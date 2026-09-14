@@ -354,3 +354,17 @@ Permanent remediation:
 - Docker/build/integration/full acceptance remain GitHub-heavy gates.
 
 This remains part of the same Wave 1. No business logic is changed.
+
+---
+
+## WAVE 1 GITHUB WINDOWS-LAUNCHER EOL CONTINUATION
+The latest GitHub Linux run reached the full Jest suite and passed 1185/1186 assertions. The only failure was the Windows operator-launcher contract because GitHub checkout materialized `.cmd` files with LF endings while the launcher contract intentionally requires CRLF + `npm.cmd`.
+
+Permanent remediation:
+- `.gitattributes` now enforces `*.cmd text eol=crlf`;
+- `.gitattributes` also enforces `*.bat text eol=crlf` for future Windows launchers;
+- the operator contract explicitly verifies the Git attribute policy;
+- Rescue validation requires the policy so Linux checkout cannot silently regress the Windows launcher byte contract.
+
+No launcher behavior, business logic, database schema, MQTT behavior, or UI behavior changes.
+This remains part of the same Wave 1.

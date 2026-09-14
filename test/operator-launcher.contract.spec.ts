@@ -86,6 +86,12 @@ describe('IoT Platform Safe Workflow Launcher v1 contract', () => {
     );
   });
 
+  it('locks Windows launcher line endings through Git attributes', () => {
+    const attributes = read('.gitattributes');
+    expect(attributes).toContain('*.cmd text eol=crlf');
+    expect(attributes).toContain('*.bat text eol=crlf');
+  });
+
   it('keeps every Windows button CRLF and npm.cmd based', () => {
     for (const path of cmdPaths) {
       const bytes = readBytes(path);

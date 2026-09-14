@@ -23,6 +23,12 @@ for (const path of [
   check(`required ${path}`, existsSync(join(root, path)));
 }
 
+check(
+  'Windows operator launchers are source-controlled with CRLF Git checkout policy',
+  read('.gitattributes').includes('*.cmd text eol=crlf') &&
+    read('.gitattributes').includes('*.bat text eol=crlf'),
+);
+
 const agentRules = read('AGENTS.md');
 check(
   'agent workflow does not auto-push on generic automatic work',
