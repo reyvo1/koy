@@ -12,7 +12,7 @@ This slice creates the approved npm workspace boundary for Admin Web, User Web, 
 - `apps/user-web` — Next.js App Router and TypeScript shell for tenant-authorized user experiences.
 - `packages/design-system` — shared semantic shell, surface, state primitives, and CSS design tokens.
 
-The root `package.json` owns the npm workspace declaration and validation scripts. Application packages use pinned Next.js `16.2.10`, React `19.2.7`, and React DOM `19.2.7`. The repository Node.js 22 and npm 10 contract remains unchanged.
+The root `package.json` owns the npm workspace declaration and validation scripts. Application packages use security-approved pinned Next.js `16.3.5`, React `19.2.7`, and React DOM `19.2.7`. The repository Node.js 22 and npm 10 contract remains unchanged.
 
 ## Design-System Boundary
 

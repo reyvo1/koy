@@ -241,6 +241,13 @@ const generatedHtml = existsSync(join(root, 'apps/admin-web'))
   ? readdirSync(join(root, 'apps/admin-web')).filter((name) => name.endsWith('.html'))
   : [];
 check('no generated admin HTML snapshots', generatedHtml.length === 0, generatedHtml.join(', '));
+check(
+  'baseline hygiene cleaner is source-controlled and explicit',
+  read('package.json').includes('baseline:hygiene:clean') &&
+    read('scripts/clean-generated-build-artifacts.mjs').includes("'dist'") &&
+    read('scripts/clean-generated-build-artifacts.mjs').includes("'apps/admin-web/.next'") &&
+    read('scripts/clean-generated-build-artifacts.mjs').includes("'apps/user-web/.next'"),
+);
 check('no stale compiled dist in source baseline', !existsSync(join(root, 'dist')));
 const repositoryTree = read('repository-tree.txt');
 check(
@@ -2153,6 +2160,47 @@ check(
 const githubCiR30 = read('.github/workflows/ci.yml');
 const liveBrokerSmokeR30 = read('scripts/run-rescue-live-broker-smoke.mjs');
 const githubCiSelfTestR30 = read('scripts/self-test-rescue-github-ci.mjs');
+const secureFastifyVerifierR30 = read('scripts/verify-secure-fastify-stack.mjs');
+const productionAuditPolicyR30 = JSON.parse(read('ops/security/production-audit-policy.json'));
+const secureNextVerifierR30 = read('scripts/verify-secure-next-stack.mjs');
+const fastifyV5CompatVerifierR30 = read('scripts/verify-fastify-v5-compat.mjs');
+const webFrameworkContractSyncVerifierR30 = read('scripts/verify-web-framework-contract-sync.mjs');
+const adminWebPackageR30 = JSON.parse(read('apps/admin-web/package.json'));
+const userWebPackageR30 = JSON.parse(read('apps/user-web/package.json'));
+check(
+  'active web workspace contract and foundation documentation track the security-approved Next.js line',
+  read('package.json').includes('web:framework:contract:verify') &&
+    webFrameworkContractSyncVerifierR30.includes("const expected = '16.3.5'") &&
+    read('test/module-10-web-workspace-design-system-foundation.contract.spec.ts').includes(
+      "expect(app.dependencies.next).toBe('16.3.5')",
+    ) &&
+    read('docs/module-10-web-workspace-design-system-foundation.md').includes('Next.js `16.3.5`'),
+);
+check(
+  'Fastify v5 source compatibility guard rejects removed v4 request/reply APIs',
+  read('package.json').includes('fastify:v5:compat:verify') &&
+    fastifyV5CompatVerifierR30.includes('request.routerPath') &&
+    fastifyV5CompatVerifierR30.includes('request.connection') &&
+    fastifyV5CompatVerifierR30.includes('reply.getResponseTime(') &&
+    read('src/metrics/metrics.interceptor.ts').includes('request.routeOptions?.url') &&
+    !read('src/metrics/metrics.interceptor.ts').includes('request.routerPath'),
+);
+check(
+  'secure Next.js boundary is source-controlled at the August 2026 patched line',
+  read('package.json').includes('security:web-stack:verify') &&
+    adminWebPackageR30.dependencies?.next === '16.3.5' &&
+    userWebPackageR30.dependencies?.next === '16.3.5' &&
+    secureNextVerifierR30.includes("const REQUIRED = '16.3.5'") &&
+    secureNextVerifierR30.includes("const MINIMUM = '16.3.3'"),
+);
+check(
+  'secure NestJS/Fastify boundary is source-controlled and has no standing critical acceptance',
+  read('package.json').includes('security:stack:verify') &&
+    secureFastifyVerifierR30.includes("'@nestjs/platform-fastify', '11.2.3'") &&
+    secureFastifyVerifierR30.includes("compare(version, '9.3.3') < 0") &&
+    Array.isArray(productionAuditPolicyR30.acceptedCriticalFindings) &&
+    productionAuditPolicyR30.acceptedCriticalFindings.length === 0,
+);
 check(
   'GitHub CI preserves core regression job and adds source-bound real EMQX rescue validation',
   githubCiR30.includes('\n  test:\n') &&

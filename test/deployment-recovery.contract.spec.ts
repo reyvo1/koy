@@ -105,33 +105,26 @@ describe('Deployment and Recovery Foundation contract', () => {
     expect(drill).toContain('finally');
   });
 
-  it('gates critical dependency findings with a time-bounded mitigation', () => {
+  it('fails closed on critical dependencies and pins the remediated Fastify stack', () => {
     const audit = read('scripts/check-production-dependencies.mjs');
     const policy = JSON.parse(
       read('ops/security/production-audit-policy.json'),
-    ) as {
-      acceptedCriticalFindings: Array<{ package: string; expiresOn: string }>;
+    ) as { acceptedCriticalFindings: Array<{ package: string }> };
+    const packageJson = JSON.parse(read('package.json')) as {
+      dependencies: Record<string, string>;
+      scripts: Record<string, string>;
     };
     expect(audit).toContain('Unreviewed critical production dependency');
     expect(audit).toContain('Critical dependency acceptance expired');
-    expect(policy.acceptedCriticalFindings).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          package: '@fastify/middie',
-          expiresOn: '2026-08-31',
-        }),
-      ]),
+    expect(policy.acceptedCriticalFindings).toEqual([]);
+    expect(packageJson.dependencies['@nestjs/platform-fastify']).toBe('11.2.3');
+    expect(packageJson.dependencies.fastify).toBe('5.10.0');
+    expect(packageJson.scripts['security:stack:verify']).toBe(
+      'node scripts/verify-secure-fastify-stack.mjs',
     );
-    expect(audit).toContain('provide: APP_GUARD');
-    expect(audit).toContain('@UseGuards(MetricsAccessGuard)');
-    const applicationSources = [
-      read('src/app.module.ts'),
-      read('src/security/sensitive-endpoint-rate-limit.guard.ts'),
-      read('src/metrics/metrics.controller.ts'),
-    ].join('\n');
-    expect(applicationSources).toContain('APP_GUARD');
-    expect(applicationSources).toContain('@UseGuards(MetricsAccessGuard)');
-    expect(applicationSources).not.toContain('MiddlewareConsumer');
+    expect(read('scripts/verify-secure-fastify-stack.mjs')).toContain(
+      "compare(version, '9.3.3') < 0",
+    );
   });
 
   it('adds CI release, recovery, security, and artifact gates', () => {

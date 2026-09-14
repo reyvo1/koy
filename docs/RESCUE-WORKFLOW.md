@@ -24,6 +24,7 @@ For each bounded change:
 5. When dependencies/services are available, run relevant typecheck/build/tests.
 6. Record fresh PASS/FAIL separately from historical evidence.
 7. Never package stale generated `dist/`; regenerate it only from a successful fresh build.
+8. After any local backend/web build and before sealing or `rescue:validate`, run `npm run baseline:hygiene:clean`. The validator remains non-mutating and must continue to fail if generated build output is present.
 8. Update `CURRENT-STATE.md`, `PROJECT-HANDOFF.md`, and the paste-to-next-chat file when the baseline changes.
 
 ## Rescue Gates

@@ -74,7 +74,7 @@ Severity: Medium
 
 Status: Controlled by Deployment and Recovery Foundation.
 
-CI includes non-mutating lint, a critical production dependency review policy, verified release manifests, production artifact startup smoke, recovery drill execution, shell syntax validation, and GitHub artifact upload with bounded retention. The current `@fastify/middie` critical advisory has a documented time-bounded acceptance because security-sensitive controls are guards, pipes, filters, and controllers rather than path-scoped middleware. Upgrade remediation remains mandatory before the acceptance expires.
+CI includes non-mutating lint, a critical production dependency review policy, verified release manifests, production artifact startup smoke, recovery drill execution, shell syntax validation, and GitHub artifact upload with bounded retention. The former `@fastify/middie` critical exception is retired in Wave 1. The repository pins NestJS 11.2.3 / Fastify 5.10.0, verifies that dependency boundary directly from `package.json` and `package-lock.json`, and rejects any resolved `@fastify/middie` below 9.3.3 before the production audit runs.
 
 ## Accepted Non-Blockers
 

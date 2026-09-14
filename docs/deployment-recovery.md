@@ -121,7 +121,7 @@ This transient CI drill validates dump and restore semantics. Production backups
 
 ## Release Security Gate
 
-The production dependency gate fails for any unreviewed critical production dependency or expired acceptance. The current `@fastify/middie` critical advisory is accepted only until the recorded expiry because the only HTTP middleware is global request logging; all security-sensitive boundaries remain guards, pipes, filters, or controllers rather than path-scoped middleware. Upgrade remediation remains mandatory before the acceptance expires.
+The production dependency gate fails for any unreviewed critical production dependency or expired acceptance. Wave 1 permanently removes the former `@fastify/middie` critical exception by upgrading the NestJS/Fastify production stack to NestJS 11.2.3 / Fastify 5.10.0. CI now verifies the locked framework boundary before running the production dependency audit and rejects any resolved `@fastify/middie` below 9.3.3.
 
 CI also runs non-mutating lint, release manifest verification, production artifact startup smoke, PostgreSQL recovery drill, and artifact upload.
 

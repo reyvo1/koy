@@ -52,7 +52,7 @@ export class MetricsInterceptor implements NestInterceptor {
   }
 
   private resolveRoute(request: FastifyRequest): string {
-    const route = request.routeOptions?.url ?? request.routerPath;
+    const route = request.routeOptions?.url;
 
     if (!route || !route.startsWith('/')) {
       return 'unmatched';

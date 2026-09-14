@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
 const policyPath = resolve(root, 'ops/security/production-audit-policy.json');
@@ -62,51 +62,6 @@ for (const packageName of accepted.keys()) {
   }
 }
 
-function listTypeScriptFiles(directory) {
-  if (!existsSync(directory)) {
-    return [];
-  }
-  const files = [];
-  for (const entry of readdirSync(directory, { withFileTypes: true })) {
-    const absolute = join(directory, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...listTypeScriptFiles(absolute));
-    } else if (entry.isFile() && entry.name.endsWith('.ts')) {
-      files.push(absolute);
-    }
-  }
-  return files;
-}
-
-if (accepted.has('@fastify/middie')) {
-  for (const absolute of listTypeScriptFiles(resolve(root, 'src'))) {
-    const source = readFileSync(absolute, 'utf8');
-    if (
-      /MiddlewareConsumer|consumer\.apply|configure\s*\(\s*consumer/.test(
-        source,
-      )
-    ) {
-      throw new Error(
-        `Security-sensitive Nest middleware is forbidden while middie risk is accepted: ${absolute}`,
-      );
-    }
-  }
-  const appModule = readFileSync(resolve(root, 'src/app.module.ts'), 'utf8');
-  const metricsController = readFileSync(
-    resolve(root, 'src/metrics/metrics.controller.ts'),
-    'utf8',
-  );
-  if (!appModule.includes('provide: APP_GUARD')) {
-    throw new Error(
-      'Middie risk acceptance requires global security controls to remain guards',
-    );
-  }
-  if (!metricsController.includes('@UseGuards(MetricsAccessGuard)')) {
-    throw new Error(
-      'Middie risk acceptance requires metrics access to remain a guard',
-    );
-  }
-}
 
 const totals = report.metadata.vulnerabilities;
 console.log(

@@ -20,6 +20,11 @@ const smoke = read(smokePath);
 const pkg = JSON.parse(read('package.json'));
 
 check('CI remains runnable manually', workflow.includes('workflow_dispatch:'));
+check('CI verifies secure NestJS/Fastify dependency boundary before production audit', workflow.includes('Verify secure NestJS/Fastify dependency boundary') && workflow.indexOf('security:stack:verify') < workflow.indexOf('security:audit:production'));
+check('CI verifies secure Next.js dependency boundary before production audit', workflow.includes('Verify secure Next.js dependency boundary') && workflow.indexOf('security:web-stack:verify') < workflow.indexOf('security:audit:production'));
+check('CI verifies Fastify v5 source compatibility before backend build', workflow.includes('Verify Fastify v5 source compatibility') && workflow.indexOf('fastify:v5:compat:verify') < workflow.indexOf('Build backend'));
+check('CI self-tests baseline build-artifact hygiene before backend build', workflow.includes('Self-test baseline build-artifact hygiene') && workflow.indexOf('baseline:hygiene:self-test') < workflow.indexOf('Build backend'));
+check('CI verifies web framework contract/documentation sync before web type-check', workflow.includes('Verify web framework contract/documentation sync') && workflow.indexOf('web:framework:contract:verify') < workflow.indexOf('Type-check web workspaces'));
 check('existing core CI job is preserved', workflow.includes('\n  test:\n') && workflow.includes('Database integration test') && workflow.includes('MQTT workflow integration test'));
 check('rescue live EMQX job runs on GitHub Ubuntu', workflow.includes('\n  rescue-live-emqx:\n') && workflow.includes('runs-on: ubuntu-latest'));
 check('rescue live EMQX job is sequenced after core CI', workflow.includes('needs: test'));

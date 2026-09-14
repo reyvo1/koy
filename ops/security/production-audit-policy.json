@@ -1,14 +1,9 @@
 {
   "schemaVersion": 1,
-  "policy": "Fail on every unreviewed critical production dependency and every expired acceptance.",
-  "acceptedCriticalFindings": [
-    {
-      "package": "@fastify/middie",
-      "expiresOn": "2026-08-31",
-      "mitigation": "The only registered HTTP middleware is request logging from nestjs-pino. Authentication, rate limiting, tenant isolation, metrics access, validation, and error handling are implemented as guards, pipes, filters, and controllers rather than path-scoped middleware. Upgrade remediation remains required before this acceptance expires."
-    }
-  ],
+  "policy": "Fail on every critical production dependency. No standing critical finding is accepted after the NestJS/Fastify security migration.",
+  "acceptedCriticalFindings": [],
   "middieMitigation": {
-    "sourceBoundary": "All TypeScript files below src/ are scanned for Nest MiddlewareConsumer registration while the acceptance is active."
+    "status": "retired",
+    "reason": "The NestJS/Fastify stack is upgraded in Wave 1 and the former @fastify/middie critical exception must not be used for production approval."
   }
 }

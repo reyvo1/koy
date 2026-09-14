@@ -192,6 +192,7 @@ describe('Observability contract', () => {
 
   it('uses route templates instead of raw request URLs', () => {
     expect(metricsInterceptorSource).toContain('request.routeOptions?.url');
+    expect(metricsInterceptorSource).not.toContain('request.routerPath');
     expect(metricsInterceptorSource).not.toContain('request.url');
     expect(metricsInterceptorSource).not.toContain('request.raw.url');
   });

@@ -67,6 +67,12 @@ jobs:
         timeout-minutes: 10
         run: bash ops/scripts/ci-bootstrap-dependencies.sh
 
+      - name: Verify secure NestJS/Fastify dependency boundary
+        run: npm run security:stack:verify
+
+      - name: Verify secure Next.js dependency boundary
+        run: npm run security:web-stack:verify
+
       - name: Production dependency audit policy
         run: npm run security:audit:production
 
@@ -81,8 +87,17 @@ jobs:
       - name: Run Prisma migrations
         run: node node_modules/prisma/build/index.js migrate deploy
 
+      - name: Self-test baseline build-artifact hygiene
+        run: npm run baseline:hygiene:self-test
+
+      - name: Verify Fastify v5 source compatibility
+        run: npm run fastify:v5:compat:verify
+
       - name: Build backend
         run: npm run build
+
+      - name: Verify web framework contract/documentation sync
+        run: npm run web:framework:contract:verify
 
       - name: Type-check web workspaces
         run: npm run web:typecheck

@@ -85,6 +85,30 @@ describe('MetricsInterceptor', () => {
     expect(metrics.renderPrometheus()).not.toContain('iot_http_requests_total');
   });
 
+  it('ignores legacy routerPath-only metadata under Fastify v5', async () => {
+    const metrics = new MetricsService();
+    const interceptor = new MetricsInterceptor(metrics);
+    const request = {
+      method: 'GET',
+      routerPath: '/legacy/:id',
+    };
+    const reply = { statusCode: 200 };
+    const context = {
+      getType: () => 'http',
+      switchToHttp: () => ({
+        getRequest: () => request,
+        getResponse: () => reply,
+      }),
+    } as unknown as ExecutionContext;
+
+    await lastValueFrom(
+      interceptor.intercept(context, { handle: () => of(undefined) }),
+    );
+
+    expect(metrics.renderPrometheus()).toContain('route="unmatched"');
+    expect(metrics.renderPrometheus()).not.toContain('/legacy/:id');
+  });
+
   it('uses a bounded unmatched label when no route template is available', async () => {
     const metrics = new MetricsService();
     const interceptor = new MetricsInterceptor(metrics);
