@@ -40,6 +40,12 @@ check('CI runs targeted DB stability before full acceptance', workflow.indexOf('
 check('CI runs real broker smoke before Gate 1/full acceptance', workflow.indexOf('Real EMQX auth ACL webhook and ACK smoke') < workflow.indexOf('Gate 1 source-bound runtime receipt'));
 check('CI captures reports and container logs on failure', workflow.includes('if: always()') && workflow.includes('docker-compose.log') && workflow.includes('actions/upload-artifact@v4'));
 check('CI tears down only ephemeral runner volumes', workflow.includes('down --volumes --remove-orphans'));
+check(
+  'CI self-tests bounded broker smoke operations before live EMQX smoke',
+  workflow.includes('Self-test bounded live broker smoke operations') &&
+    workflow.indexOf('rescue:broker:smoke:self-test') <
+      workflow.indexOf('rescue:broker:smoke -- --env=.env'),
+);
 check('broker smoke package command is exposed', pkg.scripts?.['rescue:broker:smoke'] === 'node scripts/run-rescue-live-broker-smoke.mjs');
 check('CI self-test package command is exposed', pkg.scripts?.['rescue:github-ci:self-test'] === 'node scripts/self-test-rescue-github-ci.mjs');
 check('broker smoke prioritizes dedicated rescue broker URL', smoke.includes('env.RESCUE_MQTT_BROKER_URL?.trim()') && smoke.includes("'18884'"));

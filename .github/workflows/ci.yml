@@ -210,6 +210,9 @@ jobs:
         timeout-minutes: 8
         run: npm run test:integration:db
 
+      - name: Self-test bounded live broker smoke operations
+        run: npm run rescue:broker:smoke:self-test
+
       - name: Real EMQX auth ACL webhook and ACK smoke
         timeout-minutes: 8
         run: npm run rescue:broker:smoke -- --env=.env

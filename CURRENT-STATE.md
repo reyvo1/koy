@@ -1259,3 +1259,29 @@ Permanent remediation:
 - local pre-push and `rescue-live-emqx` run this portability proof before source sealing.
 
 The manifest must be regenerated once after applying V10 and committed.
+
+---
+
+## WAVE 1 LARGE-BATCH CI HARDENING — LIVE EMQX SMOKE
+The latest GitHub run finally reached real Docker/EMQX. The following live checks passed before the job timed out:
+- live EMQX 5.9.2 detected;
+- runtime login and tenant isolation;
+- device registration/pairing/capability/heartbeat/rotation;
+- valid device MQTT credential allowed;
+- wrong device secret denied;
+- device command subscription allowed;
+- API publisher command publish allowed and received by the device.
+
+The job then hit the outer 8-minute timeout immediately after the publisher-command PASS marker. This is NOT evidence of an EMQX authentication defect. The smoke harness had unbounded MQTT subscribe/publish callbacks for later negative ACL checks, so one broker/client callback could stall the whole job without naming the exact operation.
+
+Large-batch permanent remediation:
+- every MQTT subscribe and publish in the live smoke is bounded (default 8 seconds);
+- a timeout is never treated as ACL-denial evidence;
+- negative publisher/cross-device/wrong-device-ACK paths propagate timeout as a concrete CI failure;
+- all connected MQTT clients are tracked and closed in final cleanup even when the smoke fails mid-run;
+- major broker-smoke phases emit CHECK markers before risky operations;
+- dependency-free self-tests simulate normal, denied, error, and hanging MQTT callbacks;
+- GitHub runs the smoke self-test immediately before real EMQX smoke;
+- the canonical local pre-push gate includes this harness self-test.
+
+Work policy reaffirmed: ordinary CI failures are accumulated into coherent hardening batches rather than one micro-checkpoint per line.

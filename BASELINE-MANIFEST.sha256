@@ -4,7 +4,7 @@ d8fb72357945137f3c6236a829693718f022aa97a9f32935dd1b65283a016c23  ./.env.example
 d772431114bf446abfb602f416111404206b31a113c8f07014453ed5aa513bc6  ./.eslintrc.cjs
 17b3e3dce96cb969fabf043293e17380873e3b1a43a147506c7731c308085568  ./.eslintrc.js
 50d3c6e4c8c9678cb4963022b108a01df72332c1e5783f90c9deb92550d63efd  ./.gitattributes
-8127f74304dd6a21399777490f63bcd5df15f8ee04065aa88402d70bdcd6cf6f  ./.github/workflows/ci.yml
+603e8ade9eeb8a3e22c6dd7eb9fa23d93a38188e710954d48b49ccb6015cf5b3  ./.github/workflows/ci.yml
 387bbb9a64f37a9bda6c025891a2c57826e1fa57e6d274e0ef6cb1ee91d31349  ./.gitignore
 7d2df647f25529bd87500319c41564e032e2be642e565350fa6136d7a1ec4d10  ./.node-version
 7d2df647f25529bd87500319c41564e032e2be642e565350fa6136d7a1ec4d10  ./.nvmrc
@@ -322,8 +322,8 @@ bead9f184b27083639c20803cac92b239a55bcea908cf442f5eed777f6b59df9  ./apps/user-we
 ccd2a17f28b9205adc19fbf05b2a9389dc24115b8ce40b6d958777af90bea7a1  ./apps/user-web/postcss.config.mjs
 7794f4a44d2c31c1f33e91477a00025f4e62687a88946b7c17f58f26257ef2e8  ./apps/user-web/public/icon.png
 38ee09e8ee48c7e75cab63bd076513018ca07b655295664d07c107e408606495  ./apps/user-web/tsconfig.json
-2cf00f31f418429cf6d023befef4605eedc9019219938ad59ff8f3dd9f1100d0  ./chat-session.md
-fdbf0343ba003e2b0c9e484fd2c659bf9967c341053b62ba30a009fa797ecaf9  ./CURRENT-STATE.md
+d354aced358c2af6af6ab1e4d88d6b9f19bfed36f1378bcc95e921fd08cf3d57  ./chat-session.md
+85679e3f5494b55461e1ed7761644fa54c4c7affc7a58ce0d801aae18ce130c4  ./CURRENT-STATE.md
 b56591a90e026f0c2e27c5b37f7877e8993f4bb0ab28ccf9cb10b19614aade92  ./docker-compose.rescue.yml
 12b78207cb3ce4d59fefc85abb8fb5fe7412c497252d1b0bc61a189996b84f30  ./docker-compose.yml
 b9269bb662516d800796cf5df511b0b84b588f0a8dca1c3ee57277023f2cd2e8  ./docs/architecture.md
@@ -466,7 +466,7 @@ d296e3a0df131f20476c6d8c4ece1af57e861ed63b49659ab468ab3f038bc155  ./ops/systemd/
 23bb220ecf835b2f25caa9dd46b97c266b713dad591f5169df2872534b3844f0  ./ops/systemd/iot-platform-backup.timer
 c16ce529395244a7a5cdd9b4b86902273e232212695edd8c768c8de28cfbe78f  ./ops/systemd/iot-platform.service
 5d9dd83e400f2d09fc869b407fe07be002d9658561cb785756c5d3d0158f9018  ./package-lock.json
-ad907ecc0228f0d99b6d672682c4814bf3cee7c218ae35cf90cc90e42044bd4f  ./package.json
+0e2e848fc228ae21a7c5276cb49e2631aea608eca98d801be73c41bba8c88b52  ./package.json
 a119fdac221907cc9580b940bb96d031ae518f3a3f97dab501bfe3e94cef19d3  ./packages/design-system/package.json
 b63813a336d764f5fd0ecf92cf894829347e0485f5c7bc67cc5000e866c31b41  ./packages/design-system/src/design-system-v2.css
 44d9d7e061159d773ec61ce052b3a00ee8f283b3fee215e27798533e87ab2185  ./packages/design-system/src/index.tsx
@@ -517,7 +517,7 @@ dfccc0ec741ff6ded4c8fd6799181a9ae3a246fa850e540f606788ca1b93e4b5  ./prisma/migra
 e952e776e52cd0c82c91495be96ca6b58913b7d5ce6e3252a64035e1416c0e5c  ./prisma/schema.prisma
 64c07f444e422abafe38cc719d4155d3ac9b00a2f51fac76ef4fb9f28d0d617f  ./prisma/seed.ts
 863f5d09a5b62e0618f48a98627a7e906e0a417513db68862f5b8e776117ab47  ./project-config.json
-69845d02c8569a26da1575809f3e372677f33a2f13a3cfc45fd5489f3059a73e  ./PROJECT-HANDOFF.md
+75b59b44928d57c36ee34fea2e82eb03714e1d4f56bf0fae14da1fd671a0be58  ./PROJECT-HANDOFF.md
 896508b052ba39570ee74e4c671e2665e548893a9a236ee8028ae1d60796ea2a  ./scripts/attach-rescue-02b-evidence.mjs
 7404d1decbe986db2ff4d8e86680ce928ac8fcc63257451c3c5afc0fa1de656b  ./scripts/build-production-release.mjs
 1942f1ac1aff2ab7ded4393027e0a39dbff0e9c952351adea73d4408196390ea  ./scripts/check-production-dependencies.mjs
@@ -528,6 +528,7 @@ f0966d6e40f287b7aa8e14ede7d7696098c3760c7911aae4eff342f4068b82e1  ./scripts/conf
 4c28e6c4bd2622be6a39776be87f6e5babac2a460de33173d945e3963bcfb339  ./scripts/diagnose-rescue-bootstrap.mjs
 fb7d3236b6681195e1e242bbcb03ba22f32f38ad6cd678eae3e95bbed13ed762  ./scripts/init-rescue-02b-evidence.mjs
 63b430772cb49679538e3be3505614d7d7d7ebbbff0ea63c2200e8c82b322b69  ./scripts/init-rescue-local-env.mjs
+850279ddddef30f847ee25d8b56e63ab1deb3a50116faa1e4974e28a27d23ca4  ./scripts/lib/rescue-mqtt-operations.mjs
 ef7de6f36e81ac8b484e8d56b014dc83d11fb81f8140c3858a8436b632cc51d7  ./scripts/manage-baseline-manifest.mjs
 a3a94cca3d75d0a4bb9f5609fc4004cc1886318e73610a32444e33e908dc4540  ./scripts/manage-module-state.mjs
 c62458a708d6f33f4551d481517c53892307ec9b6023f3ab23d0b6d03536ceb1  ./scripts/manage-rescue-local-runtime.mjs
@@ -535,7 +536,7 @@ c62458a708d6f33f4551d481517c53892307ec9b6023f3ab23d0b6d03536ceb1  ./scripts/mana
 b8630dfdc83a7bf7cebbd82cf52e998d80adb658e2e15d9afafd4c42c929dccd  ./scripts/rescue-local-network.mjs
 99adc64c38419b80d4d7f9eab5f614ed5335f9f655b6b20adcba74ec93ccccf8  ./scripts/run-rescue-acceptance.mjs
 72ab6c09486fa09ae2ddfdbf5cf4ff4884c25b77536575276e350ec1e02d7f75  ./scripts/run-rescue-gate1.mjs
-51270bba1004e63a28c8d71e97715318049e5baa8e30de529fed2bb49b6fedf5  ./scripts/run-rescue-live-broker-smoke.mjs
+ca063b6a5264eadd98a24647992cd069f6e08321c864a0d7295712645ceec5d9  ./scripts/run-rescue-live-broker-smoke.mjs
 43ebfe345db86e082e7151b82ea3c2f303ef5bba4b2e777c60804714c00d714a  ./scripts/self-test-baseline-hygiene.mjs
 d4d21285d4ce70ebfc2e97e31e9eb56895bb54dfceccadab61920a837dbe1dd3  ./scripts/self-test-baseline-manifest.mjs
 21e3f41e2ab47b2e86a9ca52361ac8d0daf48be2abcdc77cd7d16500e1f7b3c3  ./scripts/self-test-dashboard-widget-integration-access.mjs
@@ -546,8 +547,10 @@ d4d21285d4ce70ebfc2e97e31e9eb56895bb54dfceccadab61920a837dbe1dd3  ./scripts/self
 1250ef2b2cbda1e49504bb13237e926f5f50fff888f004bbc97d9fb41e0d5f5d  ./scripts/self-test-rescue-acceptance-runner.mjs
 da6b961aa48fa715483ea6c686da3e58b151f7f62d363e73c8b247875187403a  ./scripts/self-test-rescue-failure-summary.mjs
 f6ec81a13cef553e7cbf44149210b65608a97a651e42cd4c440b3e79d1f1c91a  ./scripts/self-test-rescue-gate1-validator.mjs
-351acd34c08d68f5e44c2ef85a9859d9dcafe6c632a6383617d1b81712b1f917  ./scripts/self-test-rescue-github-ci.mjs
+941106a8fda15ef33b4435a16e30e39e7a836973c4bce33d95364758a2e8ab8b  ./scripts/self-test-rescue-github-ci.mjs
+c7b1a75a92772ca102f42087ebf35b50118d7e60a8ac33767fca2db89a114bf5  ./scripts/self-test-rescue-live-broker-smoke.mjs
 82ad5ea725bd682520814f5b6646a54c4d02607bf1c44a9d58cf66304d1128f9  ./scripts/self-test-rescue-local-runtime.mjs
+0e589c180d575a470367a23c7319634522af55cdb8e4b44bbe9ac4fc71e1c3c0  ./scripts/self-test-rescue-mqtt-operations.mjs
 b18408f1bde55d0d989bf04483a0ef87359a9fcadac99214c333f1af87f67e9e  ./scripts/self-test-rescue-runtime-probes.mjs
 2e897b21e5b3d40354d293e6405ef7c0879718ad0651d331ecc743264fca4162  ./scripts/self-test-secure-fastify-stack.mjs
 91311dea948ac08cd40f2eb8cd4bb485779578718ff1946ab6f56c8df25fc60c  ./scripts/self-test-secure-next-stack.mjs
@@ -556,7 +559,7 @@ ed0e26eeb48c4a6d34d1b2b67d93197689da8c90252a30089559f0a1b20aee1f  ./scripts/self
 29dd93b26da22398f7af85af296f7ce0dcd89fe4e8e7cb2bee848cad3307a9ee  ./scripts/self-test-wave1-prepush.mjs
 20ea361948a1e75c0218f6fc7c929678f5a2772482e27e686165ee013d5bd0c8  ./scripts/self-test-web-framework-contract-sync.mjs
 dfdc3d80a87a636f8acec72c607f1765603adc974f0048a8d3deb3502e436739  ./scripts/validate-rescue-02b-evidence.mjs
-a87a9dbcea70d581f8d5c0b5d7597c6aea28b06d047bd910dbf3d9559b12dec8  ./scripts/validate-rescue-baseline.mjs
+810ea534812731d95559439f11fc5e7d82ee7d86b545054c8457cd5858e8c23c  ./scripts/validate-rescue-baseline.mjs
 131e3de48ca0e1238757be43693b6c7c74a2c4d34f3ab3bd242e080069364240  ./scripts/validate-rescue-gate1-receipt.mjs
 5c2a36059e7d2772e49b523854e6d3748212cb88e709fe74f182d440b73aed21  ./scripts/verify-fastify-v5-compat.mjs
 0384cbfaffdbae64203d8dd78dbee918e597dd14012b643e1a6996719dace316  ./scripts/verify-production-approval.mjs
@@ -1011,4 +1014,4 @@ d526784499ba2f416a3fca603acb5dd534fb7450580e048a80abcba43f9ece63  ./tools/redis-
 7256486d18986f5c8b6c0d1548e30a2cdf8dfb0c4d1fb27e5dffd081ee67fa98  ./tsconfig.jest.json
 fb2278ad89fcdbeb387aa4a8e0f3c550b9ffd464d1ce83b2c2aee1ff72ddc14c  ./tsconfig.json
 818d1504f9c83a672557cc3c45452c033f04098ce52f609be506b3bbe7dfe7d6  ./UI-DESIGN-SYSTEM.md
-4652eb9c5ba012945b08b187fc273249e9fb2238581bc6b740fc06dae82c322d  ./repository-tree.txt
+8c410cbe0a7a7276087a212002122c5feb381ffd1d3c9852bf8b27242e93fa57  ./repository-tree.txt

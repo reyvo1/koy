@@ -2243,6 +2243,14 @@ check(
     githubCiR30.includes('npm run rescue:acceptance -- --env=.env --full'),
 );
 check(
+  'live broker smoke bounds every MQTT subscribe/publish and fails closed on timeout',
+  read('package.json').includes('rescue:broker:smoke:self-test') &&
+    read('scripts/run-rescue-live-broker-smoke.mjs').includes("from './lib/rescue-mqtt-operations.mjs'") &&
+    read('scripts/run-rescue-live-broker-smoke.mjs').includes('if (isMqttOperationTimeout(error)) throw error') &&
+    read('scripts/run-rescue-live-broker-smoke.mjs').includes('await closeActiveMqttClients()'),
+);
+
+check(
   'GitHub rescue broker smoke stays bound to dedicated rescue MQTT endpoint and concrete live negative paths',
   liveBrokerSmokeR30.includes('env.RESCUE_MQTT_BROKER_URL?.trim()') &&
     liveBrokerSmokeR30.includes("'18884'") &&

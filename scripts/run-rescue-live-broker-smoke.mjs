@@ -27,6 +27,12 @@ import {
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import {
+  expectSubscribeDeniedBounded,
+  isMqttOperationTimeout,
+  mqttPublishBounded,
+  mqttSubscribeBounded,
+} from './lib/rescue-mqtt-operations.mjs';
 
 const argv = process.argv.slice(2);
 const arg = (name) =>
@@ -242,6 +248,12 @@ const argon2 = rootRequire('argon2');
 const mqtt = rootRequire('mqtt');
 
 const prisma = new PrismaClient();
+const activeMqttClients = new Set();
+
+function brokerCheck(id) {
+  console.log(`CHECK ${id}...`);
+}
+
 const apiBase = normalizeHttpBase({ ...fileEnv, ...process.env });
 const brokerUrl = normalizeBrokerUrl({ ...fileEnv, ...process.env });
 const emqxApiUrl = normalizeEmqxApiUrl({ ...fileEnv, ...process.env });
@@ -556,6 +568,7 @@ async function connectMqtt(username, password, label) {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
+      activeMqttClients.add(client);
       resolve({ client, packet });
     });
 
@@ -588,61 +601,63 @@ async function expectMqttDenied(username, password, label) {
 
 async function endMqtt(client) {
   if (!client) return;
+  activeMqttClients.delete(client);
+
   await new Promise((resolve) => {
-    try {
-      client.end(true, {}, resolve);
-    } catch {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
       resolve();
+    };
+    const timer = setTimeout(finish, 800);
+
+    try {
+      client.end(true, {}, finish);
+    } catch {
+      finish();
     }
-    setTimeout(resolve, 800).unref();
   });
 }
 
-async function mqttSubscribe(client, topic, qos = 1) {
-  return await new Promise((resolve, reject) => {
-    client.subscribe(topic, { qos }, (error, granted) => {
-      if (error) {
-        reject(error);
-        return;
-      }
-      resolve(granted ?? []);
-    });
-  });
+async function closeActiveMqttClients() {
+  const clients = [...activeMqttClients];
+  await Promise.allSettled(clients.map((client) => endMqtt(client)));
 }
 
-async function expectSubscribeDenied(client, topic) {
-  try {
-    const granted = await mqttSubscribe(client, topic, 1);
-    if (
-      granted.length === 0 ||
-      granted.every(
-        (item) =>
-          item.qos === 128 ||
-          item.reasonCode === 128 ||
-          item.reasonCode === 135,
-      )
-    ) {
-      return true;
-    }
-    return false;
-  } catch {
-    return true;
-  }
+async function mqttSubscribe(client, topic, qos = 1, timeoutMs = 8_000) {
+  return await mqttSubscribeBounded(client, topic, qos, timeoutMs);
 }
 
-async function mqttPublish(client, topic, payload, qos = 1) {
-  const message =
-    typeof payload === 'string' ? payload : JSON.stringify(payload);
+async function expectSubscribeDenied(
+  client,
+  topic,
+  qos = 1,
+  timeoutMs = 8_000,
+) {
+  return await expectSubscribeDeniedBounded(
+    client,
+    topic,
+    qos,
+    timeoutMs,
+  );
+}
 
-  return await new Promise((resolve, reject) => {
-    client.publish(topic, message, { qos }, (error, packet) => {
-      if (error) {
-        reject(error);
-        return;
-      }
-      resolve(packet ?? null);
-    });
-  });
+async function mqttPublish(
+  client,
+  topic,
+  payload,
+  qos = 1,
+  timeoutMs = 8_000,
+) {
+  return await mqttPublishBounded(
+    client,
+    topic,
+    payload,
+    qos,
+    timeoutMs,
+  );
 }
 
 function createMessageQueue(client) {
@@ -1103,6 +1118,7 @@ async function main() {
     'Live API publisher credential published to the canonical command topic and the device subscription received the payload.',
   );
 
+  brokerCheck('liveBroker.publisher-non-command-denied');
   const { client: negativePublisher } = await connectMqtt(
     publisherUsername,
     publisherPassword,
@@ -1124,7 +1140,8 @@ async function main() {
     );
     publisherPublishRejected =
       Number(packet?.reasonCode ?? 0) >= 0x80;
-  } catch {
+  } catch (error) {
+    if (isMqttOperationTimeout(error)) throw error;
     publisherPublishRejected = true;
   }
   await sleep(1200);
@@ -1379,6 +1396,7 @@ async function main() {
     'Canonical command API persisted the command, API publisher sent it through live EMQX, and the device subscription received the matching correlationId.',
   );
 
+  brokerCheck('liveBroker.cross-device-tenant-topic-denied');
   const provisionB = (
     await apiRequest('POST', '/admin/platform-devices', {
       token: platformLogin.accessToken,
@@ -1424,7 +1442,8 @@ async function main() {
       1,
     );
     crossPublishRejected = Number(packet?.reasonCode ?? 0) >= 0x80;
-  } catch {
+  } catch (error) {
+    if (isMqttOperationTimeout(error)) throw error;
     crossPublishRejected = true;
   }
   await sleep(1200);
@@ -1453,6 +1472,7 @@ async function main() {
     'Live EMQX denied a device from another tenant/device command subscription and did not persist its cross-device telemetry attempt.',
   );
 
+  brokerCheck('liveBroker.ack-device-binding-and-replay');
   const commandBeforeWrongAck = await prisma.deviceCommand.findUnique({
     where: { id: commandResponse.id },
     select: { status: true, acknowledgedAt: true },
@@ -1470,7 +1490,8 @@ async function main() {
       1,
     );
     wrongAckRejected = Number(packet?.reasonCode ?? 0) >= 0x80;
-  } catch {
+  } catch (error) {
+    if (isMqttOperationTimeout(error)) throw error;
     wrongAckRejected = true;
   }
   await sleep(900);
@@ -1611,6 +1632,7 @@ async function main() {
     'Canonical tenant/device command history returned the live command with its ACKNOWLEDGED status and capability payload.',
   );
 
+  brokerCheck('liveBroker.wrong-webhook-secret-denied');
   const wrongWebhook = await apiRequest('POST', '/mqtt/webhook/telemetry', {
     headers: {
       'x-webhook-secret': `wrong-${randomBytes(16).toString('hex')}`,
@@ -1635,6 +1657,7 @@ async function main() {
     'Telemetry webhook rejected a request carrying an intentionally incorrect webhook secret.',
   );
 
+  brokerCheck('liveBroker.revoked-device-denied');
   const provisionRevoked = (
     await apiRequest('POST', '/admin/platform-devices', {
       token: platformLogin.accessToken,
@@ -1776,6 +1799,7 @@ main()
     process.exitCode = error?.exitCode ?? 1;
   })
   .finally(async () => {
+    await closeActiveMqttClients();
     try {
       await prisma.$disconnect();
     } catch {

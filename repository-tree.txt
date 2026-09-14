@@ -528,6 +528,7 @@ scripts/configure-emqx-webhooks.mjs
 scripts/diagnose-rescue-bootstrap.mjs
 scripts/init-rescue-02b-evidence.mjs
 scripts/init-rescue-local-env.mjs
+scripts/lib/rescue-mqtt-operations.mjs
 scripts/manage-baseline-manifest.mjs
 scripts/manage-module-state.mjs
 scripts/manage-rescue-local-runtime.mjs
@@ -547,7 +548,9 @@ scripts/self-test-rescue-acceptance-runner.mjs
 scripts/self-test-rescue-failure-summary.mjs
 scripts/self-test-rescue-gate1-validator.mjs
 scripts/self-test-rescue-github-ci.mjs
+scripts/self-test-rescue-live-broker-smoke.mjs
 scripts/self-test-rescue-local-runtime.mjs
+scripts/self-test-rescue-mqtt-operations.mjs
 scripts/self-test-rescue-runtime-probes.mjs
 scripts/self-test-secure-fastify-stack.mjs
 scripts/self-test-secure-next-stack.mjs
