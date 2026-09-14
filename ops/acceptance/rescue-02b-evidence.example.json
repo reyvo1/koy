@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 2,
+  "gate": "RESCUE-02B",
+  "generatedAt": "2026-09-13T00:00:00.000Z",
+  "automatedReport": "../../reports/rescue-runtime-acceptance-REPLACE.json",
+  "runtimeFlow": {
+    "executedAt": null,
+    "environment": "",
+    "checks": [
+      {
+        "id": "login",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "tenant-context-isolation",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "register-device",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "pair-device",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "repair-rotation-safety",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "register-capability",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "heartbeat-active",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "telemetry-idempotency",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "realtime-dashboard",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "command-publish-path",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "ack-correlation-and-replay",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "command-history",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "command-device-replay-safety",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "scene-device-command-path",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "automation-runtime-path",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "schedule-runtime-path",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "notification-report-persisted-data",
+        "status": "PENDING",
+        "evidence": null
+      }
+    ]
+  },
+  "liveBroker": {
+    "executedAt": null,
+    "emqxVersion": "",
+    "checks": [
+      {
+        "id": "device-valid-secret-allowed",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "device-wrong-secret-denied",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "revoked-device-denied",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "publisher-command-publish-allowed",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "publisher-non-command-operations-denied",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "device-telemetry-publish-allowed",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "device-ack-publish-allowed",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "device-command-subscribe-allowed",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "cross-device-tenant-topic-denied",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "telemetry-webhook-idempotent",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "ack-bound-to-matching-device-command",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "wrong-webhook-secret-denied",
+        "status": "PENDING",
+        "evidence": null
+      }
+    ]
+  },
+  "physicalEsp32": {
+    "executedAt": null,
+    "boardModel": "",
+    "espIdfVersion": "",
+    "checks": [
+      {
+        "id": "esp-idf-compile",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "provision-and-reboot-persistence",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "tls-api-and-mqtt-validation",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "wifi-loss-reconnect",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "mqtt-reconnect-qos1-dedupe",
+        "status": "PENDING",
+        "evidence": null
+      },
+      {
+        "id": "physical-telemetry-command-ack-heartbeat",
+        "status": "PENDING",
+        "evidence": null
+      }
+    ]
+  },
+  "productionOnly": {
+    "otaDigestVerification": {
+      "status": "DEFERRED",
+      "executedAt": null,
+      "deviceId": "",
+      "artifactPath": "",
+      "artifactSha256": "",
+      "deviceObservedSha256": "",
+      "evidence": "OTA is outside the RESCUE-02B pass claim until artifact-byte SHA-256 verification and physical hardware proof exist."
+    }
+  },
+  "operatorNotes": ""
+}

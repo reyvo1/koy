@@ -1,0 +1,33 @@
+# EMQX 5.8 HTTP authenticator example for the IoT Platform.
+# This is a configuration FRAGMENT, not a complete emqx.conf.
+# Replace the webhook secret before use. Do not commit a real secret.
+#
+# The backend /mqtt/auth response returns a device-bound ACL on EMQX 5.8+,
+# so a second HTTP authorizer is not required for the canonical rescue path.
+
+authentication = [
+  {
+    mechanism = password_based
+    backend = http
+    method = post
+    url = "http://api:3000/mqtt/auth"
+    body {
+      username = "${username}"
+      password = "${password}"
+    }
+    headers {
+      "Content-Type" = "application/json"
+      "X-Webhook-Secret" = "REPLACE_WITH_MQTT_WEBHOOK_SECRET"
+    }
+    pool_size = 8
+    connect_timeout = "5s"
+    request_timeout = "5s"
+    enable_pipelining = 100
+    ssl.enable = false
+  }
+]
+
+# Keep broker fallback fail-closed. The embedded ACL is checked before
+# authorizers; unmatched operations must never become implicitly allowed.
+authorization.no_match = deny
+authorization.deny_action = disconnect

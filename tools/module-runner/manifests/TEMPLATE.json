@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "id": "module-10-slice-10.10-example",
+  "title": "Bounded slice title",
+  "baseSha": "0000000000000000000000000000000000000000",
+  "branch": "main",
+  "commitSubject": "type(scope): concise subject",
+  "expectedTrackedFilesBefore": 0,
+  "expectedTrackedFilesAfter": 1,
+  "payload": {
+    "format": "exact-files-v1",
+    "path": "payload"
+  },
+  "allowedChanges": {
+    "added": ["path/to/new-file.txt"],
+    "modified": [],
+    "deleted": []
+  },
+  "expectedFileHashes": {
+    "path/to/new-file.txt": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "forbiddenPrefixes": [".github/workflows/", "prisma/migrations/"],
+  "validationProfile": "module-10-admin-web",
+  "postApplyValidationProfile": "framework-post-apply",
+  "remote": {
+    "name": "origin",
+    "branch": "main"
+  }
+}

@@ -1,0 +1,27 @@
+LANJUTKAN IOT PLATFORM DARI RR30. JANGAN AUDIT DARI NOL.
+
+BASELINE AKTIF: RR30 GITHUB-HOSTED HEAVY VALIDATION RESTORATION.
+
+FAKTA YANG SUDAH TERBUKTI:
+- Root cause MQTT host-path lama sudah ditutup: 127.0.0.1:1883 adalah Mosquitto Windows asing, bukan rescue EMQX.
+- Rescue EMQX host endpoint canonical tetap mqtt://127.0.0.1:18884; internal Compose tetap emqx:1883.
+- Jangan buka ulang diagnosis “EMQX menerima wrong password” berdasarkan hasil lama di 1883. Hanya buka ulang jika bukti BARU terhadap endpoint rescue 18884 menunjukkan defect yang sama.
+- RR29 live sebelumnya mencapai FULL READY 0 blocker, Gate 1 PASS, Gate 1 validation PASS, dan Gate 2 entry permitted.
+- Full acceptance RR29 terakhir gagal karena PostgreSQL host lokal 127.0.0.1:55432 hilang di tengah Database integration; 33 failure berikutnya adalah efek berantai, bukan 33 bug yang boleh ditambal satu-satu.
+- Host Windows/WSL lama tidak stabil dan Podman VHDX membesar ~21.92 GB. Old podman-machine-default sudah di-unregister; ruang C kembali ~31.7 GB dan Windows stabil setelah restart.
+
+RR30 MENGUBAH STRATEGI TESTING, BUKAN BUSINESS LOGIC:
+- Existing GitHub Actions core CI tetap dipertahankan.
+- Job baru `rescue-live-emqx` berjalan di ubuntu-latest setelah core CI PASS.
+- Job itu membuat .env ephemeral, menjalankan source-controlled docker-compose.rescue.yml dengan Docker Compose, targeted PostgreSQL integration stability gate, real EMQX broker smoke, Gate 1 + validator, lalu SATU full automated acceptance.
+- Real broker smoke mencakup valid/wrong device auth, publisher ACL, device telemetry/ACK/command subscribe, cross-device denial, telemetry webhook idempotency, ACK binding/replay, revoked-device denial, dan wrong-webhook-secret denial.
+- Reports + Compose logs di-upload sebagai GitHub artifact walau job gagal.
+- Physical ESP32/OTA tetap hardware gate terpisah; jangan klaim production ready.
+
+NEXT:
+1. Push/overlay RR30 ke repo GitHub.
+2. Jalankan workflow CI via push/PR atau workflow_dispatch.
+3. Lihat job `test` dulu untuk membuktikan Database integration pada fresh GitHub PostgreSQL.
+4. Jika `test` PASS, `rescue-live-emqx` berjalan otomatis dengan real EMQX.
+5. Jangan jalankan full acceptance lokal berulang di laptop.
+6. Jika GitHub full acceptance PASS, buat evidence baru yang source-bound ke RR30 lalu lanjut physical ESP32 gate.

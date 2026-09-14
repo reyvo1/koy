@@ -1,0 +1,25 @@
+{
+  "name": "@iot-platform/user-mobile",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start --dev-client",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "config:validate": "expo config --type public",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
+  },
+  "dependencies": {
+    "expo": "57.0.7",
+    "expo-dev-client": "57.0.7",
+    "expo-secure-store": "~57.0.1",
+    "expo-system-ui": "~57.0.1",
+    "react": "19.2.3",
+    "react-native": "0.86.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.4",
+    "typescript": "6.0.3"
+  }
+}

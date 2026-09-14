@@ -1,0 +1,1256 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id          String          @id @default(uuid())
+  name        String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  users       User[]
+  devices     Device[]
+  deviceGroups DeviceGroup[]
+  telemetry   Telemetry[]
+  commands    DeviceCommand[]
+  memberships Membership[]
+  automations          Automation[]
+  automationExecutions AutomationExecution[]
+  scenes               Scene[]
+  sceneExecutions      SceneExecution[]
+  schedules            Schedule[]
+  scheduleRuns         ScheduleRun[]
+  notificationTemplates NotificationTemplate[]
+  notifications         Notification[]
+  firmwareArtifacts     FirmwareArtifact[]
+  otaRollouts           OtaRollout[]
+  analyticsFindings     AnalyticsFinding[]
+  spaces                Space[]
+  shareGrants           DeviceShareGrant[]
+  organizationBranches  OrganizationBranch[] @relation("BranchTenant")
+  customRoles           CustomRole[]
+  apiKeys               ApiKey[]
+  webhookEndpoints      WebhookEndpoint[]
+  webhookDeliveries     WebhookDelivery[]
+  integrations          Integration[]
+  billingSubscription   BillingSubscription?
+  billingUsage          BillingUsage?
+
+  @@map("tenants")
+}
+
+model User {
+  id                      String          @id @default(uuid())
+  email                   String
+  name                    String? // Added name field
+  tenantId                String
+  tenant                  Tenant          @relation(fields: [tenantId], references: [id])
+  credential              UserCredential?
+  isVerified              Boolean         @default(false)
+  verificationTokenHash   String?         @unique
+  verificationTokenLookup String?         @unique
+  resetTokenHash          String?         @unique
+  resetTokenLookup        String?         @unique
+  resetTokenExpires       DateTime?
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+  memberships             Membership[]
+  ownedDevices            Device[]
+
+  @@unique([email, tenantId])
+  @@index([tenantId])
+  @@map("users")
+}
+
+model Membership {
+  id              String      @id @default(uuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+  tenantId        String
+  tenant          Tenant      @relation(fields: [tenantId], references: [id])
+  role            String      @default("MEMBER") // MEMBER, ADMIN, PLATFORM_ADMIN
+  status          String      @default("ACTIVE") // ACTIVE, PENDING, REVOKED
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  ownedDashboards  Dashboard[]  @relation("DashboardOwnerMembership")
+  ownedAutomations Automation[] @relation("AutomationOwnerMembership")
+  notificationPreferences NotificationPreference[]
+  shareGrantsReceived     DeviceShareGrant[]      @relation("ShareGrantee")
+  ownedOrganizations      Organization[]          @relation("OrganizationOwner")
+  roleOverrides           MembershipRoleOverride[]
+
+  @@unique([userId, tenantId])
+  @@unique([id, tenantId])
+  @@index([userId])
+  @@index([tenantId])
+  @@map("memberships")
+}
+
+model UserCredential {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("user_credentials")
+}
+
+model RefreshTokenFamily {
+  id        String         @id @default(uuid())
+  userId    String
+  tenantId  String
+  isRevoked Boolean        @default(false)
+  createdAt DateTime       @default(now())
+  tokens    RefreshToken[]
+
+  @@index([userId])
+  @@map("refresh_token_families")
+}
+
+model RefreshToken {
+  id          String             @id @default(uuid())
+  tokenHash   String             @unique
+  tokenLookup String             @unique
+  familyId    String
+  family      RefreshTokenFamily @relation(fields: [familyId], references: [id])
+  userId      String
+  tenantId    String
+  expiresAt   DateTime
+  isRevoked   Boolean            @default(false)
+  createdAt   DateTime           @default(now())
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([tokenHash])
+  @@index([tokenLookup])
+  @@map("refresh_tokens")
+}
+
+model Device {
+  id                       String                   @id @default(uuid())
+  name                     String
+  type                     DeviceType               @default(SENSOR)
+  status                   DeviceStatus             @default(PROVISIONING)
+  tenantId                 String
+  tenant                   Tenant                   @relation(fields: [tenantId], references: [id])
+  ownerId                  String?
+  owner                    User?                    @relation(fields: [ownerId], references: [id])
+  provisioningTokenHash    String?
+  provisioningTokenExpires DateTime?
+  lastHeartbeatAt          DateTime?
+  credential               DeviceCredential?
+  telemetry                Telemetry[]
+  commands                 DeviceCommand[]
+  capabilities             Capability[]
+  dashboardBindings        DashboardWidgetBinding[] @relation("DashboardBindingDevice")
+  deviceGroupMembers       DeviceGroupMember[]
+  automationTriggers       Automation[]              @relation("AutomationTriggerDevice")
+  automationActions          AutomationAction[]          @relation("AutomationActionDevice")
+  automationExecutionTriggers AutomationExecution[]       @relation("AutomationExecutionTriggerDevice")
+  automationExecutionActions  AutomationExecutionAction[] @relation("AutomationExecutionActionDevice")
+  sceneActions              SceneAction[]              @relation("SceneActionDevice")
+  spacePlacement            SpaceDevicePlacement?
+  shareGrants               DeviceShareGrant[]
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+
+  @@unique([id, tenantId])
+  @@index([tenantId])
+  @@index([ownerId])
+  @@map("devices")
+}
+
+model DeviceCredential {
+  id           String   @id @default(uuid())
+  deviceId     String   @unique
+  device       Device   @relation(fields: [deviceId], references: [id])
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("device_credentials")
+}
+
+model DeviceCommand {
+  id             String        @id @default(uuid())
+  correlationId  String        @unique @default(uuid())
+  idempotencyKey String?
+  tenantId       String
+  tenant         Tenant        @relation(fields: [tenantId], references: [id])
+  deviceId       String
+  device         Device        @relation(fields: [deviceId], references: [id])
+  payload        Json
+  status         CommandStatus @default(PENDING)
+  createdAt      DateTime      @default(now())
+  sentAt         DateTime?
+  acknowledgedAt DateTime?
+  updatedAt      DateTime      @updatedAt
+  automationExecutionActions AutomationExecutionAction[] @relation("AutomationExecutionActionCommand")
+
+  @@unique([id, tenantId])
+  @@unique([deviceId, idempotencyKey])
+  @@index([tenantId])
+  @@index([deviceId])
+  @@index([status])
+  @@index([status, sentAt])
+  @@map("device_commands")
+}
+
+model Capability {
+  id                String                   @id @default(uuid())
+  deviceId          String
+  device            Device                   @relation(fields: [deviceId], references: [id])
+  key               String
+  semanticType      String
+  dataType          String
+  unit              String?
+  constraints       Json? // min, max, enum, precision
+  isReadable        Boolean                  @default(true)
+  isWritable        Boolean                  @default(false)
+  isReportable      Boolean                  @default(true)
+  schemaVersion     String                   @default("1.0.0")
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+  dashboardBindings DashboardWidgetBinding[] @relation("DashboardBindingCapability")
+  automationTriggers Automation[]              @relation("AutomationTriggerCapability")
+  automationActions           AutomationAction[]          @relation("AutomationActionCapability")
+  automationExecutionTriggers AutomationExecution[]       @relation("AutomationExecutionTriggerCapability")
+  automationExecutionActions  AutomationExecutionAction[] @relation("AutomationExecutionActionCapability")
+  sceneActions      SceneAction[]            @relation("SceneActionCapability")
+
+  @@unique([deviceId, key])
+  @@unique([id, deviceId])
+  @@index([deviceId])
+  @@map("capabilities")
+}
+
+model Telemetry {
+  id        String   @id @default(uuid())
+  eventId   String
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  deviceId  String
+  device    Device   @relation(fields: [deviceId], references: [id])
+  payload   Json
+  createdAt            DateTime              @default(now())
+  automationExecutions AutomationExecution[] @relation("AutomationExecutionTriggerTelemetry")
+
+  @@unique([id, tenantId])
+  @@unique([deviceId, eventId])
+  @@index([tenantId])
+  @@index([deviceId])
+  @@index([createdAt])
+  @@index([tenantId, deviceId, createdAt, id])
+  @@map("telemetry")
+}
+
+model Dashboard {
+  id                String            @id @default(uuid())
+  tenantId          String
+  ownerMembershipId String
+  ownerMembership   Membership        @relation("DashboardOwnerMembership", fields: [ownerMembershipId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  name              String
+  description       String?
+  audience          DashboardAudience @default(PERSONAL)
+  schemaVersion     String            @default("1.0.0")
+  revision          Int               @default(1)
+  layouts           DashboardLayout[]
+  widgets           DashboardWidget[]
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@unique([id, tenantId])
+  @@index([tenantId, ownerMembershipId])
+  @@index([tenantId, audience])
+  @@map("dashboards")
+}
+
+model DashboardLayout {
+  id          String                @id @default(uuid())
+  tenantId    String
+  dashboardId String
+  dashboard   Dashboard             @relation(fields: [dashboardId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
+  breakpoint  DashboardBreakpoint
+  columns     Int
+  rowHeight   Int
+  gap         Int
+  items       DashboardLayoutItem[]
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  @@unique([id, tenantId])
+  @@unique([dashboardId, breakpoint])
+  @@index([tenantId, dashboardId])
+  @@map("dashboard_layouts")
+}
+
+model DashboardWidget {
+  id                 String                   @id @default(uuid())
+  tenantId           String
+  dashboardId        String
+  dashboard          Dashboard                @relation(fields: [dashboardId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
+  kind               DashboardWidgetKind
+  title              String
+  schemaVersion      String                   @default("1.0.0")
+  presentationConfig Json?
+  layoutItems        DashboardLayoutItem[]
+  bindings           DashboardWidgetBinding[]
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+
+  @@unique([id, tenantId])
+  @@index([tenantId, dashboardId])
+  @@map("dashboard_widgets")
+}
+
+model DashboardLayoutItem {
+  id        String          @id @default(uuid())
+  tenantId  String
+  layoutId  String
+  layout    DashboardLayout @relation(fields: [layoutId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
+  widgetId  String
+  widget    DashboardWidget @relation(fields: [widgetId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
+  x         Int
+  y         Int
+  width     Int
+  height    Int
+  minWidth  Int?
+  minHeight Int?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@unique([layoutId, widgetId])
+  @@index([tenantId, layoutId])
+  @@index([tenantId, widgetId])
+  @@map("dashboard_layout_items")
+}
+
+model DashboardWidgetBinding {
+  id           String                 @id @default(uuid())
+  tenantId     String
+  widgetId     String
+  widget       DashboardWidget        @relation(fields: [widgetId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
+  alias        String
+  intent       DashboardBindingIntent
+  mode         DashboardBindingMode
+  deviceId     String
+  device       Device                 @relation("DashboardBindingDevice", fields: [deviceId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  capabilityId String?
+  capability   Capability?            @relation("DashboardBindingCapability", fields: [capabilityId, deviceId], references: [id, deviceId], onDelete: Restrict, onUpdate: Cascade)
+  queryConfig  Json?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  @@unique([widgetId, alias])
+  @@index([tenantId, widgetId])
+  @@index([tenantId, deviceId])
+  @@index([capabilityId, deviceId])
+  @@map("dashboard_widget_bindings")
+}
+
+enum DashboardAudience {
+  PERSONAL
+  TENANT_SHARED
+}
+
+enum DashboardBreakpoint {
+  DESKTOP
+  TABLET
+  MOBILE
+}
+
+enum DashboardWidgetKind {
+  CARD
+  SWITCH
+  GAUGE
+  CHART
+  MAP
+  TABLE
+  STATUS
+}
+
+enum DashboardBindingIntent {
+  READ
+  REPORT
+  WRITE
+}
+
+enum DashboardBindingMode {
+  DEVICE_STATUS
+  LATEST
+  HISTORY
+  AGGREGATE
+  COMMAND
+}
+
+enum DeviceType {
+  SENSOR
+  ACTUATOR
+  GATEWAY
+  CAMERA
+}
+
+enum DeviceStatus {
+  PROVISIONING
+  PAIRED
+  ACTIVE
+  INACTIVE
+  REVOKED
+}
+
+enum CommandStatus {
+  PENDING
+  SENT
+  ACKNOWLEDGED
+  FAILED
+  TIMED_OUT
+}
+
+
+model Automation {
+  id                  String                @id @default(uuid())
+  tenantId            String
+  tenant              Tenant                @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  ownerMembershipId   String
+  ownerMembership     Membership            @relation("AutomationOwnerMembership", fields: [ownerMembershipId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  name                String
+  schemaVersion       String                @default("1.0.0")
+  enabled             Boolean               @default(false)
+  revision            Int                   @default(1)
+  triggerKind         AutomationTriggerKind
+  triggerDeviceId     String
+  triggerDevice       Device                @relation("AutomationTriggerDevice", fields: [triggerDeviceId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  triggerCapabilityId String
+  triggerCapability   Capability            @relation("AutomationTriggerCapability", fields: [triggerCapabilityId, triggerDeviceId], references: [id, deviceId], onDelete: Restrict, onUpdate: Cascade)
+  condition           Json
+  cooldownSeconds     Int                   @default(0)
+  actions             AutomationAction[]
+  executions          AutomationExecution[]
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  @@unique([id, tenantId])
+  @@index([tenantId, ownerMembershipId])
+  @@index([tenantId, enabled])
+  @@index([tenantId, triggerDeviceId, triggerCapabilityId, enabled], map: "automations_trigger_lookup_idx")
+  @@map("automations")
+}
+
+model AutomationAction {
+  id           String               @id @default(uuid())
+  tenantId     String
+  automationId String
+  automation   Automation           @relation(fields: [automationId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
+  actionId     String
+  position     Int
+  kind         AutomationActionKind
+  deviceId     String
+  device       Device               @relation("AutomationActionDevice", fields: [deviceId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  capabilityId String
+  capability   Capability           @relation("AutomationActionCapability", fields: [capabilityId, deviceId], references: [id, deviceId], onDelete: Restrict, onUpdate: Cascade)
+  value        Json
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@unique([automationId, actionId])
+  @@unique([automationId, position])
+  @@unique([automationId, deviceId, capabilityId])
+  @@index([tenantId, automationId])
+  @@index([tenantId, deviceId, capabilityId])
+  @@map("automation_actions")
+}
+
+
+model AutomationExecution {
+  id                    String                    @id @default(uuid())
+  tenantId              String
+  tenant                Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  automationId          String
+  automation            Automation                @relation(fields: [automationId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  automationRevision    Int
+  triggerTelemetryId    String
+  triggerTelemetry      Telemetry                 @relation("AutomationExecutionTriggerTelemetry", fields: [triggerTelemetryId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  triggerEventId        String
+  triggerDeviceId       String
+  triggerDevice         Device                    @relation("AutomationExecutionTriggerDevice", fields: [triggerDeviceId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  triggerCapabilityId   String
+  triggerCapability     Capability                @relation("AutomationExecutionTriggerCapability", fields: [triggerCapabilityId, triggerDeviceId], references: [id, deviceId], onDelete: Restrict, onUpdate: Cascade)
+  triggerCapabilityKey  String
+  triggerValue          Json
+  triggerOccurredAt     DateTime
+  ancestry                      Json
+  cooldownSeconds                Int                       @default(0)
+  cooldownEvaluatedAt            DateTime?
+  cooldownReferenceExecutionId   String?
+  cooldownReferenceExecution     AutomationExecution?      @relation("AutomationExecutionCooldownReference", fields: [cooldownReferenceExecutionId, tenantId, automationId], references: [id, tenantId, automationId], onDelete: Restrict, onUpdate: Cascade)
+  cooldownSuppressedExecutions   AutomationExecution[]     @relation("AutomationExecutionCooldownReference")
+  status                         AutomationExecutionStatus @default(RESERVED)
+  decisionReason                 String
+  dispatchStartedAt              DateTime?
+  completedAt                    DateTime?
+  actions                        AutomationExecutionAction[]
+  createdAt                      DateTime                  @default(now())
+
+  @@unique([id, tenantId])
+  @@unique([id, tenantId, automationId], map: "automation_executions_cooldown_reference_key")
+  @@unique([tenantId, automationId, automationRevision, triggerTelemetryId], map: "automation_executions_canonical_identity_key")
+  @@index([tenantId, automationId, createdAt, id])
+  @@index([tenantId, automationId, status, createdAt, id], map: "automation_executions_cooldown_lookup_idx")
+  @@index([tenantId, status, createdAt, id])
+  @@index([tenantId, triggerTelemetryId])
+  @@index([tenantId, triggerEventId])
+  @@index([tenantId, cooldownReferenceExecutionId])
+  @@map("automation_executions")
+}
+
+model AutomationExecutionAction {
+  id           String                          @id @default(uuid())
+  tenantId     String
+  executionId  String
+  execution    AutomationExecution             @relation(fields: [executionId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
+  actionId     String
+  position     Int
+  kind         AutomationActionKind
+  deviceId     String
+  device       Device                          @relation("AutomationExecutionActionDevice", fields: [deviceId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  capabilityId String
+  capability   Capability                      @relation("AutomationExecutionActionCapability", fields: [capabilityId, deviceId], references: [id, deviceId], onDelete: Restrict, onUpdate: Cascade)
+  capabilityKey String
+  value        Json
+  status            AutomationExecutionActionStatus @default(PENDING)
+  commandId         String?
+  command           DeviceCommand?                  @relation("AutomationExecutionActionCommand", fields: [commandId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  errorCode         String?
+  dispatchAttemptCount Int                          @default(1)
+  retryNextEligibleAt  DateTime?
+  dispatchStartedAt DateTime?
+  completedAt       DateTime?
+  createdAt         DateTime                        @default(now())
+
+  @@unique([executionId, actionId])
+  @@unique([executionId, position])
+  @@index([tenantId, executionId, status])
+  @@index([tenantId, deviceId, capabilityId])
+  @@index([tenantId, commandId])
+  @@map("automation_execution_actions")
+}
+
+enum AutomationExecutionStatus {
+  RESERVED
+  DISPATCHING
+  SUCCEEDED
+  FAILED
+  PARTIALLY_FAILED
+  SUPPRESSED_COOLDOWN
+  SUPPRESSED_LOOP
+}
+
+enum AutomationExecutionActionStatus {
+  PENDING
+  DISPATCHING
+  SUCCEEDED
+  FAILED
+  SKIPPED
+}
+
+enum AutomationTriggerKind {
+  CAPABILITY_REPORTED
+}
+
+enum AutomationActionKind {
+  DEVICE_COMMAND
+}
+
+// ---------------------------------------------------------------------------
+// Module 12 — Scene
+// ---------------------------------------------------------------------------
+
+model Scene {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  name      String
+  enabled   Boolean  @default(false)
+  revision  Int      @default(1)
+  actions   SceneAction[]
+  executions SceneExecution[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([id, tenantId])
+  @@unique([tenantId, name])
+  @@index([tenantId, enabled])
+  @@map("scenes")
+}
+
+model SceneAction {
+  id            String @id @default(uuid())
+  tenantId      String
+  sceneId       String
+  scene         Scene  @relation(fields: [sceneId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
+  actionId      String
+  position      Int
+  deviceId      String
+  device        Device @relation("SceneActionDevice", fields: [deviceId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  capabilityId  String
+  capability    Capability @relation("SceneActionCapability", fields: [capabilityId, deviceId], references: [id, deviceId], onDelete: Restrict, onUpdate: Cascade)
+  capabilityKey String
+  value         Json
+
+  @@unique([sceneId, actionId])
+  @@unique([sceneId, position])
+  @@index([tenantId, sceneId])
+  @@map("scene_actions")
+}
+
+enum SceneExecutionStatus {
+  RESERVED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  PARTIALLY_FAILED
+}
+
+enum SceneTriggerSource {
+  USER_REQUEST
+}
+
+model SceneExecution {
+  id           String              @id @default(uuid())
+  tenantId     String
+  tenant       Tenant              @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  sceneId      String
+  scene        Scene               @relation(fields: [sceneId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  sceneRevision Int
+  requestId    String
+  triggerSource SceneTriggerSource
+  status       SceneExecutionStatus @default(RESERVED)
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime            @default(now())
+
+  @@unique([tenantId, sceneId, requestId])
+  @@index([tenantId, sceneId, createdAt])
+  @@map("scene_executions")
+}
+
+model SystemMetadata {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("system_metadata")
+}
+
+// ---------------------------------------------------------------------------
+// Module 13 — Scheduler
+// ---------------------------------------------------------------------------
+
+enum ScheduleKind {
+  CRON
+  COUNTDOWN
+}
+
+enum ScheduleRepeat {
+  INDEFINITE
+  LIMITED
+  ONCE
+}
+
+enum ScheduleMissedRunPolicy {
+  SKIP_TO_NEXT
+  RUN_IMMEDIATELY
+}
+
+model Schedule {
+  id              String                     @id @default(uuid())
+  tenantId        String
+  tenant          Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  name            String
+  enabled         Boolean                    @default(false)
+  kind            ScheduleKind
+  expression      String
+  timezone        String
+  targetSceneId   String?
+  countdownSeconds Int?
+  repeat          ScheduleRepeat             @default(INDEFINITE)
+  maxRuns         Int?
+  runCount        Int                        @default(0)
+  nextRunAt       DateTime?
+  lastRunAt       DateTime?
+  missedRunPolicy ScheduleMissedRunPolicy    @default(SKIP_TO_NEXT)
+  runs            ScheduleRun[]
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+
+  @@unique([id, tenantId])
+  @@unique([tenantId, name])
+  @@index([enabled, nextRunAt])
+  @@index([tenantId])
+  @@map("schedules")
+}
+
+enum ScheduleRunStatus {
+  PENDING
+  CLAIMED
+  SUCCEEDED
+  FAILED
+  SKIPPED_MISSED
+}
+
+model ScheduleRun {
+  id               String             @id @default(uuid())
+  tenantId         String
+  tenant           Tenant             @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  scheduleId       String
+  schedule         Schedule           @relation(fields: [scheduleId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
+  scheduledFor     DateTime
+  status           ScheduleRunStatus  @default(PENDING)
+  sceneExecutionId String?
+  claimedAt        DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime           @default(now())
+
+  @@unique([scheduleId, scheduledFor])
+  @@index([status, scheduledFor])
+  @@index([tenantId])
+  @@map("schedule_runs")
+}
+
+// ---------------------------------------------------------------------------
+// Module 14 — Notification
+// ---------------------------------------------------------------------------
+
+enum NotificationChannel {
+  WEBHOOK
+  EMAIL
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  EXHAUSTED
+}
+
+model NotificationTemplate {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  key       String
+  subject   String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, key])
+  @@map("notification_templates")
+}
+
+model Notification {
+  id              String             @id @default(uuid())
+  tenantId        String
+  tenant          Tenant             @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  channel         NotificationChannel
+  templateKey     String?
+  subject         String?
+  body            String
+  destination     String
+  status          NotificationStatus @default(PENDING)
+  attemptCount    Int                @default(0)
+  nextRetryAt     DateTime?
+  lastErrorCode   String?
+  idempotencyKey  String
+  sentAt          DateTime?
+  createdAt       DateTime           @default(now())
+
+  @@unique([tenantId, idempotencyKey])
+  @@index([status, nextRetryAt])
+  @@index([tenantId, createdAt])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id           String             @id @default(uuid())
+  tenantId     String
+  membershipId String
+  membership   Membership         @relation(fields: [membershipId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
+  channel      NotificationChannel
+  enabled      Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+
+  @@unique([membershipId, channel])
+  @@map("notification_preferences")
+}
+
+// ---------------------------------------------------------------------------
+// Module 15 — OTA Firmware
+// ---------------------------------------------------------------------------
+
+enum OtaRolloutStatus {
+  DRAFT
+  PUBLISHED
+  IN_PROGRESS
+  COMPLETED
+  ROLLED_BACK
+}
+
+model FirmwareArtifact {
+  id                String   @id @default(uuid())
+  tenantId          String
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  version           String
+  artifactUrl       String
+  sha256            String
+  sizeBytes         BigInt
+  compatibleModels  Json
+  releaseNotes      String?
+  rollouts          OtaRollout[]
+  createdAt         DateTime @default(now())
+
+  @@unique([id, tenantId])
+  @@unique([tenantId, version])
+  @@index([tenantId])
+  @@map("firmware_artifacts")
+}
+
+model OtaRollout {
+  id                 String           @id @default(uuid())
+  tenantId           String
+  tenant             Tenant           @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  firmwareId         String
+  firmware           FirmwareArtifact @relation(fields: [firmwareId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  status             OtaRolloutStatus @default(DRAFT)
+  targetDeviceIds    Json
+  completedDeviceIds Json             @default("[]")
+  failedDeviceIds    Json             @default("[]")
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([tenantId, status])
+  @@map("ota_rollouts")
+}
+
+// ---------------------------------------------------------------------------
+// Module 16 — AI Analytics Foundation (provider-neutral)
+// ---------------------------------------------------------------------------
+
+enum AnalyticsFindingKind {
+  ANOMALY
+  RECOMMENDATION
+}
+
+enum AnalyticsSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+model AnalyticsFinding {
+  id                  String               @id @default(uuid())
+  tenantId            String
+  tenant              Tenant               @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  deviceId            String
+  capabilityKey       String
+  kind                AnalyticsFindingKind
+  severity            AnalyticsSeverity
+  summary             String
+  confidence          Float
+  detectorVersion     String
+  evidenceTelemetryId String?
+  createdAt           DateTime             @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, deviceId])
+  @@map("analytics_findings")
+}
+
+// ---------------------------------------------------------------------------
+// Module 17 — Smart Space Management
+// ---------------------------------------------------------------------------
+
+enum SpaceKind {
+  SITE
+  BUILDING
+  FLOOR
+  ROOM
+}
+
+model Space {
+  id        String    @id @default(uuid())
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  name      String
+  kind      SpaceKind
+  parentId  String?
+  parent    Space?    @relation("SpaceHierarchy", fields: [parentId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
+  children  Space[]   @relation("SpaceHierarchy")
+  path      String
+  depth     Int
+  placements SpaceDevicePlacement[]
+  createdAt DateTime  @default(now())
+
+  @@unique([id, tenantId])
+  @@unique([tenantId, name])
+  @@index([tenantId, kind])
+  @@index([parentId])
+  @@map("spaces")
+}
+
+model SpaceDevicePlacement {
+  id       String @id @default(uuid())
+  tenantId String
+  roomId   String
+  room     Space  @relation(fields: [roomId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
+  deviceId String @unique
+  device   Device @relation(fields: [deviceId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([deviceId, tenantId])
+  @@index([roomId, tenantId])
+  @@map("space_device_placements")
+}
+
+// ---------------------------------------------------------------------------
+// Module 18 — Device Sharing & Guest Access
+// ---------------------------------------------------------------------------
+
+enum ShareGrantPermission {
+  VIEW
+  CONTROL
+}
+
+enum ShareGrantStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+model DeviceShareGrant {
+  id                    String             @id @default(uuid())
+  tenantId              String
+  tenant                Tenant             @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  deviceId              String
+  device                Device             @relation(fields: [deviceId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
+  grantedToMembershipId String
+  grantedTo             Membership         @relation("ShareGrantee", fields: [grantedToMembershipId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
+  permission            ShareGrantPermission
+  status                ShareGrantStatus   @default(ACTIVE)
+  expiresAt             DateTime
+  revokedAt             DateTime?
+  createdByMembershipId String
+  createdAt             DateTime           @default(now())
+
+  @@index([tenantId, status])
+  @@index([grantedToMembershipId])
+  @@map("device_share_grants")
+}
+
+model ShareAuditLog {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  grantId            String
+  action             String
+  actorMembershipId  String
+  detail             String?
+  createdAt          DateTime @default(now())
+
+  @@index([grantId, createdAt])
+  @@map("share_audit_log")
+}
+
+// ---------------------------------------------------------------------------
+// Module 19 — Organization & Branch
+// ---------------------------------------------------------------------------
+
+model Organization {
+  id        String                @id @default(uuid())
+  name      String
+  ownerMembershipId String        @unique
+  ownerMembership Membership        @relation("OrganizationOwner", fields: [ownerMembershipId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  branches  OrganizationBranch[]
+  createdAt DateTime            @default(now())
+
+  @@map("organizations")
+}
+
+model OrganizationBranch {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  tenantId       String       @unique
+  tenant         Tenant       @relation("BranchTenant", fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  label          String
+  isPrimary      Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId])
+  @@map("organization_branches")
+}
+
+// ---------------------------------------------------------------------------
+// Module 20 — Advanced RBAC, Policy & Audit
+// ---------------------------------------------------------------------------
+
+enum AuditAction {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  GRANT
+  REVOKE
+}
+
+model CustomRole {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  name        String
+  permissions Json
+  overrides   MembershipRoleOverride[]
+  createdAt   DateTime @default(now())
+
+  @@unique([tenantId, name])
+  @@map("custom_roles")
+}
+
+model MembershipRoleOverride {
+  id           String      @id @default(uuid())
+  tenantId     String
+  membershipId String
+  membership   Membership  @relation(fields: [membershipId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
+  roleId       String
+  role         CustomRole  @relation(fields: [roleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt    DateTime    @default(now())
+
+  @@unique([membershipId, roleId])
+  @@index([membershipId, tenantId])
+  @@map("membership_role_overrides")
+}
+
+model RbacAuditLog {
+  id                String     @id @default(uuid())
+  tenantId          String
+  action            AuditAction
+  resourceType      String
+  resourceId        String?
+  actorMembershipId String
+  allowed           Boolean
+  detail            String?
+  createdAt         DateTime   @default(now())
+
+  @@index([tenantId, createdAt])
+  @@map("rbac_audit_log")
+}
+
+// ---------------------------------------------------------------------------
+// Module 21 — Public API, Webhook & SDK Foundation
+// ---------------------------------------------------------------------------
+
+enum ApiScope {
+  TELEMETRY_READ
+  DEVICE_CONTROL
+  SCENE_EXECUTE
+  ANALYTICS_READ
+}
+
+enum ApiKeyStatus {
+  ACTIVE
+  REVOKED
+}
+
+model ApiKey {
+  id         String       @id @default(uuid())
+  tenantId   String
+  tenant     Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  name       String
+  keyPrefix  String       @unique
+  keyHash    String
+  scopes     Json
+  status     ApiKeyStatus @default(ACTIVE)
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  createdAt  DateTime     @default(now())
+
+  @@index([tenantId, status])
+  @@map("api_keys")
+}
+
+model WebhookEndpoint {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  url           String
+  signingSecret String
+  events        Json
+  enabled       Boolean  @default(true)
+  deliveries    WebhookDelivery[]
+  createdAt     DateTime @default(now())
+
+  @@index([tenantId])
+  @@map("webhook_endpoints")
+}
+
+model WebhookDelivery {
+  id              String          @id @default(uuid())
+  tenantId        String
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  endpointId      String
+  endpoint        WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  event           String
+  statusCode      Int?
+  ok              Boolean
+  attemptCount    Int             @default(1)
+  signatureHeader String?
+  createdAt       DateTime        @default(now())
+
+  @@index([tenantId, createdAt])
+  @@map("webhook_deliveries")
+}
+
+// ---------------------------------------------------------------------------
+// Module 22 — External Smart Ecosystem Integrations
+// ---------------------------------------------------------------------------
+
+enum IntegrationProvider {
+  ALEXA
+  GOOGLE_HOME
+  HOME_ASSISTANT
+  MQTT_BRIDGE
+}
+
+enum IntegrationStatus {
+  REGISTERED
+  CONNECTED
+  ERROR
+  DISABLED
+}
+
+model Integration {
+  id            String             @id @default(uuid())
+  tenantId      String
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  provider      IntegrationProvider
+  displayName   String
+  credentialRef String
+  status        IntegrationStatus  @default(REGISTERED)
+  lastError     String?
+  syncStates    IntegrationSyncState[]
+  createdAt     DateTime           @default(now())
+
+  @@unique([tenantId, provider])
+  @@index([tenantId, status])
+  @@map("integrations")
+}
+
+model IntegrationSyncState {
+  id               String     @id @default(uuid())
+  tenantId         String
+  integrationId    String
+  integration      Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  entityType       String
+  externalEntityId String
+  internalEntityId String
+  syncedAt         DateTime   @default(now())
+
+  @@unique([integrationId, entityType, externalEntityId])
+  @@map("integration_sync_state")
+}
+
+// ---------------------------------------------------------------------------
+// Module 27 — Billing, Subscription, Usage & Quota
+// ---------------------------------------------------------------------------
+
+enum SubscriptionPlanTier {
+  FREE
+  STANDARD
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  PAST_DUE
+}
+
+model BillingPlan {
+  id                      String             @id @default(uuid())
+  tier                    SubscriptionPlanTier @unique
+  deviceQuota             Int
+  telemetryRetentionDays  Int
+  monthlyPriceCents       Int
+  subscriptions           BillingSubscription[]
+  @@map("billing_plans")
+}
+
+model BillingSubscription {
+  id                 String              @id @default(uuid())
+  tenantId           String              @unique
+  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  planId             String
+  plan               BillingPlan         @relation(fields: [planId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  status             SubscriptionStatus  @default(ACTIVE)
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  createdAt          DateTime            @default(now())
+
+  @@map("billing_subscriptions")
+}
+
+model BillingUsage {
+  id                   String   @id @default(uuid())
+  tenantId             String   @unique
+  tenant               Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  periodStart          DateTime
+  deviceCount          Int      @default(0)
+  telemetryPoints      BigInt   @default(0)
+
+  @@map("billing_usage")
+}
+
+// ADR-004: additive device location (GPS) — optional per device
+model DeviceLocation {
+  id        String   @id @default(cuid())
+  deviceId  String   @unique
+  latitude  Float
+  longitude Float
+  label     String?
+  updatedAt DateTime @updatedAt
+
+  @@map("device_locations")
+}
+
+// ADR-005: additive device groups (grup perangkat) — logical grouping
+model DeviceGroup {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  members     DeviceGroupMember[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("device_groups")
+}
+
+model DeviceGroupMember {
+  groupId  String
+  group    DeviceGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  deviceId String
+  device   Device      @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, deviceId])
+  @@index([deviceId])
+  @@map("device_group_members")
+}

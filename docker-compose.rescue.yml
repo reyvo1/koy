@@ -1,0 +1,99 @@
+# RESCUE-02B local integration runtime.
+# Development/test only. PostgreSQL, Redis, EMQX and the API share one
+# Compose network so broker -> API traffic never depends on host.docker.internal.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: iot-rescue-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-iot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-iot_local_only}
+      POSTGRES_DB: ${POSTGRES_DB:-iot}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-iot} -d ${POSTGRES_DB:-iot}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - iot_rescue_postgres:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: iot-rescue-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - iot_rescue_redis:/data
+    restart: unless-stopped
+
+  emqx:
+    image: emqx/emqx:5.9.2
+    container_name: iot-rescue-emqx
+    ports:
+      - "${RESCUE_MQTT_HOST_PORT:-18884}:1883"
+      - "${MQTT_WS_PORT:-8083}:8083"
+      - "${MQTT_WSS_PORT:-8084}:8084"
+      - "${MQTT_TLS_PORT:-8883}:8883"
+      - "${EMQX_DASHBOARD_PORT:-18083}:18083"
+    environment:
+      EMQX_NAME: emqx
+      EMQX_HOST: 127.0.0.1
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: '"${EMQX_DASHBOARD_PASSWORD:-public}"'
+    healthcheck:
+      test: ["CMD", "/opt/emqx/bin/emqx", "ctl", "status"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+    volumes:
+      - iot_rescue_emqx:/opt/emqx/data
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: ops/docker/Dockerfile.rescue-api
+    container_name: iot-rescue-api
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: development
+      HOST: 0.0.0.0
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-iot}:${POSTGRES_PASSWORD:-iot_local_only}@postgres:5432/${POSTGRES_DB:-iot}
+      TEST_DATABASE_URL: postgresql://${POSTGRES_USER:-iot}:${POSTGRES_PASSWORD:-iot_local_only}@postgres:5432/${POSTGRES_DB:-iot}
+      REDIS_URL: redis://redis:6379
+      MQTT_BROKER_URL: mqtt://emqx:1883
+    ports:
+      - "${PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      emqx:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/health/live').then(r=>process.exit(r.status===200?0:1)).catch(()=>process.exit(1))"
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  iot_rescue_postgres:
+  iot_rescue_redis:
+  iot_rescue_emqx:

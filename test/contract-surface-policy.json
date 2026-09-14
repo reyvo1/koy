@@ -1,0 +1,329 @@
+{
+  "version": 1,
+  "mutableCurrentStateDocuments": [
+    "project-config.json",
+    "docs/module-lifecycle.md",
+    "docs/project-state.md",
+    "docs/roadmap.md",
+    "AI-Development-Kit/bootstrap/PROJECT-BOOTSTRAP-v1.0.md",
+    "AI-Development-Kit/architecture/SYSTEM.md",
+    "AI-Development-Kit/agent/REPOSITORY-MEMORY.md",
+    "AI-Development-Kit/prompts/MODULE-10.md"
+  ],
+  "stableArchitecturePolicyDocuments": [
+    "docs/architecture.md",
+    "docs/module-10-multiplatform-architecture.md"
+  ],
+  "repositoryPolicyDocuments": [
+    "docs/historical-contract-transition-safety.md",
+    "docs/repository-historical-contract-architecture-remediation.md",
+    "docs/development/module-execution-efficiency.md"
+  ],
+  "currentStateContracts": [
+    "test/module-lifecycle.contract.spec.ts"
+  ],
+  "policyEnforcementContracts": [
+    "test/historical-contract-transition-safety.contract.spec.ts"
+  ],
+  "contractClasses": {
+    "src/common/errors/domain-error-code.contract.spec.ts": "stable-contract",
+    "src/common/errors/error-contract.spec.ts": "stable-contract",
+    "src/common/errors/error-handling-completion.contract.spec.ts": "historical-evidence",
+    "src/common/logging/structured-logging.contract.spec.ts": "historical-evidence",
+    "src/metrics/observability.contract.spec.ts": "historical-evidence",
+    "test/ci-dependency-bootstrap.contract.spec.ts": "historical-evidence",
+    "test/database-testing.contract.spec.ts": "stable-contract",
+    "test/deployment-recovery.contract.spec.ts": "historical-evidence",
+    "test/historical-contract-transition-safety.contract.spec.ts": "policy-enforcement",
+    "test/integration-e2e-testing-completion.contract.spec.ts": "historical-evidence",
+    "test/ios-final-release-proof-policy.contract.spec.ts": "stable-contract",
+    "test/module-09-completion-review.contract.spec.ts": "historical-evidence",
+    "test/module-09-latest-telemetry-query.contract.spec.ts": "historical-evidence",
+    "test/module-09-source-of-truth-reconciliation.contract.spec.ts": "historical-evidence",
+    "test/module-09-telemetry-aggregation-query.contract.spec.ts": "historical-evidence",
+    "test/module-09-telemetry-history-query.contract.spec.ts": "historical-evidence",
+    "test/module-09-telemetry-storage-strategy.contract.spec.ts": "historical-evidence",
+    "test/module-10-activation.contract.spec.ts": "historical-evidence",
+    "test/module-10-admin-web-operational-dashboard-ui-foundation.contract.spec.ts": "historical-evidence",
+    "test/module-10-admin-web-operational-dashboard-ui-proposal.contract.spec.ts": "historical-evidence",
+    "test/module-10-admin-web-operational-dashboard.contract.spec.ts": "historical-evidence",
+    "test/module-10-android-native-proof-preparation.contract.spec.ts": "historical-evidence",
+    "test/module-10-barcode-cctv-ui-compatibility.contract.spec.ts": "historical-evidence",
+    "test/module-10-completion-review.contract.spec.ts": "historical-evidence",
+    "test/module-10-dashboard-api.contract.spec.ts": "historical-evidence",
+    "test/module-10-dashboard-domain-schema-proposal.contract.spec.ts": "historical-evidence",
+    "test/module-10-dashboard-persistence-foundation.contract.spec.ts": "historical-evidence",
+    "test/module-10-mobile-foundation-dynamic-dashboard.contract.spec.ts": "historical-evidence",
+    "test/module-10-mobile-login-ui-foundation.contract.spec.ts": "historical-evidence",
+    "test/module-10-mobile-read-only-dashboard-integration.contract.spec.ts": "historical-evidence",
+    "test/module-10-mobile-secure-session-foundation.contract.spec.ts": "historical-evidence",
+    "test/module-10-mobile-workspace-foundation.contract.spec.ts": "historical-evidence",
+    "test/module-10-security-observability-accessibility-e2e-review.contract.spec.ts": "historical-evidence",
+    "test/module-10-telemetry-widget-query-integration.contract.spec.ts": "historical-evidence",
+    "test/module-10-user-web-dynamic-dashboard.contract.spec.ts": "historical-evidence",
+    "test/module-10-web-workspace-design-system-foundation.contract.spec.ts": "historical-evidence",
+    "test/module-10-widget-resolution.contract.spec.ts": "historical-evidence",
+    "test/module-11-automation-action-state-transition-foundation.contract.spec.ts": "stable-contract",
+    "test/module-11-automation-command-dispatch-foundation-implementation.contract.spec.ts": "stable-contract",
+    "test/module-11-automation-command-dispatch-foundation.contract.spec.ts": "stable-contract",
+    "test/module-11-automation-cooldown-reservation-foundation.contract.spec.ts": "stable-contract",
+    "test/module-11-automation-domain-contract.contract.spec.ts": "stable-contract",
+    "test/module-11-automation-evaluation-foundation.contract.spec.ts": "stable-contract",
+    "test/module-11-automation-execution-reservation-foundation.contract.spec.ts": "stable-contract",
+    "test/module-11-automation-persistence-foundation.contract.spec.ts": "stable-contract",
+    "test/module-11-automation-retry-safety-foundation.contract.spec.ts": "stable-contract",
+    "test/module-11-automation-runtime-safety-contract.contract.spec.ts": "stable-contract",
+    "test/module-11-automation-telemetry-coordination-foundation-implementation.contract.spec.ts": "stable-contract",
+    "test/module-11-automation-telemetry-coordination-foundation.contract.spec.ts": "stable-contract",
+    "test/module-execution-efficiency.contract.spec.ts": "stable-contract",
+    "test/module-execution-framework.contract.spec.ts": "stable-contract",
+    "test/module-lifecycle.contract.spec.ts": "current-state",
+    "test/module-30-esp32-sdk.contract.spec.ts": "stable-contract",
+    "test/mqtt-production-transport-proposal.contract.spec.ts": "historical-evidence",
+    "test/mqtt-testing.contract.spec.ts": "stable-contract",
+    "test/node-runtime.contract.spec.ts": "stable-contract",
+    "test/operator-launcher.contract.spec.ts": "stable-contract",
+    "test/production-configuration-lifecycle.contract.spec.ts": "historical-evidence",
+    "test/production-readiness-completion.contract.spec.ts": "historical-evidence",
+    "test/production-readiness-review.contract.spec.ts": "historical-evidence",
+    "test/production-security-boundary.contract.spec.ts": "historical-evidence",
+    "test/testing-strategy.contract.spec.ts": "historical-evidence",
+    "test/space-http.contract.spec.ts": "historical-evidence",
+    "test/g1-tenant-structure-screens.contract.spec.ts": "historical-evidence",
+    "test/g1-realtime-historical-screens.contract.spec.ts": "historical-evidence",
+    "test/g1-commands-screen.contract.spec.ts": "historical-evidence",
+    "test/g1-automation-scenes-screens.contract.spec.ts": "historical-evidence",
+    "test/g1-notifications-screen.contract.spec.ts": "historical-evidence",
+    "test/g1-reports-screen.contract.spec.ts": "historical-evidence",
+    "test/g1-super-directories.contract.spec.ts": "historical-evidence",
+    "test/g1-billing-apikeys.contract.spec.ts": "historical-evidence",
+    "test/g1-super-devices-security.contract.spec.ts": "historical-evidence",
+    "test/g1-mqtt-monitoring.contract.spec.ts": "historical-evidence",
+    "test/g1-firmware.contract.spec.ts": "historical-evidence",
+    "test/g1-noc.contract.spec.ts": "historical-evidence",
+    "test/g1-mobile-final.contract.spec.ts": "historical-evidence"
+  },
+  "historicalStableDocumentOwners": {
+    "test/module-10-activation.contract.spec.ts": [
+      "docs/module-10-multiplatform-architecture.md"
+    ]
+  },
+  "remediationBoundary": {
+    "baseSha": "850c3de5171dea4cd07a135de46078ff521d3ef9",
+    "invalidArtifacts": [
+      "module-10-completion-review-v1.0.0",
+      "module-10-completion-review-v1.0.1",
+      "repository-historical-contract-architecture-remediation-v1.0.0",
+      "repository-historical-contract-architecture-remediation-v1.0.1"
+    ],
+    "prohibitedOwnerGates": [
+      "module-10-completion",
+      "module-11-activation",
+      "push",
+      "deployment"
+    ]
+  },
+  "transitionProof": {
+    "mutableSummaryDocuments": [
+      "docs/project-state.md",
+      "docs/roadmap.md",
+      "AI-Development-Kit/bootstrap/PROJECT-BOOTSTRAP-v1.0.md",
+      "AI-Development-Kit/architecture/SYSTEM.md",
+      "AI-Development-Kit/agent/REPOSITORY-MEMORY.md"
+    ],
+    "immutableEvidenceDocuments": [
+      "docs/development/module-execution-efficiency.md",
+      "docs/historical-contract-transition-safety.md",
+      "docs/ios-final-release-proof-policy.md",
+      "docs/module-09-completion-review.md",
+      "docs/module-10-admin-web-operational-dashboard.md",
+      "docs/module-10-barcode-cctv-ui-compatibility-contract.md",
+      "docs/module-10-completion-review.md",
+      "docs/module-10-mobile-workspace-foundation.md",
+      "docs/module-10-security-observability-accessibility-e2e-review.md",
+      "docs/module-11-automation-action-state-transition-foundation-closure.md",
+      "docs/module-11-automation-action-state-transition-foundation.md",
+      "docs/module-11-automation-command-dispatch-foundation-closure.md",
+      "docs/module-11-automation-command-dispatch-foundation-implementation.md",
+      "docs/module-11-automation-command-dispatch-foundation.md",
+      "docs/module-11-automation-cooldown-reservation-foundation-closure.md",
+      "docs/module-11-automation-cooldown-reservation-foundation.md",
+      "docs/module-11-automation-evaluation-foundation-closure.md",
+      "docs/module-11-automation-evaluation-foundation.md",
+      "docs/module-11-automation-execution-reservation-foundation-closure.md",
+      "docs/module-11-automation-execution-reservation-foundation.md",
+      "docs/module-11-automation-retry-safety-foundation.md",
+      "docs/module-11-automation-runtime-safety-contract-closure.md",
+      "docs/module-11-automation-runtime-safety-contract.md",
+      "docs/module-11-automation-telemetry-coordination-foundation-closure.md",
+      "docs/module-11-automation-telemetry-coordination-foundation-implementation.md",
+      "docs/module-11-automation-telemetry-coordination-foundation.md",
+      "docs/mqtt-production-transport.md",
+      "docs/repository-historical-contract-architecture-remediation.md",
+      "docs/telemetry-storage-strategy.md"
+    ],
+    "validationCommands": [
+      [
+        "run",
+        "module:validate"
+      ],
+      [
+        "run",
+        "test:historical-contract-state"
+      ]
+    ],
+    "states": [
+      {
+        "label": "current exact checkpoint",
+        "transitions": [],
+        "churnCurrentSummaries": false
+      },
+      {
+        "label": "Module 10 Completion Review closure",
+        "transitions": [
+          [
+            "run",
+            "module:slice",
+            "--",
+            "10",
+            "--slice",
+            "Module 10 Slice 10.14 - Module 10 Completion Review",
+            "--focus",
+            "Projected Completion Review closure state",
+            "--evidence",
+            "Projected Completion Review closure after repository historical contract remediation",
+            "--date",
+            "2099-01-01"
+          ]
+        ],
+        "churnCurrentSummaries": true
+      },
+      {
+        "label": "module:complete 10",
+        "transitions": [
+          [
+            "run",
+            "module:slice",
+            "--",
+            "10",
+            "--slice",
+            "Module 10 Slice 10.14 - Module 10 Completion Review",
+            "--focus",
+            "Projected Completion Review closure state",
+            "--evidence",
+            "Projected Completion Review closure after repository historical contract remediation",
+            "--date",
+            "2099-01-01"
+          ],
+          [
+            "run",
+            "module:complete",
+            "--",
+            "10",
+            "--evidence",
+            "Projected Module 10 completion after remote-green Completion Review closure",
+            "--date",
+            "2099-01-02"
+          ]
+        ],
+        "churnCurrentSummaries": true
+      },
+      {
+        "label": "Module 11 activation",
+        "transitions": [
+          [
+            "run",
+            "module:slice",
+            "--",
+            "10",
+            "--slice",
+            "Module 10 Slice 10.14 - Module 10 Completion Review",
+            "--focus",
+            "Projected Completion Review closure state",
+            "--evidence",
+            "Projected Completion Review closure after repository historical contract remediation",
+            "--date",
+            "2099-01-01"
+          ],
+          [
+            "run",
+            "module:complete",
+            "--",
+            "10",
+            "--evidence",
+            "Projected Module 10 completion after remote-green Completion Review closure",
+            "--date",
+            "2099-01-02"
+          ],
+          [
+            "run",
+            "module:activate",
+            "--",
+            "11",
+            "--approved",
+            "--evidence",
+            "Projected explicit owner approval after remote-green Module 10 completion",
+            "--date",
+            "2099-01-03"
+          ]
+        ],
+        "churnCurrentSummaries": true
+      },
+      {
+        "label": "Module 11 Slice 11.1",
+        "transitions": [
+          [
+            "run",
+            "module:slice",
+            "--",
+            "10",
+            "--slice",
+            "Module 10 Slice 10.14 - Module 10 Completion Review",
+            "--focus",
+            "Projected Completion Review closure state",
+            "--evidence",
+            "Projected Completion Review closure after repository historical contract remediation",
+            "--date",
+            "2099-01-01"
+          ],
+          [
+            "run",
+            "module:complete",
+            "--",
+            "10",
+            "--evidence",
+            "Projected Module 10 completion after remote-green Completion Review closure",
+            "--date",
+            "2099-01-02"
+          ],
+          [
+            "run",
+            "module:activate",
+            "--",
+            "11",
+            "--approved",
+            "--evidence",
+            "Projected explicit owner approval after remote-green Module 10 completion",
+            "--date",
+            "2099-01-03"
+          ],
+          [
+            "run",
+            "module:slice",
+            "--",
+            "11",
+            "--slice",
+            "Module 11 Slice 11.1 - Automation Domain Contract",
+            "--focus",
+            "Define the bounded automation trigger condition and action contract",
+            "--evidence",
+            "Projected explicit owner approval for the first Module 11 slice",
+            "--date",
+            "2099-01-04"
+          ]
+        ],
+        "churnCurrentSummaries": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "policy": "Fail on every unreviewed critical production dependency and every expired acceptance.",
+  "acceptedCriticalFindings": [
+    {
+      "package": "@fastify/middie",
+      "expiresOn": "2026-08-31",
+      "mitigation": "The only registered HTTP middleware is request logging from nestjs-pino. Authentication, rate limiting, tenant isolation, metrics access, validation, and error handling are implemented as guards, pipes, filters, and controllers rather than path-scoped middleware. Upgrade remediation remains required before this acceptance expires."
+    }
+  ],
+  "middieMitigation": {
+    "sourceBoundary": "All TypeScript files below src/ are scanned for Nest MiddlewareConsumer registration while the acceptance is active."
+  }
+}

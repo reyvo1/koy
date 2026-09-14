@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "incremental": false,
+    "types": ["node", "jest"]
+  },
+  "include": [
+    "src/**/*.ts",
+    "test/**/*.spec.ts",
+    "apps/user-mobile/src/**/*.ts",
+    "apps/user-mobile/src/**/*.tsx",
+    "apps/user-mobile/expo-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "apps/admin-web/**",
+    "apps/user-web/**",
+    "apps/user-mobile/node_modules/**",
+    "apps/user-mobile/.expo/**"
+  ]
+}

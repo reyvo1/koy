@@ -1,0 +1,230 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: iot_platform
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/iot_platform
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/iot_platform
+      REDIS_URL: redis://localhost:6379
+      DATABASE_INTEGRATION_TESTS_ALLOWED: 'true'
+      MQTT_INTEGRATION_TESTS_ALLOWED: 'true'
+      NODE_ENV: test
+      LOG_LEVEL: silent
+      TEST_RUN_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Cache Prisma engines
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/prisma
+          key: prisma-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}
+          restore-keys: |
+            prisma-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Bootstrap dependencies
+        timeout-minutes: 10
+        run: bash ops/scripts/ci-bootstrap-dependencies.sh
+
+      - name: Production dependency audit policy
+        run: npm run security:audit:production
+
+      - name: Non-mutating lint
+        run: npm run lint:check
+
+      - name: Validate deployment shell scripts
+        run: bash -n ops/scripts/*.sh
+
+      - name: Validate Prisma schema
+        run: node node_modules/prisma/build/index.js validate
+      - name: Run Prisma migrations
+        run: node node_modules/prisma/build/index.js migrate deploy
+
+      - name: Build backend
+        run: npm run build
+
+      - name: Type-check web workspaces
+        run: npm run web:typecheck
+
+      - name: Build web workspaces
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+          NODE_ENV: production
+        run: npm run web:build
+
+      - name: Test
+        run: npm test -- --runInBand
+
+      - name: E2E smoke test
+        run: npm run test:e2e
+
+      - name: Database integration test
+        run: npm run test:integration:db
+
+      - name: MQTT workflow integration test
+        run: npm run test:integration:mqtt
+
+      - name: MQTT production publisher TLS integration test
+        run: npm run test:integration:mqtt:publisher
+
+      - name: PostgreSQL recovery drill
+        env:
+          RECOVERY_DRILL_TESTS_ALLOWED: 'true'
+        run: npm run test:recovery
+
+      - name: Test coverage
+        run: npm run test:cov
+
+      - name: Build production release artifact
+        run: npm run release:build
+
+      - name: Verify production release artifact
+        run: npm run release:verify
+
+      - name: Production artifact startup smoke
+        run: npm run test:startup:production
+
+      - name: Upload production release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: iot-platform-${{ github.sha }}
+          path: artifacts/iot-platform-release
+          if-no-files-found: error
+          retention-days: 14
+
+
+  rescue-live-emqx:
+    name: Rescue live EMQX / acceptance
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CI: 'true'
+      NODE_ENV: test
+      LOG_LEVEL: silent
+      DATABASE_INTEGRATION_TESTS_ALLOWED: 'true'
+      MQTT_INTEGRATION_TESTS_ALLOWED: 'true'
+      TEST_RUN_ID: rescue-ci-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Cache Prisma engines
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/prisma
+          key: rescue-prisma-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}
+          restore-keys: |
+            rescue-prisma-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Bootstrap dependencies
+        timeout-minutes: 10
+        run: bash ops/scripts/ci-bootstrap-dependencies.sh
+
+      - name: Verify sealed source and CI contract
+        run: |
+          npm run baseline:manifest:verify
+          npm run rescue:validate
+          npm run rescue:github-ci:self-test
+
+      - name: Verify Docker Compose runtime
+        run: |
+          docker version
+          docker compose version
+          df -h .
+
+      - name: Generate ephemeral rescue environment
+        run: npm run rescue:env:init -- --output=.env
+
+      - name: Bring up source-bound rescue runtime
+        timeout-minutes: 15
+        run: npm run rescue:local:up -- --env=.env --timeout-ms=300000
+
+      - name: Confirm live rescue endpoint
+        run: npm run rescue:local:status -- --env=.env
+
+      - name: Targeted PostgreSQL integration stability gate
+        timeout-minutes: 8
+        run: npm run test:integration:db
+
+      - name: Real EMQX auth ACL webhook and ACK smoke
+        timeout-minutes: 8
+        run: npm run rescue:broker:smoke -- --env=.env
+
+      - name: Gate 1 source-bound runtime receipt
+        run: |
+          npm run rescue:gate1
+          npm run rescue:gate1:validate
+
+      - name: Full automated acceptance once
+        timeout-minutes: 20
+        run: npm run rescue:acceptance -- --env=.env --full
+
+      - name: Capture rescue diagnostics
+        if: always()
+        run: |
+          mkdir -p reports/github-ci
+          docker compose -f docker-compose.rescue.yml ps -a > reports/github-ci/docker-compose-ps.txt 2>&1 || true
+          docker compose -f docker-compose.rescue.yml logs --no-color > reports/github-ci/docker-compose.log 2>&1 || true
+          docker system df > reports/github-ci/docker-system-df.txt 2>&1 || true
+          df -h . > reports/github-ci/disk-usage.txt 2>&1 || true
+
+      - name: Upload rescue reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rescue-live-emqx-${{ github.sha }}-${{ github.run_attempt }}
+          path: reports/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Tear down ephemeral rescue runtime
+        if: always()
+        run: docker compose -f docker-compose.rescue.yml down --volumes --remove-orphans || true

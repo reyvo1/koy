@@ -1,0 +1,3530 @@
+{
+  "version": 1,
+  "profiles": {
+    "framework-bootstrap": [
+      {
+        "label": "Pre-dependency Module Execution Kit self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit source checks",
+        "command": "npm",
+        "args": ["run", "module:runner:check"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Changed TypeScript formatting check",
+        "command": "node",
+        "args": ["tools/module-runner/check-format.mjs", "{changed}"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Current lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Prisma client generation",
+        "command": "npx",
+        "args": ["prisma", "generate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Full Jest suite once for the exact candidate",
+        "command": "npm",
+        "args": ["test", "--", "--runInBand"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      }
+    ],
+    "framework-post-apply": [
+      {
+        "label": "Post-apply lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      }
+    ],
+    "module-10-admin-web": [
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Prisma client generation",
+        "command": "npx",
+        "args": ["prisma", "generate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit self-test",
+        "command": "npm",
+        "args": ["run", "module:runner:self-test"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Web type-check",
+        "command": "npm",
+        "args": ["run", "web:typecheck"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Admin Web production build",
+        "command": "npm",
+        "args": [
+          "run",
+          "build",
+          "--workspace",
+          "@iot-platform/admin-web",
+          "--",
+          "--webpack"
+        ],
+        "env": {
+          "NEXT_TELEMETRY_DISABLED": "1",
+          "NODE_ENV": "production"
+        },
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository contract suites",
+        "command": "npm",
+        "args": ["run", "test:contracts"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module 10 suites",
+        "command": "npm",
+        "args": ["run", "test:module-10"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      }
+    ],
+    "module-10-admin-web-one-pack": [
+      {
+        "label": "Pre-dependency Module Execution Kit self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit source checks",
+        "command": "npm",
+        "args": ["run", "module:runner:check"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Changed TypeScript formatting check",
+        "command": "node",
+        "args": ["tools/module-runner/check-format.mjs", "{changed}"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Current lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Prisma client generation",
+        "command": "npx",
+        "args": ["prisma", "generate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Web type-check",
+        "command": "npm",
+        "args": ["run", "web:typecheck"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Admin Web production build",
+        "command": "npm",
+        "args": [
+          "run",
+          "build",
+          "--workspace",
+          "@iot-platform/admin-web",
+          "--",
+          "--webpack"
+        ],
+        "env": {
+          "NEXT_TELEMETRY_DISABLED": "1",
+          "NODE_ENV": "production"
+        },
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Full Jest suite once for the exact candidate",
+        "command": "npm",
+        "args": ["test", "--", "--runInBand"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      }
+    ],
+    "one-pack-transport-proof": [
+      {
+        "label": "Runner self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle validation",
+        "command": "node",
+        "args": ["scripts/manage-module-state.mjs", "validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "node",
+        "args": ["scripts/manage-module-state.mjs", "simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      }
+    ],
+    "module-10-mobile-workspace": [
+      {
+        "label": "Pre-dependency Module Execution Kit self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit source checks",
+        "command": "npm",
+        "args": ["run", "module:runner:check"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Changed TypeScript formatting check",
+        "command": "node",
+        "args": ["tools/module-runner/check-format.mjs", "{changed}"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Current lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Expo dependency compatibility",
+        "command": "npm",
+        "args": [
+          "exec",
+          "--workspace",
+          "@iot-platform/user-mobile",
+          "--",
+          "expo",
+          "install",
+          "--check"
+        ],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Expo public configuration validation",
+        "command": "npm",
+        "args": ["run", "mobile:config:validate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Mobile TypeScript validation",
+        "command": "npm",
+        "args": ["run", "mobile:typecheck"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Prisma client generation",
+        "command": "npx",
+        "args": ["prisma", "generate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Full Jest suite once for the exact candidate",
+        "command": "npm",
+        "args": ["test", "--", "--runInBand"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      }
+    ],
+    "module-10-mobile-workspace-post-apply": [
+      {
+        "label": "Post-apply lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      }
+    ],
+    "module-10-mobile-secure-session": [
+      {
+        "label": "Pre-dependency Module Execution Kit self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit source checks",
+        "command": "npm",
+        "args": ["run", "module:runner:check"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Changed TypeScript formatting check",
+        "command": "node",
+        "args": ["tools/module-runner/check-format.mjs", "{changed}"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Current lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Expo dependency compatibility",
+        "command": "npm",
+        "args": [
+          "exec",
+          "--workspace",
+          "@iot-platform/user-mobile",
+          "--",
+          "expo",
+          "install",
+          "--check"
+        ],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Expo public configuration validation",
+        "command": "npm",
+        "args": ["run", "mobile:config:validate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Mobile TypeScript validation",
+        "command": "npm",
+        "args": ["run", "mobile:typecheck"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Focused mobile secure session tests",
+        "command": "node",
+        "args": [
+          "node_modules/jest/bin/jest.js",
+          "--runInBand",
+          "--runTestsByPath",
+          "apps/user-mobile/src/session/secure-session-store.spec.ts",
+          "apps/user-mobile/src/session/mobile-session-client.spec.ts",
+          "test/module-10-mobile-secure-session-foundation.contract.spec.ts"
+        ],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Prisma client generation",
+        "command": "npx",
+        "args": ["prisma", "generate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Full Jest suite once for the exact candidate",
+        "command": "npm",
+        "args": ["test", "--", "--runInBand"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      }
+    ],
+    "module-10-mobile-secure-session-post-apply": [
+      {
+        "label": "Post-apply lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      }
+    ],
+    "module-10-mobile-login-ui": [
+      {
+        "label": "Expo public configuration validation",
+        "command": "npm",
+        "args": ["run", "mobile:config:validate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Mobile TypeScript validation",
+        "command": "npm",
+        "args": ["run", "mobile:typecheck"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Focused mobile login UI tests",
+        "command": "node",
+        "args": [
+          "node_modules/jest/bin/jest.js",
+          "--runInBand",
+          "--runTestsByPath",
+          "apps/user-mobile/src/session/secure-session-store.spec.ts",
+          "apps/user-mobile/src/session/mobile-session-client.spec.ts",
+          "apps/user-mobile/src/app/mobile-auth-controller.spec.ts",
+          "test/module-10-mobile-login-ui-foundation.contract.spec.ts"
+        ],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module 10 suites",
+        "command": "npm",
+        "args": ["run", "test:module-10"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      }
+    ],
+    "module-10-mobile-login-ui-post-apply": [
+      {
+        "label": "Post-apply lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      }
+    ],
+    "module-10-mobile-dashboard-integration": [
+      {
+        "label": "Expo public configuration validation",
+        "command": "npm",
+        "args": ["run", "mobile:config:validate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Mobile TypeScript validation",
+        "command": "npm",
+        "args": ["run", "mobile:typecheck"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Focused mobile dashboard integration tests",
+        "command": "node",
+        "args": [
+          "node_modules/jest/bin/jest.js",
+          "--runInBand",
+          "--runTestsByPath",
+          "apps/user-mobile/src/dashboard/mobile-dashboard-client.spec.ts",
+          "apps/user-mobile/src/dashboard/mobile-dashboard-controller.spec.ts",
+          "apps/user-mobile/src/app/mobile-auth-controller.spec.ts",
+          "apps/user-mobile/src/session/mobile-session-client.spec.ts",
+          "apps/user-mobile/src/session/secure-session-store.spec.ts",
+          "test/module-10-mobile-read-only-dashboard-integration.contract.spec.ts"
+        ],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module 10 suites",
+        "command": "npm",
+        "args": ["run", "test:module-10"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      }
+    ],
+    "module-10-mobile-dashboard-integration-post-apply": [
+      {
+        "label": "Post-apply lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      }
+    ],
+    "repository-historical-contract-remediation": [
+      {
+        "label": "Pre-dependency Module Execution Kit self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit source checks",
+        "command": "npm",
+        "args": ["run", "module:runner:check"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Changed TypeScript formatting check",
+        "command": "node",
+        "args": ["tools/module-runner/check-format.mjs", "{changed}"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Current lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Prisma client generation",
+        "command": "npx",
+        "args": ["prisma", "generate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Full Jest suite once for the exact candidate",
+        "command": "npm",
+        "args": ["test", "--", "--runInBand"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Five-state lifecycle and state-sensitive contract matrix",
+        "command": "npm",
+        "args": ["run", "test:historical-contract-transitions"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      }
+    ],
+    "workflow-efficiency-remediation": [
+      {
+        "label": "Pre-dependency Module Execution Kit self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit source checks",
+        "command": "npm",
+        "args": ["run", "module:runner:check"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Changed TypeScript formatting check",
+        "command": "node",
+        "args": ["tools/module-runner/check-format.mjs", "{changed}"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Current lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Prisma client generation",
+        "command": "npx",
+        "args": ["prisma", "generate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Full Jest suite once for the exact candidate",
+        "command": "npm",
+        "args": ["test", "--", "--runInBand"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Five-state lifecycle and state-sensitive contract matrix",
+        "command": "npm",
+        "args": ["run", "test:historical-contract-transitions"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      }
+    ],
+    "workflow-efficiency-post-apply": [
+      {
+        "label": "Post-apply lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      }
+    ],
+    "module-11-automation-domain-contract": [
+      {
+        "label": "Pre-dependency Module Execution Kit self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit source checks",
+        "command": "npm",
+        "args": ["run", "module:runner:check"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Changed TypeScript formatting check",
+        "command": "node",
+        "args": ["tools/module-runner/check-format.mjs", "{changed}"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Current lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Focused Module 11 automation contract tests",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "src/automation/automation-domain.validator.spec.ts",
+          "test/module-11-automation-domain-contract.contract.spec.ts"
+        ],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Prisma client generation",
+        "command": "npx",
+        "args": ["prisma", "generate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Nest application build",
+        "command": "npm",
+        "args": ["run", "build"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Full Jest suite once for the exact candidate",
+        "command": "npm",
+        "args": ["test", "--", "--runInBand"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Checkpoint-aware lifecycle and state-sensitive contract matrix",
+        "command": "npm",
+        "args": ["run", "test:historical-contract-transitions"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      }
+    ],
+    "module-11-automation-persistence-foundation": [
+      {
+        "label": "Pre-dependency Module Execution Kit self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit source checks",
+        "command": "npm",
+        "args": ["run", "module:runner:check"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Changed TypeScript formatting check",
+        "command": "node",
+        "args": ["tools/module-runner/check-format.mjs", "{changed}"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Current lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Focused Module 11 persistence and handoff continuity tests",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "src/automation/automation-domain.validator.spec.ts",
+          "test/module-11-automation-domain-contract.contract.spec.ts",
+          "test/module-11-automation-persistence-foundation.contract.spec.ts",
+          "test/module-execution-framework.contract.spec.ts",
+          "test/historical-contract-transition-safety.contract.spec.ts"
+        ],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Prisma schema validation",
+        "command": "npx",
+        "args": ["prisma", "validate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Prisma client generation",
+        "command": "npx",
+        "args": ["prisma", "generate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Nest application build",
+        "command": "npm",
+        "args": ["run", "build"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Full Jest suite once for the exact candidate",
+        "command": "npm",
+        "args": ["test", "--", "--runInBand"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Checkpoint-aware lifecycle and state-sensitive contract matrix",
+        "command": "npm",
+        "args": ["run", "test:historical-contract-transitions"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      }
+    ],
+    "module-11-automation-evaluation-foundation": [
+      {
+        "label": "Pre-dependency Module Execution Kit self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit source checks",
+        "command": "npm",
+        "args": ["run", "module:runner:check"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Changed TypeScript formatting check",
+        "command": "node",
+        "args": ["tools/module-runner/check-format.mjs", "{changed}"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Current lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Focused Module 11 evaluation and transition-safety tests",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "src/automation/automation-domain.validator.spec.ts",
+          "src/automation/automation-evaluator.spec.ts",
+          "test/module-11-automation-domain-contract.contract.spec.ts",
+          "test/module-11-automation-persistence-foundation.contract.spec.ts",
+          "test/module-11-automation-evaluation-foundation.contract.spec.ts",
+          "test/module-execution-framework.contract.spec.ts",
+          "test/historical-contract-transition-safety.contract.spec.ts"
+        ],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Prisma schema validation",
+        "command": "npx",
+        "args": ["prisma", "validate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Prisma client generation",
+        "command": "npx",
+        "args": ["prisma", "generate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Nest application build",
+        "command": "npm",
+        "args": ["run", "build"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Full Jest suite once for the exact candidate",
+        "command": "npm",
+        "args": ["test", "--", "--runInBand"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Checkpoint-aware lifecycle and state-sensitive contract matrix",
+        "command": "npm",
+        "args": ["run", "test:historical-contract-transitions"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      }
+    ],
+    "module-11-automation-evaluation-foundation-closure": [
+      {
+        "label": "Pre-dependency Module Execution Kit self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit source checks",
+        "command": "npm",
+        "args": ["run", "module:runner:check"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Changed TypeScript formatting check",
+        "command": "node",
+        "args": ["tools/module-runner/check-format.mjs", "{changed}"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Current lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Focused Module 11 evaluation closure and transition-safety tests",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "src/automation/automation-domain.validator.spec.ts",
+          "src/automation/automation-evaluator.spec.ts",
+          "test/module-11-automation-domain-contract.contract.spec.ts",
+          "test/module-11-automation-persistence-foundation.contract.spec.ts",
+          "test/module-11-automation-evaluation-foundation.contract.spec.ts",
+          "test/module-execution-framework.contract.spec.ts",
+          "test/historical-contract-transition-safety.contract.spec.ts"
+        ],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Prisma schema validation",
+        "command": "npx",
+        "args": ["prisma", "validate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Prisma client generation",
+        "command": "npx",
+        "args": ["prisma", "generate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Nest application build",
+        "command": "npm",
+        "args": ["run", "build"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Full Jest suite once for the exact candidate",
+        "command": "npm",
+        "args": ["test", "--", "--runInBand"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Checkpoint-aware lifecycle and state-sensitive contract matrix",
+        "command": "npm",
+        "args": ["run", "test:historical-contract-transitions"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      }
+    ],
+    "module-11-automation-runtime-safety-contract": [
+      {
+        "label": "Pre-dependency Module Execution Kit self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit source checks",
+        "command": "npm",
+        "args": ["run", "module:runner:check"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Changed TypeScript formatting check",
+        "command": "node",
+        "args": ["tools/module-runner/check-format.mjs", "{changed}"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Current lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Focused Module 11 runtime safety contract and transition-safety tests",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "src/automation/automation-domain.validator.spec.ts",
+          "src/automation/automation-evaluator.spec.ts",
+          "test/module-11-automation-domain-contract.contract.spec.ts",
+          "test/module-11-automation-persistence-foundation.contract.spec.ts",
+          "test/module-11-automation-evaluation-foundation.contract.spec.ts",
+          "test/module-11-automation-runtime-safety-contract.contract.spec.ts",
+          "test/module-execution-framework.contract.spec.ts",
+          "test/historical-contract-transition-safety.contract.spec.ts"
+        ],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Prisma schema validation",
+        "command": "npx",
+        "args": ["prisma", "validate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Prisma client generation",
+        "command": "npx",
+        "args": ["prisma", "generate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Nest application build",
+        "command": "npm",
+        "args": ["run", "build"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Full Jest suite once for the exact candidate",
+        "command": "npm",
+        "args": ["test", "--", "--runInBand"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Checkpoint-aware lifecycle and state-sensitive contract matrix",
+        "command": "npm",
+        "args": ["run", "test:historical-contract-transitions"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      }
+    ],
+    "module-11-automation-runtime-safety-contract-closure": [
+      {
+        "label": "Pre-dependency Module Execution Kit self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit source checks",
+        "command": "npm",
+        "args": ["run", "module:runner:check"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Changed TypeScript formatting check",
+        "command": "node",
+        "args": ["tools/module-runner/check-format.mjs", "{changed}"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Current lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Focused Module 11 runtime safety closure and transition-safety tests",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "src/automation/automation-domain.validator.spec.ts",
+          "src/automation/automation-evaluator.spec.ts",
+          "test/module-11-automation-domain-contract.contract.spec.ts",
+          "test/module-11-automation-persistence-foundation.contract.spec.ts",
+          "test/module-11-automation-evaluation-foundation.contract.spec.ts",
+          "test/module-11-automation-runtime-safety-contract.contract.spec.ts",
+          "test/module-execution-framework.contract.spec.ts",
+          "test/historical-contract-transition-safety.contract.spec.ts"
+        ],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Prisma schema validation",
+        "command": "npx",
+        "args": ["prisma", "validate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Prisma client generation",
+        "command": "npx",
+        "args": ["prisma", "generate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Nest application build",
+        "command": "npm",
+        "args": ["run", "build"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Full Jest suite once for the exact candidate",
+        "command": "npm",
+        "args": ["test", "--", "--runInBand"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Checkpoint-aware lifecycle and state-sensitive contract matrix",
+        "command": "npm",
+        "args": ["run", "test:historical-contract-transitions"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      }
+    ],
+    "module-11-automation-execution-reservation-foundation": [
+      {
+        "label": "Pre-dependency Module Execution Kit self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit source checks",
+        "command": "npm",
+        "args": ["run", "module:runner:check"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Changed TypeScript formatting check",
+        "command": "node",
+        "args": ["tools/module-runner/check-format.mjs", "{changed}"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Current lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Focused Module 11 execution reservation and transition-safety tests",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "src/automation/automation-domain.validator.spec.ts",
+          "src/automation/automation-evaluator.spec.ts",
+          "src/automation/automation-execution.repository.spec.ts",
+          "test/module-11-automation-domain-contract.contract.spec.ts",
+          "test/module-11-automation-persistence-foundation.contract.spec.ts",
+          "test/module-11-automation-evaluation-foundation.contract.spec.ts",
+          "test/module-11-automation-runtime-safety-contract.contract.spec.ts",
+          "test/module-11-automation-execution-reservation-foundation.contract.spec.ts",
+          "test/module-execution-framework.contract.spec.ts",
+          "test/historical-contract-transition-safety.contract.spec.ts"
+        ],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Prisma schema validation",
+        "command": "npx",
+        "args": ["prisma", "validate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Prisma client generation",
+        "command": "npx",
+        "args": ["prisma", "generate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Nest application build",
+        "command": "npm",
+        "args": ["run", "build"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Full Jest suite once for the exact candidate",
+        "command": "npm",
+        "args": ["test", "--", "--runInBand"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Checkpoint-aware lifecycle and state-sensitive contract matrix",
+        "command": "npm",
+        "args": ["run", "test:historical-contract-transitions"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      }
+    ],
+    "module-11-automation-execution-reservation-foundation-closure": [
+      {
+        "label": "Pre-dependency Module Execution Kit self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit source checks",
+        "command": "npm",
+        "args": ["run", "module:runner:check"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Changed TypeScript formatting check",
+        "command": "node",
+        "args": ["tools/module-runner/check-format.mjs", "{changed}"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Current lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Focused Module 11 execution reservation closure and transition-safety tests",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "src/automation/automation-domain.validator.spec.ts",
+          "src/automation/automation-evaluator.spec.ts",
+          "src/automation/automation-execution.repository.spec.ts",
+          "test/module-11-automation-domain-contract.contract.spec.ts",
+          "test/module-11-automation-persistence-foundation.contract.spec.ts",
+          "test/module-11-automation-evaluation-foundation.contract.spec.ts",
+          "test/module-11-automation-runtime-safety-contract.contract.spec.ts",
+          "test/module-11-automation-execution-reservation-foundation.contract.spec.ts",
+          "test/module-execution-framework.contract.spec.ts",
+          "test/historical-contract-transition-safety.contract.spec.ts"
+        ],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Prisma schema validation",
+        "command": "npx",
+        "args": ["prisma", "validate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Prisma client generation",
+        "command": "npx",
+        "args": ["prisma", "generate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Nest application build",
+        "command": "npm",
+        "args": ["run", "build"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Full Jest suite once for the exact candidate",
+        "command": "npm",
+        "args": ["test", "--", "--runInBand"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Checkpoint-aware lifecycle and state-sensitive contract matrix",
+        "command": "npm",
+        "args": ["run", "test:historical-contract-transitions"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      }
+    ],
+    "module-11-automation-cooldown-reservation-foundation": [
+      {
+        "label": "Pre-dependency Module Execution Kit self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit source checks",
+        "command": "npm",
+        "args": ["run", "module:runner:check"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Changed TypeScript formatting check",
+        "command": "node",
+        "args": ["tools/module-runner/check-format.mjs", "{changed}"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Current lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Focused Module 11 cooldown reservation and transition-safety tests",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "src/automation/automation-domain.validator.spec.ts",
+          "src/automation/automation-evaluator.spec.ts",
+          "src/automation/automation-execution.repository.spec.ts",
+          "test/module-11-automation-domain-contract.contract.spec.ts",
+          "test/module-11-automation-persistence-foundation.contract.spec.ts",
+          "test/module-11-automation-evaluation-foundation.contract.spec.ts",
+          "test/module-11-automation-runtime-safety-contract.contract.spec.ts",
+          "test/module-11-automation-execution-reservation-foundation.contract.spec.ts",
+          "test/module-11-automation-cooldown-reservation-foundation.contract.spec.ts",
+          "test/module-execution-framework.contract.spec.ts",
+          "test/historical-contract-transition-safety.contract.spec.ts"
+        ],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Prisma schema validation",
+        "command": "npx",
+        "args": ["prisma", "validate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Prisma client generation",
+        "command": "npx",
+        "args": ["prisma", "generate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Nest application build",
+        "command": "npm",
+        "args": ["run", "build"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Full Jest suite once for the exact candidate",
+        "command": "npm",
+        "args": ["test", "--", "--runInBand"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Checkpoint-aware lifecycle and state-sensitive contract matrix",
+        "command": "npm",
+        "args": ["run", "test:historical-contract-transitions"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      }
+    ],
+    "module-11-automation-cooldown-reservation-foundation-closure": [
+      {
+        "label": "Pre-dependency Module Execution Kit self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit source checks",
+        "command": "npm",
+        "args": ["run", "module:runner:check"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Changed TypeScript formatting check",
+        "command": "node",
+        "args": ["tools/module-runner/check-format.mjs", "{changed}"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Current lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Focused Module 11 cooldown reservation closure and transition-safety tests",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "src/automation/automation-domain.validator.spec.ts",
+          "src/automation/automation-evaluator.spec.ts",
+          "src/automation/automation-execution.repository.spec.ts",
+          "test/module-11-automation-domain-contract.contract.spec.ts",
+          "test/module-11-automation-persistence-foundation.contract.spec.ts",
+          "test/module-11-automation-evaluation-foundation.contract.spec.ts",
+          "test/module-11-automation-runtime-safety-contract.contract.spec.ts",
+          "test/module-11-automation-execution-reservation-foundation.contract.spec.ts",
+          "test/module-11-automation-cooldown-reservation-foundation.contract.spec.ts",
+          "test/module-execution-framework.contract.spec.ts",
+          "test/historical-contract-transition-safety.contract.spec.ts"
+        ],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Prisma schema validation",
+        "command": "npx",
+        "args": ["prisma", "validate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Prisma client generation",
+        "command": "npx",
+        "args": ["prisma", "generate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Nest application build",
+        "command": "npm",
+        "args": ["run", "build"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Full Jest suite once for the exact candidate",
+        "command": "npm",
+        "args": ["test", "--", "--runInBand"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Checkpoint-aware lifecycle and state-sensitive contract matrix",
+        "command": "npm",
+        "args": ["run", "test:historical-contract-transitions"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      }
+    ],
+    "module-11-automation-action-state-transition-foundation": [
+      {
+        "label": "Pre-dependency Module Execution Kit self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit source checks",
+        "command": "npm",
+        "args": ["run", "module:runner:check"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Changed TypeScript formatting check",
+        "command": "node",
+        "args": ["tools/module-runner/check-format.mjs", "{changed}"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Current lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Structured logging contract regression gate",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "src/common/logging/structured-logging.contract.spec.ts"
+        ],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Focused Module 11 action-state transition and transition-safety tests",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "src/automation/automation-domain.validator.spec.ts",
+          "src/automation/automation-evaluator.spec.ts",
+          "src/automation/automation-execution.repository.spec.ts",
+          "src/automation/automation-execution-transition.repository.spec.ts",
+          "test/module-11-automation-domain-contract.contract.spec.ts",
+          "test/module-11-automation-persistence-foundation.contract.spec.ts",
+          "test/module-11-automation-evaluation-foundation.contract.spec.ts",
+          "test/module-11-automation-runtime-safety-contract.contract.spec.ts",
+          "test/module-11-automation-execution-reservation-foundation.contract.spec.ts",
+          "test/module-11-automation-cooldown-reservation-foundation.contract.spec.ts",
+          "test/module-11-automation-action-state-transition-foundation.contract.spec.ts",
+          "test/module-execution-framework.contract.spec.ts",
+          "test/historical-contract-transition-safety.contract.spec.ts"
+        ],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Prisma schema validation",
+        "command": "npx",
+        "args": ["prisma", "validate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Prisma client generation",
+        "command": "npx",
+        "args": ["prisma", "generate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Nest application build",
+        "command": "npm",
+        "args": ["run", "build"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "PostgreSQL automation transition integration",
+        "command": "npm",
+        "args": ["run", "test:integration:db"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "NODE_ENV": "test",
+          "DATABASE_INTEGRATION_TESTS_ALLOWED": "true"
+        },
+        "requiredEnv": ["TEST_DATABASE_URL"]
+      },
+      {
+        "label": "Full Jest suite once for the exact candidate",
+        "command": "npm",
+        "args": ["test", "--", "--runInBand"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Checkpoint-aware lifecycle and state-sensitive contract matrix",
+        "command": "npm",
+        "args": ["run", "test:historical-contract-transitions"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      }
+    ],
+    "module-11-automation-action-state-transition-foundation-closure": [
+      {
+        "label": "Pre-dependency Module Execution Kit self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit source checks",
+        "command": "npm",
+        "args": ["run", "module:runner:check"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Changed TypeScript formatting check",
+        "command": "node",
+        "args": ["tools/module-runner/check-format.mjs", "{changed}"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Current lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Structured logging contract regression gate",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "src/common/logging/structured-logging.contract.spec.ts"
+        ],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Focused Module 11 action-state transition closure and transition-safety tests",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "src/automation/automation-domain.validator.spec.ts",
+          "src/automation/automation-evaluator.spec.ts",
+          "src/automation/automation-execution.repository.spec.ts",
+          "src/automation/automation-execution-transition.repository.spec.ts",
+          "test/module-11-automation-domain-contract.contract.spec.ts",
+          "test/module-11-automation-persistence-foundation.contract.spec.ts",
+          "test/module-11-automation-evaluation-foundation.contract.spec.ts",
+          "test/module-11-automation-runtime-safety-contract.contract.spec.ts",
+          "test/module-11-automation-execution-reservation-foundation.contract.spec.ts",
+          "test/module-11-automation-cooldown-reservation-foundation.contract.spec.ts",
+          "test/module-11-automation-action-state-transition-foundation.contract.spec.ts",
+          "test/module-execution-framework.contract.spec.ts",
+          "test/historical-contract-transition-safety.contract.spec.ts"
+        ],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Prisma schema validation",
+        "command": "npx",
+        "args": ["prisma", "validate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Prisma client generation",
+        "command": "npx",
+        "args": ["prisma", "generate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Nest application build",
+        "command": "npm",
+        "args": ["run", "build"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "PostgreSQL automation transition integration",
+        "command": "npm",
+        "args": ["run", "test:integration:db"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "NODE_ENV": "test",
+          "DATABASE_INTEGRATION_TESTS_ALLOWED": "true"
+        },
+        "requiredEnv": ["TEST_DATABASE_URL"]
+      },
+      {
+        "label": "Full Jest suite once for the exact candidate",
+        "command": "npm",
+        "args": ["test", "--", "--runInBand"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Checkpoint-aware lifecycle and state-sensitive contract matrix",
+        "command": "npm",
+        "args": ["run", "test:historical-contract-transitions"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      }
+    ],
+    "module-11-automation-command-dispatch-foundation-selection": [
+      {
+        "label": "Pre-dependency Module Execution Kit self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit source checks",
+        "command": "npm",
+        "args": ["run", "module:runner:check"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Changed TypeScript formatting check",
+        "command": "node",
+        "args": ["tools/module-runner/check-format.mjs", "{changed}"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Current lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Structured logging contract regression gate",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "src/common/logging/structured-logging.contract.spec.ts"
+        ],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Shared mobile compatibility gate with iOS native proof deferred",
+        "command": "npm",
+        "args": ["run", "mobile:validate"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Focused Slice 11.8 selection, iOS release policy, and transition-safety tests",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "test/module-11-automation-command-dispatch-foundation.contract.spec.ts",
+          "test/ios-final-release-proof-policy.contract.spec.ts",
+          "test/module-11-automation-action-state-transition-foundation.contract.spec.ts",
+          "test/module-10-mobile-workspace-foundation.contract.spec.ts",
+          "test/module-lifecycle.contract.spec.ts",
+          "test/module-execution-framework.contract.spec.ts",
+          "test/historical-contract-transition-safety.contract.spec.ts"
+        ],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Prisma schema validation",
+        "command": "npx",
+        "args": ["prisma", "validate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Prisma client generation",
+        "command": "npx",
+        "args": ["prisma", "generate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Nest application build",
+        "command": "npm",
+        "args": ["run", "build"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "PostgreSQL automation regression integration",
+        "command": "npm",
+        "args": ["run", "test:integration:db"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "NODE_ENV": "test",
+          "DATABASE_INTEGRATION_TESTS_ALLOWED": "true"
+        },
+        "requiredEnv": ["TEST_DATABASE_URL"]
+      },
+      {
+        "label": "Full Jest suite once for the exact candidate",
+        "command": "npm",
+        "args": ["test", "--", "--runInBand"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Checkpoint-aware lifecycle and state-sensitive contract matrix",
+        "command": "npm",
+        "args": ["run", "test:historical-contract-transitions"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      }
+    ],
+    "module-11-automation-command-dispatch-foundation": [
+      {
+        "label": "Pre-dependency Module Execution Kit self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit source checks",
+        "command": "npm",
+        "args": ["run", "module:runner:check"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Changed TypeScript formatting check",
+        "command": "node",
+        "args": ["tools/module-runner/check-format.mjs", "{changed}"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Current lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Structured logging contract regression gate",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "src/common/logging/structured-logging.contract.spec.ts"
+        ],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Focused Slice 11.8 dispatcher, policy, logging, and transition tests",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "src/automation/automation-command-dispatcher.spec.ts",
+          "src/automation/automation-execution-transition.repository.spec.ts",
+          "src/device/command.service.spec.ts",
+          "test/module-11-automation-command-dispatch-foundation-implementation.contract.spec.ts",
+          "test/module-11-automation-command-dispatch-foundation.contract.spec.ts",
+          "test/module-11-automation-action-state-transition-foundation.contract.spec.ts",
+          "test/ios-final-release-proof-policy.contract.spec.ts",
+          "test/module-lifecycle.contract.spec.ts",
+          "test/module-execution-framework.contract.spec.ts",
+          "test/historical-contract-transition-safety.contract.spec.ts"
+        ],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Shared mobile compatibility gate with iOS native proof deferred",
+        "command": "npm",
+        "args": ["run", "mobile:validate"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Prisma schema validation",
+        "command": "npx",
+        "args": ["prisma", "validate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Prisma client generation",
+        "command": "npx",
+        "args": ["prisma", "generate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Nest application build",
+        "command": "npm",
+        "args": ["run", "build"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "PostgreSQL automation command dispatch integration",
+        "command": "npm",
+        "args": ["run", "test:integration:db"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "NODE_ENV": "test",
+          "DATABASE_INTEGRATION_TESTS_ALLOWED": "true"
+        },
+        "requiredEnv": ["TEST_DATABASE_URL"]
+      },
+      {
+        "label": "Full Jest suite once for the exact candidate",
+        "command": "npm",
+        "args": ["test", "--", "--runInBand"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Checkpoint-aware lifecycle and state-sensitive contract matrix",
+        "command": "npm",
+        "args": ["run", "test:historical-contract-transitions"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      }
+    ],
+    "module-11-automation-command-dispatch-foundation-closure": [
+      {
+        "label": "Pre-dependency Module Execution Kit self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit source checks",
+        "command": "npm",
+        "args": ["run", "module:runner:check"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Changed TypeScript formatting check",
+        "command": "node",
+        "args": ["tools/module-runner/check-format.mjs", "{changed}"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Current lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Structured logging contract regression gate",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "src/common/logging/structured-logging.contract.spec.ts"
+        ],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Focused Slice 11.8 closure, dispatcher, policy, logging, and transition tests",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "src/automation/automation-command-dispatcher.spec.ts",
+          "src/automation/automation-execution-transition.repository.spec.ts",
+          "src/device/command.service.spec.ts",
+          "test/module-11-automation-command-dispatch-foundation-implementation.contract.spec.ts",
+          "test/module-11-automation-command-dispatch-foundation.contract.spec.ts",
+          "test/module-11-automation-action-state-transition-foundation.contract.spec.ts",
+          "test/ios-final-release-proof-policy.contract.spec.ts",
+          "test/module-lifecycle.contract.spec.ts",
+          "test/module-execution-framework.contract.spec.ts",
+          "test/historical-contract-transition-safety.contract.spec.ts"
+        ],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Shared mobile compatibility gate with iOS native proof deferred",
+        "command": "npm",
+        "args": ["run", "mobile:validate"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Prisma schema validation",
+        "command": "npx",
+        "args": ["prisma", "validate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Prisma client generation",
+        "command": "npx",
+        "args": ["prisma", "generate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Nest application build",
+        "command": "npm",
+        "args": ["run", "build"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "PostgreSQL automation command dispatch integration",
+        "command": "npm",
+        "args": ["run", "test:integration:db"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "NODE_ENV": "test",
+          "DATABASE_INTEGRATION_TESTS_ALLOWED": "true"
+        },
+        "requiredEnv": ["TEST_DATABASE_URL"]
+      },
+      {
+        "label": "Full Jest suite once for the exact candidate",
+        "command": "npm",
+        "args": ["test", "--", "--runInBand"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Checkpoint-aware lifecycle and state-sensitive contract matrix",
+        "command": "npm",
+        "args": ["run", "test:historical-contract-transitions"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      }
+    ],
+    "module-11-automation-telemetry-coordination-foundation-selection": [
+      {
+        "label": "Pre-dependency Module Execution Kit self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit source checks",
+        "command": "npm",
+        "args": ["run", "module:runner:check"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Changed TypeScript formatting check",
+        "command": "node",
+        "args": ["tools/module-runner/check-format.mjs", "{changed}"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Current lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Structured logging contract regression gate",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "src/common/logging/structured-logging.contract.spec.ts"
+        ],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Focused Slice 11.9 selection, telemetry, automation, policy, and transition-safety tests",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "src/telemetry/telemetry.service.spec.ts",
+          "src/automation/automation-evaluator.spec.ts",
+          "src/automation/automation-execution.repository.spec.ts",
+          "src/automation/automation-command-dispatcher.spec.ts",
+          "test/module-11-automation-telemetry-coordination-foundation.contract.spec.ts",
+          "test/module-11-automation-command-dispatch-foundation-implementation.contract.spec.ts",
+          "test/module-11-automation-command-dispatch-foundation.contract.spec.ts",
+          "test/ios-final-release-proof-policy.contract.spec.ts",
+          "test/module-lifecycle.contract.spec.ts",
+          "test/module-execution-framework.contract.spec.ts",
+          "test/historical-contract-transition-safety.contract.spec.ts"
+        ],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Shared mobile compatibility gate with iOS native proof deferred",
+        "command": "npm",
+        "args": ["run", "mobile:validate"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Prisma schema validation",
+        "command": "npx",
+        "args": ["prisma", "validate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Prisma client generation",
+        "command": "npx",
+        "args": ["prisma", "generate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Nest application build",
+        "command": "npm",
+        "args": ["run", "build"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "PostgreSQL telemetry and automation regression integration",
+        "command": "npm",
+        "args": ["run", "test:integration:db"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "NODE_ENV": "test",
+          "DATABASE_INTEGRATION_TESTS_ALLOWED": "true"
+        },
+        "requiredEnv": ["TEST_DATABASE_URL"]
+      },
+      {
+        "label": "Full Jest suite once for the exact candidate",
+        "command": "npm",
+        "args": ["test", "--", "--runInBand"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Checkpoint-aware lifecycle and state-sensitive contract matrix",
+        "command": "npm",
+        "args": ["run", "test:historical-contract-transitions"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      }
+    ],
+    "module-11-automation-telemetry-coordination-foundation": [
+      {
+        "label": "Pre-dependency Module Execution Kit self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit source checks",
+        "command": "npm",
+        "args": ["run", "module:runner:check"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Changed TypeScript formatting check",
+        "command": "node",
+        "args": ["tools/module-runner/check-format.mjs", "{changed}"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Current lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Structured logging contract regression gate",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "src/common/logging/structured-logging.contract.spec.ts"
+        ],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Focused Slice 11.9 coordinator, runtime-read, evaluator, reservation, dispatch, and policy tests",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "src/automation/automation-telemetry-coordinator.spec.ts",
+          "src/automation/automation-runtime-read.repository.spec.ts",
+          "src/automation/automation-evaluator.spec.ts",
+          "src/automation/automation-execution.repository.spec.ts",
+          "src/automation/automation-command-dispatcher.spec.ts",
+          "test/module-11-automation-telemetry-coordination-foundation-implementation.contract.spec.ts",
+          "test/module-11-automation-telemetry-coordination-foundation.contract.spec.ts",
+          "test/module-11-automation-command-dispatch-foundation-implementation.contract.spec.ts",
+          "test/module-11-automation-command-dispatch-foundation.contract.spec.ts",
+          "test/module-11-automation-action-state-transition-foundation.contract.spec.ts",
+          "test/ios-final-release-proof-policy.contract.spec.ts",
+          "test/module-lifecycle.contract.spec.ts",
+          "test/module-execution-framework.contract.spec.ts",
+          "test/historical-contract-transition-safety.contract.spec.ts"
+        ],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Shared mobile compatibility gate with iOS native proof deferred",
+        "command": "npm",
+        "args": ["run", "mobile:validate"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Prisma schema validation",
+        "command": "npx",
+        "args": ["prisma", "validate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Prisma client generation",
+        "command": "npx",
+        "args": ["prisma", "generate"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "Nest application build",
+        "command": "npm",
+        "args": ["run", "build"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "DATABASE_URL": "postgresql://module_runner:module_runner@127.0.0.1:5432/module_runner_validation?schema=public"
+        }
+      },
+      {
+        "label": "PostgreSQL automation telemetry coordination integration",
+        "command": "npm",
+        "args": ["run", "test:integration:db"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": true,
+        "env": {
+          "NODE_ENV": "test",
+          "DATABASE_INTEGRATION_TESTS_ALLOWED": "true"
+        },
+        "requiredEnv": ["TEST_DATABASE_URL"]
+      },
+      {
+        "label": "Full Jest suite once for the exact candidate",
+        "command": "npm",
+        "args": ["test", "--", "--runInBand"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Checkpoint-aware lifecycle and state-sensitive contract matrix",
+        "command": "npm",
+        "args": ["run", "test:historical-contract-transitions"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      }
+    ],
+    "module-11-automation-telemetry-closure-retry-selection": [
+      {
+        "label": "Pre-dependency Module Execution Kit self-test",
+        "command": "node",
+        "args": ["tools/module-runner/self-test.mjs"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Module Execution Kit source checks",
+        "command": "npm",
+        "args": ["run", "module:runner:check"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Clean dependency bootstrap",
+        "command": "npm",
+        "args": [
+          "ci",
+          "--prefer-offline",
+          "--no-audit",
+          "--fund=false",
+          "--progress=false"
+        ],
+        "timeoutMs": 1800000,
+        "heartbeatMs": 30000,
+        "stream": false
+      },
+      {
+        "label": "Changed TypeScript formatting check",
+        "command": "node",
+        "args": ["tools/module-runner/check-format.mjs", "{changed}"],
+        "timeoutMs": 300000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Repository non-mutating lint",
+        "command": "npm",
+        "args": ["run", "lint:check"],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Current lifecycle validation",
+        "command": "npm",
+        "args": ["run", "module:validate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Lifecycle simulation through Module 30",
+        "command": "npm",
+        "args": ["run", "module:simulate"],
+        "timeoutMs": 180000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Focused Slice 11.9 closure and Slice 11.10 retry selection contracts",
+        "command": "npm",
+        "args": [
+          "test",
+          "--",
+          "--runInBand",
+          "--runTestsByPath",
+          "test/module-11-automation-retry-safety-foundation.contract.spec.ts",
+          "test/module-11-automation-telemetry-coordination-foundation-implementation.contract.spec.ts",
+          "test/module-11-automation-telemetry-coordination-foundation.contract.spec.ts",
+          "test/module-11-automation-command-dispatch-foundation-implementation.contract.spec.ts",
+          "test/ios-final-release-proof-policy.contract.spec.ts",
+          "test/module-lifecycle.contract.spec.ts",
+          "test/module-execution-framework.contract.spec.ts",
+          "test/historical-contract-transition-safety.contract.spec.ts"
+        ],
+        "timeoutMs": 600000,
+        "heartbeatMs": 30000,
+        "stream": true
+      },
+      {
+        "label": "Checkpoint-aware lifecycle and state-sensitive contract matrix",
+        "command": "npm",
+        "args": ["run", "test:historical-contract-transitions"],
+        "timeoutMs": 900000,
+        "heartbeatMs": 30000,
+        "stream": false
+      }
+    ]
+  }
+}

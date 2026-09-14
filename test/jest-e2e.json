@@ -1,0 +1,13 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "..",
+  "testEnvironment": "node",
+  "testRegex": ".*\\.e2e-spec\\.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "setupFiles": ["<rootDir>/test/setup-e2e.ts"],
+  "testPathIgnorePatterns": ["/node_modules/", "/dist/"],
+  "maxWorkers": 1,
+  "modulePathIgnorePatterns": ["<rootDir>/artifacts/"]
+}

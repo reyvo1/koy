@@ -1,0 +1,35 @@
+[Unit]
+Description=IoT Platform API
+After=network-online.target postgresql.service redis-server.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=iot-platform
+Group=iot-platform
+WorkingDirectory=/opt/iot-platform/current
+EnvironmentFile=/etc/iot-platform/iot-platform.env
+ExecStartPre=/usr/bin/test -r /etc/iot-platform/iot-platform.env
+ExecStartPre=/usr/bin/test -f /opt/iot-platform/current/dist/main.js
+ExecStart=/usr/bin/node /opt/iot-platform/current/dist/main.js
+Restart=on-failure
+RestartSec=5s
+TimeoutStartSec=60s
+TimeoutStopSec=30s
+KillSignal=SIGTERM
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target

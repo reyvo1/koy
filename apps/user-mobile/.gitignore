@@ -1,0 +1,8 @@
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+.kotlin/
+.metro-health-check*
+android/
+ios/

@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily encrypted PostgreSQL backup for IoT Platform
+
+[Timer]
+OnCalendar=*-*-* 02:15:00
+Persistent=true
+RandomizedDelaySec=15m
+Unit=iot-platform-backup.service
+
+[Install]
+WantedBy=timers.target

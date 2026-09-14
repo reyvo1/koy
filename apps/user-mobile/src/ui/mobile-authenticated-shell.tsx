@@ -1,0 +1,637 @@
+import { useCallback, useEffect, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+
+import type { MobileDashboardState } from '../dashboard';
+import {
+  loadLatestTelemetry,
+  loadMobileAlerts,
+  loadMobileDeviceDetail,
+  loadMobileDevices,
+  type MobileAlertsPayload,
+  type MobileDeviceDetail,
+  type MobileDeviceSummary,
+  type MobileTelemetryPoint,
+} from '../device-control/mobile-device-client';
+import { defaultMobileLocale, mobileMessages } from '../localization/messages';
+import { mobileSessionClient } from '../session';
+import { MobileDashboardScreen } from './mobile-dashboard-screen';
+import { MobileAlertsPanel } from './mobile-alerts-panel';
+import { MobileDeviceDetailPanel } from './mobile-device-detail-panel';
+
+type MobileTab = 'home' | 'devices' | 'realtime' | 'alerts' | 'profile';
+
+interface MobileAuthenticatedShellProps {
+  dashboardState: MobileDashboardState;
+  isDark: boolean;
+  pending: boolean;
+  tenantId: string;
+  onLogout(): Promise<void>;
+  onRefreshDashboard(dashboardId: string | null): Promise<void>;
+  onSelectDashboard(dashboardId: string): Promise<void>;
+  onSendCommand(
+    deviceId: string,
+    capabilityKey: string,
+    value: boolean,
+  ): Promise<{ commandId: string; status: string }>;
+}
+
+const NAV_ITEMS: ReadonlyArray<{
+  key: MobileTab;
+  label: string;
+}> = [
+  { key: 'home', label: 'Home' },
+  { key: 'devices', label: 'Devices' },
+  { key: 'realtime', label: 'Realtime' },
+  { key: 'alerts', label: 'Alerts' },
+  { key: 'profile', label: 'Profile' },
+];
+
+export function MobileAuthenticatedShell({
+  dashboardState,
+  isDark,
+  pending,
+  tenantId,
+  onLogout,
+  onRefreshDashboard,
+  onSelectDashboard,
+  onSendCommand,
+}: MobileAuthenticatedShellProps) {
+  const copy = mobileMessages[defaultMobileLocale];
+  const [tab, setTab] = useState<MobileTab>('home');
+  const [devices, setDevices] = useState<MobileDeviceSummary[]>([]);
+  const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [inventoryError, setInventoryError] = useState<string | null>(null);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
+  const [telemetry, setTelemetry] = useState<MobileTelemetryPoint[]>([]);
+  const [telemetryLoading, setTelemetryLoading] = useState(false);
+  const [telemetryError, setTelemetryError] = useState<string | null>(null);
+  const [detailDeviceId, setDetailDeviceId] = useState<string | null>(null);
+  const [deviceDetail, setDeviceDetail] = useState<MobileDeviceDetail | null>(null);
+  const [deviceDetailLoading, setDeviceDetailLoading] = useState(false);
+  const [deviceDetailError, setDeviceDetailError] = useState<string | null>(null);
+  const [alerts, setAlerts] = useState<MobileAlertsPayload | null>(null);
+  const [alertsLoading, setAlertsLoading] = useState(false);
+  const [alertsError, setAlertsError] = useState<string | null>(null);
+
+  const loadInventory = useCallback(async () => {
+    setInventoryLoading(true);
+    setInventoryError(null);
+    try {
+      const rows = await loadMobileDevices(mobileSessionClient);
+      setDevices(rows);
+      setSelectedDeviceId((current) =>
+        current && rows.some((device) => device.id === current)
+          ? current
+          : rows[0]?.id ?? null,
+      );
+      setDetailDeviceId((current) =>
+        current && rows.some((device) => device.id === current) ? current : null,
+      );
+    } catch {
+      setDevices([]);
+      setSelectedDeviceId(null);
+      setInventoryError('Daftar perangkat belum dapat dimuat dari API tenant.');
+    } finally {
+      setInventoryLoading(false);
+    }
+  }, []);
+
+  const loadTelemetry = useCallback(async (deviceId: string | null) => {
+    if (!deviceId) {
+      setTelemetry([]);
+      setTelemetryError(null);
+      return;
+    }
+
+    setTelemetryLoading(true);
+    setTelemetryError(null);
+    try {
+      setTelemetry(await loadLatestTelemetry(mobileSessionClient, deviceId));
+    } catch {
+      setTelemetry([]);
+      setTelemetryError('Telemetry terbaru belum dapat dibaca untuk perangkat ini.');
+    } finally {
+      setTelemetryLoading(false);
+    }
+  }, []);
+
+  const loadDetail = useCallback(async (deviceId: string) => {
+    const summary = devices.find((device) => device.id === deviceId);
+    if (!summary) {
+      setDeviceDetail(null);
+      setDeviceDetailError('Perangkat tidak lagi tersedia pada workspace user.');
+      return;
+    }
+
+    setDeviceDetailLoading(true);
+    setDeviceDetailError(null);
+    try {
+      setDeviceDetail(await loadMobileDeviceDetail(mobileSessionClient, summary));
+    } catch {
+      setDeviceDetail(null);
+      setDeviceDetailError('Device Detail belum dapat dimuat dari backend.');
+    } finally {
+      setDeviceDetailLoading(false);
+    }
+  }, [devices]);
+
+  const loadAlerts = useCallback(async () => {
+    setAlertsLoading(true);
+    setAlertsError(null);
+    try {
+      setAlerts(await loadMobileAlerts(mobileSessionClient));
+    } catch {
+      setAlerts(null);
+      setAlertsError('Alerts analitik belum dapat dimuat dari backend.');
+    } finally {
+      setAlertsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (tab === 'devices' || tab === 'realtime') {
+      void loadInventory();
+    }
+  }, [tab, loadInventory]);
+
+  useEffect(() => {
+    if (tab === 'realtime') {
+      void loadTelemetry(selectedDeviceId);
+    }
+  }, [tab, selectedDeviceId, loadTelemetry]);
+
+  useEffect(() => {
+    if (tab === 'devices' && detailDeviceId) {
+      void loadDetail(detailDeviceId);
+    }
+  }, [tab, detailDeviceId, loadDetail]);
+
+  useEffect(() => {
+    if (tab === 'alerts') {
+      void loadAlerts();
+    }
+  }, [tab, loadAlerts]);
+
+  return (
+    <View style={[styles.shell, isDark && styles.shellDark]}>
+      <View style={[styles.header, isDark && styles.cardDark]}>
+        <View style={styles.headerCopy}>
+          <Text style={[styles.eyebrow, isDark && styles.textMutedDark]}>
+            {copy.authenticated.eyebrow}
+          </Text>
+          <Text accessibilityRole="header" style={[styles.title, isDark && styles.textDark]}>
+            {copy.appName}
+          </Text>
+          <Text style={[styles.description, isDark && styles.textMutedDark]}>
+            {activeTabDescription(tab)}
+          </Text>
+        </View>
+        <View
+          accessibilityLabel={`${copy.authenticated.tenantLabel}: ${tenantId}`}
+          accessibilityRole="summary"
+          style={[styles.tenantBadge, isDark && styles.tenantBadgeDark]}
+        >
+          <Text style={[styles.tenantLabel, isDark && styles.textMutedDark]}>
+            {copy.authenticated.tenantLabel}
+          </Text>
+          <Text selectable style={[styles.tenantId, isDark && styles.textDark]}>
+            {tenantId}
+          </Text>
+        </View>
+      </View>
+
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
+        {tab === 'home' ? (
+          <MobileDashboardScreen
+            isDark={isDark}
+            onRefresh={onRefreshDashboard}
+            onSelectDashboard={onSelectDashboard}
+            onSendCommand={onSendCommand}
+            state={dashboardState}
+          />
+        ) : null}
+
+        {tab === 'devices' ? (
+          detailDeviceId ? (
+            <MobileDeviceDetailPanel
+              detail={deviceDetail}
+              error={deviceDetailError}
+              isDark={isDark}
+              loading={deviceDetailLoading}
+              onBack={() => { setDetailDeviceId(null); setDeviceDetail(null); setDeviceDetailError(null); }}
+              onRefresh={() => loadDetail(detailDeviceId)}
+              onSendCommand={onSendCommand}
+            />
+          ) : (
+            <DeviceDirectory
+              devices={devices}
+              error={inventoryError}
+              isDark={isDark}
+              loading={inventoryLoading}
+              onOpenDevice={setDetailDeviceId}
+              onRefresh={loadInventory}
+            />
+          )
+        ) : null}
+
+        {tab === 'realtime' ? (
+          <RealtimePanel
+            devices={devices}
+            inventoryError={inventoryError}
+            inventoryLoading={inventoryLoading}
+            isDark={isDark}
+            onRefreshInventory={loadInventory}
+            onRefreshTelemetry={() => loadTelemetry(selectedDeviceId)}
+            onSelectDevice={setSelectedDeviceId}
+            selectedDeviceId={selectedDeviceId}
+            telemetry={telemetry}
+            telemetryError={telemetryError}
+            telemetryLoading={telemetryLoading}
+          />
+        ) : null}
+
+        {tab === 'alerts' ? (
+          <MobileAlertsPanel
+            error={alertsError}
+            isDark={isDark}
+            loading={alertsLoading}
+            onRefresh={loadAlerts}
+            payload={alerts}
+          />
+        ) : null}
+
+        {tab === 'profile' ? (
+          <View style={styles.sectionGap}>
+            <InfoCard
+              isDark={isDark}
+              title={copy.authenticated.statusTitle}
+              description={copy.authenticated.statusDescription}
+            />
+            <InfoCard
+              isDark={isDark}
+              title={copy.authenticated.tenantLabel}
+              description={tenantId}
+            />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ busy: pending, disabled: pending }}
+              disabled={pending}
+              onPress={() => void onLogout()}
+              style={({ pressed }) => [
+                styles.actionButton,
+                isDark && styles.actionButtonDark,
+                pending && styles.buttonDisabled,
+                pressed && !pending && styles.buttonPressed,
+              ]}
+            >
+              <Text style={[styles.actionButtonText, isDark && styles.textDark]}>
+                {pending
+                  ? copy.authenticated.pendingLogoutAction
+                  : copy.authenticated.logoutAction}
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
+      </ScrollView>
+
+      <View
+        accessibilityLabel="Navigasi utama mobile"
+        accessibilityRole="tablist"
+        style={[styles.navBar, isDark && styles.navBarDark]}
+      >
+        {NAV_ITEMS.map((item) => {
+          const selected = item.key === tab;
+          return (
+            <Pressable
+              accessibilityRole="tab"
+              accessibilityState={{ selected }}
+              key={item.key}
+              onPress={() => setTab(item.key)}
+              style={({ pressed }) => [
+                styles.navItem,
+                selected && styles.navItemSelected,
+                isDark && styles.navItemDark,
+                pressed && styles.buttonPressed,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.navLabel,
+                  selected && styles.navLabelSelected,
+                  isDark && styles.textDark,
+                ]}
+              >
+                {item.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+function DeviceDirectory({
+  devices,
+  error,
+  isDark,
+  loading,
+  onOpenDevice,
+  onRefresh,
+}: {
+  devices: MobileDeviceSummary[];
+  error: string | null;
+  isDark: boolean;
+  loading: boolean;
+  onOpenDevice(deviceId: string): void;
+  onRefresh(): Promise<void>;
+}) {
+  return (
+    <View style={styles.sectionGap}>
+      <SectionHeading
+        isDark={isDark}
+        title="Perangkat Saya"
+        description="Hanya perangkat yang dimiliki atau dibagikan ke akun ini yang dikirim oleh API."
+      />
+      {error ? <InfoCard isDark={isDark} title="Perangkat tidak tersedia" description={error} /> : null}
+      {!loading && !error && devices.length === 0 ? (
+        <InfoCard
+          isDark={isDark}
+          title="Belum ada perangkat"
+          description="Tidak ada perangkat yang dapat dilihat oleh akun ini."
+        />
+      ) : null}
+      {devices.map((device) => (
+        <View key={device.id} style={[styles.card, isDark && styles.cardDark]}>
+          <View style={styles.rowBetween}>
+            <View style={styles.flexOne}>
+              <Text style={[styles.cardTitle, isDark && styles.textDark]}>{device.name}</Text>
+              <Text style={[styles.cardMeta, isDark && styles.textMutedDark]}>
+                {device.type ?? 'Perangkat'} · {device.status}
+              </Text>
+            </View>
+            <Text style={[styles.statusPill, isDark && styles.statusPillDark]}>{device.status}</Text>
+          </View>
+          <Text style={[styles.cardMeta, isDark && styles.textMutedDark]}>
+            Heartbeat: {device.lastHeartbeatAt ?? 'belum tersedia'}
+          </Text>
+          <Text style={[styles.cardMeta, isDark && styles.textMutedDark]}>
+            {device.roomPath ?? 'Belum ditempatkan ke ROOM'} · {device.canControl ? 'VIEW + CONTROL' : 'VIEW'}
+          </Text>
+          <ActionButton compact isDark={isDark} label="Buka Device Detail" onPress={async () => onOpenDevice(device.id)} />
+        </View>
+      ))}
+      <ActionButton
+        isDark={isDark}
+        label={loading ? 'Memuat perangkat…' : 'Perbarui perangkat'}
+        onPress={onRefresh}
+        disabled={loading}
+      />
+    </View>
+  );
+}
+
+function RealtimePanel({
+  devices,
+  inventoryError,
+  inventoryLoading,
+  isDark,
+  onRefreshInventory,
+  onRefreshTelemetry,
+  onSelectDevice,
+  selectedDeviceId,
+  telemetry,
+  telemetryError,
+  telemetryLoading,
+}: {
+  devices: MobileDeviceSummary[];
+  inventoryError: string | null;
+  inventoryLoading: boolean;
+  isDark: boolean;
+  onRefreshInventory(): Promise<void>;
+  onRefreshTelemetry(): Promise<void>;
+  onSelectDevice(deviceId: string): void;
+  selectedDeviceId: string | null;
+  telemetry: MobileTelemetryPoint[];
+  telemetryError: string | null;
+  telemetryLoading: boolean;
+}) {
+  return (
+    <View style={styles.sectionGap}>
+      <SectionHeading
+        isDark={isDark}
+        title="Realtime Telemetry"
+        description="Nilai berasal dari endpoint telemetry terbaru untuk perangkat yang dapat dilihat akun ini."
+      />
+      {inventoryError ? (
+        <InfoCard isDark={isDark} title="Daftar perangkat tidak tersedia" description={inventoryError} />
+      ) : null}
+      <ScrollView
+        contentContainerStyle={styles.deviceSelector}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+      >
+        {devices.map((device) => {
+          const selected = device.id === selectedDeviceId;
+          return (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
+              key={device.id}
+              onPress={() => onSelectDevice(device.id)}
+              style={[
+                styles.deviceChip,
+                isDark && styles.deviceChipDark,
+                selected && styles.deviceChipSelected,
+              ]}
+            >
+              <Text style={[styles.deviceChipText, isDark && styles.textDark]}>{device.name}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+      {!inventoryLoading && !inventoryError && devices.length === 0 ? (
+        <InfoCard
+          isDark={isDark}
+          title="Belum ada perangkat"
+          description="Telemetry tidak dapat dipilih karena akun ini belum memiliki perangkat yang dapat dilihat."
+        />
+      ) : null}
+      {telemetryError ? (
+        <InfoCard isDark={isDark} title="Telemetry tidak tersedia" description={telemetryError} />
+      ) : null}
+      {!telemetryLoading && !telemetryError && selectedDeviceId && telemetry.length === 0 ? (
+        <InfoCard
+          isDark={isDark}
+          title="Belum ada telemetry"
+          description="Perangkat belum memiliki telemetry terbaru yang dapat ditampilkan."
+        />
+      ) : null}
+      {telemetry.map((point) => (
+        <View key={point.capabilityKey} style={[styles.card, isDark && styles.cardDark]}>
+          <Text style={[styles.telemetryValue, isDark && styles.textDark]}>{String(point.value)}</Text>
+          <Text style={[styles.cardTitle, isDark && styles.textDark]}>{point.capabilityKey}</Text>
+          <Text style={[styles.cardMeta, isDark && styles.textMutedDark]}>
+            {point.recordedAt || 'waktu belum tersedia'}
+          </Text>
+        </View>
+      ))}
+      <View style={styles.actionRow}>
+        <ActionButton
+          compact
+          disabled={inventoryLoading}
+          isDark={isDark}
+          label={inventoryLoading ? 'Memuat…' : 'Perangkat'}
+          onPress={onRefreshInventory}
+        />
+        <ActionButton
+          compact
+          disabled={telemetryLoading || !selectedDeviceId}
+          isDark={isDark}
+          label={telemetryLoading ? 'Memuat…' : 'Telemetry'}
+          onPress={onRefreshTelemetry}
+        />
+      </View>
+    </View>
+  );
+}
+
+function SectionHeading({
+  description,
+  isDark,
+  title,
+}: {
+  description: string;
+  isDark: boolean;
+  title: string;
+}) {
+  return (
+    <View style={styles.heading}>
+      <Text accessibilityRole="header" style={[styles.sectionTitle, isDark && styles.textDark]}>{title}</Text>
+      <Text style={[styles.description, isDark && styles.textMutedDark]}>{description}</Text>
+    </View>
+  );
+}
+
+function InfoCard({
+  description,
+  isDark,
+  title,
+}: {
+  description: string;
+  isDark: boolean;
+  title: string;
+}) {
+  return (
+    <View style={[styles.card, isDark && styles.cardDark]}>
+      <Text style={[styles.cardTitle, isDark && styles.textDark]}>{title}</Text>
+      <Text style={[styles.description, isDark && styles.textMutedDark]}>{description}</Text>
+    </View>
+  );
+}
+
+function ActionButton({
+  compact = false,
+  disabled = false,
+  isDark,
+  label,
+  onPress,
+}: {
+  compact?: boolean;
+  disabled?: boolean;
+  isDark: boolean;
+  label: string;
+  onPress(): Promise<void>;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      onPress={() => void onPress()}
+      style={({ pressed }) => [
+        styles.actionButton,
+        compact && styles.actionButtonCompact,
+        isDark && styles.actionButtonDark,
+        disabled && styles.buttonDisabled,
+        pressed && !disabled && styles.buttonPressed,
+      ]}
+    >
+      <Text style={[styles.actionButtonText, isDark && styles.textDark]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function activeTabDescription(tab: MobileTab): string {
+  switch (tab) {
+    case 'home':
+      return 'Dashboard capability-driven dan kontrol perangkat yang telah diotorisasi.';
+    case 'devices':
+      return 'Direktori room-aware dengan Device Detail, history, settings evidence, dan kontrol terotorisasi.';
+    case 'realtime':
+      return 'Telemetry terbaru dari perangkat yang dapat dilihat akun ini.';
+    case 'alerts':
+      return 'WARNING/CRITICAL Module 16 untuk perangkat yang dapat dilihat; bukan notification-delivery history.';
+    case 'profile':
+      return 'Identitas tenant dan kontrol sesi aman perangkat.';
+  }
+}
+
+const styles = StyleSheet.create({
+  shell: { flex: 1, backgroundColor: '#f5f7fb' },
+  shellDark: { backgroundColor: '#111827' },
+  header: {
+    gap: 14,
+    borderBottomColor: '#dbe3ef',
+    borderBottomWidth: 1,
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 18,
+    paddingBottom: 14,
+    paddingTop: 18,
+  },
+  headerCopy: { gap: 3 },
+  eyebrow: { color: '#475569', fontSize: 12, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' },
+  title: { color: '#0f172a', fontSize: 26, fontWeight: '800' },
+  description: { color: '#475569', fontSize: 14, lineHeight: 21 },
+  tenantBadge: { alignSelf: 'flex-start', borderColor: '#bfdbfe', borderRadius: 10, borderWidth: 1, backgroundColor: '#eff6ff', paddingHorizontal: 12, paddingVertical: 8 },
+  tenantBadgeDark: { borderColor: '#1d4ed8', backgroundColor: '#172554' },
+  tenantLabel: { color: '#475569', fontSize: 11, fontWeight: '600' },
+  tenantId: { color: '#0f172a', fontSize: 13, fontWeight: '700' },
+  content: { gap: 16, paddingHorizontal: 16, paddingVertical: 18, paddingBottom: 28 },
+  sectionGap: { gap: 12 },
+  heading: { gap: 4 },
+  sectionTitle: { color: '#0f172a', fontSize: 22, fontWeight: '800' },
+  card: { gap: 8, borderColor: '#dbe3ef', borderRadius: 16, borderWidth: 1, backgroundColor: '#ffffff', padding: 15 },
+  cardDark: { borderColor: '#334155', backgroundColor: '#1e293b' },
+  cardTitle: { color: '#0f172a', fontSize: 15, fontWeight: '700' },
+  cardMeta: { color: '#64748b', fontSize: 12, lineHeight: 18 },
+  rowBetween: { flexDirection: 'row', gap: 12, justifyContent: 'space-between' },
+  flexOne: { flex: 1, gap: 3 },
+  statusPill: { alignSelf: 'flex-start', borderRadius: 999, backgroundColor: '#e2e8f0', color: '#334155', fontSize: 11, fontWeight: '700', paddingHorizontal: 9, paddingVertical: 4 },
+  statusPillDark: { backgroundColor: '#334155', color: '#e2e8f0' },
+  telemetryValue: { color: '#0f766e', fontSize: 30, fontWeight: '800' },
+  deviceSelector: { gap: 8, paddingVertical: 2 },
+  deviceChip: { borderColor: '#cbd5e1', borderRadius: 999, borderWidth: 1, backgroundColor: '#ffffff', paddingHorizontal: 13, paddingVertical: 8 },
+  deviceChipDark: { borderColor: '#475569', backgroundColor: '#1e293b' },
+  deviceChipSelected: { borderColor: '#14b8a6', backgroundColor: '#ccfbf1' },
+  deviceChipText: { color: '#0f172a', fontSize: 12, fontWeight: '700' },
+  actionRow: { flexDirection: 'row', gap: 10 },
+  actionButton: { minHeight: 46, alignItems: 'center', justifyContent: 'center', borderColor: '#94a3b8', borderRadius: 12, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 11 },
+  actionButtonCompact: { flex: 1, minHeight: 42 },
+  actionButtonDark: { borderColor: '#64748b' },
+  actionButtonText: { color: '#0f172a', fontSize: 14, fontWeight: '700' },
+  buttonDisabled: { opacity: 0.55 },
+  buttonPressed: { opacity: 0.78 },
+  navBar: { flexDirection: 'row', borderTopColor: '#dbe3ef', borderTopWidth: 1, backgroundColor: '#ffffff', paddingBottom: 8, paddingHorizontal: 6, paddingTop: 8 },
+  navBarDark: { borderTopColor: '#334155', backgroundColor: '#1e293b' },
+  navItem: { flex: 1, alignItems: 'center', borderRadius: 10, paddingHorizontal: 4, paddingVertical: 9 },
+  navItemDark: { backgroundColor: 'transparent' },
+  navItemSelected: { backgroundColor: '#ccfbf1' },
+  navLabel: { color: '#64748b', fontSize: 11, fontWeight: '700' },
+  navLabelSelected: { color: '#0f766e' },
+  textDark: { color: '#f8fafc' },
+  textMutedDark: { color: '#cbd5e1' },
+});

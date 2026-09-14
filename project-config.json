@@ -1,0 +1,112 @@
+{
+  "project": {
+    "name": "IoT Platform",
+    "version": "1.0.0"
+  },
+  "architecture": {
+    "version": "1.0",
+    "type": "Vendor Neutral",
+    "protocol": "Protocol Neutral",
+    "domain": "Capability Driven"
+  },
+  "development": {
+    "currentModule": null,
+    "lastCompletedModule": 30,
+    "nextModule": null,
+    "nextModuleStatus": "All planned modules 01-30 are completed; future work requires a new approved roadmap.",
+    "phase": "Planned Module Roadmap Complete",
+    "milestone": "Module 30 - ESP32 Device SDK & Provisioning completed: docs/module-30-completion-review.md: SDK contract header + spec green; Jest 150 suites / 1030 tests; ROADMAP COMPLETE - all 30 modules have foundations with closures and green gates",
+    "focus": [
+      "Define the next approved roadmap"
+    ],
+    "previousMilestone": "Module 30 - ESP32 Device SDK & Provisioning activated: Module 29 completion review committed; autonomous progression pre-approved by owner",
+    "completedWorkstreams": [
+      "Documentation Synchronization",
+      "Structured Logging",
+      "Observability",
+      "Error Handling Consistency",
+      "Integration and End-to-End Testing"
+    ],
+    "activeWorkstream": "Module Lifecycle",
+    "earlierImplementationMilestone": "Documentation synchronization gap closure and Telemetry MQTT webhook contract validation hardening completed",
+    "completedStructuredLoggingSlices": [
+      "Logging Foundation",
+      "Domain Event Normalization",
+      "Completion Review"
+    ],
+    "activeSlice": "Module 30 - ESP32 Device SDK & Provisioning Completion Review",
+    "completedObservabilitySlices": [
+      "Health and Readiness Foundation",
+      "Basic Operational Metrics",
+      "Completion Review"
+    ],
+    "completedErrorHandlingSlices": [
+      "Error Contract Foundation",
+      "Domain Error Code Normalization",
+      "Completion Review"
+    ],
+    "completedIntegrationAndE2ETestingSlices": [
+      "Testing Strategy Foundation",
+      "Database Integration Test Foundation",
+      "MQTT Workflow Integration Test Foundation",
+      "Completion Review"
+    ],
+    "completedProductionReadinessSlices": [
+      "Review",
+      "Production Configuration and Process Lifecycle Foundation",
+      "Production Security Boundary Hardening",
+      "Deployment and Recovery Foundation",
+      "MQTT Production Transport Architecture Proposal",
+      "MQTT Production Transport Implementation",
+      "Production Readiness Completion Review"
+    ],
+    "completionReviewStatus": "Local gates passed; remote GitHub Actions confirmed green at commit 936bde6",
+    "productionDeploymentStatus": "Not approved; environment-specific verification and explicit approval required",
+    "ciBootstrapStatus": "Confirmed green in remote CI at commit 7de76596c6c1d52bd725406f3fad381cc62aedaf / run 30983551478",
+    "moduleLifecycleState": "complete",
+    "moduleLifecycleEvidence": "docs/module-30-completion-review.md: SDK contract header + spec green; Jest 150 suites / 1030 tests; ROADMAP COMPLETE - all 30 modules have foundations with closures and green gates",
+    "moduleLifecycleUpdatedOn": "2026-08-23",
+    "moduleRegistry": "AI-Development-Kit/modules/module-registry.json"
+  },
+  "stack": {
+    "backend": "NestJS",
+    "language": "TypeScript",
+    "database": "PostgreSQL",
+    "orm": "Prisma",
+    "cache": "Redis",
+    "messaging": "MQTT",
+    "testing": "Jest",
+    "ci": "GitHub Actions",
+    "adminWeb": "Next.js App Router",
+    "userWeb": "Next.js App Router",
+    "designSystem": "React and CSS design tokens",
+    "userMobile": "Expo SDK 57 and React Native 0.86"
+  },
+  "documentation": {
+    "sourceOfTruth": [
+      "docs/product-vision.md",
+      "docs/project-state.md",
+      "docs/architecture.md",
+      "docs/roadmap.md"
+    ]
+  },
+  "runtime": {
+    "node": "22.23.1",
+    "nodeRange": ">=22 <23",
+    "npm": "10.9.8",
+    "localDockerRequired": false
+  },
+  "releasePolicy": {
+    "schemaVersion": 1,
+    "iosNativeProofMode": "deferred-until-final-release",
+    "iosProofBlocksModuleLifecycle": false,
+    "iosSharedCodeCompatibilityRequired": true,
+    "iosFinalReleaseGateAfterModule": 30,
+    "iosCloudBuildAllowed": true,
+    "iosPreferredBuildProvider": "Expo EAS",
+    "iosAppleSigningRequiredAtFinalRelease": true,
+    "iosTestFlightRequiredAtFinalRelease": true,
+    "iosPhysicalDeviceProofRequiredAtFinalRelease": true,
+    "iosAppStoreApprovalSeparate": true
+  }
+}

@@ -1,0 +1,185 @@
+{
+  "version": 1,
+  "modules": [
+    {
+      "module": 1,
+      "title": "Project Setup",
+      "scope": "Siapkan workspace, NestJS Fastify API, config validation, PostgreSQL/Prisma, Redis, EMQX local stack, Swagger, Pino, health foundation, lint/build/test foundation, Docker Compose.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-01.md"
+    },
+    {
+      "module": 2,
+      "title": "Database Foundation",
+      "scope": "Bangun database foundation, Prisma conventions, initial tenant-aware entities, migration/seed strategy, transaction conventions.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-02.md"
+    },
+    {
+      "module": 3,
+      "title": "Authentication",
+      "scope": "Implement register, login, refresh rotation, logout, verification architecture, forgot/reset password, session revocation, Argon2id dan JWT guards.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-03.md"
+    },
+    {
+      "module": 4,
+      "title": "User & Tenant Management",
+      "scope": "Implement profile, tenant/organization membership, tenant context, role/permission foundation dan invitation-ready model.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-04.md"
+    },
+    {
+      "module": 5,
+      "title": "Device Management",
+      "scope": "Implement registry, profile/type, provisioning identity, pairing, ownership, credential rotation/revocation, heartbeat dan health.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-05.md"
+    },
+    {
+      "module": 6,
+      "title": "MQTT & Device Connectivity",
+      "scope": "Implement EMQX integration, auth/ACL architecture, topic contract, LWT, ingest boundary, command publish dan correlation.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-06.md"
+    },
+    {
+      "module": 7,
+      "title": "Universal Sensor & Capability",
+      "scope": "Implement dynamic capability schema, semantic/data type, unit, constraints, readable/writable/reportable dan custom capability.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-07.md"
+    },
+    {
+      "module": 8,
+      "title": "Actuator & Device Command",
+      "scope": "Implement command lifecycle, dispatch, ack, timeout, correlation, idempotency, history dan writable validation.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-08.md"
+    },
+    {
+      "module": 9,
+      "title": "Telemetry & Time-Series Data",
+      "scope": "Implement telemetry validation/normalization, latest state, history, retention/partition strategy, aggregation dan query API.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-09.md"
+    },
+    {
+      "module": 10,
+      "title": "Dynamic Dashboard",
+      "scope": "Implement dashboard/layout/widget schema dan capability-driven card, switch, gauge, chart, map, table, status.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-10.md"
+    },
+    {
+      "module": 11,
+      "title": "Automation Engine",
+      "scope": "Implement trigger, condition tree, action, evaluation, cooldown, execution log, loop prevention dan idempotency.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-11.md"
+    },
+    {
+      "module": 12,
+      "title": "Scene",
+      "scope": "Implement scene actions, ordered/parallel execution, history, permission dan partial failure handling.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-12.md"
+    },
+    {
+      "module": 13,
+      "title": "Scheduler",
+      "scope": "Implement timezone-aware scheduling, cron/time, repeat, countdown, durable execution dan missed-run policy.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-13.md"
+    },
+    {
+      "module": 14,
+      "title": "Notification",
+      "scope": "Implement notification domain, preference, template, email adapter, webhook-ready abstraction, retry dan delivery status.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-14.md"
+    },
+    {
+      "module": 15,
+      "title": "OTA Firmware",
+      "scope": "Implement firmware metadata, compatibility, artifact abstraction, checksum, rollout, progress, failure dan rollback strategy.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-15.md"
+    },
+    {
+      "module": 16,
+      "title": "AI Analytics Foundation",
+      "scope": "Implement analytics contracts, anomaly/recommendation model, feature boundary dan provider-neutral adapter tanpa klaim akurasi palsu.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-16.md"
+    },
+    {
+      "module": 17,
+      "title": "Smart Space Management",
+      "scope": "Implement site/home, building, floor, room/area hierarchy dan device placement.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-17.md"
+    },
+    {
+      "module": 18,
+      "title": "Device Sharing & Guest Access",
+      "scope": "Implement invitation, sharing, guest access, expiry, granular permission, revoke dan audit.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-18.md"
+    },
+    {
+      "module": 19,
+      "title": "Organization & Branch",
+      "scope": "Implement enterprise organization/branch hierarchy dan membership tanpa menduplikasi smart-space domain.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-19.md"
+    },
+    {
+      "module": 20,
+      "title": "Advanced RBAC, Policy & Audit",
+      "scope": "Implement custom roles, permission/policy evaluation, resource scope, audit query dan cross-tenant negative tests.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-20.md"
+    },
+    {
+      "module": 21,
+      "title": "Public API, Webhook & SDK Foundation",
+      "scope": "Implement API key lifecycle/scope, webhook signing/retry/log dan SDK-friendly public contracts.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-21.md"
+    },
+    {
+      "module": 22,
+      "title": "External Smart Ecosystem Integrations",
+      "scope": "Bangun integration framework dan adapter boundaries. Implement provider nyata hanya jika specification/credential context tersedia.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-22.md"
+    },
+    {
+      "module": 23,
+      "title": "System Health & Metrics",
+      "scope": "Implement liveness/readiness, dependency health, metrics dan safe operational admin views.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-23.md"
+    },
+    {
+      "module": 24,
+      "title": "Observability",
+      "scope": "Implement correlation propagation, structured logs, tracing-ready context, audit consolidation dan metrics conventions.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-24.md"
+    },
+    {
+      "module": 25,
+      "title": "Flutter Mobile Application",
+      "scope": "Implement Flutter architecture dan core flows: auth, tenant/site, devices, dynamic capabilities, realtime, commands, cache/offline dan provisioning boundary.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-25.md"
+    },
+    {
+      "module": 26,
+      "title": "Admin Panel",
+      "scope": "Implement secure admin application untuk users, tenants, devices, health, audit dan usage sesuai frontend ADR.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-26.md"
+    },
+    {
+      "module": 27,
+      "title": "Billing, Subscription, Usage & Quota",
+      "scope": "Implement plans, entitlement, usage meter dan quota. Provider payment tetap abstraction sampai keputusan eksplisit.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-27.md"
+    },
+    {
+      "module": 28,
+      "title": "Production DevOps & Scaling",
+      "scope": "Implement production container/CI/CD/deployment foundation, backup/restore, migration deployment dan scaling documentation.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-28.md"
+    },
+    {
+      "module": 29,
+      "title": "Security Hardening",
+      "scope": "Lakukan threat model dan hardening auth, authorization, MQTT ACL, secrets, abuse controls, dependency security dan security tests.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-29.md"
+    },
+    {
+      "module": 30,
+      "title": "ESP32 Device SDK & Provisioning",
+      "scope": "Implement ESP32 SDK architecture, identity, Wi-Fi/BLE provisioning, MQTT, telemetry, commands, heartbeat, OTA contract dan secure storage strategy.",
+      "prompt": "AI-Development-Kit/prompts/MODULE-30.md"
+    }
+  ]
+}

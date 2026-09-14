@@ -1,0 +1,3 @@
+tools/module-runner/** text eol=lf
+docs/development/module-execution-framework.md text eol=lf
+test/module-execution-framework.contract.spec.ts text eol=lf

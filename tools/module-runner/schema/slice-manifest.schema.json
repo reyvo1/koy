@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iot-platform.local/schemas/module-slice-manifest-v1.json",
+  "title": "IoT Platform module slice manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "id",
+    "title",
+    "baseSha",
+    "branch",
+    "commitSubject",
+    "expectedTrackedFilesBefore",
+    "expectedTrackedFilesAfter",
+    "payload",
+    "allowedChanges",
+    "expectedFileHashes",
+    "forbiddenPrefixes",
+    "validationProfile"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "baseSha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "branch": {
+      "type": "string",
+      "minLength": 1
+    },
+    "commitSubject": {
+      "type": "string",
+      "minLength": 1
+    },
+    "expectedTrackedFilesBefore": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "expectedTrackedFilesAfter": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format"],
+      "properties": {
+        "format": {
+          "const": "exact-files-v1"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "allowedChanges": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["added", "modified", "deleted"],
+      "properties": {
+        "added": {
+          "$ref": "#/$defs/paths"
+        },
+        "modified": {
+          "$ref": "#/$defs/paths"
+        },
+        "deleted": {
+          "$ref": "#/$defs/paths"
+        }
+      }
+    },
+    "forbiddenPrefixes": {
+      "$ref": "#/$defs/paths"
+    },
+    "validationProfile": {
+      "type": "string",
+      "minLength": 1
+    },
+    "postApplyValidationProfile": {
+      "type": "string",
+      "minLength": 1
+    },
+    "remote": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "branch"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "branch": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "expectedFileHashes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    }
+  },
+  "$defs": {
+    "paths": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}

@@ -1,0 +1,62 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import '@iot-platform/design-system/styles.css';
+
+:root {
+  --bg-app: #0b1120;
+  --bg-card: #111c2e;
+  --bg-sidebar: #0a0f1c;
+  --border-soft: #1e293b;
+  --text-main: #e2e8f0;
+  --text-muted: #94a3b8;
+  --accent: #2dd4bf;
+  --accent-deep: #14b8a6;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-app);
+  color: var(--text-main);
+  font-family: var(--font-inter), "Inter", "Segoe UI", system-ui, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---------- Global premium polish (Linear-grade) ---------- */
+
+::selection {
+  background: rgba(20, 184, 166, .35);
+  color: #f0fdfa;
+}
+
+*:focus-visible {
+  outline: 2px solid rgba(45, 212, 191, .7);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #0b1120; }
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 8px;
+  border: 2px solid #0b1120;
+}
+::-webkit-scrollbar-thumb:hover { background: #334155; }
+* { scrollbar-width: thin; scrollbar-color: #1e293b #0b1120; }
+
+h1, h2, h3 { text-wrap: balance; }
+p, li { text-wrap: pretty; }
+
+/* Inner highlight untuk semua kartu gelap (super + tenant + modal) */
+[class*="111c2e"] {
+  box-shadow: 0 1px 2px rgba(2, 6, 23, .5), 0 8px 24px -8px rgba(2, 6, 23, .6),
+    inset 0 1px 0 rgba(255, 255, 255, .05);
+}
+
+/* Responsive contract (Modul 10.10): mobile-first adjustments */
+@media (max-width: 639px) {
+  body { font-size: 14px; }
+  .iot2-main { padding: 16px; }
+}

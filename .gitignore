@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.next/
+*.tsbuildinfo
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test output
+coverage/
+
+# Temporary files
+*.tmp
+
+# Archives
+*.zip
+# Production release artifacts
+artifacts/
+apps/admin-web/*.html
+apps/admin-web/uatf.txt
+apps/admin-web/tmp-*.sh
+
+# Runtime acceptance evidence (operator-generated; may contain environment metadata)
+reports/

@@ -1,0 +1,28 @@
+# Local RESCUE-02B API image only. Production deployment uses the sealed release flow.
+FROM node:22-bookworm-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+WORKDIR /app
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates openssl \
+  && rm -rf /var/lib/apt/lists/* \
+  && npm install --global npm@10.9.8
+
+COPY package.json package-lock.json ./
+COPY apps/admin-web/package.json ./apps/admin-web/package.json
+COPY apps/user-web/package.json ./apps/user-web/package.json
+COPY apps/user-mobile/package.json ./apps/user-mobile/package.json
+COPY packages/design-system/package.json ./packages/design-system/package.json
+
+RUN npm ci
+
+COPY tsconfig.json tsconfig.build.json ./
+COPY prisma ./prisma
+COPY src ./src
+
+RUN npm run build
+
+EXPOSE 3000
+
+CMD ["sh", "-lc", "./node_modules/.bin/prisma migrate deploy && exec node dist/main.js"]
