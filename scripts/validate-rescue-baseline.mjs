@@ -873,9 +873,12 @@ check(
     read('docs/RESCUE-02-RUNTIME-RUNBOOK.md').includes('Auditable final RESCUE-02B evidence gate'),
 );
 check(
-  'generated runtime acceptance evidence is excluded from source packaging by default',
-  read('.gitignore').includes('reports/') &&
-    acceptanceGuide.includes('generated under `reports/`'),
+  'generated runtime acceptance evidence is excluded without hiding nested application report routes',
+  read('.gitignore').includes('/reports/') &&
+    !read('.gitignore').split(/\r?\n/).some((line) => line.trim() === 'reports/') &&
+    acceptanceGuide.includes('generated under `reports/`') &&
+    existsSync(join(root, 'apps/admin-web/app/super/reports/page.tsx')) &&
+    existsSync(join(root, 'apps/admin-web/app/api/super/reports/tenant-summary/route.ts')),
 );
 
 const emqxConfigure = read('scripts/configure-emqx-http-auth.mjs');

@@ -113,3 +113,24 @@ Permanent remediation:
 
 No launcher behavior, business logic, database schema, MQTT behavior, or UI behavior changes.
 This remains part of the same Wave 1.
+
+---
+
+## WAVE 1 GITHUB SOURCE-SEALING CONTINUATION — REPORT ROUTE IGNORE SCOPE
+Core GitHub `test` is green. `rescue-live-emqx` did not reach Docker/EMQX yet: it failed during sealed-source verification because GitHub checkout did not contain the two canonical Super Admin report routes.
+
+Root cause:
+- `.gitignore` used broad `reports/`;
+- Git therefore ignored any nested directory named `reports`, including:
+  - `apps/admin-web/app/super/reports/page.tsx`
+  - `apps/admin-web/app/api/super/reports/tenant-summary/route.ts`
+- the files existed locally, so local manifest generation saw them;
+- they were never committed to GitHub, so the Linux checkout correctly reported them as stale manifest entries.
+
+Permanent remediation:
+- runtime evidence ignore is now anchored to top-level `/reports/`;
+- nested application report routes are explicitly required to remain Git-visible;
+- `gitignore:source-scope:self-test` proves top-level runtime evidence stays ignored while both application routes are not ignored;
+- the canonical Wave 1 pre-push check now includes this source-scope guard.
+
+This is NOT an EMQX authentication failure. The live EMQX job has not yet reached broker startup in this run.

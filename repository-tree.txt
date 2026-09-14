@@ -541,6 +541,7 @@ scripts/self-test-baseline-manifest.mjs
 scripts/self-test-dashboard-widget-integration-access.mjs
 scripts/self-test-emqx-webhooks.mjs
 scripts/self-test-fastify-v5-compat.mjs
+scripts/self-test-gitignore-source-scope.mjs
 scripts/self-test-production-approval-receipt.mjs
 scripts/self-test-rescue-acceptance-runner.mjs
 scripts/self-test-rescue-failure-summary.mjs

@@ -33,4 +33,4 @@ apps/admin-web/uatf.txt
 apps/admin-web/tmp-*.sh
 
 # Runtime acceptance evidence (operator-generated; may contain environment metadata)
-reports/
+/reports/
