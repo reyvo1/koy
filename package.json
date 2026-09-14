@@ -103,7 +103,9 @@
     "web:framework:contract:verify": "node scripts/verify-web-framework-contract-sync.mjs",
     "web:framework:contract:self-test": "node scripts/self-test-web-framework-contract-sync.mjs",
     "baseline:hygiene:clean": "node scripts/clean-generated-build-artifacts.mjs",
-    "baseline:hygiene:self-test": "node scripts/self-test-baseline-hygiene.mjs"
+    "baseline:hygiene:self-test": "node scripts/self-test-baseline-hygiene.mjs",
+    "wave1:prepush:check": "npm run security:stack:verify && npm run security:web-stack:verify && npm run security:audit:production && npm run lint:check && npm run fastify:v5:compat:verify && npm run web:framework:contract:verify && npm run baseline:hygiene:self-test && npm run baseline:hygiene:clean && npm run baseline:manifest:generate && npm run baseline:manifest:verify && npm run rescue:validate && npm run rescue:github-ci:self-test",
+    "wave1:prepush:self-test": "node scripts/self-test-wave1-prepush.mjs"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

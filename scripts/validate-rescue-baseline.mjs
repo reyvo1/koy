@@ -242,6 +242,14 @@ const generatedHtml = existsSync(join(root, 'apps/admin-web'))
   : [];
 check('no generated admin HTML snapshots', generatedHtml.length === 0, generatedHtml.join(', '));
 check(
+  'Wave 1 pre-push gate mirrors cheap GitHub security lint hygiene and source checks',
+  read('package.json').includes('wave1:prepush:check') &&
+    read('package.json').includes('security:audit:production') &&
+    read('package.json').includes('lint:check') &&
+    read('package.json').includes('baseline:hygiene:clean') &&
+    read('package.json').includes('rescue:github-ci:self-test'),
+);
+check(
   'baseline hygiene cleaner is source-controlled and explicit',
   read('package.json').includes('baseline:hygiene:clean') &&
     read('scripts/clean-generated-build-artifacts.mjs').includes("'dist'") &&

@@ -1188,3 +1188,19 @@ Permanent remediation:
 
 No business logic, database schema, MQTT behavior, or UI behavior changes.
 This remains part of the same Wave 1.
+
+---
+
+## WAVE 1 GITHUB LINT CONTINUATION
+The latest GitHub run passed dependency bootstrap and framework security gates, then stopped at `Non-mutating lint` on exactly two source-level lint violations:
+- unused callback parameter `path` in the mobile alerts test;
+- unused React `useMemo` import in User Web device detail.
+
+Permanent remediation:
+- unused mobile callback parameter is explicitly `_path`, matching the repository lint policy;
+- unused `useMemo` import is removed;
+- `wave1:prepush:check` is now the canonical lightweight local gate before every GitHub push;
+- the pre-push gate mirrors cheap GitHub checks: framework security, production audit, non-mutating lint, Fastify v5 compatibility, web contract sync, hygiene, manifest, Rescue validator, and GitHub CI self-test;
+- Docker/build/integration/full acceptance remain GitHub-heavy gates.
+
+This remains part of the same Wave 1. No business logic is changed.

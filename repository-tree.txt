@@ -552,6 +552,7 @@ scripts/self-test-secure-fastify-stack.mjs
 scripts/self-test-secure-next-stack.mjs
 scripts/self-test-unit-runtime-regressions.mjs
 scripts/self-test-unit-test-type-boundary.mjs
+scripts/self-test-wave1-prepush.mjs
 scripts/self-test-web-framework-contract-sync.mjs
 scripts/validate-rescue-02b-evidence.mjs
 scripts/validate-rescue-baseline.mjs

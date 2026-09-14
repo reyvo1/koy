@@ -159,7 +159,7 @@ describe('mobile device control client', () => {
 
   it('loads accessible WARNING/CRITICAL analytics alerts as a distinct non-delivery surface', async () => {
     const payload = await loadMobileAlerts({
-      requestJson: async <T>(path: string) => ({ source: 'ANALYTICS_FINDINGS', notificationDeliveryHistory: false, deviceScopeTruncated: false, maxDeviceScope: 1000, limit: 50, items: [] }) as T,
+      requestJson: async <T>(_path: string) => ({ source: 'ANALYTICS_FINDINGS', notificationDeliveryHistory: false, deviceScopeTruncated: false, maxDeviceScope: 1000, limit: 50, items: [] }) as T,
     });
     expect(payload.source).toBe('ANALYTICS_FINDINGS');
     expect(payload.notificationDeliveryHistory).toBe(false);
