@@ -38,6 +38,39 @@ try {
   assert(result.status === 0, `verify must tolerate generated tsbuildinfo: ${result.stderr || result.stdout}`);
   console.log('PASS  baseline manifest ignores generated *.tsbuildinfo files at arbitrary source depth');
 
+  // Prove source sealing is invariant across equivalent LF/CRLF text checkouts.
+  const sourcePath = path.join(fixture, 'apps/admin-web/source.ts');
+  const cmdPath = path.join(fixture, 'tools/operator.cmd');
+  mkdirSync(path.dirname(cmdPath), { recursive: true });
+
+  writeFileSync(sourcePath, 'export const value = 1;\n');
+  writeFileSync(cmdPath, '@echo off\r\necho ok\r\n');
+  result = run('generate');
+  assert(result.status === 0, `portable generate failed: ${result.stderr || result.stdout}`);
+  const manifestLf = readFileSync(path.join(fixture, 'BASELINE-MANIFEST.sha256'), 'utf8');
+
+  writeFileSync(sourcePath, 'export const value = 1;\r\n');
+  writeFileSync(cmdPath, '@echo off\necho ok\n');
+  result = run('generate');
+  assert(result.status === 0, `portable CRLF generate failed: ${result.stderr || result.stdout}`);
+  const manifestCrlf = readFileSync(path.join(fixture, 'BASELINE-MANIFEST.sha256'), 'utf8');
+
+  assert(
+    manifestLf === manifestCrlf,
+    'equivalent LF/CRLF checkouts must produce identical sealed-source manifests',
+  );
+  console.log('PASS  baseline manifest is portable across equivalent LF/CRLF text checkouts');
+
+  writeFileSync(sourcePath, 'export const value = 2;\r\n');
+  result = run('verify');
+  assert(result.status !== 0, 'real source-content drift must still fail');
+  console.log('PASS  baseline manifest still rejects real text-content drift');
+
+  writeFileSync(sourcePath, 'export const value = 1;\n');
+  writeFileSync(cmdPath, '@echo off\r\necho ok\r\n');
+  result = run('generate');
+  assert(result.status === 0, `fixture restore failed: ${result.stderr || result.stdout}`);
+
   writeFileSync(path.join(fixture, 'apps/admin-web/untracked-source.ts'), 'export const drift = true;\n');
   result = run('verify');
   assert(result.status !== 0, 'verify must still reject an ordinary untracked source file');

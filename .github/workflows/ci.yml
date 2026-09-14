@@ -185,6 +185,7 @@ jobs:
 
       - name: Verify sealed source and CI contract
         run: |
+          npm run baseline:manifest:self-test
           npm run baseline:manifest:verify
           npm run rescue:validate
           npm run rescue:github-ci:self-test

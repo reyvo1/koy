@@ -1618,6 +1618,13 @@ check(
 // RESCUE-02B runtime-readiness R2 — canonical baseline manifest coverage.
 const baselineManifestManagerR2 = read('scripts/manage-baseline-manifest.mjs');
 check(
+  'baseline manifest hashing is portable across Windows and Linux text checkouts',
+  read('scripts/manage-baseline-manifest.mjs').includes("const normalizedLf = decoded.replace(/\\r\\n/g, '\\n').replace(/\\r/g, '\\n')") &&
+    read('scripts/manage-baseline-manifest.mjs').includes("extension === '.cmd' || extension === '.bat'") &&
+    read('package.json').includes('baseline:manifest:self-test'),
+);
+
+check(
   'baseline manifest manager distinguishes top-level runtime reports from legitimate application report routes',
   existsSync(join(root, 'scripts/manage-baseline-manifest.mjs')) &&
     baselineManifestManagerR2.includes("const excludedTopLevel = new Set(['artifacts', 'reports'])") &&

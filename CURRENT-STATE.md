@@ -1239,3 +1239,23 @@ Permanent remediation:
 - the canonical Wave 1 pre-push check now includes this source-scope guard.
 
 This is NOT an EMQX authentication failure. The live EMQX job has not yet reached broker startup in this run.
+
+---
+
+## WAVE 1 CROSS-PLATFORM BASELINE-MANIFEST CONTINUATION
+Core GitHub `test` is green. After the report-route ignore scope fix, `rescue-live-emqx` advanced but still stopped before Docker/EMQX at sealed-source verification.
+
+Root cause:
+- the baseline manifest hashed raw checkout bytes;
+- Windows could seal CRLF text while GitHub Linux checks out the same Git text as LF;
+- `.editorconfig` exposed this first;
+- this is checkout-byte drift, not application-content drift and not an EMQX authentication failure.
+
+Permanent remediation:
+- ordinary UTF-8 text is hashed in canonical LF form;
+- `.cmd`/`.bat` launchers are hashed in canonical CRLF form;
+- binary files keep exact raw-byte hashes;
+- baseline manifest self-test proves LF/CRLF portability and still rejects real source changes;
+- local pre-push and `rescue-live-emqx` run this portability proof before source sealing.
+
+The manifest must be regenerated once after applying V10 and committed.

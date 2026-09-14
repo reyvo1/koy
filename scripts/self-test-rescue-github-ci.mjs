@@ -26,6 +26,12 @@ check('CI verifies Fastify v5 source compatibility before backend build', workfl
 check('CI self-tests baseline build-artifact hygiene before backend build', workflow.includes('Self-test baseline build-artifact hygiene') && workflow.indexOf('baseline:hygiene:self-test') < workflow.indexOf('Build backend'));
 check('CI verifies web framework contract/documentation sync before web type-check', workflow.includes('Verify web framework contract/documentation sync') && workflow.indexOf('web:framework:contract:verify') < workflow.indexOf('Type-check web workspaces'));
 check('existing core CI job is preserved', workflow.includes('\n  test:\n') && workflow.includes('Database integration test') && workflow.includes('MQTT workflow integration test'));
+check(
+  'rescue job self-tests cross-platform manifest portability before sealed-source verification',
+  workflow.includes('npm run baseline:manifest:self-test') &&
+    workflow.indexOf('npm run baseline:manifest:self-test') <
+      workflow.lastIndexOf('npm run baseline:manifest:verify'),
+);
 check('rescue live EMQX job runs on GitHub Ubuntu', workflow.includes('\n  rescue-live-emqx:\n') && workflow.includes('runs-on: ubuntu-latest'));
 check('rescue live EMQX job is sequenced after core CI', workflow.includes('needs: test'));
 check('CI generates ephemeral uncommitted rescue secrets', workflow.includes('rescue:env:init -- --output=.env'));

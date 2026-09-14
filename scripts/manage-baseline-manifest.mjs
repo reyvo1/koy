@@ -14,8 +14,32 @@ const excludedFiles = new Set(['repository-tree.txt', 'BASELINE-MANIFEST.sha256'
 const excludedFilePatterns = [/\.tsbuildinfo$/i];
 const excludedTopLevelFilePatterns = [/^APPLY-.*\.txt$/i, /^README-HOTFIX\.txt$/i];
 
-function sha256(file) {
-  return createHash('sha256').update(readFileSync(file)).digest('hex');
+function canonicalBytes(file, relativePath) {
+  const raw = readFileSync(file);
+
+  // Preserve binary bytes exactly. Canonicalize UTF-8 text so equivalent
+  // Windows CRLF and Linux LF checkouts seal to one source fingerprint.
+  if (raw.includes(0)) return raw;
+
+  const decoded = raw.toString('utf8');
+  if (!Buffer.from(decoded, 'utf8').equals(raw)) return raw;
+
+  const normalizedLf = decoded.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const extension = path.extname(relativePath).toLowerCase();
+
+  // Windows launchers remain semantically CRLF even if a temporary checkout
+  // exposes LF. .gitattributes + operator contracts still enforce checkout EOL.
+  if (extension === '.cmd' || extension === '.bat') {
+    return Buffer.from(normalizedLf.replace(/\n/g, '\r\n'), 'utf8');
+  }
+
+  return Buffer.from(normalizedLf, 'utf8');
+}
+
+function sha256(file, relativePath = path.relative(root, file).split(path.sep).join('/')) {
+  return createHash('sha256')
+    .update(canonicalBytes(file, relativePath))
+    .digest('hex');
 }
 
 function collect(directory = root, depth = 0) {
@@ -46,7 +70,7 @@ function expectedManifestRows(tree) {
   return [
     ...tree.map((relative) => ({
       path: `./${relative}`,
-      sha256: sha256(path.join(root, relative)),
+      sha256: sha256(path.join(root, relative), relative),
     })),
     { path: './repository-tree.txt', sha256: sha256(treePath) },
   ];
