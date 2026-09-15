@@ -1309,7 +1309,7 @@ async function main() {
         widgets: [
           {
             id: widgetId,
-            kind: 'GAUGE',
+            kind: 'CARD',
             title: 'Power live evidence',
             schemaVersion: '1.0.0',
           },

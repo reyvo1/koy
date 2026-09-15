@@ -1,4 +1,18 @@
+# IoT Platform — Current State — Wave 1 V13
 
+> **SOURCE OF TRUTH FOR NEW WORK — 2026-09-15.** Historical RR sections below remain evidence only.
+
+## Active status
+
+Core GitHub `test` is GREEN (180/180 suites, 1187/1187 tests). The V12 `rescue-live-emqx` run reached real EMQX 5.9.2 and proved the V12 MQTT negative-ACL lifecycle hardening: `publisher-non-command-operations-denied` now PASSes, as do valid auth, wrong-secret denial, command subscribe/delivery, telemetry publish, and webhook idempotency.
+
+The current first failure is no longer MQTT. `POST /dashboards` returned HTTP 400 `DASHBOARD_WIDGET_RESOLUTION_INVALID` because the live acceptance fixture declared a `GAUGE` while binding the already-proven `power` capability whose `dataType` is `boolean`. The production resolver is behaving correctly: GAUGE requires a numeric capability.
+
+V13 fixes the acceptance fixture contract, not production resolver behavior. The boolean power telemetry evidence now uses a `CARD` widget with a `READ`/`LATEST` binding to the same capability. Self-tests lock the capability/widget/binding relationship and fail closed on any regression to boolean+GAUGE. No Prisma schema, dashboard business rule, MQTT auth rule, UI product behavior, or rescue endpoint changes.
+
+Production remains NOT APPROVED pending physical ESP32/Wi-Fi reconnect/physical MQTT/OTA evidence. The foreign host broker on `1883` remains out of scope; rescue MQTT remains `127.0.0.1:18884`.
+
+---
 
 ---
 

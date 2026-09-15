@@ -17,6 +17,7 @@ check('real EMQX smoke runner exists', existsSync(path.join(root, smokePath)));
 
 const workflow = read(workflowPath);
 const smoke = read(smokePath);
+const brokerSmokeSelfTest = read('scripts/self-test-rescue-live-broker-smoke.mjs');
 const pkg = JSON.parse(read('package.json'));
 
 check('CI remains runnable manually', workflow.includes('workflow_dispatch:'));
@@ -75,6 +76,16 @@ check(
     'cross-device-publish',
     'wrong-device-ack-publish',
   ].every((token) => smoke.includes(token)),
+);
+
+check(
+  'broker smoke self-test guards live dashboard boolean/widget semantic compatibility',
+  brokerSmokeSelfTest.includes(
+    'live dashboard fixture matches boolean CARD/LATEST resolver semantics',
+  ) &&
+    brokerSmokeSelfTest.includes(
+      'live dashboard fixture regressed to GAUGE for the boolean power capability',
+    ),
 );
 
 if (failures.length) {

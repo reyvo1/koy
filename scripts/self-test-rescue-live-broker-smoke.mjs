@@ -31,6 +31,58 @@ for (const token of required) {
   }
 }
 
+function sourceSlice(startToken, endToken) {
+  const start = runner.indexOf(startToken);
+  const end = runner.indexOf(endToken, start + startToken.length);
+  if (start < 0 || end < 0 || end <= start) {
+    throw new Error(
+      `live broker smoke fixture block missing: ${startToken} -> ${endToken}`,
+    );
+  }
+  return runner.slice(start, end);
+}
+
+const capabilityFixture = sourceSlice(
+  'const capability = (',
+  'const capabilityArtifact =',
+);
+const dashboardFixture = sourceSlice(
+  'const dashboard = (',
+  "assert(dashboard?.id, 'Dashboard create response missing id');",
+);
+
+for (const token of [
+  "key: 'power'",
+  "dataType: 'boolean'",
+  'isReadable: true',
+  'isReportable: true',
+]) {
+  if (!capabilityFixture.includes(token)) {
+    throw new Error(
+      `live power capability contract marker missing: ${token}`,
+    );
+  }
+}
+
+for (const token of [
+  "kind: 'CARD'",
+  "intent: 'READ'",
+  "mode: 'LATEST'",
+  'capabilityId: capability.id',
+]) {
+  if (!dashboardFixture.includes(token)) {
+    throw new Error(
+      `live dashboard boolean-latest contract marker missing: ${token}`,
+    );
+  }
+}
+
+if (dashboardFixture.includes("kind: 'GAUGE'")) {
+  throw new Error(
+    'live dashboard fixture regressed to GAUGE for the boolean power capability',
+  );
+}
+
 const child = spawnSync(
   process.execPath,
   [resolve(root, 'scripts/self-test-rescue-mqtt-operations.mjs')],
@@ -72,4 +124,5 @@ console.log('PASS  explicit MQTT denial signals are required before negative ACL
 console.log('PASS  close-only and timeout paths remain fail-closed');
 console.log('PASS  primary positive MQTT clients are not sacrificed to disconnect-on-deny checks');
 console.log('PASS  all connected MQTT clients are tracked for final cleanup');
+console.log('PASS  live dashboard fixture matches boolean CARD/LATEST resolver semantics');
 console.log('RESCUE LIVE BROKER SMOKE SELF-TEST PASS');

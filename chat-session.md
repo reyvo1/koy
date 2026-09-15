@@ -1,3 +1,38 @@
+# Chat Session — Wave 1 V13 Dashboard Fixture Contract Hardening
+
+## Progress
+- Analyzed GitHub log `logs_94594644195.zip` without reopening older diagnosis.
+- Confirmed core `test` remains GREEN: 180/180 suites, 1187/1187 tests.
+- Confirmed V12 MQTT class is fixed in real EMQX: `publisher-non-command-operations-denied` PASSes and the smoke advances through telemetry webhook idempotency.
+- Identified the first new blocker at `POST /dashboards`: live smoke used `GAUGE` with the existing boolean `power` capability, so the production resolver correctly returned `DASHBOARD_WIDGET_RESOLUTION_INVALID`.
+- Fixed the whole live-dashboard fixture semantic-contract class: boolean power evidence uses `CARD` + `READ` + `LATEST`, and self-tests lock that relationship.
+- GitHub CI self-test now requires the dashboard semantic regression guard.
+
+## Test status
+- `node --check scripts/run-rescue-live-broker-smoke.mjs`: PASS.
+- `node --check scripts/self-test-rescue-live-broker-smoke.mjs`: PASS.
+- `node --check scripts/self-test-rescue-github-ci.mjs`: PASS.
+- `node scripts/self-test-rescue-live-broker-smoke.mjs`: PASS.
+- `node scripts/self-test-rescue-github-ci.mjs`: PASS.
+- Negative regression mutation (`CARD` -> `GAUGE` for the boolean power fixture): correctly rejected, PASS.
+- Docker/build/DB/Redis/real EMQX/full acceptance intentionally not run locally.
+
+## Ready state
+V13 is CI/acceptance-fixture hardening only. Application dashboard validation remains fail-closed and unchanged. V12 MQTT one-shot denial evidence remains intact. Rescue endpoint is still `mqtt://127.0.0.1:18884`; do not reopen the foreign Windows broker on `1883`.
+
+## Next steps
+1. Apply V13 to the clean complete V12 Git working tree.
+2. Run only the package-provided lightweight pre-push gate locally.
+3. Make one commit and one GitHub push.
+4. Let GitHub run heavy Docker/build/DB/Redis/EMQX/full acceptance.
+5. If red, analyze the first failure plus all related failures in its class before another batch.
+6. Production remains NOT APPROVED until physical ESP32/Wi-Fi reconnect/physical MQTT/OTA evidence is complete.
+
+## Source snapshot boundary
+The source snapshot available in this chat still omits four files that the authoritative GitHub checkout proves are present in the sealed baseline. V13 therefore preserves the authoritative V12 1016-path repository tree and updates only hashes for files actually changed by V13. The apply script refuses an incomplete target repository before copying anything.
+
+---
+
 # Chat Session — RR30 GitHub CI Restoration
 
 ## Progress

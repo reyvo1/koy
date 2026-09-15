@@ -1,3 +1,41 @@
+# PROJECT HANDOFF — WAVE 1 V13
+
+## Active continuation — 2026-09-15
+
+Do not audit from zero. Continue from the GitHub V12 evidence in `logs_94594644195.zip`.
+
+Authoritative latest facts:
+- core GitHub `test` is GREEN: 180/180 suites and 1187/1187 tests;
+- `rescue-live-emqx` reaches Docker + EMQX 5.9.2 on rescue endpoint `mqtt://127.0.0.1:18884`;
+- V12 fixed the negative-ACL connection-lifecycle class: publisher non-command subscribe/publish now PASS with explicit denial evidence;
+- valid device auth, wrong-secret denial, device command subscribe, publisher command delivery, telemetry publish, and telemetry webhook idempotency all PASS;
+- first new failure is `POST /dashboards` HTTP 400 `DASHBOARD_WIDGET_RESOLUTION_INVALID`: the live smoke created a `GAUGE` widget bound to the existing `power:boolean` capability;
+- production remains **NOT APPROVED** until physical ESP32/Wi-Fi reconnect/physical MQTT/OTA evidence is complete.
+
+V13 fixes the full live-dashboard fixture semantic-contract class without changing application behavior:
+- the boolean `power` capability remains boolean/readable/writable/reportable;
+- the live dashboard evidence widget is `CARD` + `READ` + `LATEST`, which is compatible with a boolean capability and still exercises the canonical widget-data query path;
+- the broker-smoke self-test now fails closed if the power capability or dashboard binding drifts, and explicitly rejects a regression back to `GAUGE` for the boolean capability;
+- the GitHub CI self-test requires that dashboard semantic guard to remain present.
+
+Local validation performed for V13:
+- Node syntax checks for changed smoke/self-test scripts: PASS;
+- broker-smoke self-test: PASS, including all V12 MQTT denial regressions plus dashboard semantic compatibility;
+- GitHub CI self-test: PASS;
+- negative regression mutation (`CARD` -> `GAUGE`) is rejected by the self-test: PASS;
+- no local Docker/build/DB/Redis/real EMQX/full acceptance was run.
+
+Next action:
+1. Apply V13 to the clean complete V12 repository.
+2. Let the package run the canonical lightweight pre-push gate.
+3. Commit once and push once.
+4. GitHub remains authoritative for Docker/build/DB/Redis/EMQX/full acceptance.
+5. If GitHub is red again, collect the first failure and related failures in that same class before creating another Wave 1 batch.
+
+Do not reopen the old foreign Windows Mosquitto diagnosis on port `1883`; the rescue endpoint remains `18884`.
+
+---
+
 # PROJECT HANDOFF — RR29
 
 ## Active baseline
