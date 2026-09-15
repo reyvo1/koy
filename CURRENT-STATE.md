@@ -1285,3 +1285,15 @@ Large-batch permanent remediation:
 - the canonical local pre-push gate includes this harness self-test.
 
 Work policy reaffirmed: ordinary CI failures are accumulated into coherent hardening batches rather than one micro-checkpoint per line.
+
+---
+
+## WAVE 1 LARGE-BATCH CI HARDENING V12 — NEGATIVE ACL CONNECTION LIFECYCLE
+
+Latest GitHub evidence (`logs_94531471162.zip`) confirms the V11 callback bounds work: the outer job no longer hangs indefinitely and the exact operation is named. Core `test` remains green; real EMQX 5.9.2 is reached; valid device auth, wrong-secret denial, device command subscribe, and publisher command delivery all pass. The first concrete failure is the publisher forbidden telemetry publish timing out after the preceding forbidden subscription check.
+
+Root cause is the negative ACL connection lifecycle, not EMQX authentication. Rescue EMQX is configured to disconnect a client on authorization denial. V11 reused a client after a denied subscribe, so a later QoS-1 publish could execute on an already disconnected MQTT.js client and never receive a PUBACK callback.
+
+V12 permanently treats the entire negative ACL class as one batch: every forbidden subscribe/publish runs on a fresh one-shot connection; explicit SUBACK/PUBACK authorization denial, explicit authorization error, or MQTT v5 `DISCONNECT 0x87` is required for PASS; close-only/unrelated error/timeout is fail-closed; positive clients are preserved for later positive assertions; and persistence/state side effects are independently verified absent. Publisher non-command, cross-device, and wrong-device ACK paths are all covered by the same mechanism.
+
+This remains CI/acceptance harness hardening only. No application business logic, Prisma schema, UI, MQTT auth backend rules, or production approval boundary is changed. Rescue endpoint remains `18884`; the foreign Windows Mosquitto issue on `1883` stays closed. Production remains blocked on physical ESP32/Wi-Fi reconnect/physical MQTT/OTA evidence.

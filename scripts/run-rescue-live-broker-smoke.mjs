@@ -28,10 +28,10 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import {
-  expectSubscribeDeniedBounded,
-  isMqttOperationTimeout,
+  expectPublishDeniedBounded,
   mqttPublishBounded,
   mqttSubscribeBounded,
+  observeSubscribeDenialBounded,
 } from './lib/rescue-mqtt-operations.mjs';
 
 const argv = process.argv.slice(2);
@@ -630,18 +630,58 @@ async function mqttSubscribe(client, topic, qos = 1, timeoutMs = 8_000) {
   return await mqttSubscribeBounded(client, topic, qos, timeoutMs);
 }
 
-async function expectSubscribeDenied(
-  client,
+async function expectSubscribeDeniedFresh(
+  username,
+  password,
+  label,
   topic,
   qos = 1,
   timeoutMs = 8_000,
 ) {
-  return await expectSubscribeDeniedBounded(
-    client,
-    topic,
-    qos,
-    timeoutMs,
-  );
+  const { client } = await connectMqtt(username, password, label);
+  try {
+    const result = await observeSubscribeDenialBounded(
+      client,
+      topic,
+      qos,
+      timeoutMs,
+    );
+    assert(
+      result.denied,
+      `${label} subscription was unexpectedly accepted for ${topic}`,
+    );
+    return result;
+  } finally {
+    await endMqtt(client);
+  }
+}
+
+async function expectPublishDeniedFresh(
+  username,
+  password,
+  label,
+  topic,
+  payload,
+  qos = 1,
+  timeoutMs = 8_000,
+) {
+  const { client } = await connectMqtt(username, password, label);
+  try {
+    const result = await expectPublishDeniedBounded(
+      client,
+      topic,
+      payload,
+      qos,
+      timeoutMs,
+    );
+    assert(
+      result.denied,
+      `${label} publish was unexpectedly accepted for ${topic}`,
+    );
+    return result;
+  } finally {
+    await endMqtt(client);
+  }
 }
 
 async function mqttPublish(
@@ -1119,49 +1159,40 @@ async function main() {
   );
 
   brokerCheck('liveBroker.publisher-non-command-denied');
-  const { client: negativePublisher } = await connectMqtt(
+  const publisherSubscribeDenial = await expectSubscribeDeniedFresh(
     publisherUsername,
     publisherPassword,
-    'publisher-negative',
-  );
-  const publisherSubscribeDenied = await expectSubscribeDenied(
-    negativePublisher,
+    'publisher-negative-subscribe',
     telemetryTopicA,
   );
 
   const forbiddenPublisherEvent = `publisher-forbidden-${randomUUID()}`;
-  let publisherPublishRejected = false;
-  try {
-    const packet = await mqttPublish(
-      negativePublisher,
-      telemetryTopicA,
-      { eventId: forbiddenPublisherEvent, payload: { power: false } },
-      1,
-    );
-    publisherPublishRejected =
-      Number(packet?.reasonCode ?? 0) >= 0x80;
-  } catch (error) {
-    if (isMqttOperationTimeout(error)) throw error;
-    publisherPublishRejected = true;
-  }
+  const publisherPublishDenial = await expectPublishDeniedFresh(
+    publisherUsername,
+    publisherPassword,
+    'publisher-negative-publish',
+    telemetryTopicA,
+    { eventId: forbiddenPublisherEvent, payload: { power: false } },
+    1,
+  );
   await sleep(1200);
   const forbiddenPublisherTelemetryCount = await prisma.telemetry.count({
     where: { deviceId: deviceAId, eventId: forbiddenPublisherEvent },
   });
   assert(
-    publisherSubscribeDenied,
-    'Publisher was unexpectedly allowed to subscribe to a non-command topic',
-  );
-  assert(
-    publisherPublishRejected || forbiddenPublisherTelemetryCount === 0,
-    'Publisher non-command publish was unexpectedly accepted and persisted',
+    forbiddenPublisherTelemetryCount === 0,
+    'Publisher non-command publish reached the telemetry persistence path',
   );
 
   const publisherDeniedArtifact = writeArtifact(
     'broker-publisher-non-command-denied',
     {
-      subscribeDenied: publisherSubscribeDenied,
-      nonCommandPublishRejectedByClient: publisherPublishRejected,
+      subscribeDenied: publisherSubscribeDenial.denied,
+      subscribeDenialSignal: publisherSubscribeDenial.signal,
+      subscribeDenialReasonCode: publisherSubscribeDenial.reasonCode,
+      nonCommandPublishDenied: publisherPublishDenial.denied,
+      publishDenialSignal: publisherPublishDenial.signal,
+      publishDenialReasonCode: publisherPublishDenial.reasonCode,
       forbiddenTelemetryPersistedRows: forbiddenPublisherTelemetryCount,
     },
   );
@@ -1169,9 +1200,8 @@ async function main() {
     'liveBroker',
     'publisher-non-command-operations-denied',
     publisherDeniedArtifact,
-    'Live publisher ACL denied non-command subscription and did not persist a forbidden telemetry publish.',
+    'Fresh one-shot publisher connections received explicit broker denial signals for non-command subscribe/publish operations, and the forbidden telemetry event was not persisted.',
   );
-  await endMqtt(negativePublisher);
 
   const eventId = `telemetry-${randomUUID()}`;
   const telemetryEnvelope = { eventId, payload: { power: true } };
@@ -1418,42 +1448,32 @@ async function main() {
     },
   });
 
-  const { client: deviceBClient } = await connectMqtt(
-    deviceBId,
-    deviceBSecret,
-    'device-b',
-  );
-
   const crossCommandTopic = `tenants/${tenantB.id}/devices/${deviceBId}/commands`;
   const crossTelemetryTopic = `tenants/${tenantB.id}/devices/${deviceBId}/telemetry`;
 
-  const crossSubscribeDenied = await expectSubscribeDenied(
-    deviceAClient,
+  const crossSubscribeDenial = await expectSubscribeDeniedFresh(
+    deviceAId,
+    deviceSecret,
+    'cross-device-subscribe',
     crossCommandTopic,
   );
 
   const crossEventId = `cross-${randomUUID()}`;
-  let crossPublishRejected = false;
-  try {
-    const packet = await mqttPublish(
-      deviceAClient,
-      crossTelemetryTopic,
-      { eventId: crossEventId, payload: { power: true } },
-      1,
-    );
-    crossPublishRejected = Number(packet?.reasonCode ?? 0) >= 0x80;
-  } catch (error) {
-    if (isMqttOperationTimeout(error)) throw error;
-    crossPublishRejected = true;
-  }
+  const crossPublishDenial = await expectPublishDeniedFresh(
+    deviceAId,
+    deviceSecret,
+    'cross-device-publish',
+    crossTelemetryTopic,
+    { eventId: crossEventId, payload: { power: true } },
+    1,
+  );
   await sleep(1200);
   const crossPersisted = await prisma.telemetry.count({
     where: { deviceId: deviceBId, eventId: crossEventId },
   });
-  assert(crossSubscribeDenied, 'Cross-device command subscription was allowed');
   assert(
-    crossPublishRejected || crossPersisted === 0,
-    'Cross-device telemetry publish was persisted',
+    crossPersisted === 0,
+    'Cross-device telemetry publish reached the target persistence path',
   );
 
   const crossArtifact = writeArtifact('broker-cross-device-tenant-denied', {
@@ -1461,8 +1481,12 @@ async function main() {
     targetDeviceId: deviceBId,
     sourceTenantId: tenantA.id,
     targetTenantId: tenantB.id,
-    commandSubscribeDenied: crossSubscribeDenied,
-    telemetryPublishRejectedByClient: crossPublishRejected,
+    commandSubscribeDenied: crossSubscribeDenial.denied,
+    commandSubscribeDenialSignal: crossSubscribeDenial.signal,
+    commandSubscribeDenialReasonCode: crossSubscribeDenial.reasonCode,
+    telemetryPublishDenied: crossPublishDenial.denied,
+    telemetryPublishDenialSignal: crossPublishDenial.signal,
+    telemetryPublishDenialReasonCode: crossPublishDenial.reasonCode,
     targetTelemetryPersistedRows: crossPersisted,
   });
   attach(
@@ -1478,22 +1502,17 @@ async function main() {
     select: { status: true, acknowledgedAt: true },
   });
 
-  let wrongAckRejected = false;
-  try {
-    const packet = await mqttPublish(
-      deviceBClient,
-      ackTopicA,
-      {
-        commandId: commandResponse.correlationId,
-        status: 'ACK',
-      },
-      1,
-    );
-    wrongAckRejected = Number(packet?.reasonCode ?? 0) >= 0x80;
-  } catch (error) {
-    if (isMqttOperationTimeout(error)) throw error;
-    wrongAckRejected = true;
-  }
+  const wrongAckDenial = await expectPublishDeniedFresh(
+    deviceBId,
+    deviceBSecret,
+    'wrong-device-ack-publish',
+    ackTopicA,
+    {
+      commandId: commandResponse.correlationId,
+      status: 'ACK',
+    },
+    1,
+  );
   await sleep(900);
 
   const commandAfterWrongAck = await prisma.deviceCommand.findUnique({
@@ -1567,7 +1586,9 @@ async function main() {
     commandId: commandResponse.id,
     correlationId: commandResponse.correlationId,
     deviceId: deviceAId,
-    wrongDeviceAckRejectedByClient: wrongAckRejected,
+    wrongDeviceAckDenied: wrongAckDenial.denied,
+    wrongDeviceAckDenialSignal: wrongAckDenial.signal,
+    wrongDeviceAckDenialReasonCode: wrongAckDenial.reasonCode,
     wrongDeviceAckDidNotChangeState: true,
     matchingDeviceAckStatus: acknowledged.status,
     identicalReplayStatus: acknowledgedReplay.status,
@@ -1722,7 +1743,6 @@ async function main() {
   // Explicit publisher non-command check already proved publisher ACL; direct
   // device ACL checks above prove telemetry/ACK/command subscribe/cross-device.
 
-  await endMqtt(deviceBClient);
   await endMqtt(deviceAClient);
   await endMqtt(publisherClient);
 

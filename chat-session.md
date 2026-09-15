@@ -180,3 +180,38 @@ Large-batch permanent remediation:
 - the canonical local pre-push gate includes this harness self-test.
 
 Work policy reaffirmed: ordinary CI failures are accumulated into coherent hardening batches rather than one micro-checkpoint per line.
+
+---
+
+## WAVE 1 LARGE-BATCH CI HARDENING V12 — NEGATIVE ACL ONE-SHOT EVIDENCE
+
+### GitHub result analyzed
+GitHub run `logs_94531471162.zip` kept the core `test` job green and advanced `rescue-live-emqx` through real EMQX 5.9.2. The live broker smoke passed runtime login/tenant/device setup, valid device auth, wrong-secret denial, device command subscription, and publisher command publish/device receipt. It then failed at `liveBroker.publisher-non-command-denied` with `MQTT publish .../telemetry timed out after 8000ms`.
+
+### Root cause class
+V11 correctly bounded callbacks, but the negative ACL sequence still reused a client after a denied operation. The rescue broker intentionally uses `authorization.deny_action=disconnect`; therefore a denied subscribe can terminate that MQTT connection. The following QoS-1 publish on the same disconnected client can remain queued without a PUBACK callback and hit the harness timeout. That timeout is not valid ACL-denial evidence.
+
+### Permanent large-batch remediation
+- negative ACL assertions now use fresh one-shot MQTT connections;
+- publisher non-command subscribe and publish each use separate fresh publisher clients;
+- cross-device command subscribe and telemetry publish each use separate fresh source-device clients;
+- wrong-device ACK uses a fresh target-device client;
+- positive `deviceAClient` / `publisherClient` are never sacrificed to disconnect-on-deny tests;
+- negative subscribe evidence requires explicit SUBACK denial, explicit authorization error, or MQTT v5 `DISCONNECT` reason `0x87`;
+- negative publish evidence requires explicit PUBACK denial, explicit authorization error, or MQTT v5 `DISCONNECT` reason `0x87`;
+- close-only, unrelated errors, and timeout remain fail-closed and cannot become PASS;
+- negative publish checks also require the forbidden side effect to remain absent (no telemetry persistence / no wrong-device ACK state transition);
+- synthetic tests cover allowed callback, denied SUBACK/PUBACK, `DISCONNECT 0x87`, explicit authorization error, close-only ambiguity, and true callback hang.
+
+### Local test status
+- `node --check scripts/lib/rescue-mqtt-operations.mjs`: PASS.
+- `node scripts/self-test-rescue-mqtt-operations.mjs`: PASS.
+- `node scripts/self-test-rescue-live-broker-smoke.mjs`: PASS.
+- `node scripts/self-test-rescue-github-ci.mjs`: PASS.
+- Docker/build/DB/Redis/real EMQX/full acceptance were intentionally not run locally.
+
+### Ready state / next step
+Apply V12 as one Wave 1 batch, run the existing lightweight pre-push gate, commit once, and push once. GitHub remains authoritative for Docker/DB/Redis/real EMQX/full acceptance. Do not reopen the old host-port `1883` diagnosis; canonical rescue MQTT remains `127.0.0.1:18884`. Production remains NOT APPROVED until physical ESP32/Wi-Fi reconnect/MQTT/OTA evidence is complete.
+
+### Session source-snapshot boundary
+The V11 source snapshot carried into this chat omits four files that the authoritative GitHub checkout already proved present in the sealed `1016/1016` source set: the two Super Admin report routes and the two MQTT TLS test fixtures. Therefore this session does not regenerate the source tree from the incomplete snapshot. V12 preserves the V11 `repository-tree.txt` (1016 paths), reseals only files changed by V12 in the 1017-entry manifest, and its apply preflight refuses an incomplete target repository before copying payload files.

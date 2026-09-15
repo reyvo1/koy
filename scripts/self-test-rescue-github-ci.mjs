@@ -64,6 +64,18 @@ check('broker smoke covers concrete live broker safety paths', [
   'wrong-webhook-secret-denied',
   'revoked-device-denied',
 ].every((token) => smoke.includes(token)));
+check(
+  'negative ACL smoke operations use fresh one-shot clients',
+  [
+    'expectSubscribeDeniedFresh',
+    'expectPublishDeniedFresh',
+    'publisher-negative-subscribe',
+    'publisher-negative-publish',
+    'cross-device-subscribe',
+    'cross-device-publish',
+    'wrong-device-ack-publish',
+  ].every((token) => smoke.includes(token)),
+);
 
 if (failures.length) {
   console.error(`\nRESCUE GITHUB CI SELF-TEST FAILED (${failures.length})`);

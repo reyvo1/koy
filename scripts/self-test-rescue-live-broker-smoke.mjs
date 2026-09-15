@@ -11,10 +11,18 @@ const runner = readFileSync(
 
 const required = [
   "from './lib/rescue-mqtt-operations.mjs'",
+  'expectPublishDeniedBounded',
+  'observeSubscribeDenialBounded',
+  'async function expectSubscribeDeniedFresh(',
+  'async function expectPublishDeniedFresh(',
+  "'publisher-negative-subscribe'",
+  "'publisher-negative-publish'",
+  "'cross-device-subscribe'",
+  "'cross-device-publish'",
+  "'wrong-device-ack-publish'",
   'activeMqttClients.add(client)',
   'await closeActiveMqttClients()',
   "brokerCheck('liveBroker.publisher-non-command-denied')",
-  'if (isMqttOperationTimeout(error)) throw error',
 ];
 
 for (const token of required) {
@@ -30,7 +38,7 @@ const child = spawnSync(
 );
 if (child.status !== 0) {
   throw new Error(
-    `MQTT bounded-operation self-test failed:\n${child.stdout}\n${child.stderr}`,
+    `MQTT ACL-observation self-test failed:\n${child.stdout}\n${child.stderr}`,
   );
 }
 process.stdout.write(child.stdout);
@@ -42,7 +50,26 @@ if (/client\.publish\([^)]*\{ qos \}[^]*new Promise/.test(runner)) {
   throw new Error('unbounded inline MQTT publish implementation remains');
 }
 
+const forbiddenPatterns = [
+  'expectSubscribeDenied(\n    negativePublisher',
+  'mqttPublish(\n      negativePublisher',
+  'expectSubscribeDenied(\n    deviceAClient',
+  'mqttPublish(\n      deviceAClient,\n      crossTelemetryTopic',
+  'mqttPublish(\n      deviceBClient,\n      ackTopicA',
+  'if (isMqttOperationTimeout(error)) throw error',
+];
+for (const pattern of forbiddenPatterns) {
+  if (runner.includes(pattern)) {
+    throw new Error(
+      `negative ACL client-reuse/timeout inference pattern remains: ${pattern}`,
+    );
+  }
+}
+
 console.log('PASS  live broker smoke uses bounded MQTT operations');
-console.log('PASS  negative ACL timeouts cannot be misreported as denial');
+console.log('PASS  negative ACL subscribe/publish checks use fresh one-shot clients');
+console.log('PASS  explicit MQTT denial signals are required before negative ACL PASS');
+console.log('PASS  close-only and timeout paths remain fail-closed');
+console.log('PASS  primary positive MQTT clients are not sacrificed to disconnect-on-deny checks');
 console.log('PASS  all connected MQTT clients are tracked for final cleanup');
 console.log('RESCUE LIVE BROKER SMOKE SELF-TEST PASS');

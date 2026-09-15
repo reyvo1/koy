@@ -2243,10 +2243,18 @@ check(
     githubCiR30.includes('npm run rescue:acceptance -- --env=.env --full'),
 );
 check(
-  'live broker smoke bounds every MQTT subscribe/publish and fails closed on timeout',
+  'live broker smoke uses one-shot negative ACL clients and explicit denial signals',
   read('package.json').includes('rescue:broker:smoke:self-test') &&
     read('scripts/run-rescue-live-broker-smoke.mjs').includes("from './lib/rescue-mqtt-operations.mjs'") &&
-    read('scripts/run-rescue-live-broker-smoke.mjs').includes('if (isMqttOperationTimeout(error)) throw error') &&
+    read('scripts/run-rescue-live-broker-smoke.mjs').includes('expectSubscribeDeniedFresh') &&
+    read('scripts/run-rescue-live-broker-smoke.mjs').includes('expectPublishDeniedFresh') &&
+    read('scripts/run-rescue-live-broker-smoke.mjs').includes("'publisher-negative-subscribe'") &&
+    read('scripts/run-rescue-live-broker-smoke.mjs').includes("'publisher-negative-publish'") &&
+    read('scripts/run-rescue-live-broker-smoke.mjs').includes("'cross-device-subscribe'") &&
+    read('scripts/run-rescue-live-broker-smoke.mjs').includes("'cross-device-publish'") &&
+    read('scripts/run-rescue-live-broker-smoke.mjs').includes("'wrong-device-ack-publish'") &&
+    read('scripts/lib/rescue-mqtt-operations.mjs').includes('disconnect-not-authorized') &&
+    read('scripts/lib/rescue-mqtt-operations.mjs').includes('MQTT_OPERATION_CLOSED') &&
     read('scripts/run-rescue-live-broker-smoke.mjs').includes('await closeActiveMqttClients()'),
 );
 

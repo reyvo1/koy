@@ -435,3 +435,15 @@ Large-batch permanent remediation:
 - the canonical local pre-push gate includes this harness self-test.
 
 Work policy reaffirmed: ordinary CI failures are accumulated into coherent hardening batches rather than one micro-checkpoint per line.
+
+---
+
+## WAVE 1 V12 HANDOFF — EXPLICIT NEGATIVE ACL EVIDENCE
+
+The GitHub run after V11 kept core `test` green and reached real EMQX 5.9.2. The live smoke passed valid device auth, wrong-secret denial, device command subscribe, and publisher command delivery, then failed at `publisher-non-command-denied` because the forbidden telemetry publish callback timed out.
+
+Do not diagnose this as broken EMQX auth. The precise class is negative ACL connection reuse under `authorization.deny_action=disconnect`: a forbidden subscription can disconnect its client, and V11 then attempted another QoS-1 operation on that same disconnected client.
+
+V12 fixes the complete class in one batch. All forbidden subscription/publish checks use fresh one-shot MQTT clients; explicit SUBACK/PUBACK denial, explicit authorization error, or MQTT v5 `DISCONNECT 0x87` is required; close-only/network ambiguity/timeout cannot count as denial; and forbidden side effects are checked independently. The batch covers publisher non-command operations, cross-device tenant isolation, and wrong-device ACK binding while preserving the primary positive device/publisher connections.
+
+Work policy remains unchanged: local = targeted/lightweight only; one commit/push; GitHub = Docker/build/DB/Redis/EMQX/full acceptance. If GitHub is red again, collect the first failure and related failures in the same class before making another large Wave 1 batch. Rescue MQTT remains `127.0.0.1:18884`; do not reopen the old foreign `1883` broker issue. Production is still NOT APPROVED until physical ESP32/Wi-Fi reconnect/MQTT/OTA evidence is complete.
