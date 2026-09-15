@@ -469,3 +469,44 @@ V8 fixes the evidence harness class without changing Notification business logic
 - Full authoritative reconstructed source seal: 1035/1036 PASS.
 - Synthetic clean V8 1033/1034 -> V9 18-file overlay -> 1035/1036 -> gate invocation -> final verify: PASS.
 - Heavy PostgreSQL/Notification/EMQX/full acceptance remains GitHub evidence and is not claimed locally.
+
+
+## 2026-09-15 — Wave 3 V2 root-cause pass
+
+- User explicitly requested root-cause repair because GitHub heavy runs are slow.
+- First Wave 3 GitHub run: core application remained green; firmware job failed during ESP-IDF configure with `Failed to resolve component 'iot_sdk' required by component 'main'`.
+- Root audit against ESP-IDF build-system contract found the full class, not only the visible line: component identity is directory-derived (`esp32-sdk`), `main` auto-depends on discovered components, the C3 job copied only `test-app` and would lose the SDK parent component, RNG/netif helper APIs lacked explicit owning headers/dependency declaration, and the custom dual-OTA partition table needed a 4MB flash contract.
+- V2 removes fabricated `REQUIRES iot_sdk`, keeps direct EXTRA_COMPONENT_DIRS discovery, copies the complete SDK tree for C3, adds `esp_random.h`, `esp_netif.h`, `esp_wifi_default.h`, `esp_hw_support`, 4MB flash config, secure MQTT CA verification, and fail-closed invalid OTA Content-Length handling.
+- Added `scripts/self-test-wave3-esp-idf-build-graph.mjs`. It checks component discovery, dependency ownership, C3 topology, flash contract, secure MQTT, and CI sequencing.
+- CI firmware job now runs parallel with core test, and all cheap Wave 3 source/build-graph guards execute before the expensive ESP-IDF installation. Rescue live acceptance still waits for both jobs.
+- Dependency-free Wave 3 simulation/build-graph/source guards pass after the changes. Real ESP-IDF compile/QEMU remains pending GitHub evidence; do not claim it locally.
+
+## 2026-09-15 — Wave 3 V2 full native-chain root audit
+
+- User required root-cause repair because GitHub native firmware runs are slow; no one-line `REQUIRES` patch is acceptable.
+- First Wave 3 run proved core application green and failed at ESP-IDF component resolution (`main` required nonexistent `iot_sdk`).
+- Root audit closed guaranteed follow-on failures before repush: component discovery, API header/dependency ownership, ESP32-C3 source-tree topology, 4MB custom partition flash sizing, MQTT TLS CA verification, OTA invalid Content-Length rejection, and slow CI sequencing.
+- Additional security/evidence audit moved long-lived device-secret generation until after Wi-Fi connects (RF entropy active), rejects non-ESP `.bin` artifacts via image magic `0xE9`, and removed the false claim that simulation proves encrypted NVS. Production/HIL must prove NVS encryption or equivalent secure storage separately.
+- Firmware CI was redesigned as a parallel `[esp32, esp32c3]` matrix. Both targets build with ESP-IDF 5.5.5 and boot target-appropriate Espressif QEMU; firmware also runs in parallel with core CI. Rescue live acceptance waits for core plus the complete matrix and consumes the exact ESP32 artifact.
+- Dependency-free build-graph/source/simulator/CI guards PASS. YAML/package/Python syntax PASS. Real ESP-IDF/QEMU remains GitHub evidence because the chat container has no network/toolchain.
+- Wave 3 remains ACTIVE; Wave 4 blocked.
+
+### V2 package QA — native build-chain root correction
+- dependency-free Wave 3 OTA/dedupe/rollback simulator: PASS
+- ESP-IDF build-graph self-test: PASS
+- Wave 3 source/evidence self-test: PASS
+- GitHub CI contract self-test: PASS
+- baseline manifest portability self-test: PASS
+- workflow YAML + package JSON + pytest Python syntax: PASS
+- Module 30 changed TypeScript contract transpile: PASS
+- authoritative candidate seal: `1051/1052` PASS
+- synthetic applicator from clean pushed V1 `1050/1051`: PASS through 23-file overlay, target-generated `1051/1052`, synthetic lightweight gate invocation, and final manifest verify
+- real ESP-IDF 5.5.5 compilation/QEMU is intentionally NOT claimed locally because this container has no ESP-IDF toolchain/network; GitHub remains the native-build authority
+
+### V2 final package certification
+- Final staged payload matches the Wave 3 V2 candidate for all 23 indexed files.
+- Internal `SHA256SUMS.txt` verification: PASS.
+- ZIP structural integrity (`unzip -t`): PASS.
+- Exact final-ZIP applicator test from a clean synthetic Wave 3 V1 `1050/1051` baseline: PASS through root guards, target-generated `1051/1052` seal, synthetic lightweight-gate invocation, and final seal verification.
+- Exact final-ZIP payload identity after apply: 23/23 PASS.
+- Real ESP-IDF 5.5.5 native compilation/QEMU and live EMQX/OTA/full acceptance remain GitHub evidence and are intentionally not claimed by this packaging test.

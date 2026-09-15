@@ -14,7 +14,8 @@ already exists in earlier modules.
 
 - 30.1 SDK contract: identity (UUID + hashed MQTT credential), BLE
   provisioning flow with claim-code exchange via `/api/provision/claim`,
-  NVS encrypted credential storage, tenant-scoped MQTT topic layout,
+  NVS credential persistence (production/HIL secure-storage encryption is a
+  separate security-profile requirement), tenant-scoped MQTT topic layout,
   telemetry payload rules matching server validation (≤1KB, primitives,
   UUID eventId), command/ack envelope, 60s heartbeat, OTA sha256-verify +
   boot-partition rollback policy.
@@ -39,8 +40,8 @@ real firmware compilation/OTA verification outside Module 30. Enterprise Wave 3
 activates that deferred work without rewriting the historical foundation claim:
 
 - `packages/esp32-sdk` is now an ESP-IDF component;
-- CI builds ESP32 and ESP32-C3 with ESP-IDF 5.5.5;
-- the ESP32 build boots in Espressif QEMU;
+- CI builds ESP32 and ESP32-C3 with ESP-IDF 5.5.5 as a parallel matrix;
+- both ESP32 and ESP32-C3 builds boot in target-appropriate Espressif QEMU;
 - OTA streams to the inactive partition, verifies full SHA-256 before boot-slot
   selection, aborts partial writes, and confirms a pending image only after live
   MQTT reconnect;
@@ -48,3 +49,6 @@ activates that deferred work without rewriting the historical foundation claim:
   digital-twin OTA simulation;
 - Wokwi remains an optional additional simulator and physical HIL remains final
   production-certification evidence.
+
+- Wave 3 simulation does not claim encrypted-NVS physical evidence; production/HIL
+  must prove ESP-IDF NVS encryption or equivalent secure storage separately.

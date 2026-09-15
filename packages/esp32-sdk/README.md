@@ -45,3 +45,30 @@ void app_main(void) {
 ## Validation boundary
 
 Wave 3 adds a real ESP-IDF 5.5.5 component build, Espressif QEMU boot test, and a live-service ESP32 digital twin using the exact built firmware artifact for OTA SHA-256/failure/rollback simulation. Optional Wokwi CI can add another simulated-hardware layer when its token is configured. These are SIMULATED-HARDWARE/LIVE-SERVICE evidence only; physical HIL remains required before final production certification.
+
+
+## ESP-IDF component integration
+
+`packages/esp32-sdk` itself is the ESP-IDF component directory. A consuming
+project may add this directory directly to `EXTRA_COMPONENT_DIRS`; ESP-IDF names
+the component from the directory (`esp32-sdk`). The special `main` component
+automatically depends on every discovered project component, so the Wave 3 test
+app intentionally does **not** invent a `REQUIRES iot_sdk` alias.
+
+The component declares the public API owners it uses (`esp_hw_support`,
+`esp_netif`, `esp_wifi`, MQTT, HTTP, OTA, mbedTLS, NVS). Secure MQTT (`mqtts`/
+`wss`) and HTTPS operations fail closed unless `IOT_PLATFORM_CERT_PEM` is
+provided by the firmware build.
+
+
+### NVS encryption evidence boundary
+
+The SDK persists device identity, MQTT secret and Wi-Fi credentials in the default
+NVS namespace. The Wave 3 QEMU/simulator profile does **not** claim physical
+at-rest security. Production/HIL firmware must enable ESP-IDF NVS encryption (or
+an equivalent device secure-storage profile) and prove it during final security
+certification. This avoids treating simulator flash semantics as physical security
+evidence.
+
+Device secrets are generated only after Wi-Fi has connected so `esp_fill_random()`
+has the RF entropy source active.

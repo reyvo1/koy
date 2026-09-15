@@ -73,7 +73,9 @@ iot_state_t iot_sdk_get_state(void);
  * Store provisioning payload received over BLE/serial:
  * Wi-Fi SSID/password + platform pairing code (<deviceId>:<one-time-token>).
  * Calls POST /devices/<deviceId>/pair, generates the device secret locally,
- * and persists the resulting MQTT identity in the encrypted NVS partition.
+ * and persists the resulting MQTT identity in NVS. Production/HIL firmware
+ * must enable ESP-IDF NVS encryption (or an equivalent secure-storage
+ * profile); the CI simulation profile does not claim at-rest encryption.
  */
 bool iot_sdk_provision(const char* ssid,
                        const char* wifi_password,

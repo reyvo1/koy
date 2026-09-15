@@ -57,3 +57,12 @@ V8 fixes the evidence harness class without changing Notification business logic
 
 ## Wave 3 automated-simulation note
 Wave 3 adds mandatory ESP-IDF 5.5.5 compile, QEMU boot, and a live-service ESP32 digital twin bound to the exact built firmware artifact. OTA simulation verifies artifact bytes/SHA-256 and exercises reject/interruption/rollback/confirm paths. These are SIMULATED-HARDWARE/LIVE-SERVICE evidence only; historical Rescue Gate 1 physical-production requirements remain unchanged.
+
+
+## Wave 3 V2 build-chain status — ACTIVE
+
+- Wave 1/2 inherited core baseline remained GREEN in the first Wave 3 run.
+- First Wave 3 heavy failure: ESP-IDF component graph (`REQUIRES iot_sdk`) before C compilation.
+- V2 root-cause batch closes the native class: component discovery, explicit IDF API ownership, dual-target 4MB OTA build contract, secure MQTT CA, Wi-Fi-backed secret entropy, real ESP image-magic validation, and truthful simulated-vs-HIL NVS security evidence.
+- ESP32 and ESP32-C3 now build and boot target-specific QEMU as a parallel matrix; firmware starts in parallel with core CI and cheap build-graph guards run before toolchain install.
+- No ESP-IDF/QEMU PASS is claimed from local/chat QA. GitHub remains authoritative for compile/emulation/live-service evidence.

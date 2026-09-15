@@ -1442,3 +1442,19 @@ V8 fixes the evidence harness class without changing Notification business logic
 - Wave 2 remains ACTIVE pending Windows local 14-suite gate and GitHub heavy acceptance.
 
 V9 pre-handoff QA: shared HTTPS real-network checks + authoritative 1035/1036 seal + synthetic V8→V9 applicator all PASS; GitHub heavy evidence pending.
+
+
+## WAVE 3 V2 — ESP-IDF BUILD-CHAIN ROOT-CAUSE CORRECTION
+
+The first Wave 3 GitHub run preserved the green core application baseline but failed during the first real ESP-IDF configure step: `main` required unknown component `iot_sdk`. V2 root audit expanded this into the complete native firmware class before another push: component identity/discovery, explicit ESP-IDF API ownership, 4MB dual-OTA flash sizing, MQTT CA verification, OTA content-length fail-closed behavior, Wi-Fi-backed entropy before long-lived device-secret generation, ESP binary magic validation, and truthful NVS at-rest evidence. ESP32 and ESP32-C3 are now independent parallel build/QEMU matrix targets so native failures surface together and in parallel with core CI; cheap source/build-graph guards run before ESP-IDF install. Wave 3 remains ACTIVE until both native builds/QEMU boots, exact-artifact live-service OTA simulation, real EMQX and full acceptance are green.
+### V2 package QA — native build-chain root correction
+- dependency-free Wave 3 OTA/dedupe/rollback simulator: PASS
+- ESP-IDF build-graph self-test: PASS
+- Wave 3 source/evidence self-test: PASS
+- GitHub CI contract self-test: PASS
+- baseline manifest portability self-test: PASS
+- workflow YAML + package JSON + pytest Python syntax: PASS
+- Module 30 changed TypeScript contract transpile: PASS
+- authoritative candidate seal: `1051/1052` PASS
+- synthetic applicator from clean pushed V1 `1050/1051`: PASS through 23-file overlay, target-generated `1051/1052`, synthetic lightweight gate invocation, and final manifest verify
+- real ESP-IDF 5.5.5 compilation/QEMU is intentionally NOT claimed locally because this container has no ESP-IDF toolchain/network; GitHub remains the native-build authority

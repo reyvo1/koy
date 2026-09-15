@@ -153,10 +153,15 @@ jobs:
 
 
   esp32-firmware-simulation:
-    name: Wave 3 ESP-IDF build and QEMU boot simulation
-    needs: test
+    name: Wave 3 ESP-IDF ${{ matrix.target }} build and QEMU boot
+    # Run both chip targets in parallel with core CI. This makes native firmware
+    # failures visible early instead of serializing ESP32 -> QEMU -> ESP32-C3.
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [esp32, esp32c3]
     env:
       WOKWI_CLI_TOKEN: ${{ secrets.WOKWI_CLI_TOKEN }}
 
@@ -169,28 +174,30 @@ jobs:
         with:
           node-version-file: '.nvmrc'
 
+      - name: Verify Wave 3 firmware/build-graph contract before toolchain install
+        run: |
+          node scripts/self-test-wave3-esp32-simulation.mjs
+          node scripts/self-test-wave3-esp-idf-build-graph.mjs
+          node scripts/self-test-wave3-esp32-source.mjs
+
       - name: Install ESP-IDF 5.5.5
         uses: espressif/install-esp-idf-action@v1
         with:
           version: v5.5.5
 
-      - name: Verify Wave 3 firmware source contract
-        run: |
-          node scripts/self-test-wave3-esp32-simulation.mjs
-          node scripts/self-test-wave3-esp32-source.mjs
-
-      - name: Build ESP32 firmware with real ESP-IDF toolchain
+      - name: Build ${{ matrix.target }} firmware with real ESP-IDF toolchain
         working-directory: packages/esp32-sdk/test-app
         run: |
           rm -rf build sdkconfig sdkconfig.old
-          idf.py set-target esp32
+          idf.py set-target "${{ matrix.target }}"
           idf.py build
 
-      - name: Install QEMU and pytest-embedded
+      - name: Install target QEMU and pytest-embedded
         run: |
           sudo apt-get update
           sudo apt-get install -y libgcrypt20 libglib2.0-0 libpixman-1-0 libsdl2-2.0-0 libslirp0
-          python "$IDF_PATH/tools/idf_tools.py" install qemu-xtensa
+          if [ "${{ matrix.target }}" = "esp32c3" ]; then QEMU_TOOL=qemu-riscv32; else QEMU_TOOL=qemu-xtensa; fi
+          python "$IDF_PATH/tools/idf_tools.py" install "$QEMU_TOOL"
           . "$IDF_PATH/export.sh"
           python -m pip install --disable-pip-version-check \
             pytest==8.4.2 \
@@ -198,32 +205,25 @@ jobs:
             pytest-embedded-idf==2.9.2 \
             pytest-embedded-qemu==2.9.2
 
-      - name: Boot linked SDK firmware in Espressif QEMU
+      - name: Boot ${{ matrix.target }} linked SDK firmware in Espressif QEMU
         working-directory: packages/esp32-sdk/test-app
         run: |
           . "$IDF_PATH/export.sh"
-          pytest -s pytest_wave3.py --embedded-services idf,qemu --app-path .
+          pytest -s pytest_wave3.py --embedded-services idf,qemu --target "${{ matrix.target }}" --app-path .
 
-      - name: Cross-build the same SDK for ESP32-C3
-        run: |
-          rm -rf /tmp/wave3-esp32c3
-          cp -a packages/esp32-sdk/test-app /tmp/wave3-esp32c3
-          cd /tmp/wave3-esp32c3
-          rm -rf build sdkconfig sdkconfig.old
-          idf.py set-target esp32c3
-          idf.py build
-
-      - name: Stage exact firmware artifact for live-service simulation
+      - name: Stage exact ESP32 firmware artifact for live-service simulation
+        if: matrix.target == 'esp32'
         run: |
           mkdir -p artifacts/wave3-esp32
           cp packages/esp32-sdk/test-app/build/iot_sdk_wave3_test_app.bin artifacts/wave3-esp32/
           cp packages/esp32-sdk/test-app/build/iot_sdk_wave3_test_app.elf artifacts/wave3-esp32/
           cp packages/esp32-sdk/test-app/build/flasher_args.json artifacts/wave3-esp32/
+          test "$(od -An -tx1 -N1 artifacts/wave3-esp32/iot_sdk_wave3_test_app.bin | tr -d ' \n')" = "e9"
           (cd artifacts/wave3-esp32 && sha256sum iot_sdk_wave3_test_app.bin > sha256.txt)
           cat artifacts/wave3-esp32/sha256.txt
 
       - name: Optional Wokwi hardware simulation
-        if: env.WOKWI_CLI_TOKEN != ''
+        if: matrix.target == 'esp32' && env.WOKWI_CLI_TOKEN != ''
         uses: wokwi/wokwi-ci-action@v1
         with:
           token: ${{ env.WOKWI_CLI_TOKEN }}
@@ -231,10 +231,11 @@ jobs:
           expect_text: 'WAVE3_OTA_SHA256_REQUIRED'
 
       - name: Record Wokwi evidence boundary when token is absent
-        if: env.WOKWI_CLI_TOKEN == ''
-        run: echo 'Wokwi NOT_RUN_EXTERNAL_TOKEN; mandatory ESP-IDF build + QEMU evidence remains required and Wokwi PASS is not claimed.'
+        if: matrix.target == 'esp32' && env.WOKWI_CLI_TOKEN == ''
+        run: echo 'Wokwi NOT_RUN_EXTERNAL_TOKEN; mandatory ESP-IDF/QEMU matrix evidence remains required and Wokwi PASS is not claimed.'
 
       - name: Upload Wave 3 firmware artifact
+        if: matrix.target == 'esp32'
         uses: actions/upload-artifact@v4
         with:
           name: wave3-esp32-firmware

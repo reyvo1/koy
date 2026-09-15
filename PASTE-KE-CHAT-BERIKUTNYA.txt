@@ -50,3 +50,12 @@ WAVE 2 V7 STATUS:
 
 ## Active Wave 2 recovery: V9
 Do not reopen V4-V8 symptom fixes individually. GitHub V8 narrowed the remaining failure to outbound Notification HTTPS evidence, but the old network layer erased its cause as `WEBHOOK_UNREACHABLE`. V9 replaces the shared outbound HTTPS foundation for both Webhook and Email Relay. Production TLS verification stays enabled; integration uses an explicit fixture CA and never a global TLS bypass. Wave 3 is blocked until V9 GitHub heavy acceptance is fully green.
+
+WAVE 3 STATUS: ACTIVE V2 root-cause build-chain correction after real ESP-IDF component-resolution failure; Wave 1-2 remain CLOSED GREEN. Do not open Wave 4 until GitHub ESP-IDF/QEMU/live-service/full acceptance is green.
+
+
+WAVE 3 V2 ROOT BUILD-CHAIN:
+- First native failure was unknown ESP-IDF component `iot_sdk`; do not patch only that line.
+- V2 audits/fixes full native chain: component graph/API deps, 4MB dual OTA, MQTT CA, entropy ordering, ESP image magic, NVS evidence boundary.
+- ESP32 + ESP32-C3 are parallel ESP-IDF/QEMU matrix targets; rescue waits for both and consumes exact ESP32 artifact.
+- Wave 4 remains blocked until Wave 3 GitHub is fully green.

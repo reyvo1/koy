@@ -292,7 +292,7 @@ A dependency-free contract harness over the root contract suite reproduced sixte
 - dashboard module contract includes `DeviceModule`;
 - automation telemetry contract follows `isAutomationRuntimeEnabled()` rather than requiring an inline env comparison;
 - Mobile dashboard contract follows permission-aware controls instead of the superseded read-only placeholder wording;
-- ESP32 contract assertions follow the current canonical SHA-256/encrypted-NVS wording.
+- ESP32 contract assertions follow the then-current SHA-256/NVS wording; Wave 3 now explicitly separates simulated NVS persistence from production/HIL encrypted-storage evidence.
 
 One genuine source defect was also found by the structured-logging contract: automation persistence used a ternary expression in the `event` field. RR23 emits explicit literal `automation.persistence.activated` / `automation.persistence.deactivated` events without changing execution behavior.
 
@@ -601,3 +601,30 @@ V8 fixes the evidence harness class without changing Notification business logic
 Do not reopen V4-V8 symptom fixes individually. GitHub V8 narrowed the remaining failure to outbound Notification HTTPS evidence, but the old network layer erased its cause as `WEBHOOK_UNREACHABLE`. V9 replaces the shared outbound HTTPS foundation for both Webhook and Email Relay. Production TLS verification stays enabled; integration uses an explicit fixture CA and never a global TLS bypass. Wave 3 is blocked until V9 GitHub heavy acceptance is fully green.
 
 V9 pre-handoff QA: shared HTTPS real-network checks + authoritative 1035/1036 seal + synthetic V8→V9 applicator all PASS; GitHub heavy evidence pending.
+
+
+## Wave 3 V2 root-cause correction
+
+Do not reopen Wave 1/2. The first Wave 3 heavy run reached the real ESP-IDF
+toolchain and failed at component resolution before compilation (`main` required
+nonexistent `iot_sdk`). V2 repairs the complete firmware build chain instead of
+that single line: true component discovery, explicit IDF 5.5 API ownership,
+4MB dual-OTA flash contract, secure MQTT CA verification, Wi-Fi-backed entropy
+before long-lived secret generation, ESP image-magic validation, and a truthful
+NVS security evidence boundary. ESP32 and ESP32-C3 now build and boot QEMU in a
+parallel matrix, and cheap build-graph guards run before toolchain installation.
+`rescue-live-emqx` still waits for core plus the full firmware matrix and consumes
+the exact ESP32 build artifact. Wave 3 is not closed until both native targets,
+QEMU, built-artifact OTA simulation, real EMQX and full acceptance are green.
+
+### V2 package QA — native build-chain root correction
+- dependency-free Wave 3 OTA/dedupe/rollback simulator: PASS
+- ESP-IDF build-graph self-test: PASS
+- Wave 3 source/evidence self-test: PASS
+- GitHub CI contract self-test: PASS
+- baseline manifest portability self-test: PASS
+- workflow YAML + package JSON + pytest Python syntax: PASS
+- Module 30 changed TypeScript contract transpile: PASS
+- authoritative candidate seal: `1051/1052` PASS
+- synthetic applicator from clean pushed V1 `1050/1051`: PASS through 23-file overlay, target-generated `1051/1052`, synthetic lightweight gate invocation, and final manifest verify
+- real ESP-IDF 5.5.5 compilation/QEMU is intentionally NOT claimed locally because this container has no ESP-IDF toolchain/network; GitHub remains the native-build authority

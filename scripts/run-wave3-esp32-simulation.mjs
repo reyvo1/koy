@@ -248,6 +248,7 @@ async function main() {
   await endMqtt(publisher);
 
   const firmware = readFileSync(firmwarePath);
+  assert(firmware.length > 0 && firmware[0] === 0xe9, 'Wave 3 firmware artifact is not an ESP app image (missing 0xE9 image magic)');
   const firmwareSha256 = createHash('sha256').update(firmware).digest('hex');
   const cert = readFileSync(path.join(projectRoot, 'test/fixtures/wave2-localhost-tls.cert.pem'));
   const key = readFileSync(path.join(projectRoot, 'test/fixtures/wave2-localhost-tls.key.pem'));

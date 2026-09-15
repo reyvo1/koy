@@ -69,3 +69,42 @@ Docker services, real EMQX, and full acceptance belong to GitHub.
 Wave 3 may close when one Wave 3 GitHub push proves all mandatory automated
 items above green. Physical HIL is intentionally retained for final enterprise
 certification before production promotion.
+
+
+## V2 root-cause build-chain hardening
+
+The first real ESP-IDF GitHub run exposed a build-graph defect before C
+compilation: `main` required a fabricated component name `iot_sdk`, while
+ESP-IDF derives component identity from the actual component directory. V2
+fixes the complete native build/runtime-evidence class instead of patching only
+that line:
+
+- `main` relies on ESP-IDF's documented automatic dependency on discovered
+  project components;
+- `EXTRA_COMPONENT_DIRS` points directly at the SDK component directory;
+- ESP32 and ESP32-C3 are separate **parallel matrix builds** from the complete
+  source tree; both must boot in their target-appropriate Espressif QEMU
+  (`qemu-xtensa` / `qemu-riscv32`);
+- RNG/netif/Wi-Fi public headers and component dependencies are explicit;
+- the long-lived device secret is generated only after Wi-Fi has connected so
+  the RF entropy source is active for `esp_fill_random()`;
+- the custom dual-OTA partition table pins a 4MB flash contract;
+- MQTT TLS verification uses the same explicit platform CA boundary as HTTPS;
+- invalid/missing OTA Content-Length is rejected before OTA writes begin;
+- the staged firmware artifact is rejected unless it has ESP application-image
+  magic (`0xE9`) before it is hashed and passed to live OTA simulation;
+- credential persistence is truthfully classified: Wave 3 simulation stores
+  credentials in NVS but does **not** claim physical at-rest encryption.
+  Production/HIL firmware must enable ESP-IDF NVS encryption (or equivalent
+  secure storage) and prove that in final security certification;
+- a dependency-free build-graph self-test runs before the expensive ESP-IDF
+  toolchain install;
+- firmware matrix jobs run in parallel with core CI, while live rescue
+  acceptance still waits for core plus the complete matrix.
+
+This design deliberately makes cheap topology/security contract failures occur
+before toolchain installation and makes ESP32 and ESP32-C3 failures surface in
+parallel, reducing elapsed feedback time without weakening acceptance.
+
+The V2 correction does not claim ESP-IDF/QEMU PASS locally. Real compile and
+QEMU remain GitHub evidence.

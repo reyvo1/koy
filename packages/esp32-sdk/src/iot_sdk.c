@@ -21,12 +21,16 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "esp_err.h"
 #include "esp_event.h"
 #include "esp_http_client.h"
 #include "esp_log.h"
+#include "esp_netif.h"
 #include "esp_ota_ops.h"
+#include "esp_random.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
+#include "esp_wifi_default.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "freertos/task.h"
@@ -47,6 +51,17 @@ static const char* TAG = "iot-sdk";
 static bool trusted_https_configured(const char* url) {
     return url && strncmp(url, "https://", 8) == 0 &&
            IOT_PLATFORM_CERT_PEM != NULL && IOT_PLATFORM_CERT_PEM[0] != '\0';
+}
+
+static bool mqtt_uri_requires_tls(const char* uri) {
+    return uri && (strncmp(uri, "mqtts://", 8) == 0 ||
+                   strncmp(uri, "wss://", 6) == 0);
+}
+
+static bool trusted_mqtt_configured(const char* uri) {
+    if (!uri || uri[0] == '\0') return false;
+    if (!mqtt_uri_requires_tls(uri)) return true;
+    return IOT_PLATFORM_CERT_PEM != NULL && IOT_PLATFORM_CERT_PEM[0] != '\0';
 }
 
 /* ------------------------------------------------------------------ */
@@ -301,7 +316,6 @@ bool iot_sdk_provision(const char* ssid,
     }
 
     char device_secret[65] = {0};
-    random_hex(device_secret, 32);
     s_ctx.state = IOT_STATE_PROVISIONING;
 
     strncpy(s_ctx.ssid, ssid, sizeof(s_ctx.ssid) - 1);
@@ -312,6 +326,11 @@ bool iot_sdk_provision(const char* ssid,
         return false;
     }
     s_ctx.state = IOT_STATE_PROVISIONING;
+
+    /* esp_fill_random() is guaranteed true-random while the RF entropy
+     * source is active. Generate the long-lived device secret only after
+     * Wi-Fi has started and connected. */
+    random_hex(device_secret, 32);
 
     char body[256];
     int body_len = snprintf(body, sizeof(body),
@@ -511,6 +530,8 @@ static void mqtt_event_handler(void* arg,
                                esp_event_base_t base,
                                int32_t id,
                                void* event_data) {
+    (void)arg;
+    (void)base;
     esp_mqtt_event_handle_t event = event_data;
     switch ((esp_mqtt_event_id_t)id) {
         case MQTT_EVENT_CONNECTED:
@@ -586,12 +607,17 @@ static void mqtt_event_handler(void* arg,
 }
 
 static bool mqtt_start(void) {
+    if (!trusted_mqtt_configured(s_ctx.mqtt_uri)) {
+        ESP_LOGE(TAG, "secure MQTT requires an explicit platform CA");
+        return false;
+    }
     s_ctx.state = IOT_STATE_MQTT_CONNECTING;
     char client_id[48];
     snprintf(client_id, sizeof(client_id), "device-%s", s_ctx.device_id);
 
     esp_mqtt_client_config_t mqtt_cfg = {
         .broker.address.uri = s_ctx.mqtt_uri,
+        .broker.verification.certificate = IOT_PLATFORM_CERT_PEM,
         .credentials.username = s_ctx.device_id,
         .credentials.client_id = client_id,
         .credentials.authentication.password = s_ctx.mqtt_password,
@@ -693,6 +719,7 @@ static bool send_heartbeat(void) {
 }
 
 static void heartbeat_task(void* arg) {
+    (void)arg;
     for (;;) {
         vTaskDelay(pdMS_TO_TICKS(IOT_HEARTBEAT_INTERVAL_MS));
         if (s_ctx.state != IOT_STATE_ONLINE) continue;
@@ -779,16 +806,13 @@ bool iot_sdk_ota_update(const char* artifact_url, const char* sha256_hex) {
         ESP_LOGE(TAG, "OTA artifact HTTP status rejected: %d", status);
         goto cleanup;
     }
-    if (content_length == 0 ||
-        (content_length > 0 &&
-         (uint64_t)content_length > (uint64_t)update_partition->size)) {
-        ESP_LOGE(TAG, "OTA artifact length is invalid for update partition");
+    if (content_length <= 0 ||
+        (uint64_t)content_length > (uint64_t)update_partition->size) {
+        ESP_LOGE(TAG, "OTA artifact length is missing, timed out, or invalid for update partition");
         goto cleanup;
     }
 
-    const size_t image_size = content_length > 0
-                                  ? (size_t)content_length
-                                  : OTA_SIZE_UNKNOWN;
+    const size_t image_size = (size_t)content_length;
     err = esp_ota_begin(update_partition, image_size, &ota_handle);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "esp_ota_begin failed: %s", esp_err_to_name(err));

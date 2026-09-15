@@ -43,7 +43,10 @@
 //
 // SECURITY:
 //   - Pairing token is one-time and short lived.
-//   - Device secret and Wi-Fi credentials are stored in the encrypted NVS partition.
+//   - Device secret and Wi-Fi credentials are stored in NVS.
+//   - Production/HIL firmware must enable ESP-IDF NVS encryption (or an
+//     equivalent secure-storage profile); simulator evidence does not claim
+//     physical at-rest encryption.
 //   - Credentials must never be logged.
 #pragma once
 #define IOT_SDK_CONTRACT_VERSION "2.1.0"

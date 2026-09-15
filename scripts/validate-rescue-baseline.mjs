@@ -2236,7 +2236,7 @@ check(
   'GitHub CI preserves core regression job and adds source-bound real EMQX rescue validation',
   githubCiR30.includes('\n  test:\n') &&
     githubCiR30.includes('\n  rescue-live-emqx:\n') &&
-    githubCiR30.includes('needs: test') &&
+    githubCiR30.includes('needs: [test, esp32-firmware-simulation]') &&
     githubCiR30.includes('runs-on: ubuntu-latest') &&
     githubCiR30.includes('rescue:local:up -- --env=.env') &&
     githubCiR30.includes('rescue:broker:smoke -- --env=.env'),
