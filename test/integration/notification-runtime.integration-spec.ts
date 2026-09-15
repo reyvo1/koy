@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createServer, Server } from 'node:https';
 import { AddressInfo } from 'node:net';
-import path from 'node:path';
+import { join } from 'node:path';
 import { PrismaClient } from '@prisma/client';
 import { NotificationService } from '../../src/notification/notification.service';
 import type { ClaimedNotificationDelivery } from '../../src/notification/notification.service';
@@ -36,9 +36,9 @@ describe('Wave 2 notification runtime integration', () => {
   );
   const webhookA = new WebhookTransport(serviceA);
 
-  let tenantId: string;
-  let server: Server;
-  let baseUrl: string;
+  let tenantId = '';
+  let server: Server | undefined;
+  let baseUrl = '';
   let retryEndpointCalls = 0;
   const received: Array<{
     url: string;
@@ -57,16 +57,10 @@ describe('Wave 2 notification runtime integration', () => {
     ).id;
 
     const key = readFileSync(
-      path.join(
-        process.cwd(),
-        'test/fixtures/wave2-localhost-tls.key.pem',
-      ),
+      join(process.cwd(), 'test/fixtures/wave2-localhost-tls.key.pem'),
     );
     const cert = readFileSync(
-      path.join(
-        process.cwd(),
-        'test/fixtures/wave2-localhost-tls.cert.pem',
-      ),
+      join(process.cwd(), 'test/fixtures/wave2-localhost-tls.cert.pem'),
     );
 
     server = createServer({ key, cert }, (request, response) => {
@@ -115,12 +109,19 @@ describe('Wave 2 notification runtime integration', () => {
     } else {
       process.env.NODE_TLS_REJECT_UNAUTHORIZED = priorTlsSetting;
     }
-    await new Promise<void>((resolve, reject) =>
-      server.close((error) => (error ? reject(error) : resolve())),
-    );
-    await prismaA.notification.deleteMany({ where: { tenantId } });
-    await prismaA.tenant.delete({ where: { id: tenantId } });
-    await Promise.all([prismaA.$disconnect(), prismaB.$disconnect()]);
+    try {
+      if (server?.listening) {
+        await new Promise<void>((resolve, reject) =>
+          server!.close((error) => (error ? reject(error) : resolve())),
+        );
+      }
+      if (tenantId) {
+        await prismaA.notification.deleteMany({ where: { tenantId } });
+        await prismaA.tenant.deleteMany({ where: { id: tenantId } });
+      }
+    } finally {
+      await Promise.all([prismaA.$disconnect(), prismaB.$disconnect()]);
+    }
   });
 
   beforeEach(() => {

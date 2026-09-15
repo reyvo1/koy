@@ -99,6 +99,11 @@ requireText(notificationIntegration, 'createServer({ key, cert }', 'notification
 requireText(notificationIntegration, "code: 'WEBHOOK_HTTP_400'", 'notification terminal HTTP integration');
 requireText(notificationIntegration, "code: 'WEBHOOK_HTTP_503'", 'notification retryable HTTP integration');
 requireText(notificationIntegration, 'retryEndpointCalls).toBe(2)', 'notification retry success integration');
+requireText(notificationIntegration, "import { join } from 'node:path';", 'notification integration uses CommonJS-safe named path import');
+rejectText(notificationIntegration, "import path from 'node:path';", 'notification integration rejects fragile default node:path import');
+requireText(notificationIntegration, 'let server: Server | undefined;', 'notification integration server lifecycle is explicitly nullable');
+requireText(notificationIntegration, 'if (server?.listening)', 'notification integration cleanup tolerates setup failure');
+requireText(notificationIntegration, 'if (tenantId)', 'notification integration cleanup guards partial tenant setup');
 
 const acceptanceEvidence = read('docs/ENTERPRISE-ACCEPTANCE-EVIDENCE.md');
 requireText(acceptanceEvidence, 'STATIC / CONTRACT', 'evidence tier policy');
