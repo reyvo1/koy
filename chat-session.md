@@ -529,3 +529,14 @@ V8 fixes the evidence harness class without changing Notification business logic
 - Candidate source seal: 1052/1053 PASS.
 - Synthetic clean pushed V2 1051/1052 -> V3 12-file overlay -> 1052/1053 reseal -> synthetic lightweight gate invocation -> final verify: PASS with process status 0.
 - Real ESP-IDF 5.5.5 compile/QEMU is not claimed locally; GitHub remains the native-toolchain authority.
+
+
+## 2026-09-15 — Wave 3 V4 root-cause correction
+- GitHub V3: core 186/186 suites and DB integration 15/15 remained green.
+- Both ESP32/ESP32-C3 firmware targets built successfully; failure moved to QEMU setup.
+- Root cause: `install-esp-idf-action` already exported `/tmp/esp` environment, then workflow re-sourced `$IDF_PATH/export.sh`; activation failed with `esp-rom-elfs has no installed versions`.
+- V4 removes all secondary `export.sh` sourcing from the firmware job.
+- QEMU install and pytest use `$IDF_PYTHON_ENV_PATH/bin/python`; QEMU binary path is resolved under `$IDF_TOOLS_PATH/tools/<tool>` and appended to current PATH + `$GITHUB_PATH`.
+- Added `self-test-wave3-esp-idf-toolchain-lifecycle.mjs` and CI regression assertions.
+- Wave 3 remains ACTIVE pending GitHub native QEMU + live service + full acceptance.
+- V4 synthetic recovery QA: clean V3 1052/1053 -> 11-file overlay -> all dependency-free Wave 3/toolchain/CI/manifest regressions PASS -> generated V4 1053/1054 -> pre-push command invocation -> final manifest verify PASS. Full npm pre-push and native QEMU remain for operator/GitHub evidence.

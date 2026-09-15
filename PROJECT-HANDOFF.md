@@ -638,3 +638,7 @@ The V2 heavy run proved the build graph fix by compiling the SDK on both ESP32 a
 - V3 adds one source path and seals at `1052/1053`.
 - Synthetic recovery from clean pushed V2 `1051/1052` through 12-file overlay, reseal, gate invocation and final verify PASS.
 - Real dual-target compile/QEMU remains GitHub evidence; no native PASS is fabricated locally.
+
+
+## Wave 3 V4 handoff
+Current correction class: ESP-IDF/QEMU CI toolchain lifecycle. V3 build graph and ESP-IDF 5.5 API surface are closed. Both chip targets built, then `. "$IDF_PATH/export.sh"` re-activation failed because the action-managed tool registry was re-read inconsistently. V4 uses one environment owner (`espressif/install-esp-idf-action@v1`), the action venv for QEMU/pytest installation, and explicit QEMU PATH export without reactivation. Do not reopen backend/Wave 2 issues.

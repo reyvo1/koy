@@ -4,7 +4,7 @@ e2c89d4a25e67f9647140a7da251c57bd5ec64ade986b4f0b2f39f46b071d24c  ./.env.example
 d772431114bf446abfb602f416111404206b31a113c8f07014453ed5aa513bc6  ./.eslintrc.cjs
 17b3e3dce96cb969fabf043293e17380873e3b1a43a147506c7731c308085568  ./.eslintrc.js
 50d3c6e4c8c9678cb4963022b108a01df72332c1e5783f90c9deb92550d63efd  ./.gitattributes
-5dd7134fb2908cf7c6cf7388d0ab2030f06c6038adbd1f47374af3968f1f897a  ./.github/workflows/ci.yml
+be9b1ed71ed07697b9c4146399224138e28de54a5010997f96f3eeca86abb65a  ./.github/workflows/ci.yml
 387bbb9a64f37a9bda6c025891a2c57826e1fa57e6d274e0ef6cb1ee91d31349  ./.gitignore
 7d2df647f25529bd87500319c41564e032e2be642e565350fa6136d7a1ec4d10  ./.node-version
 7d2df647f25529bd87500319c41564e032e2be642e565350fa6136d7a1ec4d10  ./.nvmrc
@@ -64,10 +64,10 @@ fa8e7a7fd1666ea56eedb4aad5a1b307d532b97962540234edc1b1fdc134d2e3  ./AI-Developme
 cab10a82cb5f2255ecdf99981067119041beb07ab6c1f1976e531d10db5fd724  ./AI-Development-Kit/templates/MODULE-STATUS-TEMPLATE.md
 2bb87b9d04d7d0724eb6fee8cc117285b06976b92c27b9d38f757eb07810c337  ./AI-Development-Kit/workflows/AGENT-EXECUTION-LOOP.md
 e1daa19600aaeff1fd6779b1d73149c4a04ee6b1cb516b87b12c628110c0d3f8  ./AI-Development-Kit/workflows/FAILURE-PROTOCOL.md
-ed923ad4aa9d06b855fa91d5a81374aadf75a00800bfe5812baca1ada96e8cda  ./CURRENT-STATE.md
-b5c7c82e6b5f147e420ccc934f4fda9cf0d47bb8946136260394c3213e82eb9f  ./GATE-1-STATUS.md
-d58744cb92bcb18efec21ccbec26aaaa68dd44e32970141a4fd7504652bbe178  ./PASTE-KE-CHAT-BERIKUTNYA.txt
-fdc0d6feb1d45a2d96e1eac4aaed145dd5712e0bfa16c288a92d6cf739ab1568  ./PROJECT-HANDOFF.md
+d89a8c436ae334ba81ddbdc2ff0148f6c39da2cff32be3b091aa700529cb714d  ./CURRENT-STATE.md
+1bf92cf9a4effbc1495ec1626e01511721c58a917c80fbf487915526a7cd27b7  ./GATE-1-STATUS.md
+42056a66ab040a37f58bf12fc9eb36e9f93ccbb8337917d1b60cbca9bb279ded  ./PASTE-KE-CHAT-BERIKUTNYA.txt
+a9ee679acc56953c2c75fef2d03df41f4e9c3b0df2d36b0eb54717ba900e6db8  ./PROJECT-HANDOFF.md
 818d1504f9c83a672557cc3c45452c033f04098ce52f609be506b3bbe7dfe7d6  ./UI-DESIGN-SYSTEM.md
 b1fccb9456471fd16d730f6d6bc8af04e9d7d93fa90072df57431a87564d7200  ./apps/admin-web/.env.example
 bf718ac29fd9514ef3aa0be97c5739ed8039960cdf8e427607017c20388006c5  ./apps/admin-web/app/api/admin/analytics-findings/route.ts
@@ -325,7 +325,7 @@ bead9f184b27083639c20803cac92b239a55bcea908cf442f5eed777f6b59df9  ./apps/user-we
 ccd2a17f28b9205adc19fbf05b2a9389dc24115b8ce40b6d958777af90bea7a1  ./apps/user-web/postcss.config.mjs
 7794f4a44d2c31c1f33e91477a00025f4e62687a88946b7c17f58f26257ef2e8  ./apps/user-web/public/icon.png
 38ee09e8ee48c7e75cab63bd076513018ca07b655295664d07c107e408606495  ./apps/user-web/tsconfig.json
-bc405815ce61c06693de6327aba161edd5a576fd230cd068754cc9680b674df8  ./chat-session.md
+a6fb862bccc819afa5e9aedc6b4afec6596372f14181dcba35d5412f6575d686  ./chat-session.md
 b56591a90e026f0c2e27c5b37f7877e8993f4bb0ab28ccf9cb10b19614aade92  ./docker-compose.rescue.yml
 12b78207cb3ce4d59fefc85abb8fb5fe7412c497252d1b0bc61a189996b84f30  ./docker-compose.yml
 5bd9f643761b67ba91df8b4c097be38dc068c2360787bf0e9e48a973764f41d5  ./docs/ENTERPRISE-ACCEPTANCE-EVIDENCE.md
@@ -417,7 +417,7 @@ ef78260ef957d16a501a7ff502eaed9549197a0eaf4be4e8a08e43eb34e7f4e5  ./docs/module-
 84e404052a111d2f024e56796b33b08e1532153e9934e8279574965f95700912  ./docs/module-27-completion-review.md
 67c5661d3ed64b68492ee2c014045b952be2ea30e74bed4ed3d0ee90f78fc953  ./docs/module-28-completion-review.md
 9441d6e3a54083319882b1d84a071e916ae9632357fb2d283e9a2f4b529e702e  ./docs/module-29-completion-review.md
-c3083b7dd1e7e0654601bfedbcd89418b0f5386fed8911263704076ee813c3a2  ./docs/module-30-completion-review.md
+e638d8cc966f9f55435d1b7ab6669f045e5e84637ad8e99c6326acc8d7f5ad40  ./docs/module-30-completion-review.md
 682f8fe4c69a17249e5f5cd81602a46fc66ed25f52da56ff63394930507b933b  ./docs/module-lifecycle.md
 33a178377e1f9ea75872c16d1468a3cce5e68e6a3a2caef5e51187a0b719af4a  ./docs/mqtt-production-transport-proposal.md
 a50405cd91696faaca2988bb736749e0d78f3df2163fdb5d24a8eabe9cafd297  ./docs/mqtt-production-transport.md
@@ -450,7 +450,7 @@ b5f241c5bcf5e860dfef9e1b5ccf9deee8ffe60c05ae9767754d993462d23bbe  ./docs/telemet
 c6dfa1d4ff37b3f8800a0e868d7c2a8b6e8662759e6246f461b810fa83d22bf0  ./docs/telemetry-storage-strategy.md
 6cd206f3f9aec5adcbeebab3d6387535306b3b128a5e43159343875b8bfe54f3  ./docs/testing-strategy.md
 bbaa5aeef5f4d786edc240389ea3ba0f7b6c7720e6d017e29e5776bb92a4a846  ./docs/wave-02-core-runtime-closure.md
-15f11feea8d0836e513955e88c7bbcd7cf33219de1c595bb1ceba7653d3e0fbb  ./docs/wave-03-esp32-ota-simulation.md
+10e7b126de4e4c7d7e3c4302334dd1f84151a199bed9a21e9f2e7db51c059bf1  ./docs/wave-03-esp32-ota-simulation.md
 8846eb270f035aa3725b3e544ede2a983d7abdb2d86b8f67c7b2bf1dad182725  ./jest.config.js
 d3bcd30f19ff6ad443bec5ef23f299872287538aece015d0e8bca0bed5d304ef  ./ops/acceptance/README.md
 92b22e3671d2ced6c205538fc3f5156ea67669f464b5018ae463f95167c7440a  ./ops/acceptance/rescue-02b-evidence.example.json
@@ -471,7 +471,7 @@ d296e3a0df131f20476c6d8c4ece1af57e861ed63b49659ab468ab3f038bc155  ./ops/systemd/
 23bb220ecf835b2f25caa9dd46b97c266b713dad591f5169df2872534b3844f0  ./ops/systemd/iot-platform-backup.timer
 c16ce529395244a7a5cdd9b4b86902273e232212695edd8c768c8de28cfbe78f  ./ops/systemd/iot-platform.service
 5d9dd83e400f2d09fc869b407fe07be002d9658561cb785756c5d3d0158f9018  ./package-lock.json
-c3b98125569100587d18bac66b713e68a8c8d7d152f7fe609ef75e46b8b4b9e0  ./package.json
+878ab50b296321e7040eb95c1deeacf574fe372533cd2e6ed5f37ed4abe44563  ./package.json
 a119fdac221907cc9580b940bb96d031ae518f3a3f97dab501bfe3e94cef19d3  ./packages/design-system/package.json
 b63813a336d764f5fd0ecf92cf894829347e0485f5c7bc67cc5000e866c31b41  ./packages/design-system/src/design-system-v2.css
 44d9d7e061159d773ec61ce052b3a00ee8f283b3fee215e27798533e87ab2185  ./packages/design-system/src/index.tsx
@@ -564,7 +564,7 @@ d63324696a8c14fae4a519d3728c24c418a2c348367634f60baef6c9b47e0745  ./scripts/run-
 1250ef2b2cbda1e49504bb13237e926f5f50fff888f004bbc97d9fb41e0d5f5d  ./scripts/self-test-rescue-acceptance-runner.mjs
 da6b961aa48fa715483ea6c686da3e58b151f7f62d363e73c8b247875187403a  ./scripts/self-test-rescue-failure-summary.mjs
 f6ec81a13cef553e7cbf44149210b65608a97a651e42cd4c440b3e79d1f1c91a  ./scripts/self-test-rescue-gate1-validator.mjs
-933932209dc959c17e130912524a60cfe823631aef0e35b497ea555d869d4a75  ./scripts/self-test-rescue-github-ci.mjs
+fb20c93923c10311add3481636a500ed94448664a43f878b4db838e1553ec4cb  ./scripts/self-test-rescue-github-ci.mjs
 4f585fda6f5245a6db74a9236d1c5b33379e1e3e86912e945edb4ddad4b74af9  ./scripts/self-test-rescue-live-broker-smoke.mjs
 82ad5ea725bd682520814f5b6646a54c4d02607bf1c44a9d58cf66304d1128f9  ./scripts/self-test-rescue-local-runtime.mjs
 675bb9ac239d4335c4b8d0deefda59c3fff733eb87415548832c99adca711403  ./scripts/self-test-rescue-mqtt-operations.mjs
@@ -578,6 +578,7 @@ ed0e26eeb48c4a6d34d1b2b67d93197689da8c90252a30089559f0a1b20aee1f  ./scripts/self
 c966355fa5c08cc0a46c888bc7e926882ec2336fb63978d25726cd5a562d043d  ./scripts/self-test-wave2-prisma-schema-check.mjs
 d721280eeb79da7b26d49f0bf8c7a48552b3e7986c45d0a11106e582cfc4bd97  ./scripts/self-test-wave3-esp-idf-api-surface.mjs
 125a342f79eea85295f6ca9a5c0408d6e2439426e9e30ec44e67cd20fb1e38ed  ./scripts/self-test-wave3-esp-idf-build-graph.mjs
+ee4d8e3d05b30730eaa69d23fea0fb6de2db2440deb187bd4704210ad5cf28c9  ./scripts/self-test-wave3-esp-idf-toolchain-lifecycle.mjs
 ae5c73a9a3a9f63e31fc2931c39beafb4bfd99c920d2c81ad17108a6fabd7b58  ./scripts/self-test-wave3-esp32-simulation.mjs
 e067d025387337db69d5630533b2e7ccce0c55425e89b2f23885fce714776222  ./scripts/self-test-wave3-esp32-source.mjs
 20ea361948a1e75c0218f6fc7c929678f5a2772482e27e686165ee013d5bd0c8  ./scripts/self-test-web-framework-contract-sync.mjs
@@ -1050,4 +1051,4 @@ d526784499ba2f416a3fca603acb5dd534fb7450580e048a80abcba43f9ece63  ./tools/redis-
 0543e915f75a5ecc6acceb422f4bebbac2e6a4ca6a77c3b8a031191884d8996c  ./tsconfig.build.json
 7256486d18986f5c8b6c0d1548e30a2cdf8dfb0c4d1fb27e5dffd081ee67fa98  ./tsconfig.jest.json
 fb2278ad89fcdbeb387aa4a8e0f3c550b9ffd464d1ce83b2c2aee1ff72ddc14c  ./tsconfig.json
-93b223bbfbd159a6f4e09b46c2442750baa5187d48582c6639646746988860ef  ./repository-tree.txt
+112a44c62c9cb748b297dfc40c4d39a79320756f669d0e40d9674f25b0df9df6  ./repository-tree.txt

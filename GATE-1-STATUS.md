@@ -74,3 +74,7 @@ Wave 3 adds mandatory ESP-IDF 5.5.5 compile, QEMU boot, and a live-service ESP32
 - V3 uses the ESP-IDF 5.5 public API `esp_mqtt_client_register_event(..., MQTT_EVENT_ANY, ...)` and adds a pre-toolchain API-surface guard covering the native dependency families used by the SDK.
 - Core application and DB integration were green in the V2 heavy run; no non-firmware product layer is reopened.
 - Wave 3 remains ACTIVE; physical/HIL evidence remains a separate later certification boundary.
+
+
+### Wave 3 V4 CI lifecycle status
+V3 native compilation reached completion for both chip targets; the active blocker is isolated to QEMU setup environment re-activation. V4 removes the second ESP-IDF activation and adds a pre-toolchain lifecycle guard. This is not physical/HIL evidence.

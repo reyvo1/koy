@@ -179,6 +179,7 @@ jobs:
           node scripts/self-test-wave3-esp32-simulation.mjs
           node scripts/self-test-wave3-esp-idf-build-graph.mjs
           node scripts/self-test-wave3-esp-idf-api-surface.mjs
+          node scripts/self-test-wave3-esp-idf-toolchain-lifecycle.mjs
           node scripts/self-test-wave3-esp32-source.mjs
 
       - name: Install ESP-IDF 5.5.5
@@ -193,14 +194,27 @@ jobs:
           idf.py set-target "${{ matrix.target }}"
           idf.py build
 
-      - name: Install target QEMU and pytest-embedded
+      - name: Install target QEMU and pytest-embedded without reactivating ESP-IDF
         run: |
           sudo apt-get update
           sudo apt-get install -y libgcrypt20 libglib2.0-0 libpixman-1-0 libsdl2-2.0-0 libslirp0
-          if [ "${{ matrix.target }}" = "esp32c3" ]; then QEMU_TOOL=qemu-riscv32; else QEMU_TOOL=qemu-xtensa; fi
-          python "$IDF_PATH/tools/idf_tools.py" install "$QEMU_TOOL"
-          . "$IDF_PATH/export.sh"
-          python -m pip install --disable-pip-version-check \
+          if [ "${{ matrix.target }}" = "esp32c3" ]; then
+            QEMU_TOOL=qemu-riscv32
+            QEMU_BINARY=qemu-system-riscv32
+          else
+            QEMU_TOOL=qemu-xtensa
+            QEMU_BINARY=qemu-system-xtensa
+          fi
+          IDF_PYTHON="$IDF_PYTHON_ENV_PATH/bin/python"
+          test -x "$IDF_PYTHON"
+          "$IDF_PYTHON" "$IDF_PATH/tools/idf_tools.py" install "$QEMU_TOOL"
+          QEMU_PATH="$(find "$IDF_TOOLS_PATH/tools/$QEMU_TOOL" \( -type f -o -type l \) -name "$QEMU_BINARY" -print -quit)"
+          test -n "$QEMU_PATH"
+          QEMU_DIR="$(dirname "$QEMU_PATH")"
+          export PATH="$QEMU_DIR:$PATH"
+          echo "$QEMU_DIR" >> "$GITHUB_PATH"
+          "$QEMU_PATH" --version
+          "$IDF_PYTHON" -m pip install --disable-pip-version-check \
             pytest==8.4.2 \
             pytest-embedded==2.9.2 \
             pytest-embedded-idf==2.9.2 \
@@ -209,7 +223,12 @@ jobs:
       - name: Boot ${{ matrix.target }} linked SDK firmware in Espressif QEMU
         working-directory: packages/esp32-sdk/test-app
         run: |
-          . "$IDF_PATH/export.sh"
+          if [ "${{ matrix.target }}" = "esp32c3" ]; then
+            command -v qemu-system-riscv32
+          else
+            command -v qemu-system-xtensa
+          fi
+          idf.py --version
           pytest -s pytest_wave3.py --embedded-services idf,qemu --target "${{ matrix.target }}" --app-path .
 
       - name: Stage exact ESP32 firmware artifact for live-service simulation

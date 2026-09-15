@@ -61,3 +61,6 @@ WAVE 3 V2 ROOT BUILD-CHAIN:
 - Wave 4 remains blocked until Wave 3 GitHub is fully green.
 
 WAVE 3 V3 ACTIVE: V2 build graph is proven; both ESP32/ESP32-C3 reached C compilation and failed on the same ESP-MQTT API mismatch. V3 uses esp_mqtt_client_register_event(..., MQTT_EVENT_ANY, ...) and adds a pre-toolchain ESP-IDF API-surface guard. Keep Wave 3 open until real dual-target compile/QEMU + exact-artifact live simulation + real EMQX/full acceptance are green.
+
+
+WAVE 3 V4: jangan reopen API MQTT/build graph lama. V3 membuktikan kedua chip build; blocker adalah ESP-IDF environment diaktifkan ulang sebelum QEMU. V4 wajib single environment owner + action venv + explicit QEMU PATH. Wave 3 masih ACTIVE sampai GitHub hijau.

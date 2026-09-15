@@ -578,6 +578,7 @@ scripts/self-test-wave2-core-runtime.mjs
 scripts/self-test-wave2-prisma-schema-check.mjs
 scripts/self-test-wave3-esp-idf-api-surface.mjs
 scripts/self-test-wave3-esp-idf-build-graph.mjs
+scripts/self-test-wave3-esp-idf-toolchain-lifecycle.mjs
 scripts/self-test-wave3-esp32-simulation.mjs
 scripts/self-test-wave3-esp32-source.mjs
 scripts/self-test-web-framework-contract-sync.mjs

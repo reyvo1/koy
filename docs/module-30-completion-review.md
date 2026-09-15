@@ -56,3 +56,7 @@ activates that deferred work without rewriting the historical foundation claim:
 ### Wave 3 V3 ESP-IDF 5.5 compatibility closure
 
 The first real dual-target compile after build-graph repair exposed stale ESP-MQTT event-registration names. Module 30 now uses `esp_mqtt_client_register_event(..., MQTT_EVENT_ANY, ...)` and carries a dependency-free API-surface guard before toolchain installation. This is a compatibility correction only; automated compile/QEMU/live-service evidence remains required before Wave 3 can close.
+
+
+### Wave 3 V4 evidence note
+Dual-target native compilation is proven to reach post-build QEMU setup. V4 fixes only the CI environment lifecycle that prevented QEMU execution; it does not upgrade SIMULATED-HARDWARE evidence to PHYSICAL/HIL.

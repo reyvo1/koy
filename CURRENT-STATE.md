@@ -1467,3 +1467,10 @@ V3 corrects the API surface to ESP-IDF 5.5 public ESP-MQTT contracts: `esp_mqtt_
 
 ### V3 package QA
 Dependency-free Wave 3 guards and CI contract PASS; workflow/package/pytest syntax PASS; candidate seal `1052/1053` PASS; synthetic recovery from clean V2 `1051/1052` to V3 `1052/1053` PASS with final manifest verification. Real ESP-IDF compile/QEMU remains GitHub-only evidence.
+
+
+## Wave 3 V4 — ESP-IDF toolchain lifecycle root correction
+- GitHub V3 proved both ESP32 and ESP32-C3 native builds completed before QEMU setup.
+- Failure class was CI environment re-activation: `install-esp-idf-action` had already exported IDF/tool/Python state, then the QEMU step re-sourced `export.sh` and failed its tool registry with `esp-rom-elfs has no installed versions`.
+- V4 keeps the GitHub action as the single ESP-IDF environment owner. QEMU is installed with `$IDF_PYTHON_ENV_PATH/bin/python`; its resolved binary directory alone is appended to PATH/GITHUB_PATH.
+- No backend, DB, MQTT business logic, or firmware SDK behavior changed in V4. Wave 3 remains ACTIVE until native QEMU/live simulation/full acceptance is green.

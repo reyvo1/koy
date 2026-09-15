@@ -112,3 +112,7 @@ QEMU remain GitHub evidence.
 ## V3 native API compatibility gate
 
 The V2 heavy run reached real C compilation on both ESP32 and ESP32-C3 and exposed one shared ESP-MQTT API mismatch. Wave 3 now pins the source contract to ESP-IDF 5.5 public symbols: `esp_mqtt_client_register_event` with `MQTT_EVENT_ANY`. The pre-toolchain `self-test-wave3-esp-idf-api-surface.mjs` rejects obsolete/nonexistent event-registration names and verifies that each native API family used by the SDK retains its owning public header and component dependency. This gate is STATIC/CONTRACT evidence only; real native compilation/QEMU remains mandatory GitHub evidence.
+
+
+### V4 toolchain-lifecycle hardening
+The firmware CI must have exactly one ESP-IDF environment owner. `espressif/install-esp-idf-action@v1` installs and exports IDF/tool/Python state. Later QEMU installation may add the architecture-specific QEMU binary directory to PATH, but must not source `export.sh` again. QEMU and pytest-embedded installation run with `$IDF_PYTHON_ENV_PATH/bin/python`. A dependency-free lifecycle self-test enforces this before the expensive native toolchain stage.
