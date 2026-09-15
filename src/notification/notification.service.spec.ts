@@ -211,6 +211,20 @@ describe('NotificationService Wave 2 runtime', () => {
     });
   });
 
+  it('does not retry TLS trust failures because retries cannot repair certificate configuration', async () => {
+    await expect(
+      service.recordAttempt({
+        notificationId: 'n1',
+        deliveryLeaseId: 'lease-1',
+        ok: false,
+        errorCode: 'WEBHOOK_TLS_INVALID',
+      }),
+    ).resolves.toEqual({
+      finalStatus: NotificationStatus.EXHAUSTED,
+      nextRetryAt: null,
+    });
+  });
+
   it('retries explicit transient HTTP responses such as 429 and 5xx', async () => {
     await expect(
       service.recordAttempt({

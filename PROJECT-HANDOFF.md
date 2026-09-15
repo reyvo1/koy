@@ -587,3 +587,9 @@ V8 fixes the evidence harness class without changing Notification business logic
 - V8 applicator synthetic recovery/sequencing: PASS from clean V7 `1033/1034` markers through 8-file overlay, unchanged `1033/1034` seal checks, synthetic lightweight-gate invocation, and final verify.
 - Real PostgreSQL/HTTPS integration, `rescue-live-emqx`, and full acceptance remain GitHub evidence; no runtime PASS is inferred from the chat container.
 
+
+
+## Active Wave 2 recovery: V9
+Do not reopen V4-V8 symptom fixes individually. GitHub V8 narrowed the remaining failure to outbound Notification HTTPS evidence, but the old network layer erased its cause as `WEBHOOK_UNREACHABLE`. V9 replaces the shared outbound HTTPS foundation for both Webhook and Email Relay. Production TLS verification stays enabled; integration uses an explicit fixture CA and never a global TLS bypass. Wave 3 is blocked until V9 GitHub heavy acceptance is fully green.
+
+V9 pre-handoff QA: shared HTTPS real-network checks + authoritative 1035/1036 seal + synthetic V8→V9 applicator all PASS; GitHub heavy evidence pending.

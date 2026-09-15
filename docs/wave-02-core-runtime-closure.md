@@ -124,3 +124,19 @@ V8 fixes the evidence harness class without changing Notification business logic
 - V8 applicator synthetic recovery/sequencing: PASS from clean V7 `1033/1034` markers through 8-file overlay, unchanged `1033/1034` seal checks, synthetic lightweight-gate invocation, and final verify.
 - Real PostgreSQL/HTTPS integration, `rescue-live-emqx`, and full acceptance remain GitHub evidence; no runtime PASS is inferred from the chat container.
 
+
+
+## V9 root-cause closure — shared outbound HTTPS transport
+
+GitHub V8 proved that the remaining Notification failures were all collapsed to `WEBHOOK_UNREACHABLE`. The prior transport design used global `fetch` plus a process-global TLS bypass in integration evidence, and flattened TLS/socket causes into one generic code. That made failures non-diagnostic and allowed the same class to reappear on adjacent outbound channels.
+
+V9 replaces that foundation instead of patching the harness:
+
+- `NotificationHttpsClient` is the single outbound HTTPS implementation for both Webhook and Email Relay.
+- Production TLS verification is always enabled. Integration evidence trusts only the checked-in fixture CA through an isolated client instance; `NODE_TLS_REJECT_UNAUTHORIZED=0` is forbidden.
+- The client enforces an absolute request deadline and classifies `TIMEOUT`, `TLS`, and `NETWORK` separately while preserving the low-level cause code.
+- Webhook/Email transports map those classes to stable durable error codes. TLS trust failures are terminal because retry cannot repair certificate configuration.
+- Local targeted tests exercise real HTTPS success, untrusted-certificate rejection, absolute timeout, and connect failure before any push.
+- PostgreSQL integration exercises both Webhook and Email Relay over the same real HTTPS client.
+
+Wave 2 remains ACTIVE until the V9 corrective push passes the full GitHub core job and downstream real-EMQX/full acceptance.

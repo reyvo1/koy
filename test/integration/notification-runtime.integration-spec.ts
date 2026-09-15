@@ -1,9 +1,12 @@
+import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createServer, Server } from 'node:https';
 import { AddressInfo } from 'node:net';
 import { join } from 'node:path';
 import { PrismaClient } from '@prisma/client';
+import { EmailRelayTransport } from '../../src/notification/email-relay.transport';
+import { NotificationHttpsClient } from '../../src/notification/notification-https.client';
 import { NotificationService } from '../../src/notification/notification.service';
 import type { ClaimedNotificationDelivery } from '../../src/notification/notification.service';
 import { WebhookTransport } from '../../src/notification/webhook.transport';
@@ -12,7 +15,7 @@ import { PrismaService } from '../../src/prisma/prisma.service';
 
 jest.setTimeout(30000);
 
-function toWebhookInput(
+function toTransportInput(
   item: ClaimedNotificationDelivery,
 ): NotificationTransportInput {
   return {
@@ -34,8 +37,9 @@ describe('Wave 2 notification runtime integration', () => {
   const serviceB = new NotificationService(
     prismaB as unknown as PrismaService,
   );
-  const webhookA = new WebhookTransport(serviceA);
 
+  let webhookA: WebhookTransport;
+  let emailA: EmailRelayTransport;
   let tenantId = '';
   let server: Server | undefined;
   let baseUrl = '';
@@ -44,9 +48,9 @@ describe('Wave 2 notification runtime integration', () => {
     url: string;
     idempotencyKey?: string;
     notificationId?: string;
+    authorization?: string;
     body: unknown;
   }> = [];
-  const priorTlsSetting = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
 
   beforeAll(async () => {
     await Promise.all([prismaA.$connect(), prismaB.$connect()]);
@@ -76,6 +80,7 @@ describe('Wave 2 notification runtime integration', () => {
           notificationId: request.headers['x-iot-notification-id'] as
             | string
             | undefined,
+          authorization: request.headers.authorization,
           body: raw ? JSON.parse(raw) : null,
         });
 
@@ -84,6 +89,8 @@ describe('Wave 2 notification runtime integration', () => {
         } else if (request.url === '/retry-503') {
           retryEndpointCalls += 1;
           response.statusCode = retryEndpointCalls === 1 ? 503 : 204;
+        } else if (request.url === '/email-ok') {
+          response.statusCode = 202;
         } else {
           response.statusCode = 204;
         }
@@ -92,28 +99,37 @@ describe('Wave 2 notification runtime integration', () => {
     });
 
     await new Promise<void>((resolve, reject) => {
-      server.once('error', reject);
-      server.listen(0, '127.0.0.1', resolve);
+      server!.once('error', reject);
+      server!.listen(0, '127.0.0.1', resolve);
     });
     const address = server.address() as AddressInfo;
     baseUrl = `https://127.0.0.1:${address.port}`;
 
-    // Test-only trust override for the local self-signed HTTPS receiver. The
-    // production transport still requires HTTPS and keeps its normal TLS path.
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+    const https = NotificationHttpsClient.withTrustedCa(cert);
+    webhookA = new WebhookTransport(serviceA, https);
+    const values: Record<string, unknown> = {
+      EMAIL_RELAY_URL: `${baseUrl}/email-ok`,
+      EMAIL_RELAY_TOKEN: 'wave2-integration-relay-token',
+      EMAIL_FROM: 'no-reply@example.test',
+      EMAIL_RELAY_TIMEOUT_MS: 2_000,
+    };
+    const config = {
+      get: jest.fn((keyName: string, fallback?: unknown) =>
+        values[keyName] ?? fallback,
+      ),
+    } as unknown as ConfigService;
+    emailA = new EmailRelayTransport(serviceA, config, https);
   });
 
   afterAll(async () => {
-    if (priorTlsSetting === undefined) {
-      delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
-    } else {
-      process.env.NODE_TLS_REJECT_UNAUTHORIZED = priorTlsSetting;
-    }
     try {
-      if (server?.listening) {
-        await new Promise<void>((resolve, reject) =>
-          server!.close((error) => (error ? reject(error) : resolve())),
-        );
+      if (server) {
+        server.closeAllConnections?.();
+        if (server.listening) {
+          await new Promise<void>((resolve, reject) =>
+            server!.close((error) => (error ? reject(error) : resolve())),
+          );
+        }
       }
       if (tenantId) {
         await prismaA.notification.deleteMany({ where: { tenantId } });
@@ -129,7 +145,7 @@ describe('Wave 2 notification runtime integration', () => {
     retryEndpointCalls = 0;
   });
 
-  it('claims exactly one lease across two database clients and delivers through a real local HTTPS receiver', async () => {
+  it('claims exactly one lease across two database clients and delivers through the shared real HTTPS client', async () => {
     const queued = await serviceA.enqueue({
       tenantId,
       channel: 'WEBHOOK',
@@ -147,7 +163,7 @@ describe('Wave 2 notification runtime integration', () => {
     );
     expect(items).toHaveLength(1);
 
-    await webhookA.deliverAndRecord(toWebhookInput(items[0]));
+    await webhookA.deliverAndRecord(toTransportInput(items[0]));
 
     const durable = await prismaA.notification.findUniqueOrThrow({
       where: { id: queued.notificationId },
@@ -187,7 +203,7 @@ describe('Wave 2 notification runtime integration', () => {
     expect(item).toBeDefined();
 
     await expect(
-      webhookA.deliverAndRecord(toWebhookInput(item!)),
+      webhookA.deliverAndRecord(toTransportInput(item!)),
     ).rejects.toMatchObject({
       code: 'WEBHOOK_HTTP_400',
     });
@@ -218,7 +234,7 @@ describe('Wave 2 notification runtime integration', () => {
     expect(first).toBeDefined();
 
     await expect(
-      webhookA.deliverAndRecord(toWebhookInput(first!)),
+      webhookA.deliverAndRecord(toTransportInput(first!)),
     ).rejects.toMatchObject({
       code: 'WEBHOOK_HTTP_503',
     });
@@ -241,7 +257,7 @@ describe('Wave 2 notification runtime integration', () => {
     expect(second).toBeDefined();
     expect(second!.deliveryLeaseId).not.toBe(first!.deliveryLeaseId);
 
-    await webhookA.deliverAndRecord(toWebhookInput(second!));
+    await webhookA.deliverAndRecord(toTransportInput(second!));
 
     await expect(
       prismaA.notification.findUniqueOrThrow({ where: { id: queued.notificationId } }),
@@ -253,5 +269,41 @@ describe('Wave 2 notification runtime integration', () => {
       deliveryLeaseId: null,
     });
     expect(retryEndpointCalls).toBe(2);
+  });
+
+  it('delivers EMAIL through the same real HTTPS client without global TLS bypass', async () => {
+    const queued = await serviceA.enqueue({
+      tenantId,
+      channel: 'EMAIL',
+      destination: 'wave2@example.test',
+      subject: 'Wave 2 proof',
+      body: 'email delivery proof',
+      idempotencyKey: `wave2-email-${randomUUID()}`,
+    });
+    const claim = await serviceA.claimDueBatch(10);
+    const item = claim.items.find((candidate) => candidate.id === queued.notificationId);
+    expect(item).toBeDefined();
+
+    await emailA.deliverAndRecord(toTransportInput(item!));
+
+    await expect(
+      prismaA.notification.findUniqueOrThrow({ where: { id: queued.notificationId } }),
+    ).resolves.toMatchObject({
+      status: 'SENT',
+      attemptCount: 1,
+      deliveryLeaseId: null,
+    });
+    expect(received).toEqual([
+      expect.objectContaining({
+        url: '/email-ok',
+        authorization: 'Bearer wave2-integration-relay-token',
+        idempotencyKey: `iot-notification:${queued.notificationId}`,
+        body: expect.objectContaining({
+          notificationId: queued.notificationId,
+          to: 'wave2@example.test',
+          text: 'email delivery proof',
+        }),
+      }),
+    ]);
   });
 });

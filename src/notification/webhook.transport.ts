@@ -1,4 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
+import {
+  NotificationHttpsClient,
+  NotificationHttpsError,
+} from './notification-https.client';
 import { NotificationService } from './notification.service';
 
 export const WEBHOOK_TRANSPORT_LIMITS = {
@@ -18,15 +22,14 @@ export interface NotificationTransport {
   deliverAndRecord(input: NotificationTransportInput): Promise<void>;
 }
 
-/**
- * HTTPS webhook delivery. Network success is recorded only after a 2xx
- * response and only while the caller still owns the durable delivery lease.
- */
 @Injectable()
 export class WebhookTransport implements NotificationTransport {
   private readonly logger = new Logger(WebhookTransport.name);
 
-  constructor(private readonly notifications: NotificationService) {}
+  constructor(
+    private readonly notifications: NotificationService,
+    private readonly https: NotificationHttpsClient,
+  ) {}
 
   async deliverAndRecord(input: NotificationTransportInput): Promise<void> {
     try {
@@ -39,7 +42,7 @@ export class WebhookTransport implements NotificationTransport {
         ok: false,
         errorCode,
       });
-      throw Object.assign(new Error(errorCode), { code: errorCode });
+      throw this.deliveryError(errorCode, error);
     }
 
     await this.notifications.recordAttempt({
@@ -55,60 +58,55 @@ export class WebhookTransport implements NotificationTransport {
         code: 'WEBHOOK_CHANNEL_INVALID',
       });
     }
-    if (!/^https:\/\/.+/.test(input.destination)) {
-      throw Object.assign(new Error('destination must be https'), {
+
+    let destination: URL;
+    try {
+      destination = new URL(input.destination);
+    } catch {
+      throw Object.assign(new Error('destination must be valid https'), {
+        code: 'WEBHOOK_DESTINATION_INVALID',
+      });
+    }
+    if (
+      destination.protocol !== 'https:' ||
+      destination.username ||
+      destination.password
+    ) {
+      throw Object.assign(new Error('destination must be credential-free https'), {
         code: 'WEBHOOK_DESTINATION_INVALID',
       });
     }
 
-    const controller = new AbortController();
-    const timer = setTimeout(
-      () => controller.abort(),
+    const response = await this.https.postJson(
+      destination,
+      {
+        'content-type': 'application/json',
+        'idempotency-key': `iot-notification:${input.notificationId}`,
+        'x-iot-notification-id': input.notificationId,
+      },
+      {
+        notificationId: input.notificationId,
+        channel: input.channel,
+        subject: input.subject,
+        body: input.body,
+      },
       WEBHOOK_TRANSPORT_LIMITS.timeoutMs,
     );
 
-    try {
-      const response = await fetch(input.destination, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'idempotency-key': `iot-notification:${input.notificationId}`,
-          'x-iot-notification-id': input.notificationId,
-        },
-        body: JSON.stringify({
-          notificationId: input.notificationId,
-          channel: input.channel,
-          subject: input.subject,
-          body: input.body,
-        }),
-        signal: controller.signal,
-      });
-      if (!response.ok) {
-        throw Object.assign(
-          new Error(`webhook responded ${response.status}`),
-          { code: `WEBHOOK_HTTP_${response.status}` },
-        );
-      }
-    } catch (error) {
-      if (
-        error &&
-        typeof error === 'object' &&
-        'code' in error &&
-        typeof (error as { code?: unknown }).code === 'string'
-      ) {
-        throw error;
-      }
-      const code =
-        (error as { name?: string })?.name === 'AbortError'
-          ? 'WEBHOOK_TIMEOUT'
-          : 'WEBHOOK_UNREACHABLE';
-      throw Object.assign(new Error(code), { code });
-    } finally {
-      clearTimeout(timer);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Object.assign(
+        new Error(`webhook responded ${response.statusCode}`),
+        { code: `WEBHOOK_HTTP_${response.statusCode}` },
+      );
     }
   }
 
   private errorCode(error: unknown): string {
+    if (error instanceof NotificationHttpsError) {
+      if (error.kind === 'TIMEOUT') return 'WEBHOOK_TIMEOUT';
+      if (error.kind === 'TLS') return 'WEBHOOK_TLS_INVALID';
+      return 'WEBHOOK_UNREACHABLE';
+    }
     if (
       error &&
       typeof error === 'object' &&
@@ -122,5 +120,17 @@ export class WebhookTransport implements NotificationTransport {
       outcome: 'failed',
     });
     return 'WEBHOOK_UNREACHABLE';
+  }
+
+  private deliveryError(errorCode: string, cause: unknown): Error {
+    const error = Object.assign(new Error(errorCode), {
+      code: errorCode,
+      causeCode:
+        cause instanceof NotificationHttpsError ? cause.causeCode : undefined,
+    });
+    if (cause instanceof Error) {
+      (error as Error & { cause?: unknown }).cause = cause;
+    }
+    return error;
   }
 }

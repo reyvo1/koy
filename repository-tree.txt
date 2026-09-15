@@ -772,6 +772,8 @@ src/notification/email-relay.transport.spec.ts
 src/notification/email-relay.transport.ts
 src/notification/notification-delivery.worker.spec.ts
 src/notification/notification-delivery.worker.ts
+src/notification/notification-https.client.spec.ts
+src/notification/notification-https.client.ts
 src/notification/notification.module.ts
 src/notification/notification.service.spec.ts
 src/notification/notification.service.ts

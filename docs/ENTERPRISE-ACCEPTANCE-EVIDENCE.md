@@ -57,3 +57,8 @@ remains Wave 3 and is not implied by Wave 2 green status.
 ## Schema-tooling environment boundary
 
 Prisma `validate` and `generate` are STATIC / CONTRACT evidence. They may use a deterministic non-production datasource URL only to satisfy `env("DATABASE_URL")` parsing when an operator shell has no database environment configured. That fallback must never be cited as PostgreSQL runtime evidence. INTEGRATION evidence still requires the GitHub PostgreSQL service, migrations, isolated test schema and database integration suite. If `DATABASE_URL` is already provided by CI/runtime, the wrapper must preserve it unchanged.
+
+
+### Outbound HTTPS evidence rule
+
+Notification Webhook and Email Relay evidence MUST exercise the shared production HTTPS client. Test code may trust a fixture CA only through an isolated client instance. Process-global TLS verification bypasses such as `NODE_TLS_REJECT_UNAUTHORIZED=0` are forbidden evidence because they do not represent the production security boundary. TLS/configuration failures must remain distinguishable from timeout and network reachability failures.

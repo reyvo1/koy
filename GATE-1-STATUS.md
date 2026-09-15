@@ -45,3 +45,11 @@ V8 fixes the evidence harness class without changing Notification business logic
 - V8 applicator synthetic recovery/sequencing: PASS from clean V7 `1033/1034` markers through 8-file overlay, unchanged `1033/1034` seal checks, synthetic lightweight-gate invocation, and final verify.
 - Real PostgreSQL/HTTPS integration, `rescue-live-emqx`, and full acceptance remain GitHub evidence; no runtime PASS is inferred from the chat container.
 
+
+
+## Wave 2 V9 root-cause correction (2026-09-15)
+- GitHub V8: unit 185/185 and E2E 4/4 passed; DB integration 14/15 suites passed.
+- Remaining 3 Notification tests all failed as `WEBHOOK_UNREACHABLE`; the old transport flattened the underlying TLS/socket cause.
+- Root correction: one shared `NotificationHttpsClient` for Webhook + Email Relay, explicit scoped CA trust for tests, absolute timeout, TLS/network/timeout classification, no global TLS bypass.
+- Container QA: actual HTTPS success with fixture CA PASS; untrusted cert -> TLS/DEPTH_ZERO_SELF_SIGNED_CERT PASS; timeout -> ETIMEDOUT PASS; refused socket -> NETWORK/ECONNREFUSED PASS; changed TypeScript transpile PASS; Wave 2 invariant PASS.
+- Wave 2 remains ACTIVE pending Windows local 14-suite gate and GitHub heavy acceptance.

@@ -46,3 +46,7 @@ WAVE 2 V7 STATUS:
 - GitHub core: 185/185 unit suites (1219/1219 tests) PASS; application E2E 4/4 PASS; PostgreSQL integration 13/15 suites PASS.
 - V7 fixes the two remaining integration-contract defects as one Wave 2 batch: retry DISPATCHING DB shape clears terminal commandId and refreshes dispatchStartedAt; Notification integration maps claim DTO into transport DTO exactly as production worker does.
 - `rescue-live-emqx` was not reached because core DB integration remained red. Seal count remains 1033/1034. Wave 3 stays blocked.
+
+
+## Active Wave 2 recovery: V9
+Do not reopen V4-V8 symptom fixes individually. GitHub V8 narrowed the remaining failure to outbound Notification HTTPS evidence, but the old network layer erased its cause as `WEBHOOK_UNREACHABLE`. V9 replaces the shared outbound HTTPS foundation for both Webhook and Email Relay. Production TLS verification stays enabled; integration uses an explicit fixture CA and never a global TLS bypass. Wave 3 is blocked until V9 GitHub heavy acceptance is fully green.

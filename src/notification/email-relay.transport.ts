@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  NotificationHttpsClient,
+  NotificationHttpsError,
+} from './notification-https.client';
+import {
   NotificationTransport,
   NotificationTransportInput,
 } from './webhook.transport';
@@ -8,11 +12,6 @@ import { NotificationService } from './notification.service';
 
 const EMAIL_RELAY_DEFAULT_TIMEOUT_MS = 10_000;
 
-/**
- * Provider-neutral HTTPS email relay adapter. Wave 2 deliberately avoids a
- * vendor SDK: operators can point this contract at a trusted internal relay or
- * a later Wave 8 provider bridge without changing notification persistence.
- */
 @Injectable()
 export class EmailRelayTransport implements NotificationTransport {
   private readonly logger = new Logger(EmailRelayTransport.name);
@@ -20,6 +19,7 @@ export class EmailRelayTransport implements NotificationTransport {
   constructor(
     private readonly notifications: NotificationService,
     private readonly config: ConfigService,
+    private readonly https: NotificationHttpsClient,
   ) {}
 
   async deliverAndRecord(input: NotificationTransportInput): Promise<void> {
@@ -33,7 +33,7 @@ export class EmailRelayTransport implements NotificationTransport {
         ok: false,
         errorCode,
       });
-      throw Object.assign(new Error(errorCode), { code: errorCode });
+      throw this.deliveryError(errorCode, error);
     }
 
     await this.notifications.recordAttempt({
@@ -78,52 +78,38 @@ export class EmailRelayTransport implements NotificationTransport {
       });
     }
 
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          authorization: `Bearer ${relayToken}`,
-          'content-type': 'application/json',
-          'idempotency-key': `iot-notification:${input.notificationId}`,
-          'x-iot-notification-id': input.notificationId,
-        },
-        body: JSON.stringify({
-          notificationId: input.notificationId,
-          from,
-          to: input.destination,
-          subject: input.subject ?? '',
-          text: input.body,
-        }),
-        signal: controller.signal,
-      });
-      if (!response.ok) {
-        throw Object.assign(
-          new Error(`email relay responded ${response.status}`),
-          { code: `EMAIL_RELAY_HTTP_${response.status}` },
-        );
-      }
-    } catch (error) {
-      if (
-        error &&
-        typeof error === 'object' &&
-        'code' in error &&
-        typeof (error as { code?: unknown }).code === 'string'
-      ) {
-        throw error;
-      }
-      const code =
-        (error as { name?: string })?.name === 'AbortError'
-          ? 'EMAIL_RELAY_TIMEOUT'
-          : 'EMAIL_RELAY_UNREACHABLE';
-      throw Object.assign(new Error(code), { code });
-    } finally {
-      clearTimeout(timer);
+    const response = await this.https.postJson(
+      url,
+      {
+        authorization: `Bearer ${relayToken}`,
+        'content-type': 'application/json',
+        'idempotency-key': `iot-notification:${input.notificationId}`,
+        'x-iot-notification-id': input.notificationId,
+      },
+      {
+        notificationId: input.notificationId,
+        from,
+        to: input.destination,
+        subject: input.subject ?? '',
+        text: input.body,
+      },
+      timeoutMs,
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Object.assign(
+        new Error(`email relay responded ${response.statusCode}`),
+        { code: `EMAIL_RELAY_HTTP_${response.statusCode}` },
+      );
     }
   }
 
   private errorCode(error: unknown): string {
+    if (error instanceof NotificationHttpsError) {
+      if (error.kind === 'TIMEOUT') return 'EMAIL_RELAY_TIMEOUT';
+      if (error.kind === 'TLS') return 'EMAIL_RELAY_TLS_INVALID';
+      return 'EMAIL_RELAY_UNREACHABLE';
+    }
     if (
       error &&
       typeof error === 'object' &&
@@ -137,5 +123,17 @@ export class EmailRelayTransport implements NotificationTransport {
       outcome: 'failed',
     });
     return 'EMAIL_RELAY_UNREACHABLE';
+  }
+
+  private deliveryError(errorCode: string, cause: unknown): Error {
+    const error = Object.assign(new Error(errorCode), {
+      code: errorCode,
+      causeCode:
+        cause instanceof NotificationHttpsError ? cause.causeCode : undefined,
+    });
+    if (cause instanceof Error) {
+      (error as Error & { cause?: unknown }).cause = cause;
+    }
+    return error;
   }
 }

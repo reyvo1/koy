@@ -72,11 +72,23 @@ requireText(notificationWorker, 'deliverAndRecord', 'notification transport comp
 const notificationModule = read('src/notification/notification.module.ts');
 requireText(notificationModule, 'NotificationDeliveryWorker', 'notification worker registration');
 requireText(notificationModule, 'EmailRelayTransport', 'notification email transport registration');
+requireText(notificationModule, 'NotificationHttpsClient', 'shared notification HTTPS client registration');
 
 const emailRelay = read('src/notification/email-relay.transport.ts');
 requireText(emailRelay, "url.protocol !== 'https:'", 'email HTTPS boundary');
 requireText(emailRelay, 'authorization: `Bearer ${relayToken}`', 'email relay auth');
 requireText(emailRelay, 'EMAIL_RELAY_TIMEOUT', 'email bounded timeout');
+
+const notificationHttpsClient = read('src/notification/notification-https.client.ts');
+requireText(notificationHttpsClient, "import { request } from 'node:https';", 'shared notification HTTPS uses Node TLS transport');
+requireText(notificationHttpsClient, 'rejectUnauthorized: true', 'shared notification HTTPS keeps TLS verification enabled');
+requireText(notificationHttpsClient, 'withTrustedCa', 'shared notification HTTPS supports explicit scoped trust anchor');
+requireText(notificationHttpsClient, "code === 'ETIMEDOUT'", 'shared notification HTTPS classifies timeout');
+requireText(notificationHttpsClient, 'isTlsFailureCode', 'shared notification HTTPS classifies TLS failures');
+requireText(notificationHttpsClient, 'causeCode', 'shared notification HTTPS preserves low-level cause evidence');
+requireText(read('src/notification/webhook.transport.ts'), "return 'WEBHOOK_TLS_INVALID'", 'webhook preserves terminal TLS classification');
+requireText(emailRelay, "return 'EMAIL_RELAY_TLS_INVALID'", 'email relay preserves terminal TLS classification');
+
 
 const auth = read('src/auth/auth.service.ts');
 requireText(auth, 'this.prisma.$transaction(async (transaction)', 'auth notification transaction');
@@ -101,8 +113,13 @@ requireText(notificationIntegration, "code: 'WEBHOOK_HTTP_503'", 'notification r
 requireText(notificationIntegration, 'retryEndpointCalls).toBe(2)', 'notification retry success integration');
 requireText(notificationIntegration, "import { join } from 'node:path';", 'notification integration uses CommonJS-safe named path import');
 rejectText(notificationIntegration, "import path from 'node:path';", 'notification integration rejects fragile default node:path import');
+rejectText(notificationIntegration, 'NODE_TLS_REJECT_UNAUTHORIZED', 'notification integration never disables TLS globally');
+requireText(notificationIntegration, 'NotificationHttpsClient.withTrustedCa(cert)', 'notification integration trusts only the fixture CA explicitly');
+requireText(notificationIntegration, 'new WebhookTransport(serviceA, https)', 'notification integration exercises the production webhook HTTPS client path');
+requireText(notificationIntegration, 'new EmailRelayTransport(serviceA, config, https)', 'notification integration exercises the production email HTTPS client path');
+requireText(notificationIntegration, "channel: 'EMAIL'", 'notification integration proves email delivery over real HTTPS');
 requireText(notificationIntegration, 'let server: Server | undefined;', 'notification integration server lifecycle is explicitly nullable');
-requireText(notificationIntegration, 'if (server?.listening)', 'notification integration cleanup tolerates setup failure');
+requireText(notificationIntegration, 'if (server.listening)', 'notification integration cleanup tolerates setup failure');
 requireText(notificationIntegration, 'if (tenantId)', 'notification integration cleanup guards partial tenant setup');
 
 const acceptanceEvidence = read('docs/ENTERPRISE-ACCEPTANCE-EVIDENCE.md');
@@ -122,6 +139,11 @@ requireText(
   packageJson.scripts?.['wave2:test:targeted'] ?? '',
   'src/metrics/metrics.service.spec.ts',
   'Wave 2 targeted metrics regression',
+);
+requireText(
+  packageJson.scripts?.['wave2:test:targeted'] ?? '',
+  'src/notification/notification-https.client.spec.ts',
+  'Wave 2 targeted real HTTPS client regression',
 );
 requireText(
   packageJson.scripts?.['wave2:prepush:check'] ?? '',

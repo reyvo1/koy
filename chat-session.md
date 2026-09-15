@@ -402,3 +402,23 @@ V8 fixes the evidence harness class without changing Notification business logic
 - V8 applicator synthetic recovery/sequencing: PASS from clean V7 `1033/1034` markers through 8-file overlay, unchanged `1033/1034` seal checks, synthetic lightweight-gate invocation, and final verify.
 - Real PostgreSQL/HTTPS integration, `rescue-live-emqx`, and full acceptance remain GitHub evidence; no runtime PASS is inferred from the chat container.
 
+
+
+## 2026-09-15 — Wave 2 V9 root-cause pass
+- User explicitly rejected symptom-by-symptom patching; workflow corrected to root-cause cluster repair.
+- GitHub V8 evidence: 185/185 unit suites, 1219 tests, E2E 4/4, DB integration 14/15 suites; remaining Notification test failures were all `WEBHOOK_UNREACHABLE`.
+- Root architectural defect: Webhook and Email Relay each used global `fetch`; integration depended on process-global TLS bypass; error mapping flattened TLS/socket causes.
+- Implemented shared framework-neutral `NotificationHttpsClient` using `node:https`, strict TLS verification, scoped fixture CA for tests, absolute deadline, and TIMEOUT/TLS/NETWORK classification with preserved `causeCode`.
+- Both Webhook and Email Relay now use the same client. TLS trust failures map to terminal `*_TLS_INVALID`; timeout/network retain retry semantics.
+- Integration test now proves Webhook + Email through the shared real HTTPS client and forbids `NODE_TLS_REJECT_UNAUTHORIZED`.
+- Local targeted suite now includes `notification-https.client.spec.ts` (14 suites total).
+- Real container QA of the shared client: trusted fixture CA PASS; untrusted cert classified TLS/DEPTH_ZERO_SELF_SIGNED_CERT; timeout ETIMEDOUT; connect failure NETWORK/ECONNREFUSED.
+- Wave 2 remains ACTIVE. No Wave 3 work and no production approval.
+
+### V9 QA certification before handoff
+- Dependency-free Wave 2, baseline-manifest, GitHub-CI and Prisma-wrapper self-tests: PASS.
+- TypeScript transpile of all V9 changed runtime/tests: PASS.
+- Real shared HTTPS client execution: trusted fixture CA -> 204 PASS; untrusted self-signed cert -> TLS/DEPTH_ZERO_SELF_SIGNED_CERT PASS; absolute timeout -> TIMEOUT/ETIMEDOUT PASS; refused socket -> NETWORK/ECONNREFUSED PASS.
+- Full authoritative reconstructed source seal: 1035/1036 PASS.
+- Synthetic clean V8 1033/1034 -> V9 18-file overlay -> 1035/1036 -> gate invocation -> final verify: PASS.
+- Heavy PostgreSQL/Notification/EMQX/full acceptance remains GitHub evidence and is not claimed locally.
