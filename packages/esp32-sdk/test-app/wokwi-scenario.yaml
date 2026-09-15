@@ -1,0 +1,7 @@
+name: Wave 3 firmware boot
+version: 1
+author: IoT Platform
+steps:
+  - wait-serial: 'WAVE3_QEMU_BOOT_OK'
+  - wait-serial: 'WAVE3_SDK_LINK_OK version=2.1.0 state=0'
+  - wait-serial: 'WAVE3_OTA_SHA256_REQUIRED'

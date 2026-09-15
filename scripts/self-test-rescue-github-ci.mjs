@@ -41,7 +41,7 @@ check(
       workflow.lastIndexOf('npm run baseline:manifest:verify'),
 );
 check('rescue live EMQX job runs on GitHub Ubuntu', workflow.includes('\n  rescue-live-emqx:\n') && workflow.includes('runs-on: ubuntu-latest'));
-check('rescue live EMQX job is sequenced after core CI', workflow.includes('needs: test'));
+check('rescue live EMQX job waits for core CI and Wave 3 firmware simulation', workflow.includes('needs: [test, esp32-firmware-simulation]'));
 check('CI generates ephemeral uncommitted rescue secrets', workflow.includes('rescue:env:init -- --output=.env'));
 check('CI uses source rescue Docker Compose runtime', workflow.includes('rescue:local:up -- --env=.env') && workflow.includes('docker compose -f docker-compose.rescue.yml'));
 check('CI runs targeted DB stability before full acceptance', workflow.indexOf('Targeted PostgreSQL integration stability gate') < workflow.indexOf('Full automated acceptance once'));
@@ -57,6 +57,10 @@ check(
 check('broker smoke package command is exposed', pkg.scripts?.['rescue:broker:smoke'] === 'node scripts/run-rescue-live-broker-smoke.mjs');
 check('CI self-test package command is exposed', pkg.scripts?.['rescue:github-ci:self-test'] === 'node scripts/self-test-rescue-github-ci.mjs');
 check('Wave 2 core runtime self-test package command is exposed', pkg.scripts?.['wave2:core-runtime:self-test'] === 'node scripts/self-test-wave2-core-runtime.mjs');
+check('Wave 3 ESP32 self-test package command is exposed', pkg.scripts?.['wave3:esp32:self-test'] === 'node scripts/self-test-wave3-esp32-simulation.mjs && node scripts/self-test-wave3-esp32-source.mjs');
+check('Wave 3 firmware simulation job is mandatory before rescue live services', workflow.includes('esp32-firmware-simulation:') && workflow.includes('Wave 3 ESP-IDF build and QEMU boot simulation') && workflow.includes('needs: [test, esp32-firmware-simulation]'));
+check('Wave 3 firmware artifact is downloaded before live device simulation', workflow.indexOf('Download exact Wave 3 firmware artifact') < workflow.indexOf('Wave 3 simulated ESP32 provisioning reconnect command and OTA'));
+check('Wave 3 live simulation runs after real EMQX smoke', workflow.indexOf('Real EMQX auth ACL webhook and ACK smoke') < workflow.indexOf('Wave 3 simulated ESP32 provisioning reconnect command and OTA'));
 check(
   'rescue CI re-runs Wave 2 runtime invariant guard before live runtime',
   workflow.lastIndexOf('npm run wave2:core-runtime:self-test') >

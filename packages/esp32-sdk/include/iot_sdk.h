@@ -8,7 +8,7 @@
  *  - Telemetry: flat JSON, primitives only, <=1KB
  *  - OTA: verify SHA-256 before flashing; rollback-safe boot partitions
  *
- * Target: ESP-IDF v5.x (ESP32 / ESP32-S3 / ESP32-C3)
+ * Target: ESP-IDF v5.5.x (ESP32 / ESP32-S3 / ESP32-C3)
  */
 #ifndef IOT_SDK_H
 #define IOT_SDK_H
@@ -17,7 +17,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define IOT_SDK_VERSION "2.0.0"
+#define IOT_SDK_VERSION "2.1.0"
 #define IOT_TOPIC_MAX_LEN 160
 #define IOT_PAYLOAD_MAX_LEN 1024
 #define IOT_HEARTBEAT_INTERVAL_MS 60000
@@ -114,9 +114,12 @@ bool iot_sdk_ack_command(const char* command_id, bool success, const char* reaso
 /* ------------------------------------------------------------------ */
 
 /**
- * OTA entry point. RESCUE-02 fails closed until the implementation can prove
- * the downloaded image SHA-256 matches sha256_hex on real ESP-IDF hardware.
- * The function currently returns false and does not flash an image.
+ * Stream an OTA image over HTTPS into the inactive OTA partition. The SDK
+ * verifies the complete image SHA-256 in constant time before esp_ota_end()
+ * and before selecting the new boot partition. Any network, HTTP, partition,
+ * image-validation, or digest failure aborts the update and keeps the current
+ * boot partition. On success the caller may reboot at a safe point; the new
+ * image remains rollback-pending until it reconnects to MQTT successfully.
  */
 bool iot_sdk_ota_update(const char* artifact_url, const char* sha256_hex);
 

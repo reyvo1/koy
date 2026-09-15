@@ -14,7 +14,8 @@ evidence tier actually executed.
 | UNIT | Function/class behavior with bounded collaborators or mocks. | retry policy, input validation, race/error mapping |
 | INTEGRATION | Real process/database/cache/network boundary without the complete production stack. | PostgreSQL transactions, Redis state, local HTTPS receiver |
 | LIVE-SERVICE | Real service/container using production protocol and auth path. | EMQX auth/ACL/publish/subscribe, PostgreSQL/Redis service probes |
-| PHYSICAL / EXTERNAL | Real hardware or external provider/sandbox evidence. | ESP32 reconnect, OTA bytes on device, payment provider sandbox |
+| SIMULATED-HARDWARE | Real firmware/toolchain or explicit device simulator exercising hardware behavior without a physical board. | ESP-IDF QEMU, Wokwi, ESP32 digital twin against live EMQX |
+| PHYSICAL / EXTERNAL | Real hardware or external provider/sandbox evidence. | ESP32 HIL reconnect, OTA bytes on physical device, payment provider sandbox |
 | PRODUCTION CERTIFICATION | Release-bound evidence across required lower tiers plus UAT/security/DR/performance gates. | Wave 13 approval receipt |
 
 ## Rules
@@ -26,8 +27,7 @@ evidence tier actually executed.
    the expected outcome.
 4. A wave may close only when every exit criterion has the minimum evidence tier
    declared by that wave.
-5. Functions that cannot be exercised honestly in GitHub remain `PENDING
-   PHYSICAL/EXTERNAL EVIDENCE`; they are never promoted to PASS by simulation.
+5. Simulation must be labeled `SIMULATED-HARDWARE`; it may close an automated wave when that wave explicitly allows simulation, but it can never be promoted to PHYSICAL/HIL evidence. Functions reserved for final physical certification remain `PENDING PHYSICAL/EXTERNAL EVIDENCE`.
 6. Mocks may prove local branching but cannot be cited as LIVE-SERVICE or
    PHYSICAL evidence.
 7. GitHub heavy acceptance is authoritative for automated runtime evidence;
@@ -62,3 +62,22 @@ Prisma `validate` and `generate` are STATIC / CONTRACT evidence. They may use a 
 ### Outbound HTTPS evidence rule
 
 Notification Webhook and Email Relay evidence MUST exercise the shared production HTTPS client. Test code may trust a fixture CA only through an isolated client instance. Process-global TLS verification bypasses such as `NODE_TLS_REJECT_UNAUTHORIZED=0` are forbidden evidence because they do not represent the production security boundary. TLS/configuration failures must remain distinguishable from timeout and network reachability failures.
+
+
+## Wave 3 minimum evidence matrix
+
+| Wave 3 claim | Minimum evidence | Automated proof |
+|---|---|---|
+| SDK is buildable firmware, not only a header/source contract | INTEGRATION / TOOLCHAIN | ESP-IDF 5.5.5 build for ESP32 + ESP32-C3 |
+| Linked SDK boots on an ESP32 execution model | SIMULATED-HARDWARE | Espressif QEMU via pytest-embedded |
+| Provisioning/MQTT telemetry/command/ACK operate through the platform stack | SIMULATED-HARDWARE + LIVE-SERVICE | digital twin against real rescue API/PostgreSQL/EMQX |
+| Network reconnect preserves device identity and resumes telemetry | SIMULATED-HARDWARE + LIVE-SERVICE | forced MQTT disconnect/reconnect and persisted post-reconnect event |
+| Duplicate QoS-1 command does not re-execute actuator behavior | SIMULATED-HARDWARE + LIVE-SERVICE | bounded command cache + ACK replay against real broker |
+| OTA consumes the exact built firmware artifact | SIMULATED-HARDWARE | build artifact downloaded into rescue job and hashed before simulation |
+| OTA rejects wrong SHA-256 and interrupted stream | SIMULATED-HARDWARE | trusted HTTPS artifact server with injected digest/stream failures |
+| OTA rollback/confirmation state is deterministic | SIMULATED-HARDWARE | pending-verify slot model + live reconnect confirmation |
+| Wokwi cloud simulation | SIMULATED-HARDWARE / EXTERNAL | optional when `WOKWI_CLI_TOKEN` is configured; absence is NOT_RUN, never PASS |
+| Physical board flash/Wi-Fi RF/flash endurance/real power-loss behavior | PHYSICAL / EXTERNAL | deferred to HIL/final Wave 13 certification |
+
+Wave 3 may close on the mandatory automated evidence above. This does not waive
+physical HIL before production promotion.

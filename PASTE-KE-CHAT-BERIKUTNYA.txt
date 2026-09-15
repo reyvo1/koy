@@ -2,14 +2,14 @@ LANJUTKAN PROJECT IOT DARI HANDOFF TERBARU.
 
 MASTER WORKFLOW WAVE 1-13:
 - 30/30 modul = foundation-complete, bukan enterprise-complete.
-- Wave 1 Rescue/CI/EMQX = CLOSED GREEN (V13).
-- Wave 2 Core Runtime Closure = ACTIVE. V7 GitHub heavy run mempertahankan 185/185 unit suites (1219 tests) dan E2E 4/4, lalu maju ke 14/15 PostgreSQL/HTTPS integration suites (58/61 tests). Automation retry DB constraint sudah tertutup. Satu blocker tersisa adalah Notification HTTPS integration harness: default import `node:path` menjadi undefined pada Jest/CommonJS dan teardown tidak guarded ketika setup gagal. V8 memperbaiki portability + lifecycle harness tanpa mengubah Notification business logic. Wave 2 baru CLOSED setelah GitHub heavy acceptance seluruhnya hijau.
-- Selesaikan SATU WAVE BESAR utuh sebelum SATU push GitHub.
-- Local hanya targeted/lightweight; Prisma validate/generate boleh memakai schema-only fallback jika DATABASE_URL lokal tidak ada dan itu BUKAN runtime evidence. GitHub menjalankan heavy build/Docker/DB/Redis/EMQX/full acceptance dengan service nyata.
-- Kalau merah: ambil failure pertama + semua failure satu kelas, perbaiki dalam wave yang sama. Dilarang micro-RR.
-- Jangan reopen masalah foreign Windows Mosquitto port 1883; rescue MQTT = 18884.
-- Production tetap NOT APPROVED sampai ESP32/Wi-Fi reconnect/physical MQTT/OTA dan final certification selesai.
-- Baca `docs/ENTERPRISE-WAVE-ROADMAP.md`, `CURRENT-STATE.md`, `PROJECT-HANDOFF.md`, `chat-session.md` sebelum melanjutkan.
+- Wave 1 Rescue/CI/EMQX = CLOSED GREEN.
+- Wave 2 Core Runtime Closure = CLOSED GREEN after V9 heavy GitHub acceptance.
+- Wave 3 ESP32 + OTA Automated Simulation = ACTIVE. Build real ESP-IDF firmware, boot in Espressif QEMU, run live-service ESP32 digital twin against rescue API/PostgreSQL/EMQX, and exercise reconnect/telemetry/command/ACK/dedupe plus release-bound OTA SHA-256/reject/interruption/rollback using the exact built firmware artifact.
+- Mandatory GitHub Wave 3 simulation may close the automated wave when green, but it must be labeled SIMULATED-HARDWARE/LIVE-SERVICE. Physical ESP32/HIL is still required during final Wave 13 certification and may not be faked from simulation.
+- One complete large wave before one push. Local only targeted/lightweight; GitHub heavy acceptance. Red CI stays in the same wave and is fixed by root-cause class, not micro-RR.
+- Rescue MQTT endpoint remains 18884. Do not reopen the foreign Windows Mosquitto port 1883 issue.
+- Production remains NOT APPROVED until Waves 3–13 and final certification are complete.
+- Read docs/ENTERPRISE-WAVE-ROADMAP.md, docs/ENTERPRISE-ACCEPTANCE-EVIDENCE.md, CURRENT-STATE.md, PROJECT-HANDOFF.md, and chat-session.md before continuing.
 
 --- HISTORICAL CONTINUATION BELOW ---
 

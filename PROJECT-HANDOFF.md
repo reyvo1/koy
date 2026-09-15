@@ -1,35 +1,43 @@
-# PROJECT HANDOFF — ENTERPRISE WAVE 2
+# PROJECT HANDOFF — ENTERPRISE WAVE 3
 
-## ACTIVE HANDOFF — ENTERPRISE WAVE 2
+## ACTIVE HANDOFF — ESP32 + OTA AUTOMATED SIMULATION
 
-Master roadmap is now `docs/ENTERPRISE-WAVE-ROADMAP.md` Wave 1–13. The 30 modules are foundation-complete, but enterprise completion continues through Wave 13.
+Master roadmap: `docs/ENTERPRISE-WAVE-ROADMAP.md` Wave 1–13. Wave 1 and Wave 2 are **CLOSED GREEN**. Wave 3 is active. Do not audit from zero and do not reopen the foreign Windows Mosquitto issue on port 1883; rescue MQTT remains 18884.
 
-### Work policy
+### Wave 3 objective
 
-- Finish one large wave completely before one GitHub push.
-- Local = targeted/lightweight only.
-- GitHub = authoritative heavy build/Docker/PostgreSQL/Redis/EMQX/full acceptance.
-- If red, collect first failure + related failures in the same class and keep them in the active wave.
-- Never make a test green by weakening a production contract, accepting timeout/ambiguity, or replacing authoritative data with fake UI state.
-- Keep PRD/DevKit/DOCH, current state, manifest/tree, tests, and `chat-session.md` synchronized inside the wave.
+Close ESP32/OTA automated evidence as one large wave before one GitHub push:
 
-### Baseline
+1. Build the SDK as a real ESP-IDF 5.5.5 component for ESP32 and ESP32-C3.
+2. Boot the linked ESP32 firmware under Espressif QEMU/pytest-embedded.
+3. Carry the exact built firmware `.bin` into the rescue live-service job.
+4. Run a device digital twin through real rescue API/PostgreSQL/EMQX for provisioning, heartbeat, MQTT telemetry, disconnect/reconnect, command/ACK, and duplicate QoS-1 suppression.
+5. Exercise OTA over trusted HTTPS using that exact built artifact: matching SHA-256 success, wrong-digest rejection, interrupted-stream rejection, pending-verify rollback, and live-reconnect confirmation.
+6. Optionally run Wokwi when `WOKWI_CLI_TOKEN` exists. Missing Wokwi credentials are `NOT_RUN_EXTERNAL_TOKEN`, never a fabricated PASS.
 
-Wave 1 V13 is closed green. MQTT callback/negative-ACL/dashboard-fixture classes are closed. Rescue endpoint is 18884. Do not reopen the foreign host broker on 1883.
+### Firmware contract
 
-### Active Wave 2 — Core Runtime Closure
+- SDK contract version: `2.1.0`.
+- OTA requires HTTPS with an explicit platform CA.
+- OTA writes only to the inactive partition.
+- SHA-256 is streamed across the complete artifact and compared in constant time before `esp_ota_set_boot_partition`.
+- Partial failures abort the OTA handle.
+- A newly booted image remains rollback-pending until a live MQTT reconnect calls `esp_ota_mark_app_valid_cancel_rollback()`.
+- Physical board/HIL evidence remains separate final-certification evidence. Automated simulation must never be relabeled physical.
 
-Wave 2 is implemented as one large batch and is not yet pushed. It closes three related runtime gaps:
+### Evidence hierarchy
 
-1. Durable delayed automation retry with a real worker and same-command republish semantics.
-2. Scheduler activation safety against an inactive scheduler runtime.
-3. Durable leased Notification delivery with auth email enqueue and provider-neutral HTTPS email relay.
+- local pre-push: STATIC/CONTRACT + targeted simulation self-tests only;
+- GitHub firmware job: INTEGRATION/TOOLCHAIN + SIMULATED-HARDWARE through ESP-IDF/QEMU;
+- GitHub rescue job: LIVE-SERVICE + SIMULATED-HARDWARE against real rescue services;
+- optional Wokwi: SIMULATED-HARDWARE/EXTERNAL;
+- physical board/HIL: deferred to Wave 13 final certification.
 
-Key fail-closed invariants include PostgreSQL-authoritative clocks/state, atomic retry claims, transient-only Notification retry, stale lease rejection, semantic idempotency collision rejection, bounded network timeouts, disabled-by-default runtime flags, and an explicit Wave 2 invariant guard in both GitHub jobs.
+### Exit rule
 
-Wave 2 V3 reached the real operator pre-push gate and failed only because `rescue:validate` used an obsolete exact-string assertion for the manifest exclusion array after `next-env.d.ts` was added. V4 fixes that validator semantically, strengthens the `.tsbuildinfo` regression by mutating it after seal, and adds real PostgreSQL/HTTPS integration evidence for Wave 2 runtime behavior. Source validation alone is not accepted as closure evidence; see `docs/ENTERPRISE-ACCEPTANCE-EVIDENCE.md`. No GitHub push has occurred.
+Wave 3 remains ACTIVE until the local `wave3:prepush:check` passes, one Wave 3 push is made, and GitHub is fully green across core regression, mandatory firmware/QEMU simulation, rescue live-service simulation, real EMQX, and full acceptance. Any red run remains Wave 3 and is corrected by root-cause class. Wave 4 must not open early.
 
-Wave 2 exits only after `npm run wave2:prepush:check` passes on the operator repo and the single GitHub push is fully green. Physical hardware/OTA is Wave 3 and still blocks production approval.
+Pre-package candidate is reconstructed from the complete sealed Wave 2 V9 baseline and seals at **1050 source paths / 1051 manifest entries** after the 37-file Wave 3 overlay. The applicator must regenerate that seal from the operator checkout after overlay; it must never copy a chat-snapshot manifest over the real repository.
 
 ---
 

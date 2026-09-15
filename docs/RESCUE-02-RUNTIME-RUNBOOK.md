@@ -243,16 +243,18 @@ matches the current source baseline. The source-controlled schema/example lives
 under `ops/acceptance/`; generated evidence under `reports/` is intentionally
 ignored by source packaging.
 
-OTA digest verification remains **production-only** and may be `DEFERRED` in a
-RESCUE-02B evidence record because the current SDK deliberately fails closed
-until artifact-byte SHA-256 verification is implemented and hardware-proven.
-`DEFERRED` is never interpreted as OTA PASS.
+Wave 3 implements artifact-byte SHA-256 verification in the ESP32 SDK and
+executes release-bound OTA success/failure/rollback scenarios in automated
+ESP-IDF/QEMU/live-service simulation. That evidence is classified as
+`SIMULATED-HARDWARE`; it proves the firmware/toolchain and platform contracts but
+is **not** physical OTA proof.
 
-For a future production-only OTA `PASS`, record the exact firmware artifact
-path, SHA-256 of those bytes, the digest observed/reported by the tested device,
-physical device identity, execution timestamp, and a concrete evidence
-reference. The validator requires the local artifact bytes and both digests to
-match; a bare textual OTA PASS is rejected.
+Physical OTA/HIL remains a production-certification gate. A physical `PASS`
+must record the exact firmware artifact path, SHA-256 of those bytes, the digest
+observed/reported by the tested device, physical device identity, execution
+timestamp, and a concrete evidence reference. The validator requires the local
+artifact bytes and both digests to match; a bare textual OTA PASS is rejected.
+`DEFERRED`/`PENDING PHYSICAL` is never interpreted as OTA PASS.
 
 After `npm run release:build` and `npm run release:verify`, run the separate
 production approval gate from the same sealed source baseline:
@@ -346,7 +348,7 @@ The ESP32 SDK source contract is aligned in RESCUE-02, but the following are sti
 - MQTT reconnect and duplicate delivery test, including RAM-cache commandId suppression and ACK replay.
 - Reboot behavior is tested separately because command dedupe cache is intentionally not persisted across reboot.
 - Telemetry/command/ACK/heartbeat test on a physical board.
-- OTA digest verification proof on a physical board. OTA remains outside the RESCUE-02 production claim.
+- Physical ESP32/HIL OTA proof using the exact release-bound artifact. Automated Wave 3 OTA simulation does not satisfy this production evidence row.
 
 ## Generated TypeScript incremental metadata
 

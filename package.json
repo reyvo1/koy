@@ -112,7 +112,10 @@
     "wave2:test:targeted": "jest --runInBand --runTestsByPath src/auth/auth.service.spec.ts src/device/command.service.spec.ts src/automation/automation-command-dispatcher.spec.ts src/automation/automation-retry-reservation.service.spec.ts src/automation/automation-retry.worker.spec.ts src/scheduler/scheduler-runtime-policy.spec.ts src/scheduler/schedule.controller.spec.ts src/notification/notification.service.spec.ts src/notification/notification-https.client.spec.ts src/notification/webhook.transport.spec.ts src/notification/email-relay.transport.spec.ts src/notification/notification-delivery.worker.spec.ts src/config/config.validation.spec.ts src/metrics/metrics.service.spec.ts",
     "wave2:prisma:check": "node scripts/check-prisma-schema.mjs",
     "wave2:prepush:check": "npm run wave1:prepush:check && npm run wave2:core-runtime:self-test && npm run wave2:prisma:self-test && npm run wave2:prisma:check && npm run wave2:test:targeted",
-    "wave2:prisma:self-test": "node scripts/self-test-wave2-prisma-schema-check.mjs"
+    "wave2:prisma:self-test": "node scripts/self-test-wave2-prisma-schema-check.mjs",
+    "wave3:esp32:self-test": "node scripts/self-test-wave3-esp32-simulation.mjs && node scripts/self-test-wave3-esp32-source.mjs",
+    "wave3:esp32:simulate": "node scripts/run-wave3-esp32-simulation.mjs",
+    "wave3:prepush:check": "npm run wave2:prepush:check && npm run wave3:esp32:self-test"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

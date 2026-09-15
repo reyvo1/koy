@@ -7,7 +7,9 @@
  *  - Telemetry batching with the 1KB payload bound
  *  - Command dispatch to registered handler + ACK publishing
  *  - Heartbeat task (60s interval)
- *  - OTA entry point fails closed until SHA-256 verification is implemented
+ *  - OTA streams HTTPS bytes into the inactive partition and verifies SHA-256
+ *    before selecting the next boot image; rollback confirmation occurs only
+ *    after the new image reconnects to MQTT successfully
  *
  * Credentials are stored in the NVS "iot-creds" namespace. Pairing uses the
  * canonical POST /devices/<deviceId>/pair route over TLS (cert bundled at
@@ -15,22 +17,37 @@
  */
 #include "iot_sdk.h"
 
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "esp_event.h"
 #include "esp_http_client.h"
 #include "esp_log.h"
+#include "esp_ota_ops.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "freertos/task.h"
+#include "mbedtls/sha256.h"
 #include "mqtt_client.h"
 #include "nvs.h"
 #include "nvs_flash.h"
 
 static const char* TAG = "iot-sdk";
+
+#ifndef IOT_PLATFORM_CERT_PEM
+#define IOT_PLATFORM_CERT_PEM ((const char*)0)
+#endif
+
+#define IOT_OTA_READ_BUFFER_SIZE 4096
+#define IOT_OTA_HTTP_TIMEOUT_MS 15000
+
+static bool trusted_https_configured(const char* url) {
+    return url && strncmp(url, "https://", 8) == 0 &&
+           IOT_PLATFORM_CERT_PEM != NULL && IOT_PLATFORM_CERT_PEM[0] != '\0';
+}
 
 /* ------------------------------------------------------------------ */
 /* Module state                                                        */
@@ -319,6 +336,12 @@ bool iot_sdk_provision(const char* ssid,
         .capacity = sizeof(response),
         .length = 0,
     };
+    if (!trusted_https_configured(url)) {
+        ESP_LOGE(TAG, "pairing requires HTTPS with an explicit platform CA");
+        s_ctx.state = IOT_STATE_ERROR;
+        return false;
+    }
+
     esp_http_client_config_t http_cfg = {
         .url = url,
         .method = HTTP_METHOD_POST,
@@ -465,6 +488,25 @@ static bool wifi_start(void) {
 /* MQTT                                                                */
 /* ------------------------------------------------------------------ */
 
+static void ota_confirm_running_image_after_live_reconnect(void) {
+    const esp_partition_t* running = esp_ota_get_running_partition();
+    if (!running) return;
+
+    esp_ota_img_states_t state = ESP_OTA_IMG_UNDEFINED;
+    if (esp_ota_get_state_partition(running, &state) != ESP_OK ||
+        state != ESP_OTA_IMG_PENDING_VERIFY) {
+        return;
+    }
+
+    const esp_err_t err = esp_ota_mark_app_valid_cancel_rollback();
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "OTA image confirmed after live MQTT reconnect");
+    } else {
+        ESP_LOGE(TAG, "failed to confirm pending OTA image: %s",
+                 esp_err_to_name(err));
+    }
+}
+
 static void mqtt_event_handler(void* arg,
                                esp_event_base_t base,
                                int32_t id,
@@ -479,6 +521,7 @@ static void mqtt_event_handler(void* arg,
                 esp_mqtt_client_subscribe(s_ctx.mqtt, topic, 1);
             }
             ESP_LOGI(TAG, "mqtt online");
+            ota_confirm_running_image_after_live_reconnect();
             break;
         case MQTT_EVENT_DISCONNECTED:
             s_ctx.state = IOT_STATE_MQTT_CONNECTING;
@@ -628,6 +671,11 @@ static bool send_heartbeat(void) {
                            IOT_API_BASE_URL, s_ctx.device_id);
     if (url_len <= 0 || url_len >= (int)sizeof(url)) return false;
 
+    if (!trusted_https_configured(url)) {
+        ESP_LOGE(TAG, "heartbeat requires HTTPS with an explicit platform CA");
+        return false;
+    }
+
     esp_http_client_config_t http_cfg = {
         .url = url,
         .method = HTTP_METHOD_PATCH,
@@ -658,18 +706,168 @@ static void heartbeat_task(void* arg) {
 /* OTA                                                                 */
 /* ------------------------------------------------------------------ */
 
+static int hex_nibble(char value) {
+    if (value >= '0' && value <= '9') return value - '0';
+    value = (char)tolower((unsigned char)value);
+    if (value >= 'a' && value <= 'f') return 10 + value - 'a';
+    return -1;
+}
+
+static bool decode_sha256_hex(const char* text, unsigned char out[32]) {
+    if (!text || strlen(text) != 64) return false;
+    for (size_t i = 0; i < 32; i++) {
+        const int high = hex_nibble(text[i * 2]);
+        const int low = hex_nibble(text[i * 2 + 1]);
+        if (high < 0 || low < 0) return false;
+        out[i] = (unsigned char)((high << 4) | low);
+    }
+    return true;
+}
+
+static bool constant_time_digest_equal(const unsigned char left[32],
+                                       const unsigned char right[32]) {
+    unsigned char diff = 0;
+    for (size_t i = 0; i < 32; i++) diff |= left[i] ^ right[i];
+    return diff == 0;
+}
+
 bool iot_sdk_ota_update(const char* artifact_url, const char* sha256_hex) {
-    if (!artifact_url || !sha256_hex || strlen(sha256_hex) != 64) {
+    unsigned char expected_digest[32];
+    if (!artifact_url || !decode_sha256_hex(sha256_hex, expected_digest)) {
+        ESP_LOGE(TAG, "OTA rejected invalid URL or SHA-256 contract");
+        return false;
+    }
+    if (!trusted_https_configured(artifact_url)) {
+        ESP_LOGE(TAG, "OTA requires HTTPS with an explicit platform CA");
         return false;
     }
 
-    /* Fail closed. The previous implementation passed sha256_hex into this
-       API but never compared it with the downloaded image digest. Applying an
-       unverified artifact would make the API promise stronger than reality.
-       Re-enable OTA only after streaming SHA-256 verification is implemented
-       and validated on a physical board. */
-    ESP_LOGE(TAG, "OTA disabled: artifact SHA-256 verification is not implemented");
-    return false;
+    const esp_partition_t* update_partition =
+        esp_ota_get_next_update_partition(NULL);
+    if (!update_partition) {
+        ESP_LOGE(TAG, "OTA has no writable update partition");
+        return false;
+    }
+
+    esp_http_client_config_t http_cfg = {
+        .url = artifact_url,
+        .method = HTTP_METHOD_GET,
+        .cert_pem = IOT_PLATFORM_CERT_PEM,
+        .timeout_ms = IOT_OTA_HTTP_TIMEOUT_MS,
+        .keep_alive_enable = true,
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&http_cfg);
+    if (!client) return false;
+
+    bool success = false;
+    bool http_opened = false;
+    bool ota_started = false;
+    esp_ota_handle_t ota_handle = 0;
+    mbedtls_sha256_context sha;
+    mbedtls_sha256_init(&sha);
+
+    esp_err_t err = esp_http_client_open(client, 0);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "OTA HTTPS open failed: %s", esp_err_to_name(err));
+        goto cleanup;
+    }
+    http_opened = true;
+
+    const int64_t content_length = esp_http_client_fetch_headers(client);
+    const int status = esp_http_client_get_status_code(client);
+    if (status < 200 || status >= 300) {
+        ESP_LOGE(TAG, "OTA artifact HTTP status rejected: %d", status);
+        goto cleanup;
+    }
+    if (content_length == 0 ||
+        (content_length > 0 &&
+         (uint64_t)content_length > (uint64_t)update_partition->size)) {
+        ESP_LOGE(TAG, "OTA artifact length is invalid for update partition");
+        goto cleanup;
+    }
+
+    const size_t image_size = content_length > 0
+                                  ? (size_t)content_length
+                                  : OTA_SIZE_UNKNOWN;
+    err = esp_ota_begin(update_partition, image_size, &ota_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_ota_begin failed: %s", esp_err_to_name(err));
+        goto cleanup;
+    }
+    ota_started = true;
+
+    if (mbedtls_sha256_starts(&sha, 0) != 0) {
+        ESP_LOGE(TAG, "OTA SHA-256 initialization failed");
+        goto cleanup;
+    }
+
+    unsigned char buffer[IOT_OTA_READ_BUFFER_SIZE];
+    size_t total = 0;
+    for (;;) {
+        const int read = esp_http_client_read(client, (char*)buffer, sizeof(buffer));
+        if (read < 0) {
+            ESP_LOGE(TAG, "OTA artifact stream read failed");
+            goto cleanup;
+        }
+        if (read == 0) {
+            if (esp_http_client_is_complete_data_received(client)) break;
+            ESP_LOGE(TAG, "OTA artifact stream ended before completion");
+            goto cleanup;
+        }
+
+        if (total + (size_t)read > update_partition->size) {
+            ESP_LOGE(TAG, "OTA artifact exceeds update partition");
+            goto cleanup;
+        }
+        if (mbedtls_sha256_update(&sha, buffer, (size_t)read) != 0) {
+            ESP_LOGE(TAG, "OTA SHA-256 update failed");
+            goto cleanup;
+        }
+        err = esp_ota_write(ota_handle, buffer, (size_t)read);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "esp_ota_write failed: %s", esp_err_to_name(err));
+            goto cleanup;
+        }
+        total += (size_t)read;
+    }
+
+    if (content_length > 0 && total != (size_t)content_length) {
+        ESP_LOGE(TAG, "OTA artifact byte count does not match Content-Length");
+        goto cleanup;
+    }
+
+    unsigned char actual_digest[32];
+    if (mbedtls_sha256_finish(&sha, actual_digest) != 0) {
+        ESP_LOGE(TAG, "OTA SHA-256 finalization failed");
+        goto cleanup;
+    }
+    if (!constant_time_digest_equal(actual_digest, expected_digest)) {
+        ESP_LOGE(TAG, "OTA artifact SHA-256 mismatch; update discarded");
+        goto cleanup;
+    }
+
+    err = esp_ota_end(ota_handle);
+    ota_started = false;
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_ota_end rejected image: %s", esp_err_to_name(err));
+        goto cleanup;
+    }
+
+    err = esp_ota_set_boot_partition(update_partition);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "failed to select verified OTA image: %s", esp_err_to_name(err));
+        goto cleanup;
+    }
+
+    ESP_LOGI(TAG, "verified OTA image staged; reboot to activate");
+    success = true;
+
+cleanup:
+    if (ota_started) (void)esp_ota_abort(ota_handle);
+    mbedtls_sha256_free(&sha);
+    if (http_opened) (void)esp_http_client_close(client);
+    esp_http_client_cleanup(client);
+    return success;
 }
 
 /* ------------------------------------------------------------------ */

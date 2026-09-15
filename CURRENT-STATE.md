@@ -1,3 +1,17 @@
+# CURRENT STATE — ENTERPRISE WAVE 3
+
+## Authoritative active state — 2026-09-15
+
+- Wave 1 Rescue/CI/EMQX hardening: **CLOSED GREEN**.
+- Wave 2 Core Runtime Closure: **CLOSED GREEN** after V9 heavy GitHub acceptance.
+- Wave 3 ESP32 + OTA Automated Simulation: **ACTIVE**.
+- Active target: real ESP-IDF 5.5.5 compile, QEMU boot, live-service ESP32 digital twin against rescue PostgreSQL/API/EMQX, reconnect/telemetry/command/ACK/dedupe, and OTA SHA-256/reject/interruption/rollback simulation using the exact built firmware artifact.
+- Evidence boundary: automated Wave 3 evidence is `SIMULATED-HARDWARE` / `LIVE-SERVICE`. Physical ESP32/HIL remains `PENDING PHYSICAL/EXTERNAL EVIDENCE` until final Wave 13 certification and is never inferred from simulation.
+- Production: **NOT APPROVED**.
+- Work policy: finish Wave 3 as one large batch, local targeted/lightweight only, then one GitHub push for mandatory ESP-IDF/QEMU/live-service/full regression evidence.
+
+---
+
 # IoT Platform — Current State — Enterprise Wave 2
 
 ## Wave 2 active baseline — 2026-09-15
@@ -1009,7 +1023,7 @@ Minimum runtime gate:
 5. Enable scheduler runtime only for acceptance with `SCHEDULER_RUNTIME_ENABLED=true` and `SCHEDULER_CLAIM_TIMEOUT_MS=300000`.
 6. Execute the vertical flow and record PASS/FAIL per step.
 7. Compile/flash ESP32 SDK and verify pairing, telemetry, command, ACK, reconnect, and heartbeat on hardware.
-8. Keep OTA disabled until digest verification is implemented and proven.
+8. Run the Wave 3 automated OTA path only after exact artifact SHA-256 verification; keep PHYSICAL OTA/HIL evidence pending until a real board proves the release-bound artifact during final certification.
 
 Runtime-dependent RESCUE-03 work and production approval still require RESCUE-02B PASS. Low-risk static consolidation may continue under Gate B while the runtime environment is unavailable.
 

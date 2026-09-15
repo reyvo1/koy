@@ -620,9 +620,14 @@ check(
     mobileDeviceClient.includes('Object.entries(payload as Record<string, unknown>)'),
 );
 check(
-  'ESP32 OTA fails closed until digest verification exists',
-  sdkSource.includes('OTA disabled: artifact SHA-256 verification is not implemented') &&
-    !sdkSource.includes('esp_https_ota(&ota_cfg)'),
+  'ESP32 OTA verifies complete SHA-256 before boot selection and keeps rollback confirmation live-bound',
+  sdkSource.includes('esp_ota_get_next_update_partition(NULL)') &&
+    sdkSource.includes('mbedtls_sha256_update') &&
+    sdkSource.includes('constant_time_digest_equal(actual_digest, expected_digest)') &&
+    sdkSource.indexOf('constant_time_digest_equal(actual_digest, expected_digest)') <
+      sdkSource.indexOf('esp_ota_set_boot_partition(update_partition)') &&
+    sdkSource.includes('esp_ota_abort(ota_handle)') &&
+    sdkSource.includes('esp_ota_mark_app_valid_cancel_rollback'),
 );
 
 check(
@@ -864,12 +869,12 @@ check(
     evidenceValidator.includes('RESCUE-02B EVIDENCE PASS'),
 );
 check(
-  'runtime evidence requires live vertical broker and physical ESP32 proof while OTA remains production-only',
+  'runtime evidence keeps physical ESP32/HIL separate from automated Wave 3 simulation',
   evidenceValidator.includes('REQUIRED_RUNTIME_FLOW') &&
     evidenceValidator.includes('REQUIRED_BROKER') &&
     evidenceValidator.includes('REQUIRED_HARDWARE') &&
     evidenceValidator.includes("['DEFERRED', 'PASS']") &&
-    acceptanceGuide.includes('production-only') &&
+    acceptanceGuide.includes('Physical OTA/HIL remains') &&
     read('docs/RESCUE-02-RUNTIME-RUNBOOK.md').includes('Auditable final RESCUE-02B evidence gate'),
 );
 check(

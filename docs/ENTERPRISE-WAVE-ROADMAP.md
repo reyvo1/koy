@@ -21,8 +21,8 @@ This document is the authoritative post-foundation execution roadmap for the IoT
 | Wave | Large gate | Exit criteria |
 |---|---|---|
 | 1 | Rescue / CI / EMQX hardening | Core GitHub tests and live rescue EMQX acceptance green; MQTT auth/ACL/command path and dashboard acceptance deterministic. **Closed green on V13.** |
-| 2 | Core Runtime Closure | Automation delayed retry runtime is durable and truly republishes; scheduler activation cannot outpace its worker; Notification has leased multi-instance-safe delivery, auth email enqueue, bounded retry policy, and provider-neutral relay boundary. |
-| 3 | ESP32 + OTA Physical | Real ESP32 provisioning/reconnect/MQTT/telemetry/command/ACK plus verified OTA success/failure/recovery and image integrity evidence. |
+| 2 | Core Runtime Closure | Automation delayed retry runtime is durable and truly republishes; scheduler activation cannot outpace its worker; Notification has leased multi-instance-safe delivery, auth email enqueue, bounded retry policy, and provider-neutral relay boundary. **Closed green on V9.** |
+| 3 | ESP32 + OTA Automated Simulation | Real ESP-IDF compile, QEMU boot, live-service ESP32 digital twin, reconnect/MQTT/telemetry/command/ACK, and release-bound OTA SHA-256/failure/rollback simulation. Physical HIL remains final-certification evidence. |
 | 4 | Staging / VPS / UAT | Production-shaped staging, TLS/secrets/backups/restore/rollback, operator runbooks, and owner UAT baseline. |
 | 5 | Enterprise Domain / API Closure | Sharing, Organization/Branch, advanced RBAC, public API/webhook runtime, SDK and contract gaps closed end-to-end. |
 | 6 | Enterprise Management Plane | Capability template/version lifecycle, live MQTT management evidence, NOC, reports/audit/operational depth. |
@@ -39,9 +39,10 @@ Smart Hotel / TAMASYA is intentionally outside Wave 1–13 and starts only after
 ## Current gate
 
 - Wave 1: **CLOSED / GREEN**.
-- Wave 2: **ACTIVE — Core Runtime Closure**.
-- Waves 3–13: not active; do not pull their implementation into Wave 2 unless required to preserve a Wave 2 contract.
+- Wave 2: **CLOSED / GREEN** after V9 heavy GitHub acceptance.
+- Wave 3: **ACTIVE — ESP32 + OTA Automated Simulation**.
+- Waves 4–13: not active; do not pull their implementation into Wave 3 unless required to preserve a Wave 3 contract.
 
 ## Production boundary
 
-A green software pipeline is necessary but not sufficient for production approval. Physical ESP32/Wi‑Fi reconnect/MQTT/OTA evidence is mandatory in Wave 3, and final approval remains withheld until Wave 13 certification.
+A green software pipeline is necessary but not sufficient for production approval. Wave 3 must maximize automated ESP-IDF/QEMU/live-service simulation. Physical ESP32/HIL evidence remains mandatory before final Wave 13 production certification; simulation must never be relabeled as physical proof.

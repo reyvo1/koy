@@ -1,5 +1,7 @@
 # IoT Platform ESP32 Device SDK
 
+Current SDK contract/version: **2.1.0** (Wave 3 OTA activation).
+
 Firmware SDK for ESP32 / ESP32-S3 / ESP32-C3 boards connecting to the IoT Platform. **RESCUE-02 aligns this SDK with the active backend contract.**
 
 ## Canonical flow
@@ -12,9 +14,9 @@ Firmware SDK for ESP32 / ESP32-S3 / ESP32-C3 boards connecting to the IoT Platfo
 6. **Commands** — subscribe to `.../commands`; command envelope is `{"commandId":"...","payload":{...}}`.
 7. **ACK** — publish acknowledgements to `.../commands/ack`.
 8. **Heartbeat** — every 60 seconds the SDK calls `PATCH /devices/<deviceId>/heartbeat` with `X-Device-Id` and `X-Device-Secret` headers.
-9. **OTA** — streamed update foundation remains available; production acceptance still requires physical-board validation and SHA-256 verification proof.
+9. **OTA** — stream the artifact over trusted HTTPS into the inactive OTA partition, verify the complete SHA-256 before selecting it for boot, and confirm the new image only after live MQTT reconnect; unconfirmed first boot remains rollback-safe.
 
-## Integration (ESP-IDF v5)
+## Integration (ESP-IDF v5.5)
 
 ```c
 #include "iot_sdk.h"
@@ -42,4 +44,4 @@ void app_main(void) {
 
 ## Validation boundary
 
-The repository can statically validate the contract and server-side routes. A real ESP-IDF compile plus physical board, Wi-Fi, TLS, MQTT broker bridge, telemetry, command ACK, heartbeat and OTA tests remain required before hardware-production approval.
+Wave 3 adds a real ESP-IDF 5.5.5 component build, Espressif QEMU boot test, and a live-service ESP32 digital twin using the exact built firmware artifact for OTA SHA-256/failure/rollback simulation. Optional Wokwi CI can add another simulated-hardware layer when its token is configured. These are SIMULATED-HARDWARE/LIVE-SERVICE evidence only; physical HIL remains required before final production certification.

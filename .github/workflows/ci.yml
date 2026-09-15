@@ -152,9 +152,100 @@ jobs:
           retention-days: 14
 
 
+  esp32-firmware-simulation:
+    name: Wave 3 ESP-IDF build and QEMU boot simulation
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      WOKWI_CLI_TOKEN: ${{ secrets.WOKWI_CLI_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install ESP-IDF 5.5.5
+        uses: espressif/install-esp-idf-action@v1
+        with:
+          version: v5.5.5
+
+      - name: Verify Wave 3 firmware source contract
+        run: |
+          node scripts/self-test-wave3-esp32-simulation.mjs
+          node scripts/self-test-wave3-esp32-source.mjs
+
+      - name: Build ESP32 firmware with real ESP-IDF toolchain
+        working-directory: packages/esp32-sdk/test-app
+        run: |
+          rm -rf build sdkconfig sdkconfig.old
+          idf.py set-target esp32
+          idf.py build
+
+      - name: Install QEMU and pytest-embedded
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgcrypt20 libglib2.0-0 libpixman-1-0 libsdl2-2.0-0 libslirp0
+          python "$IDF_PATH/tools/idf_tools.py" install qemu-xtensa
+          . "$IDF_PATH/export.sh"
+          python -m pip install --disable-pip-version-check \
+            pytest==8.4.2 \
+            pytest-embedded==2.9.2 \
+            pytest-embedded-idf==2.9.2 \
+            pytest-embedded-qemu==2.9.2
+
+      - name: Boot linked SDK firmware in Espressif QEMU
+        working-directory: packages/esp32-sdk/test-app
+        run: |
+          . "$IDF_PATH/export.sh"
+          pytest -s pytest_wave3.py --embedded-services idf,qemu --app-path .
+
+      - name: Cross-build the same SDK for ESP32-C3
+        run: |
+          rm -rf /tmp/wave3-esp32c3
+          cp -a packages/esp32-sdk/test-app /tmp/wave3-esp32c3
+          cd /tmp/wave3-esp32c3
+          rm -rf build sdkconfig sdkconfig.old
+          idf.py set-target esp32c3
+          idf.py build
+
+      - name: Stage exact firmware artifact for live-service simulation
+        run: |
+          mkdir -p artifacts/wave3-esp32
+          cp packages/esp32-sdk/test-app/build/iot_sdk_wave3_test_app.bin artifacts/wave3-esp32/
+          cp packages/esp32-sdk/test-app/build/iot_sdk_wave3_test_app.elf artifacts/wave3-esp32/
+          cp packages/esp32-sdk/test-app/build/flasher_args.json artifacts/wave3-esp32/
+          (cd artifacts/wave3-esp32 && sha256sum iot_sdk_wave3_test_app.bin > sha256.txt)
+          cat artifacts/wave3-esp32/sha256.txt
+
+      - name: Optional Wokwi hardware simulation
+        if: env.WOKWI_CLI_TOKEN != ''
+        uses: wokwi/wokwi-ci-action@v1
+        with:
+          token: ${{ env.WOKWI_CLI_TOKEN }}
+          path: packages/esp32-sdk/test-app
+          expect_text: 'WAVE3_OTA_SHA256_REQUIRED'
+
+      - name: Record Wokwi evidence boundary when token is absent
+        if: env.WOKWI_CLI_TOKEN == ''
+        run: echo 'Wokwi NOT_RUN_EXTERNAL_TOKEN; mandatory ESP-IDF build + QEMU evidence remains required and Wokwi PASS is not claimed.'
+
+      - name: Upload Wave 3 firmware artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wave3-esp32-firmware
+          path: artifacts/wave3-esp32/
+          if-no-files-found: error
+          retention-days: 14
+
+
   rescue-live-emqx:
     name: Rescue live EMQX / acceptance
-    needs: test
+    needs: [test, esp32-firmware-simulation]
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -192,7 +283,17 @@ jobs:
           npm run baseline:manifest:verify
           npm run rescue:validate
           npm run wave2:core-runtime:self-test
+          npm run wave3:esp32:self-test
           npm run rescue:github-ci:self-test
+
+      - name: Download exact Wave 3 firmware artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: wave3-esp32-firmware
+          path: artifacts/wave3-esp32
+
+      - name: Verify Wave 3 firmware artifact hash
+        run: (cd artifacts/wave3-esp32 && sha256sum -c sha256.txt)
 
       - name: Verify Docker Compose runtime
         run: |
@@ -220,6 +321,10 @@ jobs:
       - name: Real EMQX auth ACL webhook and ACK smoke
         timeout-minutes: 8
         run: npm run rescue:broker:smoke -- --env=.env
+
+      - name: Wave 3 simulated ESP32 provisioning reconnect command and OTA
+        timeout-minutes: 10
+        run: npm run wave3:esp32:simulate -- --env=.env --firmware=artifacts/wave3-esp32/iot_sdk_wave3_test_app.bin
 
       - name: Gate 1 source-bound runtime receipt
         run: |

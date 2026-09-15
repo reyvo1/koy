@@ -75,11 +75,13 @@ version is unidentified, or secret-bearing keys appear in the evidence object.
 
 ## RESCUE-02B vs production OTA
 
-Physical pairing/telemetry/command/ACK/reconnect/heartbeat is required for the
-RESCUE-02B hardware boundary. OTA artifact-byte SHA-256 verification remains a
-separate **production-only** gate and may stay `DEFERRED` in a RESCUE-02B
+Physical pairing/telemetry/command/ACK/reconnect/heartbeat remains part of the
+RESCUE-02B hardware boundary. Wave 3 adds ESP-IDF/QEMU/live-service OTA
+simulation using the exact built firmware bytes, but this is classified as
+SIMULATED-HARDWARE. Physical OTA/HIL remains a separate
+**production-certification** gate and may stay `DEFERRED` in a RESCUE-02B
 evidence record. `DEFERRED` must include an explicit reason; it is not treated
-as OTA PASS.
+as physical OTA PASS.
 
 If OTA is later changed to `PASS`, the evidence validator additionally requires:
 

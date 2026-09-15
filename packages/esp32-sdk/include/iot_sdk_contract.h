@@ -37,12 +37,13 @@
 //
 // OTA CONTRACT:
 //   - GET artifactUrl over TLS
-//   - verify the expected SHA-256 before release acceptance
-//   - keep the previous partition bootable for rollback
+//   - stream into the inactive OTA partition only
+//   - verify the complete expected SHA-256 before selecting the new boot slot
+//   - keep the previous partition bootable until live MQTT reconnect confirms the new image
 //
 // SECURITY:
 //   - Pairing token is one-time and short lived.
 //   - Device secret and Wi-Fi credentials are stored in the encrypted NVS partition.
 //   - Credentials must never be logged.
 #pragma once
-#define IOT_SDK_CONTRACT_VERSION "2.0.0"
+#define IOT_SDK_CONTRACT_VERSION "2.1.0"

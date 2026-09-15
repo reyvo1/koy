@@ -1,6 +1,6 @@
 # Active enterprise state — 2026-09-15
 
-Authoritative execution is `docs/ENTERPRISE-WAVE-ROADMAP.md`. The 30 modules are foundation-complete; enterprise completion is not yet declared. Wave 1 Rescue/CI/EMQX hardening is closed green on the V13 baseline. Wave 2 Core Runtime Closure is active and covers durable automation retry runtime, scheduler activation safety, and leased Notification/email delivery runtime. Historical module-current statements below are retained only as chronology.
+Authoritative execution is `docs/ENTERPRISE-WAVE-ROADMAP.md`. The 30 modules are foundation-complete; enterprise completion is not yet declared. Wave 1 Rescue/CI/EMQX hardening and Wave 2 Core Runtime Closure are **CLOSED GREEN**. Wave 3 ESP32 + OTA Automated Simulation is **ACTIVE** and must prove real ESP-IDF compile/QEMU boot plus a live-service device twin against the rescue stack, including release-bound OTA SHA-256/failure/rollback simulation. Physical ESP32/HIL remains final-certification evidence and must never be inferred from simulation. Historical module-current statements below are retained only as chronology.
 
 ---
 

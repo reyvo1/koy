@@ -1,3 +1,50 @@
+# Chat Session — Enterprise Wave 3 ESP32 + OTA Automated Simulation
+
+## Active progress — 2026-09-15
+
+Wave 1 and Wave 2 are CLOSED GREEN; Wave 2 V9 is the authoritative input baseline (`1035` source paths / `1036` manifest entries). Wave 3 is ACTIVE and is being built as one large automated simulation gate before one push.
+
+Implemented in the current Wave 3 batch:
+- ESP32 SDK version/contract bumped to 2.1.0 and made a real ESP-IDF component.
+- Streamed HTTPS OTA implementation writes only the inactive OTA partition, computes full SHA-256, compares digest before boot-slot selection, aborts partial writes, and keeps a new image rollback-pending until MQTT reconnect confirms it.
+- ESP-IDF test application added with dual OTA slots and rollback enabled.
+- Mandatory GitHub ESP-IDF 5.5.5 job builds ESP32, boots it in Espressif QEMU via pytest-embedded, cross-builds ESP32-C3, and uploads the exact firmware artifact.
+- Optional Wokwi CI is wired only when `WOKWI_CLI_TOKEN` exists; absence is explicit NOT_RUN, never PASS.
+- Live Wave 3 digital twin uses the built firmware artifact and real rescue API/PostgreSQL/EMQX to exercise provisioning, heartbeat, telemetry, reconnect, command/ACK, duplicate command suppression, and OTA SHA/reject/interruption/rollback/confirm scenarios.
+- Acceptance policy now has a distinct SIMULATED-HARDWARE tier. Physical ESP32/HIL remains pending final Wave 13 certification.
+- Stale documentation/validator wording that claimed OTA SHA verification was unimplemented has been replaced by the new simulation-versus-physical evidence boundary.
+- Wave 3 self-tests resolve repository paths from the script location rather than process CWD.
+
+QA already executed in the chat environment:
+- `self-test-wave3-esp32-simulation.mjs`: PASS, including actual local trusted HTTPS artifact transfer, wrong-digest rejection, interrupted-stream rejection, dedupe and rollback model.
+- `self-test-wave3-esp32-source.mjs`: PASS.
+- `self-test-rescue-github-ci.mjs`: PASS with mandatory firmware job/artifact/live-simulation sequencing.
+- Wave 3 scripts Node syntax: PASS.
+- GitHub workflow YAML parse: PASS.
+- Updated OTA/evidence guards in `validate-rescue-baseline.mjs`: PASS in the working snapshot; the snapshot still has one unrelated historical Super Reports failure, so unchanged baseline files must come from the sealed V9 authoritative source rather than being patched from the chat snapshot.
+- Real ESP-IDF compilation/QEMU and rescue live-service simulation are intentionally pending GitHub evidence; they must not be claimed locally.
+
+Next before handoff/package:
+1. Overlay only Wave 3 changed/new files onto the complete sealed V9 authoritative baseline.
+2. Generate/verify the new target seal and run dependency-free regressions there.
+3. Build/test a recovery applicator that verifies the real user target is clean sealed V9 before copying anything.
+4. Package Wave 3. Do not push until the operator local `wave3:prepush:check` is green.
+
+## Wave 3 pre-package QA update
+
+- Rebuilt the Wave 3 candidate from the complete sealed Wave 2 V9 baseline instead of trusting unrelated stale files in the chat snapshot.
+- Overlay scope: 37 changed/new Wave 3 files; 15 are new source paths.
+- Authoritative candidate seal after overlay: **1050 source paths / 1051 manifest entries**.
+- `manage-baseline-manifest verify`: PASS on the reconstructed candidate.
+- Wave 3 simulation self-test: PASS even when invoked outside repository CWD.
+- Wave 3 source/CI contract self-test: PASS.
+- GitHub CI contract self-test: PASS.
+- `package.json` parse, GitHub Actions YAML parse and pytest Python syntax: PASS.
+- OTA/evidence guards in `validate-rescue-baseline`: PASS; one unrelated historical Super Reports assertion remains only in the chat-retained source snapshot and is not included in the Wave 3 payload. The operator/GitHub Wave 2 V9 checkout remains authoritative for unchanged files.
+- Mandatory real ESP-IDF build/QEMU and live rescue simulation are still GitHub evidence and are not claimed locally.
+
+---
+
 # Chat Session — Enterprise Wave 2 Core Runtime Closure
 
 ## Wave 2 progress — 2026-09-15

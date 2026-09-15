@@ -450,6 +450,7 @@ docs/telemetry-aggregation.md
 docs/telemetry-storage-strategy.md
 docs/testing-strategy.md
 docs/wave-02-core-runtime-closure.md
+docs/wave-03-esp32-ota-simulation.md
 jest.config.js
 ops/acceptance/README.md
 ops/acceptance/rescue-02b-evidence.example.json
@@ -476,10 +477,20 @@ packages/design-system/src/design-system-v2.css
 packages/design-system/src/index.tsx
 packages/design-system/src/styles.css
 packages/design-system/tsconfig.json
+packages/esp32-sdk/CMakeLists.txt
 packages/esp32-sdk/README.md
 packages/esp32-sdk/include/iot_sdk.h
 packages/esp32-sdk/include/iot_sdk_contract.h
 packages/esp32-sdk/src/iot_sdk.c
+packages/esp32-sdk/test-app/CMakeLists.txt
+packages/esp32-sdk/test-app/diagram.json
+packages/esp32-sdk/test-app/main/CMakeLists.txt
+packages/esp32-sdk/test-app/main/app_main.c
+packages/esp32-sdk/test-app/partitions.csv
+packages/esp32-sdk/test-app/pytest_wave3.py
+packages/esp32-sdk/test-app/sdkconfig.defaults
+packages/esp32-sdk/test-app/wokwi-scenario.yaml
+packages/esp32-sdk/test-app/wokwi.toml
 prisma/DATABASE-CONVENTIONS.md
 prisma/migrations/20260713000000_init/migration.sql
 prisma/migrations/20260713000001_auth_foundation_update/migration.sql
@@ -533,6 +544,7 @@ scripts/diagnose-rescue-bootstrap.mjs
 scripts/init-rescue-02b-evidence.mjs
 scripts/init-rescue-local-env.mjs
 scripts/lib/rescue-mqtt-operations.mjs
+scripts/lib/wave3-sim-core.mjs
 scripts/manage-baseline-manifest.mjs
 scripts/manage-module-state.mjs
 scripts/manage-rescue-local-runtime.mjs
@@ -541,6 +553,7 @@ scripts/rescue-local-network.mjs
 scripts/run-rescue-acceptance.mjs
 scripts/run-rescue-gate1.mjs
 scripts/run-rescue-live-broker-smoke.mjs
+scripts/run-wave3-esp32-simulation.mjs
 scripts/self-test-baseline-hygiene.mjs
 scripts/self-test-baseline-manifest.mjs
 scripts/self-test-dashboard-widget-integration-access.mjs
@@ -563,6 +576,8 @@ scripts/self-test-unit-test-type-boundary.mjs
 scripts/self-test-wave1-prepush.mjs
 scripts/self-test-wave2-core-runtime.mjs
 scripts/self-test-wave2-prisma-schema-check.mjs
+scripts/self-test-wave3-esp32-simulation.mjs
+scripts/self-test-wave3-esp32-source.mjs
 scripts/self-test-web-framework-contract-sync.mjs
 scripts/validate-rescue-02b-evidence.mjs
 scripts/validate-rescue-baseline.mjs

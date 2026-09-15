@@ -1,6 +1,6 @@
 # Gate naming clarification — 2026-09-15
 
-This file is historical Rescue Gate 1 evidence and must not be confused with the enterprise Wave 1–13 master roadmap. The active roadmap is `docs/ENTERPRISE-WAVE-ROADMAP.md`. Wave 1 software/CI is closed green; Wave 2 Core Runtime Closure is ACTIVE at V7 first-heavy-integration recovery; production approval still requires later physical and certification waves.
+This file is historical Rescue Gate 1 evidence and must not be confused with the enterprise Wave 1–13 master roadmap. The active roadmap is `docs/ENTERPRISE-WAVE-ROADMAP.md`. Wave 1 software/CI and Wave 2 Core Runtime Closure are CLOSED GREEN; Wave 3 ESP32 + OTA Automated Simulation is ACTIVE. Production approval still requires later physical/HIL and final certification waves.
 
 ---
 
@@ -53,3 +53,7 @@ V8 fixes the evidence harness class without changing Notification business logic
 - Root correction: one shared `NotificationHttpsClient` for Webhook + Email Relay, explicit scoped CA trust for tests, absolute timeout, TLS/network/timeout classification, no global TLS bypass.
 - Container QA: actual HTTPS success with fixture CA PASS; untrusted cert -> TLS/DEPTH_ZERO_SELF_SIGNED_CERT PASS; timeout -> ETIMEDOUT PASS; refused socket -> NETWORK/ECONNREFUSED PASS; changed TypeScript transpile PASS; Wave 2 invariant PASS.
 - Wave 2 remains ACTIVE pending Windows local 14-suite gate and GitHub heavy acceptance.
+
+
+## Wave 3 automated-simulation note
+Wave 3 adds mandatory ESP-IDF 5.5.5 compile, QEMU boot, and a live-service ESP32 digital twin bound to the exact built firmware artifact. OTA simulation verifies artifact bytes/SHA-256 and exercises reject/interruption/rollback/confirm paths. These are SIMULATED-HARDWARE/LIVE-SERVICE evidence only; historical Rescue Gate 1 physical-production requirements remain unchanged.
