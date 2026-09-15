@@ -9,7 +9,7 @@ Master roadmap: `docs/ENTERPRISE-WAVE-ROADMAP.md` Wave 1–13. Wave 1 and Wave 2
 Close ESP32/OTA automated evidence as one large wave before one GitHub push:
 
 1. Build the SDK as a real ESP-IDF 5.5.5 component for ESP32 and ESP32-C3.
-2. Boot the linked ESP32 firmware under Espressif QEMU/pytest-embedded.
+2. Boot the linked ESP32 firmware under Espressif QEMU/repository-native boot runner.
 3. Carry the exact built firmware `.bin` into the rescue live-service job.
 4. Run a device digital twin through real rescue API/PostgreSQL/EMQX for provisioning, heartbeat, MQTT telemetry, disconnect/reconnect, command/ACK, and duplicate QoS-1 suppression.
 5. Exercise OTA over trusted HTTPS using that exact built artifact: matching SHA-256 success, wrong-digest rejection, interrupted-stream rejection, pending-verify rollback, and live-reconnect confirmation.
@@ -642,3 +642,10 @@ The V2 heavy run proved the build graph fix by compiling the SDK on both ESP32 a
 
 ## Wave 3 V4 handoff
 Current correction class: ESP-IDF/QEMU CI toolchain lifecycle. V3 build graph and ESP-IDF 5.5 API surface are closed. Both chip targets built, then `. "$IDF_PATH/export.sh"` re-activation failed because the action-managed tool registry was re-read inconsistently. V4 uses one environment owner (`espressif/install-esp-idf-action@v1`), the action venv for QEMU/pytest installation, and explicit QEMU PATH export without reactivation. Do not reopen backend/Wave 2 issues.
+
+
+### Wave 3 V5 root-cause correction
+
+The V4 heavy run closed compile and QEMU installation but exposed a tool-version boundary: pytest-embedded-qemu 2.9.2 invoked esptool v5-style `merge-bin` against the ESP-IDF 5.5.5 esptool 4.12.0 CLI, which accepts `merge_bin`. V5 removes that redundant compatibility layer from mandatory evidence. The project now generates its QEMU flash through `idf.py merge-bin` and runs the target-specific QEMU binary directly under a bounded repository-native boot harness. Do not reintroduce pytest-embedded into the mandatory QEMU gate without an explicit compatibility proof against the pinned ESP-IDF/esptool pair.
+
+Wave 3 V5 deep-scan note: do not substitute the QEMU merged full-flash image for the OTA application artifact. The QEMU runner verifies matrix target identity and an exact 4 MiB merged image; live OTA simulation continues to consume `iot_sdk_wave3_test_app.bin` and verifies its ESP application-image magic/SHA-256 separately.

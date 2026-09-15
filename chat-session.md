@@ -8,7 +8,7 @@ Implemented in the current Wave 3 batch:
 - ESP32 SDK version/contract bumped to 2.1.0 and made a real ESP-IDF component.
 - Streamed HTTPS OTA implementation writes only the inactive OTA partition, computes full SHA-256, compares digest before boot-slot selection, aborts partial writes, and keeps a new image rollback-pending until MQTT reconnect confirms it.
 - ESP-IDF test application added with dual OTA slots and rollback enabled.
-- Mandatory GitHub ESP-IDF 5.5.5 job builds ESP32, boots it in Espressif QEMU via pytest-embedded, cross-builds ESP32-C3, and uploads the exact firmware artifact.
+- Mandatory GitHub ESP-IDF 5.5.5 job builds ESP32, boots it in Espressif QEMU via repository-native boot runner (`idf.py merge-bin` + direct QEMU), cross-builds ESP32-C3, and uploads the exact firmware artifact.
 - Optional Wokwi CI is wired only when `WOKWI_CLI_TOKEN` exists; absence is explicit NOT_RUN, never PASS.
 - Live Wave 3 digital twin uses the built firmware artifact and real rescue API/PostgreSQL/EMQX to exercise provisioning, heartbeat, telemetry, reconnect, command/ACK, duplicate command suppression, and OTA SHA/reject/interruption/rollback/confirm scenarios.
 - Acceptance policy now has a distinct SIMULATED-HARDWARE tier. Physical ESP32/HIL remains pending final Wave 13 certification.
@@ -540,3 +540,36 @@ V8 fixes the evidence harness class without changing Notification business logic
 - Added `self-test-wave3-esp-idf-toolchain-lifecycle.mjs` and CI regression assertions.
 - Wave 3 remains ACTIVE pending GitHub native QEMU + live service + full acceptance.
 - V4 synthetic recovery QA: clean V3 1052/1053 -> 11-file overlay -> all dependency-free Wave 3/toolchain/CI/manifest regressions PASS -> generated V4 1053/1054 -> pre-push command invocation -> final manifest verify PASS. Full npm pre-push and native QEMU remain for operator/GitHub evidence.
+
+
+## 2026-09-15 — Wave 3 V5 deep root-cause scan
+
+- Latest GitHub logs were scanned across both firmware matrix jobs and the core job. Core remains green; both chips compile successfully.
+- Failure class is not firmware source: pytest-embedded-qemu 2.9.2 emits esptool v5 `merge-bin`, while pinned ESP-IDF 5.5.5 provides esptool 4.12.0 with the v4 `merge_bin` CLI. Both targets fail at identical flash-image generation before guest boot.
+- Internet verification: ESP-IDF 5.5.5 documents `idf.py merge-bin`; Espressif QEMU docs document direct `qemu-system-xtensa` / `qemu-system-riscv32` execution from a merged 4MB flash image; ESP32-C3 requires `-icount 3`.
+- V5 removes pytest-embedded from mandatory QEMU evidence, adds `scripts/run-wave3-qemu-boot.mjs`, and adds a dependency-free runner self-test covering success/exit/timeout/unsupported-target.
+- Keep optional Wokwi separate; PHYSICAL/HIL remains Wave 13 evidence.
+
+## 2026-09-15 — Wave 3 V5 deep root-cause scan / native QEMU compatibility
+
+- GitHub V4 proved both ESP32 and ESP32-C3 native builds and QEMU installation succeed. The shared failure occurred before guest boot: `pytest-embedded-qemu` 2.9.2 generated esptool-v5 `merge-bin`, while pinned ESP-IDF 5.5.5 carried esptool 4.12.0 whose direct CLI spelling is `merge_bin`.
+- Mandatory QEMU evidence no longer depends on pytest-embedded. The pinned framework now owns image creation via `idf.py merge-bin`, followed by direct target-specific Espressif QEMU execution under a bounded repository-native marker runner.
+- Deep scan also removed the redundant dual-target pytest parameterization, kept ESP32/ESP32-C3 as independent CI matrix builds, preserved exact application `.bin` handoff for OTA, and retained optional Wokwi as additional evidence only.
+- New fail-fast runner checks: build target must match the matrix target, merged QEMU image must be exactly 4 MiB, ESP32-C3 requires `-icount 3`, all three firmware boot markers are required, and premature exit/timeout are fail-closed.
+- Dependency-free Wave 3 guards, GitHub CI self-test, manifest portability test, YAML/package parse, and QEMU runner success/mismatch/wrong-size/exit/timeout cases all PASS locally in the artifact workspace.
+- Heavy native ESP-IDF/QEMU remains GitHub authority; no physical/HIL PASS is claimed.
+
+### V5 applicator certification
+
+- Candidate authoritative seal: 1054 source paths / 1055 manifest entries.
+- V5 applicator tested from a clean committed V4 replica with authoritative V4 seal 1053/1054.
+- Recovery preflight detected the exact V4 pytest-embedded compatibility markers, copied 17 files, deleted `packages/esp32-sdk/test-app/pytest_wave3.py`, ran all dependency-free Wave 3 guards, regenerated 1054/1055, and finished final manifest verification PASS.
+- Synthetic test deliberately mocked only `npm run wave3:prepush:check` because this artifact workspace does not contain the full project dependency installation; on the user's Windows repo the applicator must execute the real lightweight pre-push gate and fail closed if it is not green.
+- Final ZIP must be certified separately after this note is included so the distributed artifact is byte-identical to the tested package.
+
+### V5 final package certification
+
+- Final distribution ZIP was extracted into a clean directory and every internal `SHA256SUMS.txt` entry verified.
+- The applicator was then executed from that extracted ZIP against a fresh clean committed V4 replica. Recovery, 17-file overlay, one-file deletion, all dependency-free guards, target-generated 1054/1055 seal, mocked-only synthetic pre-push invocation, and final manifest verification all PASS.
+- Final ZIP payload matched the applied target byte-for-byte 17/17. On the user's real Windows repository, `npm run wave3:prepush:check` is not mocked and remains mandatory before any corrective push.
+- GitHub remains the authority for native dual-target direct-QEMU boot, exact firmware artifact live-service OTA simulation, real EMQX, and full acceptance. Wave 4 stays blocked.

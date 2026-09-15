@@ -115,4 +115,22 @@ The V2 heavy run reached real C compilation on both ESP32 and ESP32-C3 and expos
 
 
 ### V4 toolchain-lifecycle hardening
-The firmware CI must have exactly one ESP-IDF environment owner. `espressif/install-esp-idf-action@v1` installs and exports IDF/tool/Python state. Later QEMU installation may add the architecture-specific QEMU binary directory to PATH, but must not source `export.sh` again. QEMU and pytest-embedded installation run with `$IDF_PYTHON_ENV_PATH/bin/python`. A dependency-free lifecycle self-test enforces this before the expensive native toolchain stage.
+The firmware CI must have exactly one ESP-IDF environment owner. `espressif/install-esp-idf-action@v1` installs and exports IDF/tool/Python state. Later QEMU installation may add the architecture-specific QEMU binary directory to PATH, but must not source `export.sh` again. QEMU installation runs with `$IDF_PYTHON_ENV_PATH/bin/python`; mandatory boot deliberately avoids pytest-embedded so ESP-IDF 5.5.5 owns its matching esptool contract. A dependency-free lifecycle self-test enforces this before the expensive native toolchain stage.
+
+
+## V5 — remove pytest-embedded from mandatory QEMU path
+
+The V4 heavy run reached QEMU on both targets but failed before guest boot. The installed ESP-IDF 5.5.5 environment reported esptool 4.12.0, whose CLI uses `merge_bin`; pytest-embedded-qemu 2.9.2 generated a `merge-bin` command and therefore failed on both targets. This is a tool-version compatibility boundary, not a firmware failure.
+
+V5 uses the pinned framework as the compatibility owner:
+
+1. `idf.py build` creates the target build.
+2. `idf.py merge-bin -o <absolute-output> -f raw --fill-flash-size 4MB` creates the canonical QEMU flash image using the esptool contract matched to ESP-IDF 5.5.5.
+3. The repository-native runner starts `qemu-system-xtensa -machine esp32` or `qemu-system-riscv32 -icount 3 -machine esp32c3` with that image.
+4. PASS requires `WAVE3_QEMU_BOOT_OK`, the SDK version/state marker, and the OTA-SHA marker. Premature exit or timeout is FAIL.
+
+`pytest-embedded` remains useful for other hardware/test workflows but is deliberately not a mandatory dependency of this pinned QEMU gate.
+
+### V5 additional fail-fast invariants
+
+The repository-native QEMU runner also verifies the compiled `project_description.json` target matches the CI matrix target before image generation, and requires `idf.py merge-bin --fill-flash-size 4MB` to produce exactly a 4 MiB flash image. This prevents a cross-target build or truncated/incorrect merged image from reaching QEMU and consuming another native CI cycle.

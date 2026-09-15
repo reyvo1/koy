@@ -24,18 +24,23 @@ check('firmware job never re-sources export.sh after action activation',
   !job.includes('$IDF_PATH/export.sh') && !job.includes('export.sh'));
 check('QEMU is installed through the active IDF tool registry',
   job.includes('"$IDF_PYTHON" "$IDF_PATH/tools/idf_tools.py" install "$QEMU_TOOL"'));
-check('installer-managed Python venv owns QEMU and pytest installation',
-  job.includes('IDF_PYTHON="$IDF_PYTHON_ENV_PATH/bin/python"') && job.includes('"$IDF_PYTHON" -m pip install'));
+check('installer-managed Python venv owns the QEMU tool installation',
+  job.includes('IDF_PYTHON="$IDF_PYTHON_ENV_PATH/bin/python"') &&
+    job.includes('"$IDF_PYTHON" "$IDF_PATH/tools/idf_tools.py" install "$QEMU_TOOL"'));
+check('mandatory QEMU boot does not install or depend on pytest-embedded',
+  !job.includes('pytest-embedded') && !job.includes('pytest_wave3.py') && !job.includes('--embedded-services'));
 check('target QEMU binary is resolved from IDF_TOOLS_PATH after install',
   job.includes('QEMU_PATH="$(find "$IDF_TOOLS_PATH/tools/$QEMU_TOOL"'));
 check('resolved QEMU directory is exported to current and subsequent GitHub steps',
   job.includes('export PATH="$QEMU_DIR:$PATH"') && job.includes('echo "$QEMU_DIR" >> "$GITHUB_PATH"'));
 check('ESP32 and ESP32-C3 map to architecture-correct QEMU binaries',
   job.includes('QEMU_BINARY=qemu-system-xtensa') && job.includes('QEMU_BINARY=qemu-system-riscv32'));
-check('QEMU install is verified before pytest dependencies',
-  job.indexOf('"$QEMU_PATH" --version') < job.indexOf('pytest==8.4.2'));
-check('QEMU boot step verifies binary visibility without reactivation',
-  job.includes('command -v qemu-system-riscv32') && job.includes('command -v qemu-system-xtensa'));
+check('QEMU install is verified before native boot execution',
+  job.indexOf('"$QEMU_PATH" --version') < job.indexOf('run-wave3-qemu-boot.mjs'));
+check('QEMU boot uses the repository-native ESP-IDF-compatible runner',
+  job.includes('node scripts/run-wave3-qemu-boot.mjs') &&
+    job.includes('--target="${{ matrix.target }}"') &&
+    job.includes('--app-path=packages/esp32-sdk/test-app'));
 check('idf.py remains available from the installer-managed environment',
   job.includes('idf.py --version'));
 

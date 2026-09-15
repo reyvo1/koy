@@ -78,3 +78,8 @@ Wave 3 adds mandatory ESP-IDF 5.5.5 compile, QEMU boot, and a live-service ESP32
 
 ### Wave 3 V4 CI lifecycle status
 V3 native compilation reached completion for both chip targets; the active blocker is isolated to QEMU setup environment re-activation. V4 removes the second ESP-IDF activation and adds a pre-toolchain lifecycle guard. This is not physical/HIL evidence.
+
+
+### Wave 3 V5 QEMU compatibility correction
+
+Mandatory simulated-hardware evidence now uses the version-owned ESP-IDF path: `idf.py merge-bin` followed by direct Espressif QEMU execution. `pytest-embedded-qemu` is not part of the mandatory Wave 3 boot path because its independent flash-image generator can drift from the esptool CLI version bundled with pinned ESP-IDF 5.5.5. PASS still requires actual guest boot markers on both ESP32 and ESP32-C3.

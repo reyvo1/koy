@@ -66,13 +66,24 @@ assert(
 );
 assert(
   ci.includes('qemu-riscv32') && ci.includes('qemu-xtensa') &&
-    ci.includes('--target "${{ matrix.target }}"'),
-  'both ESP32 Xtensa and ESP32-C3 RISC-V firmware boot in target-appropriate QEMU',
+    ci.includes('run-wave3-qemu-boot.mjs') && ci.includes('--target="${{ matrix.target }}"'),
+  'both ESP32 Xtensa and ESP32-C3 RISC-V firmware boot through the repository-native target-aware QEMU runner',
 );
 assert(
   !ci.includes('cp -a packages/esp32-sdk/test-app /tmp/wave3-esp32c3') &&
     !ci.includes('/tmp/wave3-esp32-sdk-c3'),
   'obsolete detached or serial ESP32-C3 copy paths are removed',
+);
+
+assert(
+  !ci.includes('pytest-embedded') && !ci.includes('pytest_wave3.py') &&
+    !ci.includes('--embedded-services idf,qemu'),
+  'mandatory QEMU boot has no independent pytest-embedded/esptool compatibility layer',
+);
+assert(
+  ci.includes('node scripts/self-test-wave3-qemu-boot-runner.mjs') &&
+    ci.indexOf('node scripts/self-test-wave3-qemu-boot-runner.mjs') < ci.indexOf('Install ESP-IDF 5.5.5'),
+  'QEMU runner lifecycle self-test runs before expensive ESP-IDF installation',
 );
 
 const jobStart = ci.indexOf('  esp32-firmware-simulation:');

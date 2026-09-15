@@ -64,3 +64,6 @@ WAVE 3 V3 ACTIVE: V2 build graph is proven; both ESP32/ESP32-C3 reached C compil
 
 
 WAVE 3 V4: jangan reopen API MQTT/build graph lama. V3 membuktikan kedua chip build; blocker adalah ESP-IDF environment diaktifkan ulang sebelum QEMU. V4 wajib single environment owner + action venv + explicit QEMU PATH. Wave 3 masih ACTIVE sampai GitHub hijau.
+
+
+WAVE 3 V5 ACTIVE: V4 proved both firmware targets compile and QEMU installs. The remaining failure was a tool-version boundary before guest boot: pytest-embedded-qemu 2.9.2 emitted esptool v5 `merge-bin` while pinned ESP-IDF 5.5.5 shipped esptool 4.12.0 using the v4 `merge_bin` command. Mandatory QEMU evidence now uses `idf.py merge-bin` plus a repository-native bounded direct-QEMU runner; pytest-embedded is removed from the mandatory boot path. Keep Wave 4 blocked until dual-target boot + exact-artifact live simulation + EMQX/full acceptance are green.

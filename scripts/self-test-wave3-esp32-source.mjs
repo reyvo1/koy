@@ -27,6 +27,7 @@ assert(sdk.includes('trusted_https_configured(artifact_url)'), 'OTA requires tru
 assert(header.includes('rollback-pending until it reconnects to MQTT successfully'), 'public SDK contract documents rollback confirmation boundary');
 assert(component.includes('app_update') && component.includes('mbedtls') && component.includes('mqtt'), 'ESP-IDF component declares OTA crypto and MQTT dependencies');
 assert(ci.includes('Wave 3 ESP-IDF ${{ matrix.target }} build and QEMU boot'), 'GitHub CI contains mandatory dual-target ESP-IDF/QEMU simulation matrix');
+assert(ci.includes('node scripts/run-wave3-qemu-boot.mjs') && !ci.includes('pytest-embedded'), 'mandatory QEMU boot uses the ESP-IDF-compatible repository-native runner without pytest-embedded version drift');
 assert(ci.includes('espressif/install-esp-idf-action@v1') && ci.includes('v5.5.5'), 'GitHub CI pins a supported ESP-IDF 5.5.5 toolchain');
 assert(ci.includes('wave3:esp32:simulate'), 'live rescue job runs the Wave 3 device digital-twin simulation');
 assert(ci.includes('actions/download-artifact@v4') && ci.includes('wave3-esp32-firmware'), 'live simulation consumes the exact firmware artifact built by the ESP-IDF job');

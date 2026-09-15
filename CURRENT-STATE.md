@@ -1474,3 +1474,10 @@ Dependency-free Wave 3 guards and CI contract PASS; workflow/package/pytest synt
 - Failure class was CI environment re-activation: `install-esp-idf-action` had already exported IDF/tool/Python state, then the QEMU step re-sourced `export.sh` and failed its tool registry with `esp-rom-elfs has no installed versions`.
 - V4 keeps the GitHub action as the single ESP-IDF environment owner. QEMU is installed with `$IDF_PYTHON_ENV_PATH/bin/python`; its resolved binary directory alone is appended to PATH/GITHUB_PATH.
 - No backend, DB, MQTT business logic, or firmware SDK behavior changed in V4. Wave 3 remains ACTIVE until native QEMU/live simulation/full acceptance is green.
+
+
+## Wave 3 V5 native QEMU image/runner root correction — 2026-09-15
+
+The V4 GitHub run proved both ESP32 and ESP32-C3 compile successfully and QEMU binaries install correctly. Boot then failed before guest execution because `pytest-embedded-qemu` 2.9.2 generated the merged flash with the esptool v5 command spelling `merge-bin`, while the ESP-IDF 5.5.5 environment carries esptool 4.12.0 whose CLI command is `merge_bin`. The mandatory QEMU path no longer uses pytest-embedded. V5 uses the ESP-IDF 5.5.5 frontend (`idf.py merge-bin`) to create the canonical 4MB flash image, then launches Espressif QEMU directly and requires all firmware boot markers before PASS. A dependency-free runner self-test covers success, premature exit, timeout, invalid target, and stdout/stderr marker collection before the expensive toolchain install.
+
+Wave 3 V5 deep-scan hardening additionally validates the built target identity from `project_description.json` and the exact 4 MiB merged QEMU flash size before guest launch. The live OTA stage remains bound to the application `.bin`, while QEMU alone consumes the merged full-flash image.

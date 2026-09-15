@@ -60,3 +60,8 @@ The first real dual-target compile after build-graph repair exposed stale ESP-MQ
 
 ### Wave 3 V4 evidence note
 Dual-target native compilation is proven to reach post-build QEMU setup. V4 fixes only the CI environment lifecycle that prevented QEMU execution; it does not upgrade SIMULATED-HARDWARE evidence to PHYSICAL/HIL.
+
+
+### Wave 3 V5 QEMU image-generation compatibility closure
+
+V4 proved both native firmware builds and target QEMU installations. Guest boot was blocked by an unnecessary compatibility layer: pytest-embedded-qemu 2.9.2 generated an esptool v5-style `merge-bin` command while the pinned ESP-IDF 5.5.5 environment contains esptool 4.12.0 with the v4 `merge_bin` CLI. Mandatory evidence now delegates flash-image creation to the pinned framework itself via `idf.py merge-bin`, then runs Espressif QEMU directly under a bounded repository-native marker verifier. This change does not weaken simulated-hardware evidence; both targets still must actually boot and emit the SDK/OTA markers.

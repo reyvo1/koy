@@ -180,6 +180,7 @@ jobs:
           node scripts/self-test-wave3-esp-idf-build-graph.mjs
           node scripts/self-test-wave3-esp-idf-api-surface.mjs
           node scripts/self-test-wave3-esp-idf-toolchain-lifecycle.mjs
+          node scripts/self-test-wave3-qemu-boot-runner.mjs
           node scripts/self-test-wave3-esp32-source.mjs
 
       - name: Install ESP-IDF 5.5.5
@@ -194,7 +195,7 @@ jobs:
           idf.py set-target "${{ matrix.target }}"
           idf.py build
 
-      - name: Install target QEMU and pytest-embedded without reactivating ESP-IDF
+      - name: Install target QEMU without reactivating ESP-IDF
         run: |
           sudo apt-get update
           sudo apt-get install -y libgcrypt20 libglib2.0-0 libpixman-1-0 libsdl2-2.0-0 libslirp0
@@ -214,22 +215,14 @@ jobs:
           export PATH="$QEMU_DIR:$PATH"
           echo "$QEMU_DIR" >> "$GITHUB_PATH"
           "$QEMU_PATH" --version
-          "$IDF_PYTHON" -m pip install --disable-pip-version-check \
-            pytest==8.4.2 \
-            pytest-embedded==2.9.2 \
-            pytest-embedded-idf==2.9.2 \
-            pytest-embedded-qemu==2.9.2
 
       - name: Boot ${{ matrix.target }} linked SDK firmware in Espressif QEMU
-        working-directory: packages/esp32-sdk/test-app
         run: |
-          if [ "${{ matrix.target }}" = "esp32c3" ]; then
-            command -v qemu-system-riscv32
-          else
-            command -v qemu-system-xtensa
-          fi
           idf.py --version
-          pytest -s pytest_wave3.py --embedded-services idf,qemu --target "${{ matrix.target }}" --app-path .
+          node scripts/run-wave3-qemu-boot.mjs \
+            --target="${{ matrix.target }}" \
+            --app-path=packages/esp32-sdk/test-app \
+            --timeout-ms=30000
 
       - name: Stage exact ESP32 firmware artifact for live-service simulation
         if: matrix.target == 'esp32'

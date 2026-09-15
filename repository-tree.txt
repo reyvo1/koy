@@ -487,7 +487,6 @@ packages/esp32-sdk/test-app/diagram.json
 packages/esp32-sdk/test-app/main/CMakeLists.txt
 packages/esp32-sdk/test-app/main/app_main.c
 packages/esp32-sdk/test-app/partitions.csv
-packages/esp32-sdk/test-app/pytest_wave3.py
 packages/esp32-sdk/test-app/sdkconfig.defaults
 packages/esp32-sdk/test-app/wokwi-scenario.yaml
 packages/esp32-sdk/test-app/wokwi.toml
@@ -554,6 +553,7 @@ scripts/run-rescue-acceptance.mjs
 scripts/run-rescue-gate1.mjs
 scripts/run-rescue-live-broker-smoke.mjs
 scripts/run-wave3-esp32-simulation.mjs
+scripts/run-wave3-qemu-boot.mjs
 scripts/self-test-baseline-hygiene.mjs
 scripts/self-test-baseline-manifest.mjs
 scripts/self-test-dashboard-widget-integration-access.mjs
@@ -581,6 +581,7 @@ scripts/self-test-wave3-esp-idf-build-graph.mjs
 scripts/self-test-wave3-esp-idf-toolchain-lifecycle.mjs
 scripts/self-test-wave3-esp32-simulation.mjs
 scripts/self-test-wave3-esp32-source.mjs
+scripts/self-test-wave3-qemu-boot-runner.mjs
 scripts/self-test-web-framework-contract-sync.mjs
 scripts/validate-rescue-02b-evidence.mjs
 scripts/validate-rescue-baseline.mjs

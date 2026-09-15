@@ -69,7 +69,7 @@ Notification Webhook and Email Relay evidence MUST exercise the shared productio
 | Wave 3 claim | Minimum evidence | Automated proof |
 |---|---|---|
 | SDK is buildable firmware, not only a header/source contract | INTEGRATION / TOOLCHAIN | ESP-IDF 5.5.5 build for ESP32 + ESP32-C3 |
-| Linked SDK boots on an ESP32 execution model | SIMULATED-HARDWARE | Espressif QEMU via pytest-embedded |
+| Linked SDK boots on an ESP32 execution model | SIMULATED-HARDWARE | Espressif QEMU via repository-native boot runner (`idf.py merge-bin` + direct QEMU) |
 | Provisioning/MQTT telemetry/command/ACK operate through the platform stack | SIMULATED-HARDWARE + LIVE-SERVICE | digital twin against real rescue API/PostgreSQL/EMQX |
 | Network reconnect preserves device identity and resumes telemetry | SIMULATED-HARDWARE + LIVE-SERVICE | forced MQTT disconnect/reconnect and persisted post-reconnect event |
 | Duplicate QoS-1 command does not re-execute actuator behavior | SIMULATED-HARDWARE + LIVE-SERVICE | bounded command cache + ACK replay against real broker |
