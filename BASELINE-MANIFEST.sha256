@@ -64,10 +64,10 @@ fa8e7a7fd1666ea56eedb4aad5a1b307d532b97962540234edc1b1fdc134d2e3  ./AI-Developme
 cab10a82cb5f2255ecdf99981067119041beb07ab6c1f1976e531d10db5fd724  ./AI-Development-Kit/templates/MODULE-STATUS-TEMPLATE.md
 2bb87b9d04d7d0724eb6fee8cc117285b06976b92c27b9d38f757eb07810c337  ./AI-Development-Kit/workflows/AGENT-EXECUTION-LOOP.md
 e1daa19600aaeff1fd6779b1d73149c4a04ee6b1cb516b87b12c628110c0d3f8  ./AI-Development-Kit/workflows/FAILURE-PROTOCOL.md
-7f25640cd24e28b3b7715ea04522b9fb9d75b1fb65efff8f090e8b3649da5e30  ./CURRENT-STATE.md
-e1c3efda068c7f1d7203ca76cc51c72e2c8fa579bc2678a233a30b3a83617f9d  ./GATE-1-STATUS.md
-f23da0ee79e76b473b89968380829f09f314906a37b0c7c6b9ec2236ba93b590  ./PASTE-KE-CHAT-BERIKUTNYA.txt
-d44a6bfbf7322d47be7453d0cf32454f4c39391e87f5b156095be5e53f08b77e  ./PROJECT-HANDOFF.md
+12f1fc1c11136e289fed81ddc4cff8ce017694fb09dbdd29306fe0941c86d6a8  ./CURRENT-STATE.md
+d512c2e02895d96a62882fc20882ed8a76b4f0400613d506db16f11c229aeb1a  ./GATE-1-STATUS.md
+5652ab0aa0bd0a7a50c979646c35b9a55472987384255727a57737db26640b48  ./PASTE-KE-CHAT-BERIKUTNYA.txt
+de458df6ec66c831aa088569c4d6c825dc473e99d8e68fdb897f8909bcfc252f  ./PROJECT-HANDOFF.md
 818d1504f9c83a672557cc3c45452c033f04098ce52f609be506b3bbe7dfe7d6  ./UI-DESIGN-SYSTEM.md
 b1fccb9456471fd16d730f6d6bc8af04e9d7d93fa90072df57431a87564d7200  ./apps/admin-web/.env.example
 bf718ac29fd9514ef3aa0be97c5739ed8039960cdf8e427607017c20388006c5  ./apps/admin-web/app/api/admin/analytics-findings/route.ts
@@ -325,7 +325,7 @@ bead9f184b27083639c20803cac92b239a55bcea908cf442f5eed777f6b59df9  ./apps/user-we
 ccd2a17f28b9205adc19fbf05b2a9389dc24115b8ce40b6d958777af90bea7a1  ./apps/user-web/postcss.config.mjs
 7794f4a44d2c31c1f33e91477a00025f4e62687a88946b7c17f58f26257ef2e8  ./apps/user-web/public/icon.png
 38ee09e8ee48c7e75cab63bd076513018ca07b655295664d07c107e408606495  ./apps/user-web/tsconfig.json
-e5162ea9bffb0440759303b280b367135d1bd1c5e5289081848d961deccff2e3  ./chat-session.md
+49a557b3f143b28c55d62d32c9ac63a493a58b34476c2ec99fe4cbd73d67c403  ./chat-session.md
 b56591a90e026f0c2e27c5b37f7877e8993f4bb0ab28ccf9cb10b19614aade92  ./docker-compose.rescue.yml
 12b78207cb3ce4d59fefc85abb8fb5fe7412c497252d1b0bc61a189996b84f30  ./docker-compose.yml
 23bd9846697b9b82f0497f6977895d8ebde364a5bbfb4617f2c8db8b06c6b832  ./docs/ENTERPRISE-ACCEPTANCE-EVIDENCE.md
@@ -449,7 +449,7 @@ d1cc59e1de673749874e13c6a789fe6063d159f8256891a146dcc3d684823d39  ./docs/structu
 b5f241c5bcf5e860dfef9e1b5ccf9deee8ffe60c05ae9767754d993462d23bbe  ./docs/telemetry-aggregation.md
 c6dfa1d4ff37b3f8800a0e868d7c2a8b6e8662759e6246f461b810fa83d22bf0  ./docs/telemetry-storage-strategy.md
 6cd206f3f9aec5adcbeebab3d6387535306b3b128a5e43159343875b8bfe54f3  ./docs/testing-strategy.md
-be5e89a83e703eeffd618e703e01d351b937ee5a48906d31df780f97499fda65  ./docs/wave-02-core-runtime-closure.md
+c21963e4a651146c64e9eda3fa9cc5d21ff84044b9cf1acc439ab7c45325f8ee  ./docs/wave-02-core-runtime-closure.md
 8846eb270f035aa3725b3e544ede2a983d7abdb2d86b8f67c7b2bf1dad182725  ./jest.config.js
 8d6deaf911cfdfed55379bbf38c0dc1d4aa0520edfd170fdead9c1f3a163aee7  ./ops/acceptance/README.md
 92b22e3671d2ced6c205538fc3f5156ea67669f464b5018ae463f95167c7440a  ./ops/acceptance/rescue-02b-evidence.example.json
@@ -561,7 +561,7 @@ b18408f1bde55d0d989bf04483a0ef87359a9fcadac99214c333f1af87f67e9e  ./scripts/self
 ed0e26eeb48c4a6d34d1b2b67d93197689da8c90252a30089559f0a1b20aee1f  ./scripts/self-test-unit-runtime-regressions.mjs
 0e91c2b2c540bd43a25b9ed229af1b8164e595157ac55d58435ae9a1b7915f89  ./scripts/self-test-unit-test-type-boundary.mjs
 29dd93b26da22398f7af85af296f7ce0dcd89fe4e8e7cb2bee848cad3307a9ee  ./scripts/self-test-wave1-prepush.mjs
-b9c1143ef1a65ea0ada5e3cf969f7af20d59291377cba22e458d1fe54ac5e2ec  ./scripts/self-test-wave2-core-runtime.mjs
+2d840093949a67c51f70024b076b8d80eda34bfe9190ccc2ee786ab22bbddb00  ./scripts/self-test-wave2-core-runtime.mjs
 c966355fa5c08cc0a46c888bc7e926882ec2336fb63978d25726cd5a562d043d  ./scripts/self-test-wave2-prisma-schema-check.mjs
 20ea361948a1e75c0218f6fc7c929678f5a2772482e27e686165ee013d5bd0c8  ./scripts/self-test-web-framework-contract-sync.mjs
 dfdc3d80a87a636f8acec72c607f1765603adc974f0048a8d3deb3502e436739  ./scripts/validate-rescue-02b-evidence.mjs
@@ -635,8 +635,8 @@ f038ffb0268fdeefd62c99e1693cf4bf9c10ad21d31ec6bf125e2bc8131eb610  ./src/automati
 5b1e1ad0ce7353c54fc29219c7b0fa3b977a5a7b01169fe75b70468ab09293fc  ./src/automation/automation-execution.persistence.types.ts
 105d7e9843668f66015dd881f7dc5119556c77bfb955fed54dbfcb653928832e  ./src/automation/automation-execution.repository.spec.ts
 241560977a9fabc16f8ca510ed70b287e88bcc3d2a70db875e2feb5385e3bf8e  ./src/automation/automation-execution.repository.ts
-1fc67559b89b8175bc329554f1eb1b0cbb3745e1e09fe0ce8e4153383e07d186  ./src/automation/automation-retry-reservation.service.spec.ts
-a0847aac3e109e3bf9567b061fe02b34e03d441ff904e0a4916079f90ce391db  ./src/automation/automation-retry-reservation.service.ts
+4eb82b837dd8b2f8e7fc052f1dfa9c065ce7939b7cb4610206eb8e8b3d7b3512  ./src/automation/automation-retry-reservation.service.spec.ts
+d476898351bba0451e936bd87ba9b6f900424690f8e483a200cf5e6881b9267c  ./src/automation/automation-retry-reservation.service.ts
 673db8716db7e16899e9c999551d6aeb45bdc863d6243e883779f6c6d33e86d9  ./src/automation/automation-retry.worker.spec.ts
 0bc1ed0dda8f9fffca034b02e8a4f520853dd86f5983b6a0395302f53e4d05bd  ./src/automation/automation-retry.worker.ts
 cbf0d48cf48dd44815ea5472a213da61eeeccfbd9bc89a0e04256a670c0d6e41  ./src/automation/automation-runtime-policy.spec.ts
@@ -899,7 +899,7 @@ f0e03f2d24ec948030cb42adbeedfb3f1fda74f9fd65ec3ad7ea6b0a6f59ba58  ./test/integra
 c378695d562e04189edc164c974ee5aaf1f883d4db34244d5fe969d962d4dba9  ./test/integration/database.integration-spec.ts
 99a523361ea44d922e415df8e76e84448d4e3e174d6c5e1c1f6ddb85accfc32c  ./test/integration/e2e-device-flow.integration-spec.ts
 5b7cf58b2df1ad2824e914b88d362eba773812ba0b6e86b18cce488349faed85  ./test/integration/mqtt.workflow.mqtt-integration-spec.ts
-1b0a1e21539857b6fe9c2e40c3f5ff0b69a6080b39593b53eb12acd600b63737  ./test/integration/notification-runtime.integration-spec.ts
+00eef9618fbb80d030f2653ebb52ef142bf5cedce343b15aea171fdbd9162d68  ./test/integration/notification-runtime.integration-spec.ts
 50d41cfbbf90f00dc086c29848aa2eb6a1ad9ec7af4841c264e4bcd319f27473  ./test/integration/sim-30-devices.integration-spec.ts
 94b624c87ac37daeca6da79c271b21f9b05a264cebc152df594f0e82752620d1  ./test/integration/telemetry-aggregation.integration-spec.ts
 a70ab3613ab06515a24719373ab91539cc8bbd391cef759cf05d9f305f10556b  ./test/ios-final-release-proof-policy.contract.spec.ts

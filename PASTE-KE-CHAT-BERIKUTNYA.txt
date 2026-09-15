@@ -3,7 +3,7 @@ LANJUTKAN PROJECT IOT DARI HANDOFF TERBARU.
 MASTER WORKFLOW WAVE 1-13:
 - 30/30 modul = foundation-complete, bukan enterprise-complete.
 - Wave 1 Rescue/CI/EMQX = CLOSED GREEN (V13).
-- Wave 2 Core Runtime Closure = ACTIVE. V4 local gate sudah PASS sampai 281/281 rescue validation + MQTT/CI self-tests, lalu berhenti hanya karena Prisma P1012 DATABASE_URL tidak ada di shell lokal. V5 memperbaiki tooling-env ini tanpa mengubah business logic. Wave 2 baru CLOSED setelah satu push dan GitHub heavy acceptance hijau.
+- Wave 2 Core Runtime Closure = ACTIVE. V6 local gate PASS lalu first GitHub heavy run mencapai 185/185 unit suites (1219 tests), E2E 4/4, dan 13/15 PostgreSQL integration suites. V7 memperbaiki dua integration-contract defects yang ditemukan: automation retry harus clear terminal commandId saat kembali DISPATCHING sesuai DB constraint, dan Notification integration harus map leased claim `id` ke transport `notificationId` seperti worker production. Wave 2 baru CLOSED setelah corrective GitHub heavy acceptance hijau.
 - Selesaikan SATU WAVE BESAR utuh sebelum SATU push GitHub.
 - Local hanya targeted/lightweight; Prisma validate/generate boleh memakai schema-only fallback jika DATABASE_URL lokal tidak ada dan itu BUKAN runtime evidence. GitHub menjalankan heavy build/Docker/DB/Redis/EMQX/full acceptance dengan service nyata.
 - Kalau merah: ambil failure pertama + semua failure satu kelas, perbaiki dalam wave yang sama. Dilarang micro-RR.
@@ -41,8 +41,8 @@ NEXT:
 5. Jangan jalankan full acceptance lokal berulang di laptop.
 6. Jika GitHub full acceptance PASS, buat evidence baru yang source-bound ke RR30 lalu lanjut physical ESP32 gate.
 
-WAVE 2 V6 STATUS:
-- V5 passed inherited Wave 1 lightweight checks + Prisma validate/generate.
-- Targeted Jest: 8 suites / 88 tests passed; 4 suites blocked by 2 TypeScript contract drifts.
-- V6 fixes CommandMetricEvent retry events + numeric notification claim parameter and adds metrics regression to targeted suite.
-- No push yet. Seal count remains 1033/1034. One Wave 2 push only after V6 local gate PASS.
+WAVE 2 V7 STATUS:
+- V6 local targeted/lightweight gate PASS and was pushed for first Wave 2 heavy acceptance.
+- GitHub core: 185/185 unit suites (1219/1219 tests) PASS; application E2E 4/4 PASS; PostgreSQL integration 13/15 suites PASS.
+- V7 fixes the two remaining integration-contract defects as one Wave 2 batch: retry DISPATCHING DB shape clears terminal commandId and refreshes dispatchStartedAt; Notification integration maps claim DTO into transport DTO exactly as production worker does.
+- `rescue-live-emqx` was not reached because core DB integration remained red. Seal count remains 1033/1034. Wave 3 stays blocked.

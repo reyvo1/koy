@@ -142,4 +142,21 @@ requireText(config, 'EMAIL_RELAY_TOKEN: validatedConfig.EMAIL_RELAY_TOKEN', 'not
 requireText(config, 'EMAIL_FROM: validatedConfig.EMAIL_FROM', 'notification sender required');
 requireText(config, 'is required when notification runtime is enabled', 'notification configuration gate');
 
+
+requireText(
+  retryService,
+  'commandId: null',
+  'automation retry claim clears the terminal command link before returning to DISPATCHING',
+);
+requireText(
+  retryService,
+  'dispatchStartedAt: databaseNow',
+  'automation retry claim timestamps the new dispatch attempt from the PostgreSQL clock',
+);
+requireText(
+  notificationIntegration,
+  'notificationId: item.id',
+  'notification runtime integration maps the leased claim DTO into the production transport contract',
+);
+
 console.log('PASS  Wave 2 core runtime source invariants');

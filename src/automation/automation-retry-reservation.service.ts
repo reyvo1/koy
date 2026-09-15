@@ -247,8 +247,15 @@ export class AutomationRetryReservationService {
           data: {
             status: AutomationExecutionActionStatus.DISPATCHING,
             dispatchAttemptCount: action.dispatchAttemptCount + 1,
+            // FAILED is a terminal row shape and may carry the command that
+            // failed. Re-entering DISPATCHING must clear that terminal link
+            // to satisfy the database transition constraint. The dispatcher
+            // reattaches the same durable DeviceCommand after retryPublish()
+            // resolves through the unchanged automation idempotency key.
+            commandId: null,
             errorCode: null,
             retryNextEligibleAt: null,
+            dispatchStartedAt: databaseNow,
             completedAt: null,
           },
         },

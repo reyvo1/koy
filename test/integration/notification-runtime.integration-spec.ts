@@ -5,10 +5,25 @@ import { AddressInfo } from 'node:net';
 import path from 'node:path';
 import { PrismaClient } from '@prisma/client';
 import { NotificationService } from '../../src/notification/notification.service';
+import type { ClaimedNotificationDelivery } from '../../src/notification/notification.service';
 import { WebhookTransport } from '../../src/notification/webhook.transport';
+import type { NotificationTransportInput } from '../../src/notification/webhook.transport';
 import { PrismaService } from '../../src/prisma/prisma.service';
 
 jest.setTimeout(30000);
+
+function toWebhookInput(
+  item: ClaimedNotificationDelivery,
+): NotificationTransportInput {
+  return {
+    notificationId: item.id,
+    deliveryLeaseId: item.deliveryLeaseId,
+    channel: item.channel,
+    destination: item.destination,
+    subject: item.subject,
+    body: item.body,
+  };
+}
 
 describe('Wave 2 notification runtime integration', () => {
   const prismaA = new PrismaClient();
@@ -131,7 +146,7 @@ describe('Wave 2 notification runtime integration', () => {
     );
     expect(items).toHaveLength(1);
 
-    await webhookA.deliverAndRecord(items[0]);
+    await webhookA.deliverAndRecord(toWebhookInput(items[0]));
 
     const durable = await prismaA.notification.findUniqueOrThrow({
       where: { id: queued.notificationId },
@@ -170,7 +185,9 @@ describe('Wave 2 notification runtime integration', () => {
     const item = claim.items.find((candidate) => candidate.id === queued.notificationId);
     expect(item).toBeDefined();
 
-    await expect(webhookA.deliverAndRecord(item!)).rejects.toMatchObject({
+    await expect(
+      webhookA.deliverAndRecord(toWebhookInput(item!)),
+    ).rejects.toMatchObject({
       code: 'WEBHOOK_HTTP_400',
     });
 
@@ -199,7 +216,9 @@ describe('Wave 2 notification runtime integration', () => {
     );
     expect(first).toBeDefined();
 
-    await expect(webhookA.deliverAndRecord(first!)).rejects.toMatchObject({
+    await expect(
+      webhookA.deliverAndRecord(toWebhookInput(first!)),
+    ).rejects.toMatchObject({
       code: 'WEBHOOK_HTTP_503',
     });
     const pending = await prismaA.notification.findUniqueOrThrow({
@@ -221,7 +240,7 @@ describe('Wave 2 notification runtime integration', () => {
     expect(second).toBeDefined();
     expect(second!.deliveryLeaseId).not.toBe(first!.deliveryLeaseId);
 
-    await webhookA.deliverAndRecord(second!);
+    await webhookA.deliverAndRecord(toWebhookInput(second!));
 
     await expect(
       prismaA.notification.findUniqueOrThrow({ where: { id: queued.notificationId } }),

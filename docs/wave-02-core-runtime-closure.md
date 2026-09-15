@@ -95,3 +95,17 @@ The V5 local gate reached real targeted Jest compilation after Prisma validate/g
 The targeted Wave 2 suite now includes `src/metrics/metrics.service.spec.ts`. Runtime behavior, retry policy, leases, database schema, and broker behavior are unchanged.
 
 V6 package QA passed the dependency-free invariants, retry metric compile contract, changed-file transpile checks, and an end-to-end synthetic recovery from a valid V5 `1033/1034` state. Operator targeted Jest remains the next required local evidence before the single Wave 2 GitHub push.
+
+---
+
+## Wave 2 V7 — first GitHub heavy-integration correction
+
+The first Wave 2 GitHub heavy run after V6 proved broad regression stability before stopping in the PostgreSQL integration stage: `185/185` unit suites (`1219/1219` tests) passed, the application E2E smoke passed `4/4`, and `13/15` database integration suites passed. `rescue-live-emqx` did not run because it is sequenced after the core job.
+
+Two related Wave 2 integration defects were exposed and are fixed together in V7:
+
+1. **Automation retry DB transition shape.** A FAILED automation action legitimately carries the terminal `commandId`, but the PostgreSQL transition constraint requires `commandId IS NULL` while the action is back in `DISPATCHING`. The retry claim now clears that terminal link and refreshes `dispatchStartedAt` from the PostgreSQL clock. The dispatcher then reattaches the same durable DeviceCommand after `retryPublish()` resolves through the unchanged automation idempotency key/correlation identity. This preserves retry identity while satisfying the real database state machine.
+2. **Notification integration adapter contract.** `ClaimedNotificationDelivery` is a lease DTO with field `id`, while `NotificationTransportInput` intentionally requires `notificationId`. Production worker code already performs this mapping. The integration evidence now uses the same explicit adapter instead of passing the claim DTO directly to the transport. No production transport contract is weakened.
+
+V7 adds source guards for both contracts and keeps the authoritative Wave 2 seal count at `1033/1034` (modified files only; no new source path). Wave 2 remains ACTIVE until the recovery is locally validated and a corrective GitHub run passes PostgreSQL/HTTPS integration, then real EMQX/full acceptance.
+

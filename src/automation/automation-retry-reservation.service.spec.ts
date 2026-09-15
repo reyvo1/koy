@@ -180,7 +180,15 @@ describe('AutomationRetryReservationService', () => {
     );
     expect(transaction.automationExecutionAction.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ dispatchAttemptCount: 2 }),
+        data: expect.objectContaining({
+          status: AutomationExecutionActionStatus.DISPATCHING,
+          dispatchAttemptCount: 2,
+          commandId: null,
+          errorCode: null,
+          retryNextEligibleAt: null,
+          dispatchStartedAt: databaseNow,
+          completedAt: null,
+        }),
       }),
     );
   });
