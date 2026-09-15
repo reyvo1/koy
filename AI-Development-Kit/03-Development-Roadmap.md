@@ -1,3 +1,9 @@
+# Post-foundation enterprise execution — authoritative addendum
+
+The numbered Module 1–30 list below is the completed **foundation roadmap**. It is no longer the active execution queue. The active post-foundation queue is `docs/ENTERPRISE-WAVE-ROADMAP.md` with Wave 1–13. Acceptance evidence strength is governed by `docs/ENTERPRISE-ACCEPTANCE-EVIDENCE.md`; STATIC/CONTRACT checks cannot substitute for INTEGRATION, LIVE-SERVICE, PHYSICAL/EXTERNAL, or final certification evidence. Wave 1 is closed green; Wave 2 Core Runtime Closure is active. One wave must be completed as a large gate before one GitHub push; no return to micro-RR progression.
+
+---
+
 # Development Roadmap
 
 1.  Project Setup

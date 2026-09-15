@@ -1,3 +1,28 @@
+# IoT Platform — Current State — Enterprise Wave 2
+
+## Wave 2 active baseline — 2026-09-15
+
+- Master execution roadmap: `docs/ENTERPRISE-WAVE-ROADMAP.md`, Wave 1–13.
+- Wave 1 Rescue/CI/EMQX hardening: **CLOSED / GitHub green on V13**.
+- Wave 2 Core Runtime Closure: **ACTIVE, implementation complete; operator lightweight gate reached rescue validation and exposed a sealing-validator regression; V4 recovery hardens evidence semantics and runtime integration, not yet pushed**.
+- One-wave-one-push policy is mandatory. Heavy Docker/build/PostgreSQL/Redis/EMQX/full acceptance remains GitHub-only.
+- Rescue MQTT remains `127.0.0.1:18884`; the foreign Windows Mosquitto on 1883 is closed history and must not be reopened.
+- Production remains **NOT APPROVED** until later physical ESP32/Wi-Fi reconnect/MQTT/OTA evidence and Wave 13 certification.
+
+Wave 2 implementation scope:
+
+1. Automation delayed retry worker behind `AUTOMATION_RUNTIME_ENABLED`, PostgreSQL-authoritative bounded candidate scan/claim, atomic rollback on claim races, retryable-error revalidation, and true republish of the same durable FAILED/TIMED_OUT command identity/correlation id.
+2. Scheduler enable endpoint fail-closes while `SCHEDULER_RUNTIME_ENABLED=false`; disable remains available and boolean input is strict.
+3. Notification runtime adds `DELIVERING` lease state, stale-lease recovery, multi-instance-safe claims, PostgreSQL-clock retry timing, transient-only retry policy, auth verification/reset email enqueue, and provider-neutral HTTPS email relay behind `NOTIFICATION_RUNTIME_ENABLED=false` by default.
+4. Notification idempotency now rejects semantic collisions and outbound relay/webhook requests expose a stable notification idempotency identifier for downstream dedupe.
+5. GitHub core and rescue jobs explicitly execute the Wave 2 runtime invariant self-test before heavy validation.
+
+The detailed Wave 2 contract and validation gate are in `docs/wave-02-core-runtime-closure.md`.
+
+Wave 2 source-level validation is green for the V4 batch: baseline manifest regression, Wave 2 invariant self-test, GitHub CI self-test, package/YAML checks and TypeScript syntax/transpile for the changed integration tests. The authoritative seal remains target-generated at 1027 source paths / 1028 manifest entries before V4 additions are resealed on the operator checkout. `apps/*/next-env.d.ts` and `*.tsbuildinfo` are generated artifacts; authored `.d.ts` remains sealed. V4 also adds PostgreSQL runtime integration for durable automation retry plus multi-client Notification lease/retry delivery through a real local HTTPS receiver. Evidence tiers are governed by `docs/ENTERPRISE-ACCEPTANCE-EVIDENCE.md`; source validation alone cannot close Wave 2.
+
+---
+
 # IoT Platform — Current State — Wave 1 V13
 
 > **SOURCE OF TRUTH FOR NEW WORK — 2026-09-15.** Historical RR sections below remain evidence only.
@@ -1311,3 +1336,45 @@ Root cause is the negative ACL connection lifecycle, not EMQX authentication. Re
 V12 permanently treats the entire negative ACL class as one batch: every forbidden subscribe/publish runs on a fresh one-shot connection; explicit SUBACK/PUBACK authorization denial, explicit authorization error, or MQTT v5 `DISCONNECT 0x87` is required for PASS; close-only/unrelated error/timeout is fail-closed; positive clients are preserved for later positive assertions; and persistence/state side effects are independently verified absent. Publisher non-command, cross-device, and wrong-device ACK paths are all covered by the same mechanism.
 
 This remains CI/acceptance harness hardening only. No application business logic, Prisma schema, UI, MQTT auth backend rules, or production approval boundary is changed. Rescue endpoint remains `18884`; the foreign Windows Mosquitto issue on `1883` stays closed. Production remains blocked on physical ESP32/Wi-Fi reconnect/physical MQTT/OTA evidence.
+
+- Wave 2 sealing infrastructure is cross-platform deterministic: repository-tree ordering uses code-point order instead of host-default locale collation; mixed-case ordering is regression-tested.
+
+
+---
+
+## WAVE 2 RECOVERY V5 — PRISMA LOCAL TOOLING ENVIRONMENT
+
+The V4 operator recovery passed deterministic/source sealing, all inherited Wave 1 checks, `RESCUE VALIDATION PASS (281/281)`, broker smoke self-test, GitHub CI self-test and Wave 2 source invariants. The only failure occurred at `wave2:prisma:check`: Prisma P1012 because the operator shell did not define `DATABASE_URL`. No schema validation error was reported.
+
+V5 classifies this correctly as a local tooling-env defect. `scripts/check-prisma-schema.mjs` preserves any real caller `DATABASE_URL` and otherwise injects a deterministic loopback port-1 schema-only URL solely for Prisma `validate` and `generate`. A dependency-free self-test proves fallback/explicit/blank behavior and subprocess order. This fallback is STATIC/CONTRACT evidence only; GitHub PostgreSQL 16 + migration + isolated-schema integration remains authoritative runtime evidence. The V5 target seal is 1033 source paths / 1034 manifest entries. Wave 2 remains ACTIVE and unpushed until V5 local gate passes and the single GitHub Wave 2 push is fully green.
+
+
+### V5 package QA
+- Prisma schema-wrapper dependency-free self-test: PASS (fallback, explicit URL preservation, blank handling, validate→generate ordering).
+- Wave 2 core runtime invariant self-test: PASS.
+- baseline manifest regression: PASS.
+- GitHub CI contract self-test: PASS.
+- V5 applicator synthetic recovery: PASS from a sealed 1031/1032 V4 structural state through 12-file overlay, 1033/1034 regenerated seal, synthetic lightweight-gate invocation, and final verify.
+- Real operator Prisma/Jest and GitHub PostgreSQL/HTTPS/Redis/EMQX/full acceptance remain pending and must not be inferred from the synthetic applicator test.
+
+---
+
+## WAVE 2 RECOVERY V6 — TYPESCRIPT CONTRACT CLOSURE
+
+Operator V5 passed the inherited Wave 1 lightweight chain, `RESCUE VALIDATION PASS (281/281)`, broker/CI self-tests, Prisma wrapper self-test, and real Prisma validate/generate. The first source-level failures appeared only when the 12 targeted Jest suites compiled Wave 2 code. Eight suites ran successfully with 88 tests passing; four suites could not compile because two Wave 2 type contracts had drifted.
+
+Root causes are grouped and fixed together:
+- `CommandMetricEvent` did not yet include the retry lifecycle events emitted by `CommandService.retryPublish`: `retry_replay`, `retry_raced`, and `retry_claimed`;
+- `NotificationService.claimDueBatch` allowed TypeScript to infer its defaulted `claimTimeoutMs` parameter from an `as const` literal, producing the literal type `60000` instead of runtime `number`.
+
+V6 widens the notification batch/claim parameters explicitly to `number`, extends the command metric event union, and adds the command retry metrics to the targeted metrics regression suite. This is a source-contract correction only; no business-flow semantics, database schema, MQTT behavior, lease policy, or retry policy are relaxed. Wave 2 remains ACTIVE and unpushed until V6 local gate passes and the single GitHub Wave 2 heavy/live acceptance is fully green.
+
+### V6 package QA
+- Wave 2 core runtime invariant self-test: PASS.
+- baseline manifest regression: PASS.
+- GitHub CI contract self-test: PASS.
+- Prisma wrapper self-test: PASS.
+- `CommandMetricEvent` retry-event TypeScript contract check: PASS.
+- syntax/transpile for the three TypeScript files changed by V6: PASS.
+- V6 applicator synthetic recovery: PASS from sealed V5 `1033/1034` through 11-file overlay, unchanged `1033/1034` reseal, synthetic lightweight-gate invocation, and final verify.
+- Real operator targeted Jest and GitHub PostgreSQL/HTTPS/Redis/EMQX/full acceptance remain pending; no PASS is inferred from the synthetic gate invocation.

@@ -112,6 +112,80 @@ describe('CommandService', () => {
     );
   });
 
+  it('re-arms and republishes the same failed command identity for an explicit retry', async () => {
+    (prisma.device.findFirst as jest.Mock).mockResolvedValue({
+      id: 'd1',
+      tenantId: 't1',
+      status: 'ACTIVE',
+      capabilities: [{ key: 'cmd', isWritable: true, dataType: 'string' }],
+    });
+    (prisma.deviceCommand.findUnique as jest.Mock).mockResolvedValue({
+      id: 'c1',
+      correlationId: 'corr1',
+      tenantId: 't1',
+      deviceId: 'd1',
+      payload: { cmd: 'reset' },
+      idempotencyKey: 'automation:e1:a1',
+      status: CommandStatus.FAILED,
+      sentAt: null,
+      acknowledgedAt: null,
+    });
+    (prisma.deviceCommand.updateMany as jest.Mock).mockResolvedValue({ count: 1 });
+    (mqttService.publish as jest.Mock).mockResolvedValue(undefined);
+
+    const result = await service.retryPublish(
+      't1',
+      'd1',
+      { cmd: 'reset' },
+      'automation:e1:a1',
+    );
+
+    expect(mqttService.publish).toHaveBeenCalledWith(
+      'tenants/t1/devices/d1/commands',
+      { commandId: 'corr1', payload: { cmd: 'reset' } },
+    );
+    expect(prisma.deviceCommand.updateMany).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        where: expect.objectContaining({ id: 'c1' }),
+        data: expect.objectContaining({ status: CommandStatus.PENDING }),
+      }),
+    );
+    expect(prisma.deviceCommand.updateMany).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        where: { id: 'c1', status: CommandStatus.PENDING },
+        data: expect.objectContaining({ status: CommandStatus.SENT }),
+      }),
+    );
+    expect(result).toMatchObject({ id: 'c1', correlationId: 'corr1', status: CommandStatus.SENT });
+  });
+
+  it('never republishes an already live or acknowledged command during retry replay', async () => {
+    (prisma.device.findFirst as jest.Mock).mockResolvedValue({
+      id: 'd1',
+      tenantId: 't1',
+      status: 'ACTIVE',
+      capabilities: [{ key: 'cmd', isWritable: true, dataType: 'string' }],
+    });
+    (prisma.deviceCommand.findUnique as jest.Mock).mockResolvedValue({
+      id: 'c1',
+      correlationId: 'corr1',
+      tenantId: 't1',
+      deviceId: 'd1',
+      payload: { cmd: 'reset' },
+      idempotencyKey: 'automation:e1:a1',
+      status: CommandStatus.ACKNOWLEDGED,
+    });
+
+    await expect(
+      service.retryPublish('t1', 'd1', { cmd: 'reset' }, 'automation:e1:a1'),
+    ).resolves.toMatchObject({ status: CommandStatus.ACKNOWLEDGED });
+
+    expect(prisma.deviceCommand.updateMany).not.toHaveBeenCalled();
+    expect(mqttService.publish).not.toHaveBeenCalled();
+  });
+
   it('rejects blank idempotency key', async () => {
     await expect(
       service.publish('t1', 'd1', { cmd: 'reset' }, '   '),

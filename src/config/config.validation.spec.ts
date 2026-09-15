@@ -42,6 +42,9 @@ describe('Config Validation', () => {
     );
     expect(validated.SENSITIVE_RATE_LIMIT_MAX).toBe(10);
     expect(validated.SENSITIVE_RATE_LIMIT_WINDOW_MS).toBe(60000);
+    expect(validated.NOTIFICATION_RUNTIME_ENABLED).toBe(false);
+    expect(validated.NOTIFICATION_CLAIM_TIMEOUT_MS).toBe(60000);
+    expect(validated.EMAIL_RELAY_TIMEOUT_MS).toBe(10000);
   });
 
   it('defaults Swagger to disabled in production', () => {
@@ -249,6 +252,57 @@ describe('Config Validation', () => {
         [key]: value,
       }),
     ).toThrow();
+  });
+
+  it('requires a complete HTTPS email relay when notification runtime is enabled', () => {
+    expect(() =>
+      validate({
+        ...productionConfig,
+        NOTIFICATION_RUNTIME_ENABLED: 'true',
+      }),
+    ).toThrow('EMAIL_RELAY_URL is required when notification runtime is enabled');
+  });
+
+  it('accepts an explicitly configured notification delivery runtime', () => {
+    const validated = validate({
+      ...productionConfig,
+      NOTIFICATION_RUNTIME_ENABLED: 'true',
+      NOTIFICATION_CLAIM_TIMEOUT_MS: '60000',
+      EMAIL_RELAY_TIMEOUT_MS: '10000',
+      EMAIL_RELAY_URL: 'https://relay.example.com/v1/send',
+      EMAIL_RELAY_TOKEN: 'relay-production-secret',
+      EMAIL_FROM: 'no-reply@example.com',
+    });
+
+    expect(validated.NOTIFICATION_RUNTIME_ENABLED).toBe(true);
+    expect(validated.EMAIL_RELAY_URL).toBe('https://relay.example.com/v1/send');
+  });
+
+  it.each([
+    'http://relay.example.com/v1/send',
+    'https://user:secret@relay.example.com/v1/send',
+  ])('rejects unsafe email relay URL %s', (EMAIL_RELAY_URL) => {
+    expect(() =>
+      validate({
+        ...productionConfig,
+        NOTIFICATION_RUNTIME_ENABLED: 'true',
+        EMAIL_RELAY_URL,
+        EMAIL_RELAY_TOKEN: 'relay-production-secret',
+        EMAIL_FROM: 'no-reply@example.com',
+      }),
+    ).toThrow('EMAIL_RELAY_URL must use credential-free https://');
+  });
+
+  it('rejects invalid notification runtime sender identity', () => {
+    expect(() =>
+      validate({
+        ...productionConfig,
+        NOTIFICATION_RUNTIME_ENABLED: 'true',
+        EMAIL_RELAY_URL: 'https://relay.example.com/v1/send',
+        EMAIL_RELAY_TOKEN: 'relay-production-secret',
+        EMAIL_FROM: 'not-an-email',
+      }),
+    ).toThrow('EMAIL_FROM must be a valid email address');
   });
 
   it('rejects a non-positive health check timeout', () => {

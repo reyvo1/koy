@@ -117,12 +117,20 @@ export class AutomationCommandDispatcher {
     };
 
     try {
-      const command = await this.commands.publish(
-        input.tenantId,
-        action.deviceId,
-        payload,
-        idempotencyKey,
-      );
+      const command =
+        action.dispatchAttemptCount > 1
+          ? await this.commands.retryPublish(
+              input.tenantId,
+              action.deviceId,
+              payload,
+              idempotencyKey,
+            )
+          : await this.commands.publish(
+              input.tenantId,
+              action.deviceId,
+              payload,
+              idempotencyKey,
+            );
 
       return this.recordCommandOutcome(input, action, command);
     } catch (error) {

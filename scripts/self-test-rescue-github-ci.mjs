@@ -27,6 +27,13 @@ check('CI verifies Fastify v5 source compatibility before backend build', workfl
 check('CI self-tests baseline build-artifact hygiene before backend build', workflow.includes('Self-test baseline build-artifact hygiene') && workflow.indexOf('baseline:hygiene:self-test') < workflow.indexOf('Build backend'));
 check('CI verifies web framework contract/documentation sync before web type-check', workflow.includes('Verify web framework contract/documentation sync') && workflow.indexOf('web:framework:contract:verify') < workflow.indexOf('Type-check web workspaces'));
 check('existing core CI job is preserved', workflow.includes('\n  test:\n') && workflow.includes('Database integration test') && workflow.includes('MQTT workflow integration test'));
+check('core CI labels PostgreSQL integration as Wave 2 runtime evidence', workflow.includes('Database integration test (includes Wave 2 runtime evidence)') && workflow.includes('run: npm run test:integration:db'));
+check(
+  'core CI runs Wave 2 runtime invariant guard before backend build',
+  workflow.includes('Verify Wave 2 core runtime contract') &&
+    workflow.indexOf('npm run wave2:core-runtime:self-test') <
+      workflow.indexOf('Build backend'),
+);
 check(
   'rescue job self-tests cross-platform manifest portability before sealed-source verification',
   workflow.includes('npm run baseline:manifest:self-test') &&
@@ -49,6 +56,14 @@ check(
 );
 check('broker smoke package command is exposed', pkg.scripts?.['rescue:broker:smoke'] === 'node scripts/run-rescue-live-broker-smoke.mjs');
 check('CI self-test package command is exposed', pkg.scripts?.['rescue:github-ci:self-test'] === 'node scripts/self-test-rescue-github-ci.mjs');
+check('Wave 2 core runtime self-test package command is exposed', pkg.scripts?.['wave2:core-runtime:self-test'] === 'node scripts/self-test-wave2-core-runtime.mjs');
+check(
+  'rescue CI re-runs Wave 2 runtime invariant guard before live runtime',
+  workflow.lastIndexOf('npm run wave2:core-runtime:self-test') >
+    workflow.indexOf('\n  rescue-live-emqx:\n') &&
+    workflow.lastIndexOf('npm run wave2:core-runtime:self-test') <
+      workflow.indexOf('Verify Docker Compose runtime'),
+);
 check('broker smoke prioritizes dedicated rescue broker URL', smoke.includes('env.RESCUE_MQTT_BROKER_URL?.trim()') && smoke.includes("'18884'"));
 check('broker smoke CI mode does not require an evidence file', smoke.includes('const evidenceMode = Boolean(evidenceArg)') && smoke.includes("'CI smoke (no evidence mutation)'"));
 check('broker smoke covers concrete live broker safety paths', [

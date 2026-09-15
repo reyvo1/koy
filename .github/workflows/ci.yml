@@ -67,6 +67,9 @@ jobs:
         timeout-minutes: 10
         run: bash ops/scripts/ci-bootstrap-dependencies.sh
 
+      - name: Verify Wave 2 core runtime contract
+        run: npm run wave2:core-runtime:self-test
+
       - name: Verify secure NestJS/Fastify dependency boundary
         run: npm run security:stack:verify
 
@@ -114,7 +117,7 @@ jobs:
       - name: E2E smoke test
         run: npm run test:e2e
 
-      - name: Database integration test
+      - name: Database integration test (includes Wave 2 runtime evidence)
         run: npm run test:integration:db
 
       - name: MQTT workflow integration test
@@ -188,6 +191,7 @@ jobs:
           npm run baseline:manifest:self-test
           npm run baseline:manifest:verify
           npm run rescue:validate
+          npm run wave2:core-runtime:self-test
           npm run rescue:github-ci:self-test
 
       - name: Verify Docker Compose runtime

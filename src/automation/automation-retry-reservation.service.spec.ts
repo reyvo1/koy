@@ -27,6 +27,7 @@ describe('AutomationRetryReservationService', () => {
       status: AutomationExecutionActionStatus.FAILED,
       errorCode: 'COMMAND_PUBLISH_FAILED',
       dispatchAttemptCount: 1,
+      position: 0,
       retryNextEligibleAt: null,
       completedAt,
     };
@@ -46,6 +47,9 @@ describe('AutomationRetryReservationService', () => {
       $transaction: jest.fn((callback: (tx: unknown) => unknown) => callback(transaction)),
       automationExecutionAction: {
         findFirst: jest.fn().mockResolvedValue(action),
+        findMany: jest.fn().mockResolvedValue([
+          { tenantId, executionId, actionId },
+        ]),
       },
     };
     service = new AutomationRetryReservationService(prisma as unknown as PrismaService);
@@ -119,6 +123,41 @@ describe('AutomationRetryReservationService', () => {
     });
   });
 
+  it('scans only bounded persisted retry candidates', async () => {
+    await expect(service.listRetryCandidates(500)).resolves.toEqual([
+      { tenantId, executionId, actionId },
+    ]);
+
+    const prisma = (service as any).prisma;
+    expect(prisma.automationExecutionAction.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ take: 100 }),
+    );
+  });
+
+  it('allows PARTIALLY_FAILED execution retry and restores deterministic later skips', async () => {
+    execution.status = AutomationExecutionStatus.PARTIALLY_FAILED;
+    action.retryNextEligibleAt = new Date(databaseNow.getTime() - 1_000);
+
+    await expect(
+      service.claimEligibleRetry({ tenantId, executionId, actionId }),
+    ).resolves.toBe(true);
+
+    expect(transaction.automationExecutionAction.updateMany).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        where: expect.objectContaining({
+          position: { gt: 0 },
+          status: AutomationExecutionActionStatus.SKIPPED,
+          errorCode: 'PRIOR_ACTION_FAILED',
+        }),
+        data: expect.objectContaining({
+          status: AutomationExecutionActionStatus.PENDING,
+          errorCode: null,
+        }),
+      }),
+    );
+  });
+
   it('claims the retry only after the persisted next-eligible time passes', async () => {
     action.retryNextEligibleAt = new Date(databaseNow.getTime() - 1_000);
 
@@ -128,7 +167,14 @@ describe('AutomationRetryReservationService', () => {
 
     expect(transaction.automationExecution.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ status: AutomationExecutionStatus.FAILED }),
+        where: expect.objectContaining({
+          status: {
+            in: [
+              AutomationExecutionStatus.FAILED,
+              AutomationExecutionStatus.PARTIALLY_FAILED,
+            ],
+          },
+        }),
         data: expect.objectContaining({ status: AutomationExecutionStatus.DISPATCHING }),
       }),
     );
@@ -146,6 +192,29 @@ describe('AutomationRetryReservationService', () => {
       service.claimEligibleRetry({ tenantId, executionId, actionId }),
     ).resolves.toBe(false);
     expect(transaction.automationExecution.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('re-checks the retryable error allowlist at claim time', async () => {
+    action.errorCode = 'AUTOMATION_COMMAND_DISPATCH_ACTION_KIND_INVALID';
+    action.retryNextEligibleAt = new Date(databaseNow.getTime() - 1_000);
+
+    await expect(
+      service.claimEligibleRetry({ tenantId, executionId, actionId }),
+    ).resolves.toBe(false);
+    expect(transaction.automationExecution.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('fails the whole transaction when the action claim races after execution claim', async () => {
+    action.retryNextEligibleAt = new Date(databaseNow.getTime() - 1_000);
+    transaction.automationExecutionAction.updateMany
+      .mockResolvedValueOnce({ count: 0 });
+
+    await expect(
+      service.claimEligibleRetry({ tenantId, executionId, actionId }),
+    ).resolves.toBe(false);
+
+    expect(transaction.automationExecution.updateMany).toHaveBeenCalledTimes(1);
+    expect(transaction.automationExecutionAction.updateMany).toHaveBeenCalledTimes(1);
   });
 
   it('refuses to claim when the attempt budget is exhausted', async () => {

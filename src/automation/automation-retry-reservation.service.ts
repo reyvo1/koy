@@ -5,6 +5,9 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AUTOMATION_EXECUTION_PERSISTENCE_ERROR_CODES } from './automation-execution.persistence.error';
+
+const PRIOR_ACTION_FAILED = 'PRIOR_ACTION_FAILED';
+const RETRY_CLAIM_RACE = 'AUTOMATION_RETRY_CLAIM_RACE';
 import {
   AUTOMATION_RETRY_LIMITS,
   AutomationActionRetryDecision,
@@ -20,14 +23,49 @@ import {
  * delivery counts are never consulted. The command idempotency key
  * `automation:<executionId>:<actionId>` is unchanged across attempts.
  *
- * This service is internal-only: no worker, queue, scheduler, polling loop,
- * telemetry hook, public endpoint, or application runtime wiring exists here.
+ * Wave 2 runtime closure keeps PostgreSQL as the only retry authority. The
+ * service now exposes a bounded candidate scan for the opt-in retry worker;
+ * claiming still re-checks every invariant against the database clock.
  */
 @Injectable()
 export class AutomationRetryReservationService {
   private readonly logger = new Logger(AutomationRetryReservationService.name);
 
   constructor(private readonly prisma: PrismaService) {}
+
+
+  /**
+   * Return a small ordered set of persisted retry candidates. This scan is only
+   * advisory: claimEligibleRetry re-checks status, budget and database time in
+   * one transaction before any dispatch can occur.
+   */
+  async listRetryCandidates(limit = 25): Promise<
+    Array<{ tenantId: string; executionId: string; actionId: string }>
+  > {
+    const safeLimit = Number.isInteger(limit)
+      ? Math.min(Math.max(limit, 1), 100)
+      : 25;
+
+    return this.prisma.automationExecutionAction.findMany({
+      where: {
+        status: AutomationExecutionActionStatus.FAILED,
+        retryNextEligibleAt: { not: null },
+        dispatchAttemptCount: { lt: AUTOMATION_RETRY_LIMITS.maxDispatchAttempts },
+        errorCode: { in: [...RETRYABLE_ACTION_ERROR_CODES] },
+        execution: {
+          status: {
+            in: [
+              AutomationExecutionStatus.FAILED,
+              AutomationExecutionStatus.PARTIALLY_FAILED,
+            ],
+          },
+        },
+      },
+      select: { tenantId: true, executionId: true, actionId: true },
+      orderBy: [{ retryNextEligibleAt: 'asc' }, { id: 'asc' }],
+      take: safeLimit,
+    });
+  }
 
   /**
    * Decide the retry fate of a failed action from persisted state only.
@@ -123,11 +161,17 @@ export class AutomationRetryReservationService {
     readonly executionId: string;
     readonly actionId: string;
   }): Promise<boolean> {
-    const result = await this.prisma.$transaction(async (transaction) => {
+    let result: boolean;
+    try {
+      result = await this.prisma.$transaction(async (transaction) => {
       const execution = await transaction.automationExecution.findFirst({
         where: { tenantId: input.tenantId, id: input.executionId },
       });
-      if (!execution || execution.status !== AutomationExecutionStatus.FAILED) {
+      if (
+        !execution ||
+        (execution.status !== AutomationExecutionStatus.FAILED &&
+          execution.status !== AutomationExecutionStatus.PARTIALLY_FAILED)
+      ) {
         return false;
       }
 
@@ -145,7 +189,8 @@ export class AutomationRetryReservationService {
       if (
         action.dispatchAttemptCount >= AUTOMATION_RETRY_LIMITS.maxDispatchAttempts ||
         !action.retryNextEligibleAt ||
-        !action.completedAt
+        !action.completedAt ||
+        !RETRYABLE_ACTION_ERROR_CODES.has(action.errorCode ?? '')
       ) {
         return false;
       }
@@ -174,14 +219,23 @@ export class AutomationRetryReservationService {
         where: {
           id: execution.id,
           tenantId: execution.tenantId,
-          status: AutomationExecutionStatus.FAILED,
+          status: {
+            in: [
+              AutomationExecutionStatus.FAILED,
+              AutomationExecutionStatus.PARTIALLY_FAILED,
+            ],
+          },
         },
         data: {
           status: AutomationExecutionStatus.DISPATCHING,
           completedAt: null,
         },
       });
-      if (update.count !== 1) return false;
+      if (update.count !== 1) {
+        throw Object.assign(new Error('automation retry execution claim raced'), {
+          code: RETRY_CLAIM_RACE,
+        });
+      }
 
       const actionUpdate = await transaction.automationExecutionAction.updateMany(
         {
@@ -193,12 +247,51 @@ export class AutomationRetryReservationService {
           data: {
             status: AutomationExecutionActionStatus.DISPATCHING,
             dispatchAttemptCount: action.dispatchAttemptCount + 1,
+            errorCode: null,
+            retryNextEligibleAt: null,
             completedAt: null,
           },
         },
       );
-      return actionUpdate.count === 1;
-    });
+      if (actionUpdate.count !== 1) {
+        // Throw so PostgreSQL rolls back the execution claim above. Returning
+        // false here would commit a half-claimed DISPATCHING execution.
+        throw Object.assign(new Error('automation retry action claim raced'), {
+          code: RETRY_CLAIM_RACE,
+        });
+      }
+
+      // A failed predecessor marked later actions SKIPPED. Once that exact
+      // predecessor is safely re-claimed, restore only those deterministic
+      // PRIOR_ACTION_FAILED skips so normal ordered dispatch can continue.
+      await transaction.automationExecutionAction.updateMany({
+        where: {
+          tenantId: action.tenantId,
+          executionId: action.executionId,
+          position: { gt: action.position },
+          status: AutomationExecutionActionStatus.SKIPPED,
+          errorCode: PRIOR_ACTION_FAILED,
+        },
+        data: {
+          status: AutomationExecutionActionStatus.PENDING,
+          errorCode: null,
+          completedAt: null,
+        },
+      });
+
+        return true;
+      });
+    } catch (error) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        (error as { code?: unknown }).code === RETRY_CLAIM_RACE
+      ) {
+        return false;
+      }
+      throw error;
+    }
 
     if (result) {
       this.logger.log({

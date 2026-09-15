@@ -9,6 +9,7 @@ import { AutomationExecutionTransitionRepository } from './automation-execution-
 import { AutomationRepository } from './automation.repository';
 import { AutomationRuntimeReadRepository } from './automation-runtime-read.repository';
 import { AutomationRetryReservationService } from './automation-retry-reservation.service';
+import { AutomationRetryWorker } from './automation-retry.worker';
 import { AutomationTelemetryCoordinator } from './automation-telemetry-coordinator';
 
 @Module({
@@ -20,6 +21,7 @@ import { AutomationTelemetryCoordinator } from './automation-telemetry-coordinat
     AutomationExecutionTransitionRepository,
     AutomationRepository,
     AutomationRetryReservationService,
+    AutomationRetryWorker,
     AutomationRuntimeReadRepository,
     AutomationTelemetryCoordinator,
   ],

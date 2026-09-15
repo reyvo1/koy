@@ -1,3 +1,11 @@
+# Enterprise completion addendum — 2026-09-15
+
+The product requirement now distinguishes **foundation completeness** from **enterprise completion**. Modules 1–30 establish the universal IoT architecture and safe contracts; post-foundation delivery is governed by `docs/ENTERPRISE-WAVE-ROADMAP.md` Wave 1–13. Enterprise completion requires real runtime/provider/hardware/recovery evidence and cannot be declared from UI placeholders or foundation contracts alone.
+
+The mandatory delivery discipline is one large wave at a time, targeted/lightweight local QA, synchronized documentation and manifest sealing, then one GitHub push whose heavy CI is authoritative. Production remains unapproved until physical ESP32/MQTT/Wi-Fi reconnect/OTA evidence and final certification are complete.
+
+---
+
 # Project Requirements
 
 Bangun Universal IoT Cloud Platform milik sendiri untuk smart home,

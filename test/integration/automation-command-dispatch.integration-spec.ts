@@ -5,6 +5,7 @@ import { AutomationExecutionRepository } from '../../src/automation/automation-e
 import { ReserveMatchedAutomationExecutionInput } from '../../src/automation/automation-execution.persistence.types';
 import { AutomationExecutionTransitionRepository } from '../../src/automation/automation-execution-transition.repository';
 import { AutomationPersistenceInput } from '../../src/automation/automation.persistence.types';
+import { AutomationRetryReservationService } from '../../src/automation/automation-retry-reservation.service';
 import { AutomationRepository } from '../../src/automation/automation.repository';
 import { CapabilityValidator } from '../../src/device/capability.validator';
 import { CommandService } from '../../src/device/command.service';
@@ -33,6 +34,9 @@ describe('PostgreSQL automation command dispatch foundation', () => {
   const dispatcher = new AutomationCommandDispatcher(
     transitionRepository,
     commandService,
+  );
+  const retryReservations = new AutomationRetryReservationService(
+    prisma as unknown as PrismaService,
   );
 
   let tenantId: string;
@@ -236,6 +240,66 @@ describe('PostgreSQL automation command dispatch foundation', () => {
       idempotencyKey: `automation:${execution.id}:second-action`,
       payload: { enabled: false },
       status: 'FAILED',
+    });
+  });
+
+
+  it('re-arms one persisted failed action and republishes the same command identity after backoff', async () => {
+    mqttPublish
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('broker unavailable'));
+    const execution = await reserveTwoActionExecution('Dispatch durable retry');
+
+    const failed = await dispatcher.dispatchExecution({
+      tenantId,
+      executionId: execution.id,
+    });
+    const failedAction = failed.execution.actions[1];
+    const commandId = failedAction.commandId!;
+
+    await prisma.automationExecutionAction.update({
+      where: { id: failedAction.id },
+      data: { retryNextEligibleAt: new Date(Date.now() - 1_000) },
+    });
+
+    const claimed = await retryReservations.claimEligibleRetry({
+      tenantId,
+      executionId: execution.id,
+      actionId: failedAction.actionId,
+    });
+    expect(claimed).toBe(true);
+
+    mqttPublish.mockReset();
+    mqttPublish.mockResolvedValue(undefined);
+
+    const retried = await dispatcher.dispatchExecution({
+      tenantId,
+      executionId: execution.id,
+    });
+
+    expect(retried.execution.status).toBe('SUCCEEDED');
+    expect(retried.processedActionCount).toBe(1);
+    expect(mqttPublish).toHaveBeenCalledTimes(1);
+    expect(mqttPublish).toHaveBeenCalledWith(
+      `tenants/${tenantId}/devices/${secondActionDeviceId}/commands`,
+      expect.objectContaining({ payload: { enabled: false } }),
+    );
+
+    const durableCommand = await prisma.deviceCommand.findUniqueOrThrow({
+      where: { id: commandId },
+    });
+    expect(durableCommand).toMatchObject({
+      id: commandId,
+      tenantId,
+      deviceId: secondActionDeviceId,
+      idempotencyKey: `automation:${execution.id}:second-action`,
+      status: 'SENT',
+    });
+    expect(retried.execution.actions[1]).toMatchObject({
+      actionId: 'second-action',
+      status: 'SUCCEEDED',
+      commandId,
+      dispatchAttemptCount: 2,
     });
   });
 

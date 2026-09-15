@@ -5,19 +5,22 @@ export const WEBHOOK_TRANSPORT_LIMITS = {
   timeoutMs: 10_000,
 } as const;
 
+export interface NotificationTransportInput {
+  notificationId: string;
+  deliveryLeaseId: string;
+  channel: 'WEBHOOK' | 'EMAIL';
+  destination: string;
+  subject: string | null;
+  body: string;
+}
+
 export interface NotificationTransport {
-  deliver(input: {
-    channel: 'WEBHOOK' | 'EMAIL';
-    destination: string;
-    subject: string | null;
-    body: string;
-  }): Promise<void>;
+  deliverAndRecord(input: NotificationTransportInput): Promise<void>;
 }
 
 /**
- * Module 14 Slice 14.2 — webhook-ready transport. POSTs the notification body
- * to the destination URL with a hard timeout; any non-2xx response or timeout
- * is a failed attempt recorded through NotificationService.recordAttempt.
+ * HTTPS webhook delivery. Network success is recorded only after a 2xx
+ * response and only while the caller still owns the durable delivery lease.
  */
 @Injectable()
 export class WebhookTransport implements NotificationTransport {
@@ -25,39 +28,33 @@ export class WebhookTransport implements NotificationTransport {
 
   constructor(private readonly notifications: NotificationService) {}
 
-  async deliverAndRecord(input: {
-    notificationId: string;
-    channel: 'WEBHOOK' | 'EMAIL';
-    destination: string;
-    subject: string | null;
-    body: string;
-  }): Promise<void> {
+  async deliverAndRecord(input: NotificationTransportInput): Promise<void> {
     try {
-      await this.deliver({
-        channel: input.channel,
-        destination: input.destination,
-        subject: input.subject,
-        body: input.body,
-      });
-      await this.notifications.recordAttempt({
-        notificationId: input.notificationId,
-        ok: true,
-      });
+      await this.deliver(input);
     } catch (error) {
+      const errorCode = this.errorCode(error);
       await this.notifications.recordAttempt({
         notificationId: input.notificationId,
+        deliveryLeaseId: input.deliveryLeaseId,
         ok: false,
-        errorCode: this.errorCode(error),
+        errorCode,
       });
+      throw Object.assign(new Error(errorCode), { code: errorCode });
     }
+
+    await this.notifications.recordAttempt({
+      notificationId: input.notificationId,
+      deliveryLeaseId: input.deliveryLeaseId,
+      ok: true,
+    });
   }
 
-  async deliver(input: {
-    channel: 'WEBHOOK' | 'EMAIL';
-    destination: string;
-    subject: string | null;
-    body: string;
-  }): Promise<void> {
+  async deliver(input: NotificationTransportInput): Promise<void> {
+    if (input.channel !== 'WEBHOOK') {
+      throw Object.assign(new Error('invalid webhook channel'), {
+        code: 'WEBHOOK_CHANNEL_INVALID',
+      });
+    }
     if (!/^https:\/\/.+/.test(input.destination)) {
       throw Object.assign(new Error('destination must be https'), {
         code: 'WEBHOOK_DESTINATION_INVALID',
@@ -73,8 +70,13 @@ export class WebhookTransport implements NotificationTransport {
     try {
       const response = await fetch(input.destination, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          'idempotency-key': `iot-notification:${input.notificationId}`,
+          'x-iot-notification-id': input.notificationId,
+        },
         body: JSON.stringify({
+          notificationId: input.notificationId,
           channel: input.channel,
           subject: input.subject,
           body: input.body,
@@ -111,11 +113,14 @@ export class WebhookTransport implements NotificationTransport {
       error &&
       typeof error === 'object' &&
       'code' in error &&
-      typeof (error as { code?: unknown }).code === 'string' &&
-      /^[A-Z][A-Z0-9_]{0,127}$/.test((error as { code: string }).code)
+      typeof (error as { code?: unknown }).code === 'string'
     ) {
       return (error as { code: string }).code;
     }
-    return 'WEBHOOK_UNEXPECTED';
+    this.logger.warn({
+      event: 'notification.webhook.unknown_error',
+      outcome: 'failed',
+    });
+    return 'WEBHOOK_UNREACHABLE';
   }
 }

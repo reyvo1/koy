@@ -11,7 +11,7 @@ const mode = process.argv[2] ?? 'verify';
 const excludedAnywhere = new Set(['.git', 'node_modules', 'dist', '.next', 'coverage', '__pycache__']);
 const excludedTopLevel = new Set(['artifacts', 'reports']);
 const excludedFiles = new Set(['repository-tree.txt', 'BASELINE-MANIFEST.sha256', '.env']);
-const excludedFilePatterns = [/\.tsbuildinfo$/i];
+const excludedFilePatterns = [/\.tsbuildinfo$/i, /^next-env\.d\.ts$/i];
 const excludedTopLevelFilePatterns = [/^APPLY-.*\.txt$/i, /^README-HOTFIX\.txt$/i];
 
 function canonicalBytes(file, relativePath) {
@@ -63,7 +63,9 @@ function collect(directory = root, depth = 0) {
       throw new Error(`Unsupported source filesystem entry: ${path.relative(root, absolute)}`);
     }
   }
-  return out.sort((a, b) => a.localeCompare(b));
+  // Keep sealed-source ordering byte/code-point deterministic across host locales.
+  // localeCompare() can produce different orderings on Windows vs Linux/default locales.
+  return out.sort((a, b) => (a === b ? 0 : a < b ? -1 : 1));
 }
 
 function expectedManifestRows(tree) {

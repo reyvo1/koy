@@ -1,3 +1,9 @@
+# Wave 2 supersession note — 2026-09-15
+
+The historical statement that no scheduler worker exists is superseded: the runtime worker was added later. Wave 2 closes the remaining activation mismatch by rejecting schedule enablement while `SCHEDULER_RUNTIME_ENABLED` is false and by requiring a real boolean enable contract. See `docs/wave-02-core-runtime-closure.md`.
+
+---
+
 # Module 13 — Scheduler Completion Review
 
 ## Status

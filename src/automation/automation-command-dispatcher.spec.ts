@@ -34,6 +34,8 @@ const action = (
     status: 'DISPATCHING',
     commandId: null,
     errorCode: null,
+    dispatchAttemptCount: 1,
+    retryNextEligibleAt: null,
     dispatchStartedAt: new Date('2026-08-05T00:00:00.000Z'),
     completedAt: null,
     createdAt: new Date('2026-08-05T00:00:00.000Z'),
@@ -57,6 +59,7 @@ describe('AutomationCommandDispatcher', () => {
   };
   let commands: {
     publish: jest.Mock;
+    retryPublish: jest.Mock;
     findTenantDeviceCommandByIdempotencyKey: jest.Mock;
   };
   let dispatcher: AutomationCommandDispatcher;
@@ -69,6 +72,7 @@ describe('AutomationCommandDispatcher', () => {
     };
     commands = {
       publish: jest.fn(),
+      retryPublish: jest.fn(),
       findTenantDeviceCommandByIdempotencyKey: jest.fn(),
     };
     dispatcher = new AutomationCommandDispatcher(
@@ -108,6 +112,32 @@ describe('AutomationCommandDispatcher', () => {
       actionId: 'first-action',
       commandId: 'command-1',
     });
+  });
+
+  it('re-publishes the same durable command identity on a claimed retry attempt', async () => {
+    const claimed = action('first-action') as AutomationExecutionTransitionAction & { dispatchAttemptCount: number };
+    claimed.dispatchAttemptCount = 2;
+    transitions.claimNextPendingAction.mockResolvedValue({
+      disposition: 'REPLAYED',
+      execution: execution('DISPATCHING'),
+      action: claimed,
+    });
+    commands.retryPublish.mockResolvedValue({ id: 'command-1', status: 'SENT' });
+    transitions.recordActionSucceeded.mockResolvedValue({
+      disposition: 'APPLIED',
+      execution: execution('SUCCEEDED'),
+      action: claimed,
+    });
+
+    await dispatcher.dispatchExecution(identity);
+
+    expect(commands.publish).not.toHaveBeenCalled();
+    expect(commands.retryPublish).toHaveBeenCalledWith(
+      identity.tenantId,
+      claimed.deviceId,
+      { enabled: true },
+      `automation:${identity.executionId}:first-action`,
+    );
   });
 
   it('completes an idempotent replay without publishing a second command', async () => {

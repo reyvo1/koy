@@ -1,3 +1,49 @@
+# Chat Session — Enterprise Wave 2 Core Runtime Closure
+
+## Wave 2 progress — 2026-09-15
+
+## Wave 2 applicator sealing correction — 2026-09-15
+
+The first operator-side Wave 2 apply reached the post-overlay seal with the correct 1029/1030 counts but failed `repository-tree.txt` equality with `missing=none; stale=none`. Root cause is sealing infrastructure, not Wave 2 runtime: `manage-baseline-manifest.mjs` used host-default `localeCompare()`, so identical path sets could be ordered differently across environments/locales. Permanent correction: sealed-source ordering now uses deterministic code-point comparison; the baseline-manifest self-test includes a mixed-case ordering regression; the recovery applicator accepts the exact failed Wave 2 overlay safely, applies the deterministic sealer, verifies the full authoritative source, then runs the canonical Wave 2 pre-push gate. No runtime/business/schema semantics are relaxed. No GitHub push has occurred.
+
+Wave 1 V13 is confirmed fully green by the owner and is frozen as the software/CI baseline. The project execution model is now Wave 1–13 (`docs/ENTERPRISE-WAVE-ROADMAP.md`), with one complete large wave before one GitHub push.
+
+Wave 2 implementation completed in the working batch so far:
+
+- Automation: added opt-in delayed retry worker, bounded persisted candidate scan, claim-time retry allowlist validation, PARTIALLY_FAILED recovery, restoration of deterministic later skips, atomic rollback on execution/action claim races, and explicit `CommandService.retryPublish()` that re-arms and republishes the same FAILED/TIMED_OUT command/correlation identity.
+- Scheduler: added fail-closed runtime policy and strict activation guard; enable is rejected when runtime is off, disable remains allowed.
+- Notification: added durable `DELIVERING` lease state/migration, bounded multi-instance-safe delivery worker, stale lease recovery, database-clock retry, stale lease rejection, explicit transient-only retry policy, semantic idempotency collision detection/P2002 race recovery, webhook idempotency headers, auth verification/reset EMAIL enqueue, and provider-neutral HTTPS email relay with stable downstream idempotency headers.
+- Config: Notification runtime defaults off and requires HTTPS relay URL/token/from only when enabled; relay token is production-secret validated.
+- Docs: master Wave 1–13 roadmap plus Wave 2 contract and historical module supersession notes are synchronized.
+
+## Local QA status
+
+- `node scripts/self-test-wave2-core-runtime.mjs` = PASS.
+- `node scripts/self-test-rescue-github-ci.mjs` = PASS with explicit Wave 2 guard assertions in both GitHub jobs.
+- `node scripts/self-test-wave1-prepush.mjs` = PASS; inherited Wave 1 gate contract remains intact.
+- `node scripts/self-test-rescue-live-broker-smoke.mjs` = PASS; Wave 1 MQTT/dashboard smoke regression guard remains intact.
+- GitHub Actions YAML parse = PASS.
+- `package.json` parse = PASS.
+- TypeScript source syntax/transpile = PASS for all 26 changed/new `.ts` files.
+- Authoritative sealed source = 1027 paths / 1028 manifest entries: V13's 1016-path baseline plus 13 Wave 2 source paths minus the two framework-generated `apps/*/next-env.d.ts` files, while preserving the four authoritative files present in GitHub/operator repo but absent from the chat snapshot.
+- Dependency bootstrap in this chat container is unavailable/incomplete (`npm ci` network timeout; offline cache lacks packages), so dependency-resolved Jest and Prisma validate/generate cannot honestly be claimed here.
+- The operator-side apply script MUST run `npm run wave2:prepush:check` against the real repo with dependencies installed before commit/push.
+- No Docker/PostgreSQL/Redis/EMQX/full acceptance is run locally; GitHub remains authoritative.
+
+## Ready state
+
+Implementation, source-level QA and authoritative manifest/tree sealing are complete. Do not push until the packaged apply script completes the canonical Wave 2 lightweight gate on the operator repository. If GitHub is red after the single Wave 2 push, remain in Wave 2 and batch the first failure plus all same-class failures.
+
+## Next steps
+
+1. Produce and integrity-seal one `WAVE2-CORE-RUNTIME-CLOSURE-20260915.zip` with preflight/apply instructions.
+2. Apply it to the clean complete V13 owner repository.
+3. Require `npm run wave2:prepush:check` to PASS inside the apply flow.
+4. One commit + one push only after that lightweight gate is green.
+5. Analyze GitHub heavy acceptance; close Wave 2 only when all authoritative jobs are green.
+
+---
+
 # Chat Session — Wave 1 V13 Dashboard Fixture Contract Hardening
 
 ## Progress
@@ -250,3 +296,69 @@ Apply V12 as one Wave 1 batch, run the existing lightweight pre-push gate, commi
 
 ### Session source-snapshot boundary
 The V11 source snapshot carried into this chat omits four files that the authoritative GitHub checkout already proved present in the sealed `1016/1016` source set: the two Super Admin report routes and the two MQTT TLS test fixtures. Therefore this session does not regenerate the source tree from the incomplete snapshot. V12 preserves the V11 `repository-tree.txt` (1016 paths), reseals only files changed by V12 in the 1017-entry manifest, and its apply preflight refuses an incomplete target repository before copying payload files.
+## Wave 2 operator recovery V3 — generated Next.js artifact sealing
+
+The second operator-side recovery passed deterministic ordering regression, then failed manifest verification at `apps/admin-web/next-env.d.ts`: the path set and ordering were correct, but the local generated Next.js declaration content differed from the chat snapshot seal. This is a sealing-classification defect, not a Wave 2 runtime defect. Next.js regenerates `next-env.d.ts` during `next dev`, `next build`, and `next typegen`; therefore it is not an authoritative source input. The permanent V3 correction excludes `next-env.d.ts` at any source depth while continuing to seal ordinary authored `.d.ts` files. A regression test mutates generated `next-env.d.ts` and requires verification to remain green, while an authored declaration remains in `repository-tree.txt`. The authoritative Wave 2 seal is therefore 1027 source paths / 1028 manifest entries. No GitHub push has occurred.
+
+
+
+## Wave 2 recovery V4 — evidence-first correction
+
+Operator V3 recovery successfully produced the deterministic 1027/1028 seal and entered the real `wave2:prepush:check`. It failed inside `rescue:validate` on the check named `baseline manifest ignores generated TypeScript incremental build metadata...`. Root cause: the validator asserted the old literal source string `const excludedFilePatterns = [/\.tsbuildinfo$/i]`; after V3 correctly added `next-env.d.ts` to the same exclusion array, behavior was correct but the brittle source-string assertion became false. This is a validator regression, not an application-runtime defect.
+
+V4 permanent correction:
+- validator checks the required `.tsbuildinfo` and `next-env.d.ts` patterns semantically instead of requiring the old exact array literal;
+- baseline self-test now actually mutates `.tsbuildinfo` after sealing and requires verify to stay green;
+- ordinary authored source drift remains rejected;
+- `docs/ENTERPRISE-ACCEPTANCE-EVIDENCE.md` defines STATIC/CONTRACT, UNIT, INTEGRATION, LIVE-SERVICE, PHYSICAL/EXTERNAL and PRODUCTION CERTIFICATION tiers;
+- PostgreSQL integration now proves automation retry claims and republishes the same failed command identity;
+- Notification integration uses two Prisma clients plus a real local HTTPS receiver to prove one lease, terminal HTTP 400, and persisted 503 backoff/reclaim/success;
+- the existing GitHub database integration step automatically executes these new `test/integration/*.integration-spec.ts` files, while the rescue job continues real EMQX evidence.
+
+No GitHub push has occurred. Wave 2 remains ACTIVE until the operator V4 lightweight gate passes and the single GitHub Wave 2 push is fully green.
+
+### V4 package QA
+- dependency-free baseline-manifest regression: PASS;
+- Wave 2 core runtime invariant self-test: PASS;
+- GitHub CI self-test: PASS;
+- TypeScript syntax/transpile for changed/new integration specs: PASS;
+- synthetic V3 recovery applicator: PASS through exact-state preflight, 16-file overlay, 1031/1032 target-generated seal, verify, synthetic gate invocation, and final verify;
+- real Prisma/Jest/PostgreSQL/HTTPS/EMQX/full acceptance is intentionally not claimed in the chat container; operator/GitHub gates remain authoritative.
+
+
+---
+
+## Wave 2 recovery V5 — Prisma local env boundary
+
+Operator V4 output proved the entire inherited Wave 1 lightweight chain through `RESCUE VALIDATION PASS (281/281)`, MQTT ACL observation/live-smoke self-tests, GitHub CI self-test and Wave 2 source invariants. It then failed at `prisma validate` with P1012 `Environment variable not found: DATABASE_URL`. No Prisma schema error occurred.
+
+V5 fixes the tooling class, not application runtime: `wave2:prisma:check` now calls `scripts/check-prisma-schema.mjs`, which preserves a supplied `DATABASE_URL` or uses a deterministic schema-only loopback port-1 fallback for validate/generate. `scripts/self-test-wave2-prisma-schema-check.mjs` proves fallback selection, explicit URL preservation, blank handling and exact validate→generate ordering with a fake CLI. The evidence policy explicitly states this is STATIC/CONTRACT only. GitHub PostgreSQL 16 + migrations + isolated integration tests remain required before Wave 2 can close. V5 target seal is 1033/1034. No push yet.
+
+
+### V5 package QA
+- Prisma schema-wrapper dependency-free self-test: PASS (fallback, explicit URL preservation, blank handling, validate→generate ordering).
+- Wave 2 core runtime invariant self-test: PASS.
+- baseline manifest regression: PASS.
+- GitHub CI contract self-test: PASS.
+- V5 applicator synthetic recovery: PASS from a sealed 1031/1032 V4 structural state through 12-file overlay, 1033/1034 regenerated seal, synthetic lightweight-gate invocation, and final verify.
+- Real operator Prisma/Jest and GitHub PostgreSQL/HTTPS/Redis/EMQX/full acceptance remain pending and must not be inferred from the synthetic applicator test.
+
+---
+
+## Wave 2 V6 — operator V5 targeted-test result
+
+Operator V5 successfully passed source seal 1033/1034, inherited Wave 1 lightweight checks, `RESCUE VALIDATION PASS (281/281)`, broker smoke self-test, GitHub CI self-test, Wave 2 source invariant test, Prisma wrapper self-test, and real `prisma validate` + `prisma generate`. Targeted Jest then executed far enough to prove 8/12 suites and 88 tests PASS. Four suites were blocked at TypeScript compile by two coherent contract defects:
+1. `CommandMetricEvent` lacked `retry_replay`, `retry_raced`, `retry_claimed` while `CommandService.retryPublish` already emits them.
+2. `NotificationService.claimDueBatch` inferred default `claimTimeoutMs` as literal `60000`, rejecting a runtime `number` from `ConfigService`.
+
+V6 fixes the whole class: extend the metric union, explicitly type delivery batch/claim parameters as `number`, add retry metric assertions to `metrics.service.spec.ts`, include that spec in `wave2:test:targeted`, and add source invariants so the drift cannot recur. This is not a relaxation of tests or runtime policy. Seal path count remains 1033/1034 because V6 only modifies existing sealed files. No push yet.
+
+### V6 package QA
+- dependency-free Wave 2 invariant: PASS
+- baseline-manifest regression: PASS
+- GitHub CI contract self-test: PASS
+- Prisma wrapper self-test: PASS
+- retry metric union compile contract: PASS
+- changed TS syntax/transpile: PASS
+- applicator synthetic V5 recovery: PASS (`1033/1034` -> overlay 11 files -> `1033/1034` -> synthetic gate invocation -> final verify)
+- operator targeted Jest is NOT yet claimed; GitHub heavy/live evidence is NOT yet claimed

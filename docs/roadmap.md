@@ -1,3 +1,9 @@
+# Master roadmap notice — 2026-09-15
+
+The authoritative active roadmap is now `docs/ENTERPRISE-WAVE-ROADMAP.md` (Wave 1–13). The detailed module/slice chronology below is historical engineering evidence. Old `TODO`, `Deferred`, `inactive`, or module-current statements must not be treated as current without checking source and the active wave document. Wave 1 is closed green; Wave 2 is active. One complete large wave precedes one GitHub push.
+
+---
+
 # IoT Platform - Roadmap
 
 > **Current-work notice (2026-09-11):** `CURRENT-STATE.md` is the operational source of truth for new work. Module/Slice activation statements below are historical evidence and do not override the Rescue workflow.

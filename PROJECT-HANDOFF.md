@@ -1,3 +1,38 @@
+# PROJECT HANDOFF — ENTERPRISE WAVE 2
+
+## ACTIVE HANDOFF — ENTERPRISE WAVE 2
+
+Master roadmap is now `docs/ENTERPRISE-WAVE-ROADMAP.md` Wave 1–13. The 30 modules are foundation-complete, but enterprise completion continues through Wave 13.
+
+### Work policy
+
+- Finish one large wave completely before one GitHub push.
+- Local = targeted/lightweight only.
+- GitHub = authoritative heavy build/Docker/PostgreSQL/Redis/EMQX/full acceptance.
+- If red, collect first failure + related failures in the same class and keep them in the active wave.
+- Never make a test green by weakening a production contract, accepting timeout/ambiguity, or replacing authoritative data with fake UI state.
+- Keep PRD/DevKit/DOCH, current state, manifest/tree, tests, and `chat-session.md` synchronized inside the wave.
+
+### Baseline
+
+Wave 1 V13 is closed green. MQTT callback/negative-ACL/dashboard-fixture classes are closed. Rescue endpoint is 18884. Do not reopen the foreign host broker on 1883.
+
+### Active Wave 2 — Core Runtime Closure
+
+Wave 2 is implemented as one large batch and is not yet pushed. It closes three related runtime gaps:
+
+1. Durable delayed automation retry with a real worker and same-command republish semantics.
+2. Scheduler activation safety against an inactive scheduler runtime.
+3. Durable leased Notification delivery with auth email enqueue and provider-neutral HTTPS email relay.
+
+Key fail-closed invariants include PostgreSQL-authoritative clocks/state, atomic retry claims, transient-only Notification retry, stale lease rejection, semantic idempotency collision rejection, bounded network timeouts, disabled-by-default runtime flags, and an explicit Wave 2 invariant guard in both GitHub jobs.
+
+Wave 2 V3 reached the real operator pre-push gate and failed only because `rescue:validate` used an obsolete exact-string assertion for the manifest exclusion array after `next-env.d.ts` was added. V4 fixes that validator semantically, strengthens the `.tsbuildinfo` regression by mutating it after seal, and adds real PostgreSQL/HTTPS integration evidence for Wave 2 runtime behavior. Source validation alone is not accepted as closure evidence; see `docs/ENTERPRISE-ACCEPTANCE-EVIDENCE.md`. No GitHub push has occurred.
+
+Wave 2 exits only after `npm run wave2:prepush:check` passes on the operator repo and the single GitHub push is fully green. Physical hardware/OTA is Wave 3 and still blocks production approval.
+
+---
+
 # PROJECT HANDOFF — WAVE 1 V13
 
 ## Active continuation — 2026-09-15
@@ -485,3 +520,30 @@ Do not diagnose this as broken EMQX auth. The precise class is negative ACL conn
 V12 fixes the complete class in one batch. All forbidden subscription/publish checks use fresh one-shot MQTT clients; explicit SUBACK/PUBACK denial, explicit authorization error, or MQTT v5 `DISCONNECT 0x87` is required; close-only/network ambiguity/timeout cannot count as denial; and forbidden side effects are checked independently. The batch covers publisher non-command operations, cross-device tenant isolation, and wrong-device ACK binding while preserving the primary positive device/publisher connections.
 
 Work policy remains unchanged: local = targeted/lightweight only; one commit/push; GitHub = Docker/build/DB/Redis/EMQX/full acceptance. If GitHub is red again, collect the first failure and related failures in the same class before making another large Wave 1 batch. Rescue MQTT remains `127.0.0.1:18884`; do not reopen the old foreign `1883` broker issue. Production is still NOT APPROVED until physical ESP32/Wi-Fi reconnect/MQTT/OTA evidence is complete.
+
+- Wave 2 sealing infrastructure is cross-platform deterministic: repository-tree ordering uses code-point order instead of host-default locale collation; mixed-case ordering is regression-tested.
+
+
+---
+
+## Wave 2 V5 recovery — Prisma schema tooling env
+
+V4 reached `wave2:prisma:check` after all earlier local gates passed, then failed with Prisma P1012 because `DATABASE_URL` was absent from the operator PowerShell environment. This is not a schema/runtime defect. V5 replaces the direct Prisma command with an environment-safe wrapper that preserves CI/runtime `DATABASE_URL` and uses a loopback port-1 schema-only fallback only when the variable is absent. The wrapper self-test is part of `wave2:prepush:check`. GitHub still supplies real PostgreSQL and remains the only Wave 2 INTEGRATION database evidence. V5 must regenerate the target seal to 1033/1034. Do not push until V5 finishes the full local gate.
+
+
+### V5 package QA
+- Prisma schema-wrapper dependency-free self-test: PASS (fallback, explicit URL preservation, blank handling, validate→generate ordering).
+- Wave 2 core runtime invariant self-test: PASS.
+- baseline manifest regression: PASS.
+- GitHub CI contract self-test: PASS.
+- V5 applicator synthetic recovery: PASS from a sealed 1031/1032 V4 structural state through 12-file overlay, 1033/1034 regenerated seal, synthetic lightweight-gate invocation, and final verify.
+- Real operator Prisma/Jest and GitHub PostgreSQL/HTTPS/Redis/EMQX/full acceptance remain pending and must not be inferred from the synthetic applicator test.
+
+---
+
+## Wave 2 recovery V6 — TypeScript contract closure
+
+V5 reached real targeted Jest compilation after all inherited Wave 1 checks and Prisma schema/generate passed. The first failure class is now source-contract drift, not tooling: `CommandService.retryPublish` emits three legitimate retry metric events missing from `CommandMetricEvent`, and `NotificationService.claimDueBatch` inferred a literal `60000` default parameter type that rejects the runtime-configured numeric lease timeout. V6 fixes both contracts together, adds metrics regression coverage to the Wave 2 targeted suite, and leaves runtime semantics unchanged. No push has occurred; Wave 2 closes only after V6 local PASS plus one fully green GitHub Wave 2 heavy/live run.
+
+### V6 QA status
+Dependency-free Wave 2/baseline/CI/Prisma self-tests PASS, retry metric type contract PASS, changed TypeScript syntax/transpile PASS, and the V6 applicator has passed synthetic V5 recovery end-to-end with the authoritative seal count remaining `1033/1034`. Operator targeted Jest must still run for real before the one Wave 2 push.

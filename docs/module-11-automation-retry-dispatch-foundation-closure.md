@@ -1,3 +1,9 @@
+# Wave 2 supersession note — 2026-09-15
+
+This document remains valid evidence for the original foundation boundary. Wave 2 now closes the previously deferred runtime portion with an opt-in durable retry worker, claim-time allowlist revalidation, atomic rollback on claim races, and an explicit command retry API that re-arms/republishes the same FAILED/TIMED_OUT command identity. See `docs/wave-02-core-runtime-closure.md`. Automation remains operator-gated by `AUTOMATION_RUNTIME_ENABLED`.
+
+---
+
 # Module 11 Slice 11.12 — Automation Retry Dispatch Foundation Closure
 
 ## Status

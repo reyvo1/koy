@@ -1,3 +1,9 @@
+# Scope clarification — 2026-09-15
+
+`30/30 Modules complete` means **foundation-complete**, not enterprise product completion. Post-foundation enterprise work is tracked only by `docs/ENTERPRISE-WAVE-ROADMAP.md` Wave 1–13. Wave 1 Rescue/CI/EMQX hardening is closed green; Wave 2 Core Runtime Closure is active. Historical activation/deferred notes below are evidence of the state at their original commits and may have been superseded by later waves.
+
+---
+
 # ROADMAP COMPLETE — 30/30 Modules
 
 ## Final state (commit d40d787)

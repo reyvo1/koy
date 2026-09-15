@@ -1,3 +1,9 @@
+# Wave 2 supersession note — 2026-09-15
+
+The foundation review remains historical evidence. Wave 2 adds the previously deferred delivery runtime: durable multi-instance leases, stale-lease recovery, transient-only retry policy, real auth verification/reset email enqueue, and a provider-neutral HTTPS email relay. Provider-specific email/payment/ecosystem integrations remain later waves. See `docs/wave-02-core-runtime-closure.md`.
+
+---
+
 # Module 14 — Notification Completion Review
 
 ## Status

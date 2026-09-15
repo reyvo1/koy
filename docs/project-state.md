@@ -1,3 +1,9 @@
+# Active enterprise state — 2026-09-15
+
+Authoritative execution is `docs/ENTERPRISE-WAVE-ROADMAP.md`. The 30 modules are foundation-complete; enterprise completion is not yet declared. Wave 1 Rescue/CI/EMQX hardening is closed green on the V13 baseline. Wave 2 Core Runtime Closure is active and covers durable automation retry runtime, scheduler activation safety, and leased Notification/email delivery runtime. Historical module-current statements below are retained only as chronology.
+
+---
+
 # IoT Platform - Project State
 
 > **Current-work notice (2026-09-11):** `CURRENT-STATE.md` is the operational source of truth for new work. Module/Slice activation statements below are historical evidence and do not override the Rescue workflow.

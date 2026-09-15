@@ -10,7 +10,7 @@ import {
   DomainBadRequestException,
   DomainNotFoundException,
 } from '../common/errors/domain-exceptions';
-import { CommandStatus, DeviceCommand, Prisma } from '@prisma/client';
+import { Capability, CommandStatus, DeviceCommand, Prisma } from '@prisma/client';
 import { toStructuredLogError } from '../common/logging/log-error';
 import { MetricsService } from '../metrics/metrics.service';
 import { MqttService } from '../mqtt/mqtt.service';
@@ -35,38 +35,11 @@ export class CommandService {
     payload: any,
     idempotencyKey?: string,
   ) {
-    if (
-      !payload ||
-      typeof payload !== 'object' ||
-      Array.isArray(payload) ||
-      Object.keys(payload).length === 0
-    ) {
-      throw new DomainBadRequestException(
-        ERROR_CODES.CommandPayloadInvalid,
-        'Invalid payload',
-      );
-    }
-
-    const normalizedIdempotencyKey = idempotencyKey?.trim();
-
-    if (idempotencyKey !== undefined && !normalizedIdempotencyKey) {
-      throw new DomainBadRequestException(
-        ERROR_CODES.CommandIdempotencyKeyInvalid,
-        'Invalid idempotency key',
-      );
-    }
-
-    const device = await this.prisma.device.findFirst({
-      where: { id: deviceId, tenantId },
-      include: { capabilities: true },
-    });
-
-    if (!device || device.status === 'REVOKED') {
-      throw new DomainNotFoundException(
-        ERROR_CODES.CommandDeviceUnavailable,
-        'Device not found or revoked',
-      );
-    }
+    const normalizedIdempotencyKey = this.validateCommandInput(
+      payload,
+      idempotencyKey,
+    );
+    const device = await this.loadCommandDevice(tenantId, deviceId);
 
     if (normalizedIdempotencyKey) {
       const existing = await this.prisma.deviceCommand.findUnique({
@@ -79,45 +52,15 @@ export class CommandService {
       });
 
       if (existing) {
-        if (
-          existing.tenantId !== tenantId ||
-          !this.isSamePayload(existing.payload, payload)
-        ) {
-          throw new DomainBadRequestException(
-            ERROR_CODES.CommandIdempotencyConflict,
-            'Idempotency key conflict',
-          );
-        }
-
+        this.assertIdempotentCommand(existing, tenantId, payload);
         this.metrics?.recordCommandLifecycle('idempotent_replay');
         return existing;
       }
     }
 
-    for (const key of Object.keys(payload)) {
-      const capability = device.capabilities.find(
-        (capability) => capability.key === key,
-      );
+    this.validateCommandCapabilities(device.capabilities, payload);
 
-      if (!capability) {
-        throw new DomainBadRequestException(
-          ERROR_CODES.CommandCapabilityNotDefined,
-          `Capability ${key} not defined for device`,
-        );
-      }
-
-      if (!capability.isWritable) {
-        throw new DomainBadRequestException(
-          ERROR_CODES.CommandCapabilityNotWritable,
-          `Capability ${key} is not writable`,
-        );
-      }
-
-      this.capabilityValidator.validateValue(payload[key], capability);
-    }
-
-    let command;
-
+    let command: DeviceCommand;
     try {
       command = await this.prisma.deviceCommand.create({
         data: {
@@ -143,28 +86,204 @@ export class CommandService {
             },
           },
         });
-
-        if (!existing) {
-          throw error;
-        }
-
-        if (
-          existing.tenantId !== tenantId ||
-          !this.isSamePayload(existing.payload, payload)
-        ) {
-          throw new DomainBadRequestException(
-            ERROR_CODES.CommandIdempotencyConflict,
-            'Idempotency key conflict',
-          );
-        }
-
+        if (!existing) throw error;
+        this.assertIdempotentCommand(existing, tenantId, payload);
         this.metrics?.recordCommandLifecycle('idempotent_replay');
         return existing;
       }
-
       throw error;
     }
 
+    return this.publishPersistedCommand(command, tenantId, deviceId, payload);
+  }
+
+  /**
+   * Re-publish the exact durable command identity for a bounded automation retry.
+   * Public idempotent publish semantics remain replay-only; only this explicit
+   * path may re-arm FAILED/TIMED_OUT rows, preserving correlationId and the
+   * automation idempotency key across attempts.
+   */
+  async retryPublish(
+    tenantId: string,
+    deviceId: string,
+    payload: any,
+    idempotencyKey: string,
+  ): Promise<DeviceCommand> {
+    const normalizedIdempotencyKey = this.validateCommandInput(
+      payload,
+      idempotencyKey,
+    );
+    if (!normalizedIdempotencyKey) {
+      throw new DomainBadRequestException(
+        ERROR_CODES.CommandIdempotencyKeyInvalid,
+        'Retry requires an idempotency key',
+      );
+    }
+
+    const device = await this.loadCommandDevice(tenantId, deviceId);
+    this.validateCommandCapabilities(device.capabilities, payload);
+
+    const existing = await this.prisma.deviceCommand.findUnique({
+      where: {
+        deviceId_idempotencyKey: {
+          deviceId,
+          idempotencyKey: normalizedIdempotencyKey,
+        },
+      },
+    });
+    if (!existing) {
+      throw new DomainNotFoundException(
+        ERROR_CODES.CommandNotFound,
+        'Retry command not found',
+      );
+    }
+    this.assertIdempotentCommand(existing, tenantId, payload);
+
+    if (
+      existing.status === CommandStatus.PENDING ||
+      existing.status === CommandStatus.SENT ||
+      existing.status === CommandStatus.ACKNOWLEDGED
+    ) {
+      this.metrics?.recordCommandLifecycle('retry_replay');
+      return existing;
+    }
+
+    if (
+      existing.status !== CommandStatus.FAILED &&
+      existing.status !== CommandStatus.TIMED_OUT
+    ) {
+      throw new DomainBadRequestException(
+        ERROR_CODES.CommandPublishFailed,
+        'Command is not retryable',
+      );
+    }
+
+    const rearmed = await this.prisma.deviceCommand.updateMany({
+      where: {
+        id: existing.id,
+        tenantId,
+        deviceId,
+        status: { in: [CommandStatus.FAILED, CommandStatus.TIMED_OUT] },
+      },
+      data: {
+        status: CommandStatus.PENDING,
+        sentAt: null,
+        acknowledgedAt: null,
+      },
+    });
+
+    if (rearmed.count !== 1) {
+      const durable = await this.prisma.deviceCommand.findUnique({
+        where: { id: existing.id },
+      });
+      if (durable && durable.tenantId === tenantId && durable.deviceId === deviceId) {
+        this.metrics?.recordCommandLifecycle('retry_raced');
+        return durable;
+      }
+      throw new DomainBadRequestException(
+        ERROR_CODES.CommandPublishFailed,
+        'Command retry claim failed',
+      );
+    }
+
+    this.metrics?.recordCommandLifecycle('retry_claimed');
+    return this.publishPersistedCommand(
+      {
+        ...existing,
+        status: CommandStatus.PENDING,
+        sentAt: null,
+        acknowledgedAt: null,
+      },
+      tenantId,
+      deviceId,
+      payload,
+    );
+  }
+
+  private validateCommandInput(
+    payload: any,
+    idempotencyKey?: string,
+  ): string | undefined {
+    if (
+      !payload ||
+      typeof payload !== 'object' ||
+      Array.isArray(payload) ||
+      Object.keys(payload).length === 0
+    ) {
+      throw new DomainBadRequestException(
+        ERROR_CODES.CommandPayloadInvalid,
+        'Invalid payload',
+      );
+    }
+
+    const normalizedIdempotencyKey = idempotencyKey?.trim();
+    if (idempotencyKey !== undefined && !normalizedIdempotencyKey) {
+      throw new DomainBadRequestException(
+        ERROR_CODES.CommandIdempotencyKeyInvalid,
+        'Invalid idempotency key',
+      );
+    }
+    return normalizedIdempotencyKey;
+  }
+
+  private async loadCommandDevice(tenantId: string, deviceId: string) {
+    const device = await this.prisma.device.findFirst({
+      where: { id: deviceId, tenantId },
+      include: { capabilities: true },
+    });
+    if (!device || device.status === 'REVOKED') {
+      throw new DomainNotFoundException(
+        ERROR_CODES.CommandDeviceUnavailable,
+        'Device not found or revoked',
+      );
+    }
+    return device;
+  }
+
+  private validateCommandCapabilities(
+    capabilities: Capability[],
+    payload: Record<string, unknown>,
+  ): void {
+    for (const key of Object.keys(payload)) {
+      const capability = capabilities.find((candidate) => candidate.key === key);
+      if (!capability) {
+        throw new DomainBadRequestException(
+          ERROR_CODES.CommandCapabilityNotDefined,
+          `Capability ${key} not defined for device`,
+        );
+      }
+      if (!capability.isWritable) {
+        throw new DomainBadRequestException(
+          ERROR_CODES.CommandCapabilityNotWritable,
+          `Capability ${key} is not writable`,
+        );
+      }
+      this.capabilityValidator.validateValue(payload[key], capability);
+    }
+  }
+
+  private assertIdempotentCommand(
+    existing: DeviceCommand,
+    tenantId: string,
+    payload: unknown,
+  ): void {
+    if (
+      existing.tenantId !== tenantId ||
+      !this.isSamePayload(existing.payload, payload)
+    ) {
+      throw new DomainBadRequestException(
+        ERROR_CODES.CommandIdempotencyConflict,
+        'Idempotency key conflict',
+      );
+    }
+  }
+
+  private async publishPersistedCommand(
+    command: DeviceCommand,
+    tenantId: string,
+    deviceId: string,
+    payload: Record<string, unknown>,
+  ): Promise<DeviceCommand> {
     const topic = `tenants/${tenantId}/devices/${deviceId}/commands`;
 
     try {
@@ -175,7 +294,6 @@ export class CommandService {
       this.metrics?.recordCommandLifecycle('sent');
     } catch (error) {
       this.metrics?.recordCommandLifecycle('publish_failed');
-
       this.logger.error({
         event: 'command.publish.failed',
         tenantId,
@@ -185,10 +303,6 @@ export class CommandService {
         outcome: 'failed',
         error: toStructuredLogError(error),
       });
-
-      // A broker publish that did not confirm is treated as failed. The state
-      // transition is conditional so a concurrent terminal device result can
-      // never be overwritten by failure bookkeeping.
       try {
         await this.prisma.deviceCommand.updateMany({
           where: { id: command.id, status: CommandStatus.PENDING },
@@ -205,29 +319,18 @@ export class CommandService {
           error: toStructuredLogError(persistError),
         });
       }
-
       throw new DomainBadRequestException(
         ERROR_CODES.CommandPublishFailed,
         'Failed to publish command',
       );
     }
 
-    // The broker has confirmed QoS-1 publication at this point. Persist SENT
-    // only if the row is still PENDING: a fast device ACK may already have
-    // moved it to ACKNOWLEDGED/FAILED, and terminal state must never regress
-    // back to SENT. If persistence itself is unavailable after broker
-    // confirmation, return the durable/created PENDING view instead of
-    // fabricating FAILED; ACK handling is explicitly allowed to settle PENDING.
     const sentAt = new Date();
     try {
       const transition = await this.prisma.deviceCommand.updateMany({
         where: { id: command.id, status: CommandStatus.PENDING },
-        data: {
-          status: CommandStatus.SENT,
-          sentAt,
-        },
+        data: { status: CommandStatus.SENT, sentAt },
       });
-
       if (transition.count === 1) {
         this.logger.log({
           event: 'command.publish.succeeded',
@@ -237,11 +340,7 @@ export class CommandService {
           correlationId: command.correlationId,
           outcome: 'succeeded',
         });
-        return {
-          ...command,
-          status: CommandStatus.SENT,
-          sentAt,
-        };
+        return { ...command, status: CommandStatus.SENT, sentAt };
       }
 
       const durable = await this.prisma.deviceCommand.findUnique({

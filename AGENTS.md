@@ -1,3 +1,11 @@
+# Enterprise execution override — 2026-09-15
+
+## Enterprise wave execution policy
+
+The active master plan is `docs/ENTERPRISE-WAVE-ROADMAP.md` Wave 1–13. Work one large wave at a time. Complete implementation, targeted/lightweight QA, documentation, repository-tree/manifest sealing and `chat-session.md` before a single GitHub push. Heavy runtime acceptance belongs to GitHub. Red CI stays in the same active wave and is repaired by failure class, never micro-RR. Production contracts/tests must not be weakened to obtain green CI. Schema-only tooling fallbacks (for example Prisma validate/generate) are STATIC/CONTRACT evidence only and must never be promoted to live database evidence.
+
+---
+
 # CURRENT WORK AUTHORITY — READ FIRST
 
 Before any mutation, read `CURRENT-STATE.md`, `PROJECT-HANDOFF.md`, `docs/RESCUE-WORKFLOW.md`, and `docs/UI-ROUTE-MAP.md`. For current work these files override conflicting historical Module/Slice status text. Do not start a new numbered Module/Slice unless the owner explicitly restores that lifecycle.

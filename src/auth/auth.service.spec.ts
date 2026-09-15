@@ -10,14 +10,17 @@ import * as argon2 from 'argon2';
 describe('AuthService', () => {
   let service: AuthService;
   let prisma: PrismaService;
+  let notifications: { sendVerificationToken: jest.Mock; sendResetToken: jest.Mock };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
-        { provide: PrismaService, useValue: { 
+        { provide: PrismaService, useValue: {
+            user: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
             $transaction: jest.fn(async (cb) => {
                 const tx = {
+                    user: { create: jest.fn(), update: jest.fn() },
                     refreshToken: { findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn(), create: jest.fn() },
                     refreshTokenFamily: { update: jest.fn() }
                 };
@@ -32,6 +35,47 @@ describe('AuthService', () => {
 
     service = module.get<AuthService>(AuthService);
     prisma = module.get<PrismaService>(PrismaService);
+    notifications = module.get(NotificationService);
+  });
+
+  describe('auth notification persistence', () => {
+    it('persists registration and verification notification in one transaction', async () => {
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
+      jest.spyOn(argon2, 'hash').mockResolvedValue('argon-hash');
+      const tx = { user: { create: jest.fn().mockResolvedValue({ id: 'u1' }) } };
+      (prisma.$transaction as jest.Mock).mockImplementation(async (cb) => cb(tx));
+
+      await service.register({
+        email: 'user@example.com',
+        password: 'StrongPassword123!',
+        tenantId: 'tenant-1',
+      } as any);
+
+      expect(tx.user.create).toHaveBeenCalledTimes(1);
+      expect(notifications.sendVerificationToken).toHaveBeenCalledWith(
+        'tenant-1',
+        'user@example.com',
+        expect.any(String),
+        tx,
+      );
+    });
+
+    it('persists password reset token and reset notification in one transaction', async () => {
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue({ id: 'u1' });
+      jest.spyOn(argon2, 'hash').mockResolvedValue('argon-reset-hash');
+      const tx = { user: { update: jest.fn().mockResolvedValue({ id: 'u1' }) } };
+      (prisma.$transaction as jest.Mock).mockImplementation(async (cb) => cb(tx));
+
+      await service.forgotPassword('user@example.com', 'tenant-1');
+
+      expect(tx.user.update).toHaveBeenCalledTimes(1);
+      expect(notifications.sendResetToken).toHaveBeenCalledWith(
+        'tenant-1',
+        'user@example.com',
+        expect.any(String),
+        tx,
+      );
+    });
   });
 
   describe('refreshTokens', () => {

@@ -736,6 +736,7 @@ enum NotificationChannel {
 
 enum NotificationStatus {
   PENDING
+  DELIVERING
   SENT
   FAILED
   EXHAUSTED
@@ -768,12 +769,15 @@ model Notification {
   attemptCount    Int                @default(0)
   nextRetryAt     DateTime?
   lastErrorCode   String?
+  deliveryLeaseId String?
+  deliveryLeaseAt DateTime?
   idempotencyKey  String
   sentAt          DateTime?
   createdAt       DateTime           @default(now())
 
   @@unique([tenantId, idempotencyKey])
   @@index([status, nextRetryAt])
+  @@index([status, deliveryLeaseAt])
   @@index([tenantId, createdAt])
   @@map("notifications")
 }

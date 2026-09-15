@@ -15,8 +15,13 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantContextGuard } from '../users/guards/tenant-context.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import { ScheduleDomainValidator } from './schedule-domain.validator';
-import { DomainNotFoundException } from '../common/errors/domain-exceptions';
+import {
+  DomainBadRequestException,
+  DomainNotFoundException,
+  DomainServiceUnavailableException,
+} from '../common/errors/domain-exceptions';
 import { ERROR_CODES } from '../common/errors/error-code';
+import { isSchedulerRuntimeEnabled } from './scheduler-runtime-policy';
 
 @Controller('schedules')
 @UseGuards(JwtAuthGuard, TenantContextGuard)
@@ -102,7 +107,19 @@ export class ScheduleController {
         tenantId: request.user.tenantContext.tenantId,
       },
     });
-    const enabled = Boolean(body?.enabled);
+    if (typeof body?.enabled !== 'boolean') {
+      throw new DomainBadRequestException(
+        ERROR_CODES.BadRequest,
+        'enabled wajib boolean',
+      );
+    }
+    const enabled = body.enabled;
+    if (enabled && !isSchedulerRuntimeEnabled()) {
+      throw new DomainServiceUnavailableException(
+        ERROR_CODES.ServiceUnavailable,
+        'Runtime scheduler belum diaktifkan oleh operator.',
+      );
+    }
     const countdownNextRunAt =
       schedule.kind === 'COUNTDOWN'
         ? enabled && schedule.countdownSeconds

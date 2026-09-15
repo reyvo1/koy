@@ -27,16 +27,45 @@ try {
   writeFileSync(path.join(fixture, 'package.json'), '{"name":"fixture"}\n');
   writeFileSync(path.join(fixture, 'apps/admin-web/source.ts'), 'export const value = 1;\n');
   writeFileSync(path.join(fixture, 'apps/admin-web/tsconfig.tsbuildinfo'), '{"fixture":true}\n');
+  writeFileSync(path.join(fixture, 'apps/admin-web/next-env.d.ts'), 'generated next env variant A\n');
+  writeFileSync(path.join(fixture, 'apps/admin-web/custom-types.d.ts'), 'declare const durableType: true;\n');
 
   let result = run('generate');
   assert(result.status === 0, `generate failed: ${result.stderr || result.stdout}`);
   const tree = readFileSync(path.join(fixture, 'repository-tree.txt'), 'utf8');
   assert(tree.includes('apps/admin-web/source.ts'), 'ordinary source file must remain sealed');
   assert(!tree.includes('tsconfig.tsbuildinfo'), '*.tsbuildinfo must be excluded from sealed source tree');
+  assert(!tree.includes('next-env.d.ts'), 'Next.js generated next-env.d.ts must be excluded from sealed source tree');
+  assert(tree.includes('custom-types.d.ts'), 'ordinary authored .d.ts files must remain sealed');
 
+  writeFileSync(path.join(fixture, 'apps/admin-web/next-env.d.ts'), 'generated next env variant B\n');
   result = run('verify');
-  assert(result.status === 0, `verify must tolerate generated tsbuildinfo: ${result.stderr || result.stdout}`);
-  console.log('PASS  baseline manifest ignores generated *.tsbuildinfo files at arbitrary source depth');
+  assert(result.status === 0, `verify must tolerate regenerated next-env.d.ts: ${result.stderr || result.stdout}`);
+  console.log('PASS  baseline manifest ignores regenerated Next.js next-env.d.ts but seals authored .d.ts files');
+
+  writeFileSync(
+    path.join(fixture, 'apps/admin-web/tsconfig.tsbuildinfo'),
+    'generated tsbuildinfo variant B\n',
+  );
+  result = run('verify');
+  assert(result.status === 0, `verify must tolerate regenerated tsbuildinfo: ${result.stderr || result.stdout}`);
+  console.log('PASS  baseline manifest ignores regenerated *.tsbuildinfo files at arbitrary source depth');
+
+  // Prove repository-tree ordering is deterministic and does not depend on host locale.
+  // The mixed case names intentionally sort differently under localeCompare() on some hosts.
+  writeFileSync(path.join(fixture, 'apps/admin-web/README.ts'), 'export const upper = true;\n');
+  writeFileSync(path.join(fixture, 'apps/admin-web/agent.ts'), 'export const lower = true;\n');
+  result = run('generate');
+  assert(result.status === 0, `deterministic ordering generate failed: ${result.stderr || result.stdout}`);
+  const orderedTree = readFileSync(path.join(fixture, 'repository-tree.txt'), 'utf8')
+    .split(/\r?\n/)
+    .filter(Boolean);
+  const codePointSortedTree = [...orderedTree].sort();
+  assert(
+    JSON.stringify(orderedTree) === JSON.stringify(codePointSortedTree),
+    'repository-tree ordering must use deterministic code-point order, not host locale collation',
+  );
+  console.log('PASS  baseline manifest tree ordering is deterministic across host locales');
 
   // Prove source sealing is invariant across equivalent LF/CRLF text checkouts.
   const sourcePath = path.join(fixture, 'apps/admin-web/source.ts');

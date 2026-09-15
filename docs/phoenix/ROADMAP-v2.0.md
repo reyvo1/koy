@@ -1,3 +1,9 @@
+# Execution alignment — 2026-09-15
+
+Phoenix version horizons remain architectural intent, but implementation sequencing is now governed by `docs/ENTERPRISE-WAVE-ROADMAP.md` Wave 1–13. In broad terms: production/runtime work maps to Waves 2–4, enterprise domain/management/mobile/provider work to Waves 5–9, scale/security to Wave 10, intelligence to Wave 11, Phoenix enterprise horizon to Wave 12, and certification to Wave 13. This prevents version labels from being mistaken for independent push checkpoints.
+
+---
+
 # PHOENIX ROADMAP v2.0 — Productionization & Enterprise Expansion
 
 Mengikuti urutan wajib POST-MODULE-30 (aaaa.txt). Setiap fase punya gate.

@@ -41,6 +41,9 @@ describe('MetricsService', () => {
     service.recordTelemetryIngestion('rejected', 2);
     service.recordCommandLifecycle('sent');
     service.recordCommandLifecycle('timed_out', 3);
+    service.recordCommandLifecycle('retry_replay');
+    service.recordCommandLifecycle('retry_raced');
+    service.recordCommandLifecycle('retry_claimed');
     service.recordDependencyReadiness('postgres', 'up', 0.004);
     service.recordOverallReadiness('not_ready');
 
@@ -57,6 +60,15 @@ describe('MetricsService', () => {
     );
     expect(output).toContain(
       'iot_device_command_lifecycle_total{event="timed_out"} 3',
+    );
+    expect(output).toContain(
+      'iot_device_command_lifecycle_total{event="retry_replay"} 1',
+    );
+    expect(output).toContain(
+      'iot_device_command_lifecycle_total{event="retry_raced"} 1',
+    );
+    expect(output).toContain(
+      'iot_device_command_lifecycle_total{event="retry_claimed"} 1',
     );
     expect(output).toContain(
       'iot_dependency_readiness_checks_total{dependency="postgres",status="up"} 1',

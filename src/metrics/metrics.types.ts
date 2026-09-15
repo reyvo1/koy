@@ -14,7 +14,10 @@ export type CommandMetricEvent =
   | 'acknowledgement_replayed'
   | 'acknowledgement_rejected'
   | 'timed_out'
-  | 'stale_pending';
+  | 'stale_pending'
+  | 'retry_replay'
+  | 'retry_raced'
+  | 'retry_claimed';
 
 export type ReadinessStatus = 'up' | 'down';
 export type OverallReadinessStatus = 'ready' | 'not_ready';

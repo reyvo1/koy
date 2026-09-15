@@ -1,3 +1,18 @@
+LANJUTKAN PROJECT IOT DARI HANDOFF TERBARU.
+
+MASTER WORKFLOW WAVE 1-13:
+- 30/30 modul = foundation-complete, bukan enterprise-complete.
+- Wave 1 Rescue/CI/EMQX = CLOSED GREEN (V13).
+- Wave 2 Core Runtime Closure = ACTIVE. V4 local gate sudah PASS sampai 281/281 rescue validation + MQTT/CI self-tests, lalu berhenti hanya karena Prisma P1012 DATABASE_URL tidak ada di shell lokal. V5 memperbaiki tooling-env ini tanpa mengubah business logic. Wave 2 baru CLOSED setelah satu push dan GitHub heavy acceptance hijau.
+- Selesaikan SATU WAVE BESAR utuh sebelum SATU push GitHub.
+- Local hanya targeted/lightweight; Prisma validate/generate boleh memakai schema-only fallback jika DATABASE_URL lokal tidak ada dan itu BUKAN runtime evidence. GitHub menjalankan heavy build/Docker/DB/Redis/EMQX/full acceptance dengan service nyata.
+- Kalau merah: ambil failure pertama + semua failure satu kelas, perbaiki dalam wave yang sama. Dilarang micro-RR.
+- Jangan reopen masalah foreign Windows Mosquitto port 1883; rescue MQTT = 18884.
+- Production tetap NOT APPROVED sampai ESP32/Wi-Fi reconnect/physical MQTT/OTA dan final certification selesai.
+- Baca `docs/ENTERPRISE-WAVE-ROADMAP.md`, `CURRENT-STATE.md`, `PROJECT-HANDOFF.md`, `chat-session.md` sebelum melanjutkan.
+
+--- HISTORICAL CONTINUATION BELOW ---
+
 LANJUTKAN IOT PLATFORM DARI RR30. JANGAN AUDIT DARI NOL.
 
 BASELINE AKTIF: RR30 GITHUB-HOSTED HEAVY VALIDATION RESTORATION.
@@ -25,3 +40,9 @@ NEXT:
 4. Jika `test` PASS, `rescue-live-emqx` berjalan otomatis dengan real EMQX.
 5. Jangan jalankan full acceptance lokal berulang di laptop.
 6. Jika GitHub full acceptance PASS, buat evidence baru yang source-bound ke RR30 lalu lanjut physical ESP32 gate.
+
+WAVE 2 V6 STATUS:
+- V5 passed inherited Wave 1 lightweight checks + Prisma validate/generate.
+- Targeted Jest: 8 suites / 88 tests passed; 4 suites blocked by 2 TypeScript contract drifts.
+- V6 fixes CommandMetricEvent retry events + numeric notification claim parameter and adds metrics regression to targeted suite.
+- No push yet. Seal count remains 1033/1034. One Wave 2 push only after V6 local gate PASS.

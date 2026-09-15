@@ -1638,9 +1638,11 @@ check(
 );
 check(
   'baseline manifest ignores generated TypeScript incremental build metadata without weakening ordinary source drift detection',
-  baselineManifestManagerR2.includes('const excludedFilePatterns = [/\\.tsbuildinfo$/i]') &&
+  baselineManifestManagerR2.includes('/\\.tsbuildinfo$/i') &&
+    baselineManifestManagerR2.includes('/^next-env\\.d\\.ts$/i') &&
     baselineManifestManagerR2.includes('stat.isFile() && excludedFilePatterns.some((pattern) => pattern.test(entry.name))') &&
     existsSync(join(root, 'scripts/self-test-baseline-manifest.mjs')) &&
+    read('scripts/self-test-baseline-manifest.mjs').includes('generated tsbuildinfo variant B') &&
     read('package.json').includes('baseline:manifest:self-test'),
 );
 check(

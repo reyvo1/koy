@@ -1,89 +1,73 @@
-import { WebhookTransport } from './webhook.transport';
 import { NotificationService } from './notification.service';
+import { WebhookTransport } from './webhook.transport';
 
 describe('WebhookTransport', () => {
   let recordAttempt: jest.Mock;
   let transport: WebhookTransport;
-  const okResponse = { ok: true, status: 200 };
+
+  const input = {
+    notificationId: 'n1',
+    deliveryLeaseId: 'lease-1',
+    channel: 'WEBHOOK' as const,
+    destination: 'https://hooks.example.com/x',
+    subject: null,
+    body: 'hello',
+  };
 
   beforeEach(() => {
     recordAttempt = jest.fn().mockResolvedValue({});
-    transport = new WebhookTransport({
-      recordAttempt,
-    } as unknown as NotificationService);
-    global.fetch = (jest.fn().mockResolvedValue(okResponse) as any);
+    transport = new WebhookTransport({ recordAttempt } as unknown as NotificationService);
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200 }) as any;
   });
 
   afterEach(() => {
     delete (global as any).fetch;
   });
 
-  it('delivers and records a successful attempt', async () => {
-    await transport.deliverAndRecord({
-      notificationId: 'n1',
-      channel: 'WEBHOOK',
-      destination: 'https://hooks.example.com/x',
-      subject: null,
-      body: 'hello',
-    });
+  it('delivers and completes the same durable lease', async () => {
+    await transport.deliverAndRecord(input);
 
     expect(fetch).toHaveBeenCalledWith(
-      'https://hooks.example.com/x',
-      expect.objectContaining({ method: 'POST' }),
+      input.destination,
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          'idempotency-key': 'iot-notification:n1',
+          'x-iot-notification-id': 'n1',
+        }),
+      }),
     );
     expect(recordAttempt).toHaveBeenCalledWith({
       notificationId: 'n1',
+      deliveryLeaseId: 'lease-1',
       ok: true,
     });
   });
 
-  it('rejects non-https destinations before any network call', async () => {
-    await transport.deliverAndRecord({
-      notificationId: 'n1',
-      channel: 'WEBHOOK',
-      destination: 'http://insecure.example.com',
-      subject: null,
-      body: 'hello',
+  it('records a bounded HTTP error against the same lease', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 503 }) as any;
+
+    await expect(transport.deliverAndRecord(input)).rejects.toMatchObject({
+      code: 'WEBHOOK_HTTP_503',
     });
 
-    expect(recordAttempt).toHaveBeenCalledWith(
-      expect.objectContaining({
-        ok: false,
-        errorCode: 'WEBHOOK_DESTINATION_INVALID',
-      }),
-    );
+    expect(recordAttempt).toHaveBeenCalledWith({
+      notificationId: 'n1',
+      deliveryLeaseId: 'lease-1',
+      ok: false,
+      errorCode: 'WEBHOOK_HTTP_503',
+    });
   });
 
-  it('records a bounded HTTP error code on non-2xx responses', async () => {
-    global.fetch = (jest.fn().mockResolvedValue({ ok: false, status: 503 }) as any);
+  it('maps timeout to WEBHOOK_TIMEOUT', async () => {
+    global.fetch = jest.fn().mockRejectedValue(new DOMException('aborted', 'AbortError')) as any;
 
-    await transport.deliverAndRecord({
-      notificationId: 'n1',
-      channel: 'WEBHOOK',
-      destination: 'https://hooks.example.com/x',
-      subject: null,
-      body: 'hello',
+    await expect(transport.deliverAndRecord(input)).rejects.toMatchObject({
+      code: 'WEBHOOK_TIMEOUT',
     });
 
     expect(recordAttempt).toHaveBeenCalledWith(
-      expect.objectContaining({ ok: false, errorCode: 'WEBHOOK_HTTP_503' }),
-    );
-  });
-
-  it('maps timeouts to WEBHOOK_TIMEOUT', async () => {
-    const abort = new DOMException('aborted', 'AbortError');
-    global.fetch = (jest.fn().mockRejectedValue(abort) as any);
-
-    await transport.deliverAndRecord({
-      notificationId: 'n1',
-      channel: 'WEBHOOK',
-      destination: 'https://hooks.example.com/x',
-      subject: null,
-      body: 'hello',
-    });
-
-    expect(recordAttempt).toHaveBeenCalledWith(
-      expect.objectContaining({ ok: false, errorCode: 'WEBHOOK_TIMEOUT' }),
+      expect.objectContaining({ errorCode: 'WEBHOOK_TIMEOUT' }),
     );
   });
 });

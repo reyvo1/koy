@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { NotificationStatus } from '@prisma/client';
+import { NotificationStatus, Prisma } from '@prisma/client';
+import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 
 export const NOTIFICATION_LIMITS = {
@@ -7,22 +8,45 @@ export const NOTIFICATION_LIMITS = {
   maxDestinationLength: 512,
   maxSubjectLength: 256,
   maxAttempts: 3,
-  backoffSecondsByAttempt: [60, 300], // after attempt 1 → 60s, attempt 2 → 5m
+  maxDeliveryBatch: 100,
+  defaultDeliveryBatch: 25,
+  defaultClaimTimeoutMs: 60_000,
+  backoffSecondsByAttempt: [60, 300],
 } as const;
 
-const DESTINATION_PATTERN = /^[A-Za-z0-9@._:+/-]{3,512}$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export type NotificationPersistenceClient = Pick<
+  Prisma.TransactionClient,
+  'notification'
+>;
 
 export type NotificationDomainErrorCode =
   | 'NOTIFICATION_BODY_INVALID'
   | 'NOTIFICATION_DESTINATION_INVALID'
   | 'NOTIFICATION_SUBJECT_INVALID'
-  | 'NOTIFICATION_CHANNEL_INVALID';
+  | 'NOTIFICATION_CHANNEL_INVALID'
+  | 'NOTIFICATION_NOT_FOUND'
+  | 'NOTIFICATION_DELIVERY_LEASE_LOST'
+  | 'NOTIFICATION_IDEMPOTENCY_CONFLICT';
+
+export interface ClaimedNotificationDelivery {
+  readonly id: string;
+  readonly tenantId: string;
+  readonly channel: 'WEBHOOK' | 'EMAIL';
+  readonly subject: string | null;
+  readonly body: string;
+  readonly destination: string;
+  readonly deliveryLeaseId: string;
+}
 
 /**
- * Module 14 Slice 14.1 — bounded notification enqueue + retry state.
- * Delivery itself goes through an injected transport (webhook/email adapter
- * arrives in a later slice); this service owns durable idempotent enqueue and
- * PostgreSQL-authoritative bounded retry bookkeeping.
+ * Module 14 + Wave 2 runtime closure.
+ *
+ * The service owns durable idempotent enqueue, bounded retry bookkeeping and
+ * the database lease used by delivery workers. External network I/O remains in
+ * transports; no timeout, close or transport ambiguity is interpreted as
+ * delivery success.
  */
 @Injectable()
 export class NotificationService {
@@ -30,7 +54,6 @@ export class NotificationService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Idempotent enqueue keyed by (tenantId, idempotencyKey). */
   async enqueue(input: {
     tenantId: string;
     channel: 'WEBHOOK' | 'EMAIL';
@@ -40,121 +63,316 @@ export class NotificationService {
     templateKey?: string;
     idempotencyKey: string;
   }): Promise<{ created: boolean; notificationId: string }> {
-    this.assertInput(input);
+    return this.enqueueWithClient(this.prisma, input);
+  }
 
-    const existing = await this.prisma.notification.findUnique({
-      where: {
-        tenantId_idempotencyKey: {
-          tenantId: input.tenantId,
-          idempotencyKey: input.idempotencyKey,
+  async enqueueWithClient(
+    client: NotificationPersistenceClient,
+    input: {
+      tenantId: string;
+      channel: 'WEBHOOK' | 'EMAIL';
+      body: string;
+      destination: string;
+      subject?: string;
+      templateKey?: string;
+      idempotencyKey: string;
+    },
+  ): Promise<{ created: boolean; notificationId: string }> {
+    const normalized = this.assertInput(input);
+    const lookup = () =>
+      client.notification.findUnique({
+        where: {
+          tenantId_idempotencyKey: {
+            tenantId: input.tenantId,
+            idempotencyKey: input.idempotencyKey,
+          },
         },
-      },
-    });
+      });
+
+    const existing = await lookup();
     if (existing) {
+      this.assertIdempotentNotification(existing, input, normalized);
       return { created: false, notificationId: existing.id };
     }
 
-    const created = await this.prisma.notification.create({
-      data: {
-        tenantId: input.tenantId,
-        channel: input.channel,
-        templateKey: input.templateKey ?? null,
-        subject: input.subject ?? null,
-        body: input.body,
-        destination: input.destination,
-        status: NotificationStatus.PENDING,
-        idempotencyKey: input.idempotencyKey,
-      },
-    });
-    return { created: true, notificationId: created.id };
+    try {
+      const created = await client.notification.create({
+        data: {
+          tenantId: input.tenantId,
+          channel: input.channel,
+          templateKey: input.templateKey ?? null,
+          subject: normalized.subject,
+          body: input.body,
+          destination: normalized.destination,
+          status: NotificationStatus.PENDING,
+          idempotencyKey: input.idempotencyKey,
+        },
+      });
+      return { created: true, notificationId: created.id };
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        const raced = await lookup();
+        if (raced) {
+          this.assertIdempotentNotification(raced, input, normalized);
+          return { created: false, notificationId: raced.id };
+        }
+      }
+      throw error;
+    }
   }
 
   /**
-   * Record one delivery attempt outcome with deterministic bounded backoff.
-   * Exhausted attempts finalize EXHAUSTED; unknown errors stay non-retryable.
+   * Lease due notifications for one bounded delivery pass. Conditional updates
+   * make overlapping workers safe; only the process that wins a PENDING ->
+   * DELIVERING transition receives the corresponding lease id.
+   */
+  async claimDueBatch(
+    limit: number = NOTIFICATION_LIMITS.defaultDeliveryBatch,
+    claimTimeoutMs: number = NOTIFICATION_LIMITS.defaultClaimTimeoutMs,
+  ): Promise<{
+    recoveredStale: number;
+    items: ClaimedNotificationDelivery[];
+  }> {
+    const safeLimit = Number.isInteger(limit)
+      ? Math.min(Math.max(limit, 1), NOTIFICATION_LIMITS.maxDeliveryBatch)
+      : NOTIFICATION_LIMITS.defaultDeliveryBatch;
+    const safeClaimTimeoutMs = Number.isFinite(claimTimeoutMs)
+      ? Math.min(Math.max(Math.trunc(claimTimeoutMs), 30_000), 600_000)
+      : NOTIFICATION_LIMITS.defaultClaimTimeoutMs;
+
+    return this.prisma.$transaction(async (transaction) => {
+      const databaseNow = await this.readDatabaseClock(transaction);
+      const staleBefore = new Date(databaseNow.getTime() - safeClaimTimeoutMs);
+      const recovered = await transaction.notification.updateMany({
+        where: {
+          status: NotificationStatus.DELIVERING,
+          deliveryLeaseAt: { lt: staleBefore },
+        },
+        data: {
+          status: NotificationStatus.PENDING,
+          deliveryLeaseId: null,
+          deliveryLeaseAt: null,
+        },
+      });
+
+      const candidates = await transaction.notification.findMany({
+        where: {
+          status: NotificationStatus.PENDING,
+          OR: [{ nextRetryAt: null }, { nextRetryAt: { lte: databaseNow } }],
+        },
+        select: {
+          id: true,
+          tenantId: true,
+          channel: true,
+          subject: true,
+          body: true,
+          destination: true,
+        },
+        orderBy: [{ nextRetryAt: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
+        take: safeLimit,
+      });
+
+      const items: ClaimedNotificationDelivery[] = [];
+      for (const candidate of candidates) {
+        const deliveryLeaseId = crypto.randomUUID();
+        const claimed = await transaction.notification.updateMany({
+          where: {
+            id: candidate.id,
+            status: NotificationStatus.PENDING,
+            OR: [
+              { nextRetryAt: null },
+              { nextRetryAt: { lte: databaseNow } },
+            ],
+          },
+          data: {
+            status: NotificationStatus.DELIVERING,
+            deliveryLeaseId,
+            deliveryLeaseAt: databaseNow,
+          },
+        });
+        if (claimed.count !== 1) continue;
+
+        items.push({
+          id: candidate.id,
+          tenantId: candidate.tenantId,
+          channel: candidate.channel,
+          subject: candidate.subject,
+          body: candidate.body,
+          destination: candidate.destination,
+          deliveryLeaseId,
+        });
+      }
+
+      return { recoveredStale: recovered.count, items };
+    });
+  }
+
+  /**
+   * Complete exactly one leased delivery attempt. A stale or foreign lease is
+   * rejected so a late worker can never overwrite a newer delivery outcome.
    */
   async recordAttempt(input: {
     notificationId: string;
+    deliveryLeaseId: string;
     ok: boolean;
     errorCode?: string;
   }): Promise<{ finalStatus: NotificationStatus; nextRetryAt: Date | null }> {
-    const notification = await this.prisma.notification.findUnique({
-      where: { id: input.notificationId },
-    });
-    if (!notification) {
-      throw Object.assign(new Error('notification not found'), {
-        code: 'NOTIFICATION_NOT_FOUND',
-      });
-    }
-    if (notification.status === 'SENT') {
-      return { finalStatus: 'SENT', nextRetryAt: null };
-    }
-
-    const attemptCount = Math.max(notification.attemptCount, 0) + 1;
-
-    if (input.ok) {
-      await this.prisma.notification.update({
+    return this.prisma.$transaction(async (transaction) => {
+      const notification = await transaction.notification.findUnique({
         where: { id: input.notificationId },
-        data: {
-          status: 'SENT',
+      });
+      if (!notification) {
+        throw Object.assign(new Error('notification not found'), {
+          code: 'NOTIFICATION_NOT_FOUND',
+        });
+      }
+      if (
+        notification.status !== NotificationStatus.DELIVERING ||
+        notification.deliveryLeaseId !== input.deliveryLeaseId
+      ) {
+        throw Object.assign(new Error('notification delivery lease lost'), {
+          code: 'NOTIFICATION_DELIVERY_LEASE_LOST',
+        });
+      }
+
+      const attemptCount = Math.max(notification.attemptCount, 0) + 1;
+      const databaseNow = await this.readDatabaseClock(transaction);
+
+      if (input.ok) {
+        await this.completeLease(transaction, input, {
+          status: NotificationStatus.SENT,
           attemptCount,
           lastErrorCode: null,
           nextRetryAt: null,
-          sentAt: new Date(),
-        },
-      });
-      return { finalStatus: 'SENT', nextRetryAt: null };
-    }
+          sentAt: databaseNow,
+        });
+        return { finalStatus: NotificationStatus.SENT, nextRetryAt: null };
+      }
 
-    if (
-      attemptCount >= NOTIFICATION_LIMITS.maxAttempts ||
-      !input.errorCode
-    ) {
-      await this.prisma.notification.update({
-        where: { id: input.notificationId },
-        data: {
-          status: 'EXHAUSTED',
+      if (
+        attemptCount >= NOTIFICATION_LIMITS.maxAttempts ||
+        !input.errorCode ||
+        !this.isRetryableDeliveryError(input.errorCode)
+      ) {
+        await this.completeLease(transaction, input, {
+          status: NotificationStatus.EXHAUSTED,
           attemptCount,
           lastErrorCode: input.errorCode ?? null,
           nextRetryAt: null,
-        },
-      });
-      return { finalStatus: 'EXHAUSTED', nextRetryAt: null };
-    }
+        });
+        return { finalStatus: NotificationStatus.EXHAUSTED, nextRetryAt: null };
+      }
 
-    const backoffSeconds =
-      NOTIFICATION_LIMITS.backoffSecondsByAttempt[attemptCount - 1];
-    if (typeof backoffSeconds !== 'number') {
-      await this.prisma.notification.update({
-        where: { id: input.notificationId },
-        data: {
-          status: 'EXHAUSTED',
+      const backoffSeconds =
+        NOTIFICATION_LIMITS.backoffSecondsByAttempt[attemptCount - 1];
+      if (typeof backoffSeconds !== 'number') {
+        await this.completeLease(transaction, input, {
+          status: NotificationStatus.EXHAUSTED,
           attemptCount,
           lastErrorCode: input.errorCode,
           nextRetryAt: null,
-        },
-      });
-      return { finalStatus: 'EXHAUSTED', nextRetryAt: null };
-    }
+        });
+        return { finalStatus: NotificationStatus.EXHAUSTED, nextRetryAt: null };
+      }
 
-    const nextRetryAt = new Date(Date.now() + backoffSeconds * 1000);
-    await this.prisma.notification.update({
-      where: { id: input.notificationId },
-      data: {
-        status: 'PENDING',
+      const nextRetryAt = new Date(
+        databaseNow.getTime() + backoffSeconds * 1000,
+      );
+      await this.completeLease(transaction, input, {
+        status: NotificationStatus.PENDING,
         attemptCount,
         lastErrorCode: input.errorCode,
         nextRetryAt,
+      });
+
+      this.logger.log({
+        event: 'notification.attempt.recorded',
+        outcome: 'retry_scheduled',
+        notificationId: input.notificationId,
+        attemptCount,
+      });
+      return { finalStatus: NotificationStatus.PENDING, nextRetryAt };
+    });
+  }
+
+  async sendVerificationToken(
+    tenantId: string,
+    email: string,
+    token: string,
+    client: NotificationPersistenceClient = this.prisma,
+  ): Promise<void> {
+    await this.enqueueWithClient(client, {
+      tenantId,
+      channel: 'EMAIL',
+      destination: email,
+      subject: 'Verify your IoT Platform account',
+      body: `Verification token: ${token}`,
+      templateKey: 'auth.verify-email.v1',
+      idempotencyKey: this.authNotificationKey('verify', token),
+    });
+  }
+
+  async sendResetToken(
+    tenantId: string,
+    email: string,
+    token: string,
+    client: NotificationPersistenceClient = this.prisma,
+  ): Promise<void> {
+    await this.enqueueWithClient(client, {
+      tenantId,
+      channel: 'EMAIL',
+      destination: email,
+      subject: 'Reset your IoT Platform password',
+      body: `Password reset token: ${token}`,
+      templateKey: 'auth.reset-password.v1',
+      idempotencyKey: this.authNotificationKey('reset', token),
+    });
+  }
+
+  private async completeLease(
+    transaction: Prisma.TransactionClient,
+    input: { notificationId: string; deliveryLeaseId: string },
+    data: {
+      status: NotificationStatus;
+      attemptCount: number;
+      lastErrorCode: string | null;
+      nextRetryAt: Date | null;
+      sentAt?: Date;
+    },
+  ): Promise<void> {
+    const updated = await transaction.notification.updateMany({
+      where: {
+        id: input.notificationId,
+        status: NotificationStatus.DELIVERING,
+        deliveryLeaseId: input.deliveryLeaseId,
+      },
+      data: {
+        ...data,
+        deliveryLeaseId: null,
+        deliveryLeaseAt: null,
       },
     });
+    if (updated.count !== 1) {
+      throw Object.assign(new Error('notification delivery lease lost'), {
+        code: 'NOTIFICATION_DELIVERY_LEASE_LOST',
+      });
+    }
+  }
 
-    this.logger.log({
-      event: 'notification.attempt.recorded',
-      outcome: 'retry_scheduled',
-      notificationId: input.notificationId,
-      attemptCount,
-    });
-    return { finalStatus: 'PENDING', nextRetryAt };
+  private async readDatabaseClock(
+    transaction: Prisma.TransactionClient,
+  ): Promise<Date> {
+    const rows = (await transaction.$queryRaw`
+      SELECT clock_timestamp() AS "databaseNow"
+    `) as Array<{ databaseNow: Date }>;
+    const databaseNow = rows[0]?.databaseNow;
+    if (!(databaseNow instanceof Date) || !Number.isFinite(databaseNow.getTime())) {
+      throw new Error('NOTIFICATION_DATABASE_CLOCK_UNAVAILABLE');
+    }
+    return databaseNow;
   }
 
   private assertInput(input: {
@@ -163,7 +381,7 @@ export class NotificationService {
     destination: string;
     subject?: string;
     idempotencyKey: string;
-  }): void {
+  }): { destination: string; subject: string | null } {
     if (input.channel !== 'WEBHOOK' && input.channel !== 'EMAIL') {
       throw Object.assign(new Error('invalid channel'), {
         code: 'NOTIFICATION_CHANNEL_INVALID',
@@ -174,20 +392,49 @@ export class NotificationService {
         code: 'NOTIFICATION_BODY_INVALID',
       });
     }
+
+    const destination = input.destination?.trim();
     if (
-      !input.destination ||
-      input.destination.length > NOTIFICATION_LIMITS.maxDestinationLength ||
-      !DESTINATION_PATTERN.test(input.destination)
+      !destination ||
+      destination !== input.destination ||
+      destination.length > NOTIFICATION_LIMITS.maxDestinationLength
     ) {
       throw Object.assign(new Error('invalid destination'), {
         code: 'NOTIFICATION_DESTINATION_INVALID',
       });
     }
+    if (input.channel === 'EMAIL') {
+      if (!EMAIL_PATTERN.test(destination)) {
+        throw Object.assign(new Error('invalid email destination'), {
+          code: 'NOTIFICATION_DESTINATION_INVALID',
+        });
+      }
+    } else {
+      let url: URL;
+      try {
+        url = new URL(destination);
+      } catch {
+        throw Object.assign(new Error('invalid webhook destination'), {
+          code: 'NOTIFICATION_DESTINATION_INVALID',
+        });
+      }
+      if (
+        url.protocol !== 'https:' ||
+        Boolean(url.username) ||
+        Boolean(url.password)
+      ) {
+        throw Object.assign(new Error('invalid webhook destination'), {
+          code: 'NOTIFICATION_DESTINATION_INVALID',
+        });
+      }
+    }
+
+    const subject = input.subject?.trim() ?? null;
     if (
       input.subject !== undefined &&
-      input.subject.length > NOTIFICATION_LIMITS.maxSubjectLength
+      (!subject || subject.length > NOTIFICATION_LIMITS.maxSubjectLength)
     ) {
-      throw Object.assign(new Error('subject too long'), {
+      throw Object.assign(new Error('invalid subject'), {
         code: 'NOTIFICATION_SUBJECT_INVALID',
       });
     }
@@ -196,14 +443,58 @@ export class NotificationService {
         code: 'NOTIFICATION_BODY_INVALID',
       });
     }
+
+    return { destination, subject };
   }
 
-  /** Auth-facing adapters (Module 3 contract). Delivery wiring arrives with the transport slice. */
-  async sendVerificationToken(_email: string, _token: string): Promise<void> {
-    // Bounded: token delivery is recorded as a notification in a later slice.
+  private assertIdempotentNotification(
+    existing: {
+      channel: unknown;
+      destination: string;
+      subject: string | null;
+      body: string;
+      templateKey: string | null;
+    },
+    input: {
+      channel: 'WEBHOOK' | 'EMAIL';
+      destination: string;
+      subject?: string;
+      body: string;
+      templateKey?: string;
+    },
+    normalized: { destination: string; subject: string | null },
+  ): void {
+    if (
+      existing.channel !== input.channel ||
+      existing.destination !== normalized.destination ||
+      existing.subject !== normalized.subject ||
+      existing.body !== input.body ||
+      existing.templateKey !== (input.templateKey ?? null)
+    ) {
+      throw Object.assign(new Error('notification idempotency key conflict'), {
+        code: 'NOTIFICATION_IDEMPOTENCY_CONFLICT',
+      });
+    }
   }
 
-  async sendResetToken(_email: string, _token: string): Promise<void> {
-    // Bounded: token delivery is recorded as a notification in a later slice.
+  private isRetryableDeliveryError(errorCode: string): boolean {
+    if (
+      errorCode === 'WEBHOOK_TIMEOUT' ||
+      errorCode === 'WEBHOOK_UNREACHABLE' ||
+      errorCode === 'EMAIL_RELAY_TIMEOUT' ||
+      errorCode === 'EMAIL_RELAY_UNREACHABLE'
+    ) {
+      return true;
+    }
+
+    const http = /^(?:WEBHOOK|EMAIL_RELAY)_HTTP_(\d{3})$/.exec(errorCode);
+    if (!http) return false;
+    const status = Number(http[1]);
+    return status === 408 || status === 425 || status === 429 || status >= 500;
+  }
+
+  private authNotificationKey(kind: 'verify' | 'reset', token: string): string {
+    const digest = crypto.createHash('sha256').update(token).digest('hex');
+    return `auth:${kind}:${digest}`;
   }
 }

@@ -46,16 +46,23 @@ export class AuthService {
     const vTokenHash = await this.hashToken(vToken);
     const vTokenLookup = this.lookupToken(vToken);
 
-    await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        tenantId: dto.tenantId,
-        verificationTokenHash: vTokenHash,
-        verificationTokenLookup: vTokenLookup,
-        credential: { create: { passwordHash } },
-      },
+    await this.prisma.$transaction(async (transaction) => {
+      await transaction.user.create({
+        data: {
+          email: dto.email,
+          tenantId: dto.tenantId,
+          verificationTokenHash: vTokenHash,
+          verificationTokenLookup: vTokenLookup,
+          credential: { create: { passwordHash } },
+        },
+      });
+      await this.notificationService.sendVerificationToken(
+        dto.tenantId,
+        dto.email,
+        vToken,
+        transaction,
+      );
     });
-    await this.notificationService.sendVerificationToken(dto.email, vToken);
     return {
       message: 'Registration successful. Check your email for verification.',
     };
@@ -284,15 +291,22 @@ export class AuthService {
       const resetTokenHash = await this.hashToken(resetToken);
       const resetTokenLookup = this.lookupToken(resetToken);
 
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: {
-          resetTokenHash,
-          resetTokenLookup,
-          resetTokenExpires: new Date(Date.now() + 60 * 60 * 1000),
-        },
+      await this.prisma.$transaction(async (transaction) => {
+        await transaction.user.update({
+          where: { id: user.id },
+          data: {
+            resetTokenHash,
+            resetTokenLookup,
+            resetTokenExpires: new Date(Date.now() + 60 * 60 * 1000),
+          },
+        });
+        await this.notificationService.sendResetToken(
+          tenantId,
+          email,
+          resetToken,
+          transaction,
+        );
       });
-      await this.notificationService.sendResetToken(email, resetToken);
     }
     return { message: 'If user exists, reset email sent.' };
   }

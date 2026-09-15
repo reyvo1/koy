@@ -45,6 +45,7 @@ const PRODUCTION_PLACEHOLDER_SECRETS = new Set([
   'your_mqtt_webhook_secret',
   'your_metrics_access_token',
   'your_mqtt_password',
+  'your_email_relay_token',
 ]);
 
 function transformBoolean(value: unknown): unknown {
@@ -171,6 +172,33 @@ class EnvironmentVariables {
   @IsBoolean()
   AUTOMATION_RUNTIME_ENABLED = false;
 
+  @Transform(({ value }) => transformBoolean(value))
+  @IsBoolean()
+  NOTIFICATION_RUNTIME_ENABLED = false;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(30_000)
+  @Max(600_000)
+  NOTIFICATION_CLAIM_TIMEOUT_MS = 60_000;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1_000)
+  @Max(60_000)
+  EMAIL_RELAY_TIMEOUT_MS = 10_000;
+
+  @IsOptional()
+  @IsString()
+  EMAIL_RELAY_URL?: string;
+
+  @IsOptional()
+  @IsString()
+  EMAIL_RELAY_TOKEN?: string;
+
+  @IsOptional()
+  @IsString()
+  EMAIL_FROM?: string;
 
   @Type(() => Number)
   @IsInt()
@@ -229,6 +257,26 @@ export function validate(config: Record<string, unknown>) {
     validatedConfig.CORS_ALLOWED_ORIGINS,
   );
 
+  if (validatedConfig.NOTIFICATION_RUNTIME_ENABLED) {
+    const emailRequiredValues = {
+      EMAIL_RELAY_URL: validatedConfig.EMAIL_RELAY_URL,
+      EMAIL_RELAY_TOKEN: validatedConfig.EMAIL_RELAY_TOKEN,
+      EMAIL_FROM: validatedConfig.EMAIL_FROM,
+    };
+    for (const [name, value] of Object.entries(emailRequiredValues)) {
+      if (!value) throw new Error(`${name} is required when notification runtime is enabled`);
+      assertNonBlank(name, value);
+    }
+
+    const relayUrl = new URL(validatedConfig.EMAIL_RELAY_URL!);
+    if (relayUrl.protocol !== 'https:' || relayUrl.username || relayUrl.password) {
+      throw new Error('EMAIL_RELAY_URL must use credential-free https://');
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(validatedConfig.EMAIL_FROM!)) {
+      throw new Error('EMAIL_FROM must be a valid email address');
+    }
+  }
+
   if (validatedConfig.NODE_ENV === Environment.Production) {
     if (validatedConfig.SWAGGER_ENABLED) {
       throw new Error('SWAGGER_ENABLED must be false in production');
@@ -239,6 +287,12 @@ export function validate(config: Record<string, unknown>) {
       validatedConfig.MQTT_WEBHOOK_SECRET,
     );
     assertProductionSecret('JWT_SECRET', validatedConfig.JWT_SECRET);
+    if (validatedConfig.NOTIFICATION_RUNTIME_ENABLED) {
+      assertProductionSecret(
+        'EMAIL_RELAY_TOKEN',
+        validatedConfig.EMAIL_RELAY_TOKEN!,
+      );
+    }
 
     const mqttRequiredValues = {
       MQTT_BROKER_URL: validatedConfig.MQTT_BROKER_URL,
