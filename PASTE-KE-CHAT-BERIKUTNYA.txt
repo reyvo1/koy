@@ -59,3 +59,5 @@ WAVE 3 V2 ROOT BUILD-CHAIN:
 - V2 audits/fixes full native chain: component graph/API deps, 4MB dual OTA, MQTT CA, entropy ordering, ESP image magic, NVS evidence boundary.
 - ESP32 + ESP32-C3 are parallel ESP-IDF/QEMU matrix targets; rescue waits for both and consumes exact ESP32 artifact.
 - Wave 4 remains blocked until Wave 3 GitHub is fully green.
+
+WAVE 3 V3 ACTIVE: V2 build graph is proven; both ESP32/ESP32-C3 reached C compilation and failed on the same ESP-MQTT API mismatch. V3 uses esp_mqtt_client_register_event(..., MQTT_EVENT_ANY, ...) and adds a pre-toolchain ESP-IDF API-surface guard. Keep Wave 3 open until real dual-target compile/QEMU + exact-artifact live simulation + real EMQX/full acceptance are green.

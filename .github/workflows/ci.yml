@@ -178,6 +178,7 @@ jobs:
         run: |
           node scripts/self-test-wave3-esp32-simulation.mjs
           node scripts/self-test-wave3-esp-idf-build-graph.mjs
+          node scripts/self-test-wave3-esp-idf-api-surface.mjs
           node scripts/self-test-wave3-esp32-source.mjs
 
       - name: Install ESP-IDF 5.5.5

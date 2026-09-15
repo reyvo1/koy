@@ -113,10 +113,11 @@
     "wave2:prisma:check": "node scripts/check-prisma-schema.mjs",
     "wave2:prepush:check": "npm run wave1:prepush:check && npm run wave2:core-runtime:self-test && npm run wave2:prisma:self-test && npm run wave2:prisma:check && npm run wave2:test:targeted",
     "wave2:prisma:self-test": "node scripts/self-test-wave2-prisma-schema-check.mjs",
-    "wave3:esp32:self-test": "node scripts/self-test-wave3-esp32-simulation.mjs && node scripts/self-test-wave3-esp-idf-build-graph.mjs && node scripts/self-test-wave3-esp32-source.mjs",
+    "wave3:esp32:self-test": "node scripts/self-test-wave3-esp32-simulation.mjs && node scripts/self-test-wave3-esp-idf-build-graph.mjs && node scripts/self-test-wave3-esp-idf-api-surface.mjs && node scripts/self-test-wave3-esp32-source.mjs",
     "wave3:esp32:simulate": "node scripts/run-wave3-esp32-simulation.mjs",
     "wave3:prepush:check": "npm run wave2:prepush:check && npm run wave3:esp32:self-test",
-    "wave3:esp32:build-graph:self-test": "node scripts/self-test-wave3-esp-idf-build-graph.mjs"
+    "wave3:esp32:build-graph:self-test": "node scripts/self-test-wave3-esp-idf-build-graph.mjs",
+    "wave3:esp32:api-surface:self-test": "node scripts/self-test-wave3-esp-idf-api-surface.mjs"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

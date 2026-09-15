@@ -626,8 +626,8 @@ static bool mqtt_start(void) {
     };
     s_ctx.mqtt = esp_mqtt_client_init(&mqtt_cfg);
     if (!s_ctx.mqtt) return false;
-    return esp_mqtt_client_register_events(s_ctx.mqtt, MQTT_EVENT_ANY_ID,
-                                           mqtt_event_handler, NULL) == ESP_OK &&
+    return esp_mqtt_client_register_event(s_ctx.mqtt, MQTT_EVENT_ANY,
+                                          mqtt_event_handler, NULL) == ESP_OK &&
            esp_mqtt_client_start(s_ctx.mqtt) == ESP_OK;
 }
 

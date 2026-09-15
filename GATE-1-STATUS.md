@@ -66,3 +66,11 @@ Wave 3 adds mandatory ESP-IDF 5.5.5 compile, QEMU boot, and a live-service ESP32
 - V2 root-cause batch closes the native class: component discovery, explicit IDF API ownership, dual-target 4MB OTA build contract, secure MQTT CA, Wi-Fi-backed secret entropy, real ESP image-magic validation, and truthful simulated-vs-HIL NVS security evidence.
 - ESP32 and ESP32-C3 now build and boot target-specific QEMU as a parallel matrix; firmware starts in parallel with core CI and cheap build-graph guards run before toolchain install.
 - No ESP-IDF/QEMU PASS is claimed from local/chat QA. GitHub remains authoritative for compile/emulation/live-service evidence.
+
+## Wave 3 V3 ESP-IDF API-surface status — ACTIVE
+
+- V2 component discovery/build topology is proven: both `esp32` and `esp32c3` reached compilation of the SDK source.
+- Both targets failed on the same ESP-MQTT compatibility defect: plural `esp_mqtt_client_register_events` and nonexistent `MQTT_EVENT_ANY_ID`.
+- V3 uses the ESP-IDF 5.5 public API `esp_mqtt_client_register_event(..., MQTT_EVENT_ANY, ...)` and adds a pre-toolchain API-surface guard covering the native dependency families used by the SDK.
+- Core application and DB integration were green in the V2 heavy run; no non-firmware product layer is reopened.
+- Wave 3 remains ACTIVE; physical/HIL evidence remains a separate later certification boundary.

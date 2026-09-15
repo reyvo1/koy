@@ -628,3 +628,13 @@ QEMU, built-artifact OTA simulation, real EMQX and full acceptance are green.
 - authoritative candidate seal: `1051/1052` PASS
 - synthetic applicator from clean pushed V1 `1050/1051`: PASS through 23-file overlay, target-generated `1051/1052`, synthetic lightweight gate invocation, and final manifest verify
 - real ESP-IDF 5.5.5 compilation/QEMU is intentionally NOT claimed locally because this container has no ESP-IDF toolchain/network; GitHub remains the native-build authority
+
+## Wave 3 V3 — ESP-IDF 5.5 API compatibility root correction
+
+The V2 heavy run proved the build graph fix by compiling the SDK on both ESP32 and ESP32-C3. Both targets failed identically at MQTT event registration because the SDK used API names that do not exist in ESP-IDF 5.5. V3 switches to the public ESP-MQTT contract `esp_mqtt_client_register_event(..., MQTT_EVENT_ANY, ...)` and adds a cheap API-surface guard before ESP-IDF installation. The guard also verifies owner header/component-dependency pairs for HTTP, OTA, RNG, netif, Wi-Fi, NVS and mbedTLS so this class is checked as a whole rather than one symbol per GitHub run. Do not reopen backend/DB/EMQX business logic: V2 core evidence remained green.
+
+### Wave 3 V3 package QA
+- Cheap API/build/source/simulation/CI guards PASS.
+- V3 adds one source path and seals at `1052/1053`.
+- Synthetic recovery from clean pushed V2 `1051/1052` through 12-file overlay, reseal, gate invocation and final verify PASS.
+- Real dual-target compile/QEMU remains GitHub evidence; no native PASS is fabricated locally.

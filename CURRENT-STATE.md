@@ -1458,3 +1458,12 @@ The first Wave 3 GitHub run preserved the green core application baseline but fa
 - authoritative candidate seal: `1051/1052` PASS
 - synthetic applicator from clean pushed V1 `1050/1051`: PASS through 23-file overlay, target-generated `1051/1052`, synthetic lightweight gate invocation, and final manifest verify
 - real ESP-IDF 5.5.5 compilation/QEMU is intentionally NOT claimed locally because this container has no ESP-IDF toolchain/network; GitHub remains the native-build authority
+
+## WAVE 3 V3 — ESP-IDF 5.5 MQTT API-SURFACE ROOT CORRECTION
+
+The second Wave 3 GitHub native run proved the V2 component/build graph correction worked: both `esp32` and `esp32c3` reached compilation of `packages/esp32-sdk/src/iot_sdk.c`, while the inherited core application remained green (`186/186` suites) and PostgreSQL integration remained green (`15/15` suites). Both chip targets then failed on the same SDK line because the source used non-existent ESP-MQTT symbols `esp_mqtt_client_register_events` and `MQTT_EVENT_ANY_ID`.
+
+V3 corrects the API surface to ESP-IDF 5.5 public ESP-MQTT contracts: `esp_mqtt_client_register_event(..., MQTT_EVENT_ANY, ...)`. A new dependency-free `self-test-wave3-esp-idf-api-surface.mjs` rejects the obsolete symbols and checks the public owner-header/component dependency pairs for MQTT, HTTP, OTA, RNG, netif, Wi-Fi, NVS and mbedTLS. GitHub runs this guard before the expensive ESP-IDF installation, so future native API drift fails fast. No backend, Prisma, MQTT broker ACL, OTA semantics, or application API is changed. Wave 3 remains ACTIVE until native compile/QEMU, exact-artifact live simulation, real EMQX and full acceptance are all green.
+
+### V3 package QA
+Dependency-free Wave 3 guards and CI contract PASS; workflow/package/pytest syntax PASS; candidate seal `1052/1053` PASS; synthetic recovery from clean V2 `1051/1052` to V3 `1052/1053` PASS with final manifest verification. Real ESP-IDF compile/QEMU remains GitHub-only evidence.

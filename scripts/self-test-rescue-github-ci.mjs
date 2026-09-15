@@ -57,11 +57,12 @@ check(
 check('broker smoke package command is exposed', pkg.scripts?.['rescue:broker:smoke'] === 'node scripts/run-rescue-live-broker-smoke.mjs');
 check('CI self-test package command is exposed', pkg.scripts?.['rescue:github-ci:self-test'] === 'node scripts/self-test-rescue-github-ci.mjs');
 check('Wave 2 core runtime self-test package command is exposed', pkg.scripts?.['wave2:core-runtime:self-test'] === 'node scripts/self-test-wave2-core-runtime.mjs');
-check('Wave 3 ESP32 self-test package command is exposed', pkg.scripts?.['wave3:esp32:self-test'] === 'node scripts/self-test-wave3-esp32-simulation.mjs && node scripts/self-test-wave3-esp-idf-build-graph.mjs && node scripts/self-test-wave3-esp32-source.mjs');
+check('Wave 3 ESP32 self-test package command is exposed', pkg.scripts?.['wave3:esp32:self-test'] === 'node scripts/self-test-wave3-esp32-simulation.mjs && node scripts/self-test-wave3-esp-idf-build-graph.mjs && node scripts/self-test-wave3-esp-idf-api-surface.mjs && node scripts/self-test-wave3-esp32-source.mjs');
 check('Wave 3 firmware simulation job is mandatory before rescue live services', workflow.includes('esp32-firmware-simulation:') && workflow.includes('Wave 3 ESP-IDF ${{ matrix.target }} build and QEMU boot') && workflow.includes('needs: [test, esp32-firmware-simulation]'));
 check('Wave 3 firmware job runs in parallel with core CI', !workflow.slice(workflow.indexOf('  esp32-firmware-simulation:'), workflow.indexOf('  rescue-live-emqx:')).includes('needs: test'));
 check('Wave 3 firmware matrix covers ESP32 and ESP32-C3', workflow.includes('target: [esp32, esp32c3]') && workflow.includes('qemu-riscv32') && workflow.includes('qemu-xtensa'));
 check('Wave 3 build-graph guard runs before ESP-IDF install', workflow.indexOf('Verify Wave 3 firmware/build-graph contract before toolchain install') < workflow.indexOf('Install ESP-IDF 5.5.5'));
+check('Wave 3 ESP-IDF API-surface guard runs before ESP-IDF install', workflow.indexOf('node scripts/self-test-wave3-esp-idf-api-surface.mjs') > workflow.indexOf('Verify Wave 3 firmware/build-graph contract before toolchain install') && workflow.indexOf('node scripts/self-test-wave3-esp-idf-api-surface.mjs') < workflow.indexOf('Install ESP-IDF 5.5.5'));
 check('Wave 3 firmware artifact is downloaded before live device simulation', workflow.indexOf('Download exact Wave 3 firmware artifact') < workflow.indexOf('Wave 3 simulated ESP32 provisioning reconnect command and OTA'));
 check('Wave 3 live simulation runs after real EMQX smoke', workflow.indexOf('Real EMQX auth ACL webhook and ACK smoke') < workflow.indexOf('Wave 3 simulated ESP32 provisioning reconnect command and OTA'));
 check(

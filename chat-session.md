@@ -510,3 +510,22 @@ V8 fixes the evidence harness class without changing Notification business logic
 - Exact final-ZIP applicator test from a clean synthetic Wave 3 V1 `1050/1051` baseline: PASS through root guards, target-generated `1051/1052` seal, synthetic lightweight-gate invocation, and final seal verification.
 - Exact final-ZIP payload identity after apply: 23/23 PASS.
 - Real ESP-IDF 5.5.5 native compilation/QEMU and live EMQX/OTA/full acceptance remain GitHub evidence and are intentionally not claimed by this packaging test.
+
+## 2026-09-15 — Wave 3 V3 ESP-IDF API-surface root correction
+
+- GitHub V2 proved the V2 build-graph correction: both `esp32` and `esp32c3` compiled into `packages/esp32-sdk/src/iot_sdk.c`.
+- Core evidence stayed green: `186/186` core suites and `15/15` PostgreSQL integration suites passed.
+- Both native targets failed on one shared ESP-MQTT API mismatch: `esp_mqtt_client_register_events` / `MQTT_EVENT_ANY_ID` are not ESP-IDF 5.5 public symbols.
+- Verified against official ESP-IDF/ESP-MQTT 5.5 documentation: correct API is `esp_mqtt_client_register_event(..., MQTT_EVENT_ANY, ...)`.
+- V3 changes the SDK to that public API and adds `scripts/self-test-wave3-esp-idf-api-surface.mjs`.
+- The new guard is dependency-free and runs before ESP-IDF install; it rejects the obsolete MQTT names and checks native owner-header/component-dependency pairs across MQTT, HTTP, OTA, RNG, netif, Wi-Fi, NVS and mbedTLS.
+- No backend, database, broker ACL, OTA state-machine or product feature change is included.
+- Wave 3 remains ACTIVE pending real ESP-IDF compile/QEMU plus the inherited exact-artifact live simulation/full acceptance chain.
+
+### V3 package QA — ESP-IDF 5.5 API-surface correction
+- Dependency-free Wave 3 simulator/build-graph/source/API-surface guards: PASS.
+- GitHub CI contract self-test: PASS; API-surface guard is required before ESP-IDF install.
+- Workflow YAML, package JSON, pytest syntax: PASS.
+- Candidate source seal: 1052/1053 PASS.
+- Synthetic clean pushed V2 1051/1052 -> V3 12-file overlay -> 1052/1053 reseal -> synthetic lightweight gate invocation -> final verify: PASS with process status 0.
+- Real ESP-IDF 5.5.5 compile/QEMU is not claimed locally; GitHub remains the native-toolchain authority.

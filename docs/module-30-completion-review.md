@@ -52,3 +52,7 @@ activates that deferred work without rewriting the historical foundation claim:
 
 - Wave 3 simulation does not claim encrypted-NVS physical evidence; production/HIL
   must prove ESP-IDF NVS encryption or equivalent secure storage separately.
+
+### Wave 3 V3 ESP-IDF 5.5 compatibility closure
+
+The first real dual-target compile after build-graph repair exposed stale ESP-MQTT event-registration names. Module 30 now uses `esp_mqtt_client_register_event(..., MQTT_EVENT_ANY, ...)` and carries a dependency-free API-surface guard before toolchain installation. This is a compatibility correction only; automated compile/QEMU/live-service evidence remains required before Wave 3 can close.
