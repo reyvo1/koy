@@ -70,9 +70,12 @@ PASTE-KE-CHAT-BERIKUTNYA.txt
 PROJECT-HANDOFF.md
 UI-DESIGN-SYSTEM.md
 apps/admin-web/.env.example
+apps/admin-web/AGENTS.md
+apps/admin-web/CLAUDE.md
 apps/admin-web/app/api/admin/analytics-findings/route.ts
 apps/admin-web/app/api/admin/device-capabilities/route.ts
 apps/admin-web/app/api/admin/device-detail/route.ts
+apps/admin-web/app/api/admin/device-health/route.ts
 apps/admin-web/app/api/admin/devices/route.ts
 apps/admin-web/app/api/admin/directory/tenants/route.ts
 apps/admin-web/app/api/admin/operational-summary/route.ts
@@ -82,6 +85,10 @@ apps/admin-web/app/api/admin/tenant-devices/route.ts
 apps/admin-web/app/api/admin/tenant-users/[userId]/reset-password/route.ts
 apps/admin-web/app/api/admin/tenant-users/[userId]/route.ts
 apps/admin-web/app/api/admin/tenant-users/route.ts
+apps/admin-web/app/api/auth/forgot-password/route.ts
+apps/admin-web/app/api/auth/register/route.ts
+apps/admin-web/app/api/auth/reset-password/route.ts
+apps/admin-web/app/api/auth/verify-email/route.ts
 apps/admin-web/app/api/cameras/route.ts
 apps/admin-web/app/api/devices/[deviceId]/commands/route.ts
 apps/admin-web/app/api/devices/[deviceId]/revoke/route.ts
@@ -136,6 +143,7 @@ apps/admin-web/app/api/tenant/spaces/[spaceId]/route.ts
 apps/admin-web/app/api/tenant/spaces/route.ts
 apps/admin-web/app/automation/page.tsx
 apps/admin-web/app/cctv/page.tsx
+apps/admin-web/app/daftar/page.tsx
 apps/admin-web/app/dashboard/page.tsx
 apps/admin-web/app/design-system-v2.css
 apps/admin-web/app/devices/page.tsx
@@ -144,12 +152,14 @@ apps/admin-web/app/globals.css
 apps/admin-web/app/layout.tsx
 apps/admin-web/app/loading.tsx
 apps/admin-web/app/login/page.tsx
+apps/admin-web/app/lupa-password/page.tsx
 apps/admin-web/app/mobile-preview/page.tsx
 apps/admin-web/app/noc/page.tsx
 apps/admin-web/app/not-found.tsx
 apps/admin-web/app/page.tsx
 apps/admin-web/app/perangkat/[deviceId]/page.tsx
 apps/admin-web/app/perangkat/page.tsx
+apps/admin-web/app/reset-password/page.tsx
 apps/admin-web/app/super/ai/page.tsx
 apps/admin-web/app/super/alerts/page.tsx
 apps/admin-web/app/super/api-keys/page.tsx
@@ -196,6 +206,7 @@ apps/admin-web/app/tenant/temuan/page.tsx
 apps/admin-web/app/tenant/workspace/page.tsx
 apps/admin-web/components/admin-login-form.tsx
 apps/admin-web/components/admin-shell-v3.tsx
+apps/admin-web/components/auth-shell.tsx
 apps/admin-web/components/auto-forward.tsx
 apps/admin-web/components/capability-value-input.tsx
 apps/admin-web/components/device-detail-content.tsx
@@ -550,6 +561,7 @@ scripts/manage-rescue-local-runtime.mjs
 scripts/rescue-failure-summary.mjs
 scripts/rescue-local-network.mjs
 scripts/run-rescue-acceptance.mjs
+scripts/run-rescue-auth-selfservice-flow.mjs
 scripts/run-rescue-gate1.mjs
 scripts/run-rescue-live-broker-smoke.mjs
 scripts/run-rescue-runtime-flow-extension.mjs
@@ -992,6 +1004,7 @@ test/scripts/run-historical-contract-transition-matrix.mjs
 test/scripts/run-mqtt-integration.ts
 test/scripts/run-production-startup-smoke.ts
 test/scripts/run-recovery-drill.ts
+test/self-service-auth-surface.contract.spec.ts
 test/setup-e2e.ts
 test/setup-integration.ts
 test/setup-mqtt-integration.ts

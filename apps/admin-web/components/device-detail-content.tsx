@@ -20,6 +20,15 @@ interface DeviceInfo {
   createdAt?: string;
 }
 
+/** Verdict from the backend's own health check, not a client-side re-derivation. */
+type DeviceHealthStatus = 'HEALTHY' | 'UNHEALTHY' | 'UNKNOWN';
+
+const HEALTH_LABEL: Record<DeviceHealthStatus, string> = {
+  HEALTHY: 'Sehat',
+  UNHEALTHY: 'Tidak sehat (heartbeat > 5 menit)',
+  UNKNOWN: 'Belum ada heartbeat',
+};
+
 interface Capability {
   id: string;
   key: string;
@@ -84,6 +93,7 @@ export default function DeviceDetailContent() {
   const [capabilityResult, setCapabilityResult] = useState<string | null>(null);
   const [capabilityDataType, setCapabilityDataType] = useState('boolean');
   const [commandInputs, setCommandInputs] = useState<Record<string, string>>({});
+  const [health, setHealth] = useState<DeviceHealthStatus>('UNKNOWN');
 
   const load = useCallback(async () => {
     try {
@@ -92,14 +102,24 @@ export default function DeviceDetailContent() {
       setCommandHistoryError(null);
       setTechnicalHistoryError(null);
       setTelemetryError(null);
-      const [dRes, capRes, commandRes, technicalRes] = await Promise.all([
+      const [dRes, capRes, commandRes, technicalRes, healthRes] = await Promise.all([
         fetch(`/api/admin/device-detail?deviceId=${encodeURIComponent(deviceId)}`),
         fetch(`/api/admin/device-capabilities?deviceId=${encodeURIComponent(deviceId)}`),
         fetch(`/api/devices/${encodeURIComponent(deviceId)}/commands`),
         fetch(`/api/devices/${encodeURIComponent(deviceId)}/technical-history`),
+        fetch(`/api/admin/device-health?deviceId=${encodeURIComponent(deviceId)}`),
       ]);
       if (!dRes.ok) throw new Error(`device HTTP ${dRes.status}`);
       setDevice(await dRes.json());
+      // Ask the API for the verdict rather than recomputing it from lastHeartbeatAt here.
+      // The five-minute rule lives in DeviceService.checkHealth; duplicating it in the
+      // browser is how the console and the system it reports on drift apart.
+      if (healthRes.ok) {
+        const body = (await healthRes.json()) as { status?: DeviceHealthStatus };
+        setHealth(body.status ?? 'UNKNOWN');
+      } else {
+        setHealth('UNKNOWN');
+      }
       if (capRes.ok) {
         const body = await capRes.json();
         setCapabilities(body.capabilities ?? []);
@@ -281,6 +301,7 @@ export default function DeviceDetailContent() {
             ['Tipe', device.type ?? '—'],
             ['Status', device.status],
             ['Terdaftar', device.createdAt ? new Date(device.createdAt).toLocaleString('id-ID') : '—'],
+            ['Health (dari API)', HEALTH_LABEL[health]],
             ['Heartbeat Terakhir', device.lastHeartbeatAt ? new Date(device.lastHeartbeatAt).toLocaleString('id-ID') : 'belum ada'],
             ['Jumlah Capability', capabilityError ? '—' : String(capabilities.length)],
             ['Current Firmware', technicalHistory?.firmware.currentVersion ?? 'belum ada kontrak per-device'],

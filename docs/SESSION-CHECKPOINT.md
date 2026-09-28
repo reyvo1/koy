@@ -26,6 +26,20 @@
 3. Board ESP32 -> test firmware fisik
 4. Kamera IP -> test CCTV streaming
 
+Tidak ada lagi gate software yang terbuka dan menggantung. Empat item di atas semuanya
+butuh Acquisition (VPS/board/kamera) atau credential pihak ketiga (payment keys), bukan
+kode. KalauRey menyatakan tidak ada alat fisik, development **tidak** berhenti: seluruh
+pekerjaan yang bisa dibuktikan tanpa hardware sudah dikerjakan dan hijau secara lokal —
+jalankan `npm run rescue:auth:flow` untuk melihat bukti alur auth yang tidak pernah bisa
+diuji sebelumnya. Yang tersisa hanyalah evidence yang secara definisi tidak bisa
+dihasilkan tanpa board, dan itu tidak boleh dipalsukan.
+
+## Keputusan yang menunggu dan tidak bisa diasumsikan
+- `project-config.json`: `releasePolicy.iosFinalReleaseGateAfterModule` (30) sudah tidak
+  lebih besar dari `development.lastCompletedModule` (30), sehingga `check-sources.mjs`
+  menolak. Menaikkan gate atau mendeklarasikan module 31 adalah keputusan kebijakan
+  rilis (dampaknya ke signing dan app store), bukan perbaikan teknis.
+
 ## Langkah saat "lanjut iot"
 Baca docs/phoenix/ROADMAP-v2.0.md, sambung dari fase berikutnya yang bisa
 dikerjakan lokal. Jangan langgar freeze: perubahan kontrak/skema wajib ADR baru.

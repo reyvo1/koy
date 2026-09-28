@@ -70,9 +70,12 @@ d50ffbde1ee16a1348cecc1b2939614de7977e6d212530130b5d04981b0fbb19  ./GATE-1-STATU
 6b834be7477f5f4523596aca6d8994af17b5fed1a5c591a515111d47fec71be7  ./PROJECT-HANDOFF.md
 818d1504f9c83a672557cc3c45452c033f04098ce52f609be506b3bbe7dfe7d6  ./UI-DESIGN-SYSTEM.md
 b1fccb9456471fd16d730f6d6bc8af04e9d7d93fa90072df57431a87564d7200  ./apps/admin-web/.env.example
+63f2c50380ed6303237cce215ce27af1d620d094c215e28d1b1538a3c070e3bb  ./apps/admin-web/AGENTS.md
+336cc4fbf19beaada7ccf9986414fa91851a8d7a07dfb3ccbe800a69eed0ab49  ./apps/admin-web/CLAUDE.md
 bf718ac29fd9514ef3aa0be97c5739ed8039960cdf8e427607017c20388006c5  ./apps/admin-web/app/api/admin/analytics-findings/route.ts
 501e41090198957569844fa56cdc96229abe6574165869acb15ecf80fc57e454  ./apps/admin-web/app/api/admin/device-capabilities/route.ts
 8ada243b42a9f827c89382361e666126477940e6c1ddee185f5206e97c0d1952  ./apps/admin-web/app/api/admin/device-detail/route.ts
+496fe33e4d8643d91d969070fead959528c11aca4c020d5ccd8ca764e90d648f  ./apps/admin-web/app/api/admin/device-health/route.ts
 f449252ecce85e488d408c82532dbb275e73c8c8ae888e925c835f4c530e3ada  ./apps/admin-web/app/api/admin/devices/route.ts
 5b7202f8cc34003ca2a6afc18e1e7f2fcffe36cf494eddd95f242941c0227675  ./apps/admin-web/app/api/admin/directory/tenants/route.ts
 66a96d699c25beb5997ff3e76f932d29857da07b9c6d47b614bce6554e65de81  ./apps/admin-web/app/api/admin/operational-summary/route.ts
@@ -82,6 +85,10 @@ f7cf328cb4e8ae794c8dc2db2f9ce47cd22b27bd0065428be604f8404bf66efb  ./apps/admin-w
 05406248f40cefd06202ec6663dc125729f6cd658c4a708c1be4fc185c542012  ./apps/admin-web/app/api/admin/tenant-users/[userId]/reset-password/route.ts
 2c416ad8ce58762641192e856d922b50f3781d46bb7adb59c43d8221242b85dc  ./apps/admin-web/app/api/admin/tenant-users/[userId]/route.ts
 9f1b6b0d8606f55a496ba3d271c4a1dd2f292fdea33f2880d1c2d8c1ed05a423  ./apps/admin-web/app/api/admin/tenant-users/route.ts
+e266131d1e71ebd49dc8f250bd9f1d9b4b80c58363fb6db3e31582fc81d26165  ./apps/admin-web/app/api/auth/forgot-password/route.ts
+dc68d82a547c1fe2cece0e5e85ecdc21b6c7a5798347c5f9cae690bb5b8fddfb  ./apps/admin-web/app/api/auth/register/route.ts
+a33ee52910f82782f5925b0d11420b6def424470e98b0d80b0b61b09f2c504c2  ./apps/admin-web/app/api/auth/reset-password/route.ts
+29fd06738fee0281d5703299f1299afe9017502d3170311b2e21eb79aab51345  ./apps/admin-web/app/api/auth/verify-email/route.ts
 2b728cedf9f3fba6bd5bb519306ed209c105094739b1f34558512c990ae4760e  ./apps/admin-web/app/api/cameras/route.ts
 2911ee0c8d67c6f928ed01ce70d0679cf05289cdeb7e6c46af37bd2cbf7a0677  ./apps/admin-web/app/api/devices/[deviceId]/commands/route.ts
 458826707c8478eecd7be16409bae386e7e0980b4dab4f05d98e6428e74947f5  ./apps/admin-web/app/api/devices/[deviceId]/revoke/route.ts
@@ -116,7 +123,7 @@ e88f2cf75fa022099b9b1515d7cc8f61b94aae06820276b24cd8fbfecb93d759  ./apps/admin-w
 d18072622445c3693a2003fb3c08a4efcd90ecc6219790afd15f61647a1be63d  ./apps/admin-web/app/api/super/users/route.ts
 11ed2192ecdf6f5af547aaa185e5889407d936f7ff13da0453846086203bf65b  ./apps/admin-web/app/api/tenant/automations/[automationId]/activate/route.ts
 ed5a64ec3df6aa3fe9eec84816650f57978320c59d2f31750692282ba170fe89  ./apps/admin-web/app/api/tenant/automations/[automationId]/deactivate/route.ts
-3d02615f8439dee3bffaae9352bbe112c8846e2ec7a311d20cce9fd067348c89  ./apps/admin-web/app/api/tenant/automations/[automationId]/route.ts
+03b2f2ecafa4a75caaf106ad75cd75326883bdfbaf87af0a6e034b6439b2c491  ./apps/admin-web/app/api/tenant/automations/[automationId]/route.ts
 b114796974159da172b6efb35d843ed5b55a1a34443d8edfc258931c832bd652  ./apps/admin-web/app/api/tenant/automations/route.ts
 7932f61805e9903db6a4c7be142677d97b4bc45331c6db1e77679079482e6abf  ./apps/admin-web/app/api/tenant/commands/route.ts
 f408e87a61cfbc6bc59b7e8cb81ecf586e9af3609f6a5fc2736f7781e68ed43b  ./apps/admin-web/app/api/tenant/dashboards/[dashboardId]/route.ts
@@ -136,6 +143,7 @@ f3e40cd90d0d82fa3215cf45ab8b27ceb41355adb93d99b2c7d0b3f2055ecbc6  ./apps/admin-w
 02479fdb1ea4ff6bdc6d3dea975e0c95c53d2134d5fed4b307a0c25dd42a41c1  ./apps/admin-web/app/api/tenant/spaces/route.ts
 8557a6fd23abccafd708beaf561a8c6d27da80b9901e567f068e2afb8c8f3470  ./apps/admin-web/app/automation/page.tsx
 2f72ccab2d8890f6ef7b50e0fc1e5a857ddbacfebc95cdc8ec335ed6fe661a59  ./apps/admin-web/app/cctv/page.tsx
+cafb4d7567a71a45d6966692a10a1bfe373b01869a44a0a0473d5c19a5c958d5  ./apps/admin-web/app/daftar/page.tsx
 8ee04c9399a23c98dc7e836aacde284df8a8215ac6319368caece3858d0b1e8c  ./apps/admin-web/app/dashboard/page.tsx
 3c34e4ea68f821cb07e5665d8b37eeb3312ee58558d150feec28eac6e899210a  ./apps/admin-web/app/design-system-v2.css
 4a84e7cddee1eb70f66ba8d83c6524f711f3857eb2ca454633cf31cd2dd1615a  ./apps/admin-web/app/devices/page.tsx
@@ -143,13 +151,15 @@ f642f7818501bbbe237e1c519c2f505092d024289dbb5f5ff9f205a809295951  ./apps/admin-w
 8475edd02c75e8258f490a074a5944204838ccbebe449982cef190210e3664c3  ./apps/admin-web/app/globals.css
 b8a2ca2727c00882d3967971cb3f54da9c22756840335b1e7c868534e6311075  ./apps/admin-web/app/layout.tsx
 8bdb2afad677ce973c1d83a5540e5fd534ac331130eff00b50ff4b52ce890c4e  ./apps/admin-web/app/loading.tsx
-59fc7940a3d9ed7cf930627fc1ec8c07f3e0b6f83c5369e704ecf32289b78211  ./apps/admin-web/app/login/page.tsx
+7d13071a48cb069e3b8949a926245c923c4a266a5c378ccb1a1cc33d2b056f88  ./apps/admin-web/app/login/page.tsx
+2931fa56618802fcc35e8990663a43d4ee2d7580c2ef238f486b285c649cc4bc  ./apps/admin-web/app/lupa-password/page.tsx
 28ebc4a01a73a0ee71091c4ed3d059ea5c0b88ffb7c5884b0abe1de4f290fe5b  ./apps/admin-web/app/mobile-preview/page.tsx
 3f5e9d91fca9d101abae9c77d839cb96e5d4f9e131aa538eea01d7eb7e8fc1f2  ./apps/admin-web/app/noc/page.tsx
 7d38a76f5650d066a38a9ad6a60b87010dbfca1c5bdeee7c9577ed712d9a634c  ./apps/admin-web/app/not-found.tsx
 d0bd3860b4bb15e35ec337af7d3d957dd216319bb1ffc6a09d5a291127ee5f7f  ./apps/admin-web/app/page.tsx
 66b7bbc5624e7765666c406da592d1cd32ef39c29fd7790d605006f9fe1a2804  ./apps/admin-web/app/perangkat/[deviceId]/page.tsx
 e4f7e05fceab734abe29f17196ae809c4703af03c7ca03bba43495c5964f9602  ./apps/admin-web/app/perangkat/page.tsx
+540dc6455a8694c7aab573d12d7eecfa0365498fd3671a6825b5396b29a5e5c5  ./apps/admin-web/app/reset-password/page.tsx
 199443adc6a130b773627ff0f531e57117c485c936d8529757441f0fb1a1d157  ./apps/admin-web/app/super/ai/page.tsx
 a62ce23d9db56d7583138bb5da2eca78f3da27e1664a2d3e5741b78fb1ee2870  ./apps/admin-web/app/super/alerts/page.tsx
 f193b151d8e4df35c3ec0da5b23c7f40d39065b94c000075b0f32e78d52368e7  ./apps/admin-web/app/super/api-keys/page.tsx
@@ -196,9 +206,10 @@ df755bccc5f9473f0ece13ca85eb6684d0b55bf62894dbdda7cd2f8d56aa1375  ./apps/admin-w
 d2461917a8fdcf9b090c0054b5812b7de794410990721d8ae81317a7c12da8d2  ./apps/admin-web/app/tenant/workspace/page.tsx
 97995f92cfb815427170e2508dba5c92cab8a6d7e9edbbbf51af6cc205a9d380  ./apps/admin-web/components/admin-login-form.tsx
 f13c520f45631747cfd1c3cd23593c5106a8547a3c00cf7071deaccf366e66dc  ./apps/admin-web/components/admin-shell-v3.tsx
+1f88c944f959fd93922977935d18e16a995847f94c76d9d2c4c9c108c2d482f2  ./apps/admin-web/components/auth-shell.tsx
 eacdf0682271b2282bce24d7ece6d6383b7ac9c2bbd4c10821b7ff42d45ecef4  ./apps/admin-web/components/auto-forward.tsx
 c17ba74e0efc81d6abca6f5cf5aebc28fa96efb9306639c9565fe4185298b643  ./apps/admin-web/components/capability-value-input.tsx
-c7f5184aa96da13886f3a4655f97da470acea1c472054ee8cd4c172c64225556  ./apps/admin-web/components/device-detail-content.tsx
+c6758133c1f1c003d6e8d5a2de0a0e60b3a7fb3b8ddc4c9ed7539673da118ca2  ./apps/admin-web/components/device-detail-content.tsx
 007755f722b86ba4cb369e90d7d3de229eb03f496aad7ae64c524983407e166b  ./apps/admin-web/components/enterprise-table.tsx
 15e47f048c157d689671382f4d1f6545e70dfd683a4459a4e43e6c6f618264e3  ./apps/admin-web/components/noc-content.tsx
 8f620857030812fd332fe274f3ce3f9a62bf5544795fa35709a5afe365b69a43  ./apps/admin-web/components/operational-summary-dashboard.tsx
@@ -338,7 +349,7 @@ fef9ece6f6fc0842eb8105405c4b17b2ebea0d3a2368da015a121b1e3cca1bcc  ./docs/README.
 e609750984b6a528a218c343a0e3614403e010751dd1529cdc17da3d9148d2cf  ./docs/RESCUE-WORKFLOW.md
 2fd52fea04918f5e778492de8879f074e594fb72c449993eef7b4ef3e8e33921  ./docs/ROADMAP-COMPLETE.md
 b7c50d5ecd0ef5538e96d0c7c2b40311e951e764d53f6f16f27f516f3eb1c911  ./docs/ROADMAP-SMART-HOTEL.md
-45533b7f49a751a7c22898a62b083a144e1f7789e8ab288cfa3b5d31dcdd4a7b  ./docs/SESSION-CHECKPOINT.md
+64f54a9b8a4b38dbf1c54510603ff8f26957465dd5d2dc3f7149b26d9163fe96  ./docs/SESSION-CHECKPOINT.md
 c48a16054db83f5bc318fa64a77726760345a95b4a25da675e2aa145298457d6  ./docs/STAGING-RUNBOOK.md
 9068354702f42ccabcaae1381b5be9990881a2419bd4ad0ad4a0f9a24e564a83  ./docs/UAT-CHECKLIST.md
 fd27630f986c4654b5ad81a8eb6486418bfa9f225dcb105a2d262c93659e6c73  ./docs/UI-BLUEPRINT-ENTERPRISE.md
@@ -471,7 +482,7 @@ d296e3a0df131f20476c6d8c4ece1af57e861ed63b49659ab468ab3f038bc155  ./ops/systemd/
 23bb220ecf835b2f25caa9dd46b97c266b713dad591f5169df2872534b3844f0  ./ops/systemd/iot-platform-backup.timer
 c16ce529395244a7a5cdd9b4b86902273e232212695edd8c768c8de28cfbe78f  ./ops/systemd/iot-platform.service
 5d9dd83e400f2d09fc869b407fe07be002d9658561cb785756c5d3d0158f9018  ./package-lock.json
-22643b744c12a512c846f48116d9f8515dfa99ee2e492faac8f3f6fcdb245c8c  ./package.json
+984310568897d04ac4a4f025cb3602005f269e6a258204d637e7ed91b5e7df93  ./package.json
 a119fdac221907cc9580b940bb96d031ae518f3a3f97dab501bfe3e94cef19d3  ./packages/design-system/package.json
 b63813a336d764f5fd0ecf92cf894829347e0485f5c7bc67cc5000e866c31b41  ./packages/design-system/src/design-system-v2.css
 44d9d7e061159d773ec61ce052b3a00ee8f283b3fee215e27798533e87ab2185  ./packages/design-system/src/index.tsx
@@ -550,6 +561,7 @@ c62458a708d6f33f4551d481517c53892307ec9b6023f3ab23d0b6d03536ceb1  ./scripts/mana
 98838b804a3c370473cd15171a66ef28daf3576bc94cd0a4ef9ac20a002b2e9a  ./scripts/rescue-failure-summary.mjs
 b8630dfdc83a7bf7cebbd82cf52e998d80adb658e2e15d9afafd4c42c929dccd  ./scripts/rescue-local-network.mjs
 99adc64c38419b80d4d7f9eab5f614ed5335f9f655b6b20adcba74ec93ccccf8  ./scripts/run-rescue-acceptance.mjs
+5c9565744d020915bc8f00ea019a127b2c44ed13f6e8f046dfae1c39119b53da  ./scripts/run-rescue-auth-selfservice-flow.mjs
 72ab6c09486fa09ae2ddfdbf5cf4ff4884c25b77536575276e350ec1e02d7f75  ./scripts/run-rescue-gate1.mjs
 ce4d558bfdcedbae0daca34894f94f62f22468df4c439013fa0fa55296842d5a  ./scripts/run-rescue-live-broker-smoke.mjs
 c45c02c825ae5a29deda1fbce1a9510e58905804a9787ad10d878e369a589936  ./scripts/run-rescue-runtime-flow-extension.mjs
@@ -876,7 +888,7 @@ af093ef810c83de2f59ce46e052773afea3141d58596c06888202ca61cb82ac7  ./src/users/gu
 598dcee2de5ba4c3dc614fb79b2d3ebf8b748c9132dd50e9544965890cccff83  ./src/users/users.service.ts
 8766c0027813373889ffdaeeb4b3d626e61b19eda25e9456ab6f9a2903692019  ./test/application.smoke.e2e-spec.ts
 a7146c20bcaac9b7334779d528d91b790973fbfcdf9e2f08cd6af18a5dfbc572  ./test/ci-dependency-bootstrap.contract.spec.ts
-a4a17c9c06327fc4287b71785cc897084b0cff06e085b96f2faa7455fef8ae94  ./test/contract-surface-policy.json
+befdd716541019f4699fdb8f11ef1ad536b3adc2d7613c60bdb2c15b96dc306f  ./test/contract-surface-policy.json
 ef693928a55b95aaf66fa09673f6cae0ea63f4214bd56d69eb5a6bc5193dd131  ./test/database-testing.contract.spec.ts
 09e6218bd2e26e4bee32a31dd322956813f19d27698e74ca994ebf642c081eaf  ./test/deployment-recovery.contract.spec.ts
 139c87bcdb7b69fec310db9fa52ba40f8d7a5af7cacf8eb86a59def7e78ef71f  ./test/fixtures/historical-contract-policy/advanced-indirection.fixture.ts
@@ -992,6 +1004,7 @@ adc0b609308fc3077cf7c38d9ca118a147b517837e5e1ecd8d7eae60df9fbfc6  ./test/scripts
 dc40e5f744560fbc285887d994aa1d87a2fe517bff2d142077662d3a0fcc74c5  ./test/scripts/run-mqtt-integration.ts
 2993c396b90efab7afd8fb0393b77dedd20a52e52b33467db238c52e3d76a5a3  ./test/scripts/run-production-startup-smoke.ts
 aea5192eb4ac1cc4bcd1132abf1ec745dabfad205085e3c08999bdaf85c84d1f  ./test/scripts/run-recovery-drill.ts
+57292bf2854b2d4be1336a499162f842ad7c5b756a26c4a6b92474eaa4cd0c5a  ./test/self-service-auth-surface.contract.spec.ts
 6dfc93c2691450597e881551db7cda42ad46fa989f088a7e428b0ea5cc1ee3e2  ./test/setup-e2e.ts
 99c8e8d229eba40f2883d9d5256c6b4269cc140668e80959c7c6010bf59b41f7  ./test/setup-integration.ts
 6a3b402126118b355123626d2224b45468a69e9028f71655c0620d993231e53f  ./test/setup-mqtt-integration.ts
@@ -1057,4 +1070,4 @@ d526784499ba2f416a3fca603acb5dd534fb7450580e048a80abcba43f9ece63  ./tools/redis-
 0543e915f75a5ecc6acceb422f4bebbac2e6a4ca6a77c3b8a031191884d8996c  ./tsconfig.build.json
 7256486d18986f5c8b6c0d1548e30a2cdf8dfb0c4d1fb27e5dffd081ee67fa98  ./tsconfig.jest.json
 fb2278ad89fcdbeb387aa4a8e0f3c550b9ffd464d1ce83b2c2aee1ff72ddc14c  ./tsconfig.json
-4ee79345c23c11a4931ea22dfa3e612466347b44da883bcd0f5d8dd5ef835fcb  ./repository-tree.txt
+e541f2bfa240ceef48bc105429d24e8bd8929abf6ea65fa4feead71f32e9f2e9  ./repository-tree.txt

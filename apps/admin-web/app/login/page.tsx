@@ -7,6 +7,7 @@
  */
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function PremiumLoginPage() {
@@ -153,6 +154,22 @@ export default function PremiumLoginPage() {
           </form>
 
           <p className="mt-6 text-center text-[12px] text-slate-600">
+            <Link
+              href="/lupa-password"
+              className="font-semibold text-slate-400 hover:text-teal-300"
+            >
+              Lupa password?
+            </Link>
+            {' · '}
+            <Link
+              href="/daftar"
+              className="font-semibold text-slate-400 hover:text-teal-300"
+            >
+              Daftar akun
+            </Link>
+          </p>
+
+          <p className="mt-3 text-center text-[12px] text-slate-600">
             Dilindungi sesi HttpOnly · Audit diaktifkan
           </p>
         </div>

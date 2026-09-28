@@ -102,6 +102,7 @@
     "test/production-readiness-completion.contract.spec.ts": "historical-evidence",
     "test/production-readiness-review.contract.spec.ts": "historical-evidence",
     "test/production-security-boundary.contract.spec.ts": "historical-evidence",
+    "test/self-service-auth-surface.contract.spec.ts": "stable-contract",
     "test/space-http.contract.spec.ts": "historical-evidence",
     "test/telemetry-automation-wiring.contract.spec.ts": "stable-contract",
     "test/testing-strategy.contract.spec.ts": "historical-evidence",
