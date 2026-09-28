@@ -9,6 +9,12 @@ const treePath = path.join(root, 'repository-tree.txt');
 const manifestPath = path.join(root, 'BASELINE-MANIFEST.sha256');
 const mode = process.argv[2] ?? 'verify';
 const excludedAnywhere = new Set(['.git', 'node_modules', 'dist', '.next', 'coverage', '__pycache__']);
+// ESP-IDF writes its whole CMake/ninja output tree into packages/esp32-sdk/test-app/build
+// (merged 4 MiB QEMU flash images, eFuse blobs, .elf, sdkconfig, CMake caches). Those are
+// native toolchain artifacts, not sealed source. Wave 3's QEMU boot also materialises
+// wave3-qemu-<target>*.bin there, so without this the firmware job would leave files that
+// the rescue job's independent `baseline:manifest:verify` rejects as unsealed source.
+const excludedDirectoryNames = new Set(['build']);
 const excludedTopLevel = new Set(['artifacts', 'reports']);
 const excludedFiles = new Set(['repository-tree.txt', 'BASELINE-MANIFEST.sha256', '.env']);
 const excludedFilePatterns = [/\.tsbuildinfo$/i, /^next-env\.d\.ts$/i];
@@ -46,6 +52,7 @@ function collect(directory = root, depth = 0) {
   const out = [];
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     if (excludedAnywhere.has(entry.name)) continue;
+    if (excludedDirectoryNames.has(entry.name)) continue;
     if (depth === 0 && excludedTopLevel.has(entry.name)) continue;
     if (depth === 0 && excludedFiles.has(entry.name)) continue;
     if (depth === 0 && excludedTopLevelFilePatterns.some((pattern) => pattern.test(entry.name))) continue;

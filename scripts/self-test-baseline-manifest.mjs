@@ -105,6 +105,50 @@ try {
   assert(result.status !== 0, 'verify must still reject an ordinary untracked source file');
   assert((result.stderr + result.stdout).includes('untracked-source.ts'), 'drift failure must identify the ordinary untracked file');
   console.log('PASS  baseline manifest still rejects ordinary untracked source drift');
+  rmSync(path.join(fixture, 'apps/admin-web/untracked-source.ts'), { force: true });
+  result = run('verify');
+  assert(result.status === 0, `verify must pass again after the drift is removed: ${result.stderr || result.stdout}`);
+
+  // Wave 3 regression: the ESP-IDF build tree and the QEMU boot runner both write
+  // large native artifacts into packages/esp32-sdk/test-app/build. The firmware CI job
+  // must not leave them behind as unsealed source, because the independent rescue job
+  // re-runs `baseline:manifest:verify` against a checkout that shares that path.
+  const espBuild = path.join(fixture, 'packages/esp32-sdk/test-app/build');
+  mkdirSync(espBuild, { recursive: true });
+  writeFileSync(path.join(espBuild, 'flasher_args.json'), '{"flash_files":{}}\n');
+  writeFileSync(path.join(espBuild, 'iot_sdk_wave3_test_app.bin'), Buffer.from([0xe9, 0x01, 0x02]));
+  writeFileSync(path.join(espBuild, 'wave3-qemu-esp32.bin'), Buffer.alloc(4096, 0xff));
+  writeFileSync(path.join(espBuild, 'wave3-qemu-esp32-efuse.bin'), Buffer.alloc(124, 0x00));
+  mkdirSync(path.join(espBuild, 'config'), { recursive: true });
+  writeFileSync(path.join(espBuild, 'config/sdkconfig.h'), '#define CONFIG_IDF_TARGET "esp32"\n');
+  mkdirSync(path.join(espBuild, 'esp-idf', 'log'), { recursive: true });
+  writeFileSync(path.join(espBuild, 'esp-idf/log/idf_py_stderr_output_x'), 'toolchain log\n');
+
+  result = run('verify');
+  assert(result.status === 0, `verify must ignore the ESP-IDF build output tree: ${result.stderr || result.stdout}`);
+  console.log('PASS  baseline manifest ignores the ESP-IDF build output tree');
+
+  result = run('generate');
+  assert(result.status === 0, `generate must ignore the ESP-IDF build output tree: ${result.stderr || result.stdout}`);
+  const rebuiltTree = readFileSync(path.join(fixture, 'repository-tree.txt'), 'utf8');
+  assert(!rebuiltTree.includes('test-app/build'), 'ESP-IDF build output must never enter the sealed source tree');
+  assert(rebuiltTree.includes('packages/esp32-sdk/test-app') === false || rebuiltTree.includes('source.ts'),
+    'sealing unrelated project source must still work alongside the excluded build tree');
+  console.log('PASS  baseline manifest never seals ESP-IDF build or QEMU boot artifacts');
+
+  // The exclusion must not over-reach: a hand-authored directory named build is
+  // indistinguishable by name alone, so the contract is explicit and tested rather
+  // than accidental. Removing the exclusion must make these files drift.
+  const withoutExclusion = readFileSync(path.join(fixture, 'scripts/manage-baseline-manifest.mjs'), 'utf8')
+    .replace("const excludedDirectoryNames = new Set(['build']);", 'const excludedDirectoryNames = new Set([]);');
+  assert(withoutExclusion !== readFileSync(path.join(fixture, 'scripts/manage-baseline-manifest.mjs'), 'utf8'),
+    'build exclusion must be present in the manifest manager');
+  writeFileSync(path.join(fixture, 'scripts/manage-baseline-manifest.mjs'), withoutExclusion);
+  result = run('verify');
+  assert(result.status !== 0, 'removing the build exclusion must reintroduce the Wave 3 seal failure');
+  assert((result.stderr + result.stdout).includes('wave3-qemu-esp32.bin'),
+    'the build-exclusion regression must fail on the QEMU boot artifact specifically');
+  console.log('PASS  baseline manifest build exclusion is load-bearing, not incidental');
 } finally {
   rmSync(fixture, { recursive: true, force: true });
 }

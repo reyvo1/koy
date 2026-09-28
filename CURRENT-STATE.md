@@ -1,6 +1,69 @@
 # CURRENT STATE — ENTERPRISE WAVE 3
 
-## Authoritative active state — 2026-09-15
+## Authoritative active state — 2026-09-28 (Wave 3 V6)
+
+- Wave 1 Rescue/CI/EMQX hardening: **CLOSED GREEN**.
+- Wave 2 Core Runtime Closure: **CLOSED GREEN** after V9 heavy GitHub acceptance.
+- Wave 3 ESP32 + OTA Automated Simulation: **ACTIVE — V6 is the active batch**.
+- V6 is a root-cause correction of the repository-native QEMU boot command, not a
+  micro-patch. A source audit against the pinned toolchain
+  (`espressif/esp-idf` tag `v5.5.5`, `tools/idf_py_actions/qemu_ext.py`) proved that
+  V5 reproduced only the *image-generation* half of the native argument contract and
+  silently dropped four device arguments the native `idf.py qemu` frontend always
+  passes. The runner therefore booted a different machine than the ESP-IDF toolchain
+  does, which is a plausible source of a marker timeout that never appears as a
+  native compile or link error.
+- V6 changes, all in the QEMU boot path, no backend/database/broker/product change:
+  1. `scripts/wave3-qemu-efuse-defaults.mjs` (new) carries the ESP32 (124 B) and
+     ESP32-C3 (1024 B) default eFuse images **verbatim** from `QEMU_TARGETS`.
+  2. The runner materialises a per-target eFuse image and attaches it with
+     `-drive file=...,if=none,format=raw,id=efuse` plus
+     `-global driver=nvram.<target>.efuse,property=drive,value=efuse`. Without it
+     every emulated eFuse is 0, which is not the chip revision ESP-IDF boots.
+  3. The runner passes `-global driver=timer.<target>.timg,property=wdt_disable,value=true`
+     so the emulated TWDT cannot reset the SoC mid-boot and masquerade as a
+     marker timeout.
+  4. ESP32 now passes `-m 4M` and ESP32-C3 correctly passes no `-m`, matching
+     `QEMU_TARGETS.qemu_args`. **Correction to an earlier V6 draft claim:** `-m` is
+     PSRAM, not internal SRAM. `esp32_soc_init()` always maps DRAM/IRAM/iCache/RTC
+     regardless of `machine->ram_size`; only `esp32_machine_init_psram()` is gated
+     on it. The Wave 3 test app does not enable `CONFIG_SPIRAM`, so this argument is
+     native-contract parity, not a functional prerequisite. It is kept so a future
+     PSRAM-enabled build inherits the correct emulated window.
+- Of the four dropped arguments, the two that plausibly explain a silent marker
+  timeout are the eFuse backing store and the armed TWDT. The `-m` and the C3
+  `-icount` entries are contract-parity corrections. This distinction was corrected
+  after re-reading `esp32_soc_init()`; the earlier "no RAM window at all" wording in
+  this file and in `chat-session.md` was wrong and has been fixed.
+- V6 also closes a second, independent defect that the same audit surfaced: the
+  sealed-source manifest did not exclude ESP-IDF's build output tree. Both
+  `idf.py build` and the Wave 3 QEMU runner write into
+  `packages/esp32-sdk/test-app/build/` — a 4 MiB merged flash image, the eFuse
+  blob, `.elf`, `flasher_args.json`, `config/sdkconfig.h` and CMake caches.
+  Because `excludedAnywhere` covered only `.git/node_modules/dist/.next/coverage/
+  __pycache__`, those files entered the source set and `baseline:manifest:verify`
+  rejected them. Reproduced locally before the fix:
+  `missing=packages/esp32-sdk/test-app/build/wave3-qemu-esp32-efuse.bin,
+  packages/esp32-sdk/test-app/build/wave3-qemu-esp32.bin`.
+  `scripts/manage-baseline-manifest.mjs` now excludes any directory named `build`
+  at any depth, and `scripts/self-test-baseline-manifest.mjs` gained three
+  assertions — including one that *removes* the exclusion and asserts the Wave 3
+  artifact failure returns, so the rule is proven load-bearing rather than
+  incidentally satisfied. This is a real latent CI hazard: the firmware job and the
+  rescue job are separate runners, but the seal is a repository-wide contract and
+  the operator's own `baseline:manifest:generate` would have sealed 4 MiB binaries.
+- Dependency-free guards now pin all four arguments, and the runner self-test
+  additionally asserts the written eFuse image is byte-identical to the ESP-IDF
+  default. Candidate seal: 1055 source paths / 1056 manifest entries.
+- GitHub remains the authority for native dual-target ESP-IDF/QEMU boot. V6 has
+  **not** been accepted by a heavy run; it is a locally verified candidate.
+- Evidence boundary: automated Wave 3 evidence is `SIMULATED-HARDWARE` /
+  `LIVE-SERVICE`. Physical ESP32/HIL remains `PENDING PHYSICAL/EXTERNAL EVIDENCE`.
+- Production: **NOT APPROVED**.
+- Work policy: finish Wave 3 as one large batch, local targeted/lightweight only,
+  then one GitHub push for mandatory ESP-IDF/QEMU/live-service/full regression evidence.
+
+## Authoritative active state — 2026-09-15 (Wave 3 V5)
 
 - Wave 1 Rescue/CI/EMQX hardening: **CLOSED GREEN**.
 - Wave 2 Core Runtime Closure: **CLOSED GREEN** after V9 heavy GitHub acceptance.
