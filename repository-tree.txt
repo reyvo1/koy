@@ -552,6 +552,7 @@ scripts/rescue-local-network.mjs
 scripts/run-rescue-acceptance.mjs
 scripts/run-rescue-gate1.mjs
 scripts/run-rescue-live-broker-smoke.mjs
+scripts/run-rescue-runtime-flow-extension.mjs
 scripts/run-wave3-esp32-simulation.mjs
 scripts/run-wave3-qemu-boot.mjs
 scripts/self-test-baseline-hygiene.mjs

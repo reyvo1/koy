@@ -93,6 +93,7 @@
     "rescue:local:recover": "node scripts/manage-rescue-local-runtime.mjs recover",
     "rescue:dashboard-integration:self-test": "node scripts/self-test-dashboard-widget-integration-access.mjs",
     "rescue:broker:smoke": "node scripts/run-rescue-live-broker-smoke.mjs",
+    "rescue:runtime:flow:extension": "node scripts/run-rescue-runtime-flow-extension.mjs",
     "rescue:github-ci:self-test": "node scripts/self-test-rescue-github-ci.mjs",
     "security:stack:verify": "node scripts/verify-secure-fastify-stack.mjs",
     "security:stack:self-test": "node scripts/self-test-secure-fastify-stack.mjs",

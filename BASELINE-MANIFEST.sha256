@@ -471,7 +471,7 @@ d296e3a0df131f20476c6d8c4ece1af57e861ed63b49659ab468ab3f038bc155  ./ops/systemd/
 23bb220ecf835b2f25caa9dd46b97c266b713dad591f5169df2872534b3844f0  ./ops/systemd/iot-platform-backup.timer
 c16ce529395244a7a5cdd9b4b86902273e232212695edd8c768c8de28cfbe78f  ./ops/systemd/iot-platform.service
 5d9dd83e400f2d09fc869b407fe07be002d9658561cb785756c5d3d0158f9018  ./package-lock.json
-0834bb857f0729a9fb4e6eb9a44f3019c91a0a7b817818a36df7a60d1cfab10b  ./package.json
+22643b744c12a512c846f48116d9f8515dfa99ee2e492faac8f3f6fcdb245c8c  ./package.json
 a119fdac221907cc9580b940bb96d031ae518f3a3f97dab501bfe3e94cef19d3  ./packages/design-system/package.json
 b63813a336d764f5fd0ecf92cf894829347e0485f5c7bc67cc5000e866c31b41  ./packages/design-system/src/design-system-v2.css
 44d9d7e061159d773ec61ce052b3a00ee8f283b3fee215e27798533e87ab2185  ./packages/design-system/src/index.tsx
@@ -552,6 +552,7 @@ b8630dfdc83a7bf7cebbd82cf52e998d80adb658e2e15d9afafd4c42c929dccd  ./scripts/resc
 99adc64c38419b80d4d7f9eab5f614ed5335f9f655b6b20adcba74ec93ccccf8  ./scripts/run-rescue-acceptance.mjs
 72ab6c09486fa09ae2ddfdbf5cf4ff4884c25b77536575276e350ec1e02d7f75  ./scripts/run-rescue-gate1.mjs
 ce4d558bfdcedbae0daca34894f94f62f22468df4c439013fa0fa55296842d5a  ./scripts/run-rescue-live-broker-smoke.mjs
+c45c02c825ae5a29deda1fbce1a9510e58905804a9787ad10d878e369a589936  ./scripts/run-rescue-runtime-flow-extension.mjs
 d63324696a8c14fae4a519d3728c24c418a2c348367634f60baef6c9b47e0745  ./scripts/run-wave3-esp32-simulation.mjs
 6ce455e472c2ee9238284a0f3c3a823c9a4cde0f868a69037bcc40d02b50e78d  ./scripts/run-wave3-qemu-boot.mjs
 43ebfe345db86e082e7151b82ea3c2f303ef5bba4b2e777c60804714c00d714a  ./scripts/self-test-baseline-hygiene.mjs
@@ -1052,4 +1053,4 @@ d526784499ba2f416a3fca603acb5dd534fb7450580e048a80abcba43f9ece63  ./tools/redis-
 0543e915f75a5ecc6acceb422f4bebbac2e6a4ca6a77c3b8a031191884d8996c  ./tsconfig.build.json
 7256486d18986f5c8b6c0d1548e30a2cdf8dfb0c4d1fb27e5dffd081ee67fa98  ./tsconfig.jest.json
 fb2278ad89fcdbeb387aa4a8e0f3c550b9ffd464d1ce83b2c2aee1ff72ddc14c  ./tsconfig.json
-37d5eb109b9aaed012cd582e7cd05771543f4f758634333b606fd07ff7167deb  ./repository-tree.txt
+64246fe4d203d693fba7db0bd2f69ad5369681151dc6e48f37bae61b2d2b8b86  ./repository-tree.txt
