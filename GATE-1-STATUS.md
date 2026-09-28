@@ -6,7 +6,13 @@ This file is historical Rescue Gate 1 evidence and must not be confused with the
 
 # GATE 1 STATUS — RR29
 
-Status: **REVALIDATION REQUIRED ON OPERATOR PC**
+> **Reading rule.** Lines below mix two different facts: the `rescue:gate1` runner PASS, and the
+> separate `rescue:gate1:validate` result. They are not the same gate. The runner produced a LIVE
+> PASS; the validator has not been re-run since the RR29 source change, which is what
+> "REVALIDATION REQUIRED" refers to. Neither line overrides the enterprise status in
+> `docs/ENTERPRISE-WAVE-ROADMAP.md` (Wave 1 and 2 closed green, Wave 3 active, Wave 4 blocked).
+
+Status: **RUNNER PASS, VALIDATOR REVALIDATION REQUIRED ON OPERATOR PC**
 
 ## Live RR28 proof
 

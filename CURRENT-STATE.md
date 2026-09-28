@@ -2,6 +2,11 @@
 
 ## Authoritative active state — 2026-09-28
 
+> **Reading rule for this file.** This is a prepend-style document: older `ENTERPRISE WAVE 2`,
+> `Wave 1 V13` and `RR29` blocks are stacked below and were never retracted in place. Some of
+> them still say "Wave 2 remains ACTIVE" — that is **superseded** by this block and by
+> `docs/ENTERPRISE-WAVE-ROADMAP.md`. Do not treat a status line from a lower block as current.
+
 - Wave 1 Rescue/CI/EMQX hardening: **CLOSED GREEN**.
 - Wave 2 Core Runtime Closure: **CLOSED GREEN** after V9 heavy GitHub acceptance.
 - Wave 3 ESP32 + OTA Automated Simulation: **ACTIVE**.

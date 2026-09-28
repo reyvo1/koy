@@ -4,7 +4,7 @@ e2c89d4a25e67f9647140a7da251c57bd5ec64ade986b4f0b2f39f46b071d24c  ./.env.example
 d772431114bf446abfb602f416111404206b31a113c8f07014453ed5aa513bc6  ./.eslintrc.cjs
 17b3e3dce96cb969fabf043293e17380873e3b1a43a147506c7731c308085568  ./.eslintrc.js
 50d3c6e4c8c9678cb4963022b108a01df72332c1e5783f90c9deb92550d63efd  ./.gitattributes
-1c0bfb8a31089709a4615d9df350d1b1b36cdf9495b1ad81bda2015002b9b7ac  ./.github/workflows/ci.yml
+50c0112123ca81f39abefca52e081c0a5ad21778270f1880ffdaa5ebb2a22bf2  ./.github/workflows/ci.yml
 387bbb9a64f37a9bda6c025891a2c57826e1fa57e6d274e0ef6cb1ee91d31349  ./.gitignore
 7d2df647f25529bd87500319c41564e032e2be642e565350fa6136d7a1ec4d10  ./.node-version
 7d2df647f25529bd87500319c41564e032e2be642e565350fa6136d7a1ec4d10  ./.nvmrc
@@ -64,8 +64,8 @@ fa8e7a7fd1666ea56eedb4aad5a1b307d532b97962540234edc1b1fdc134d2e3  ./AI-Developme
 cab10a82cb5f2255ecdf99981067119041beb07ab6c1f1976e531d10db5fd724  ./AI-Development-Kit/templates/MODULE-STATUS-TEMPLATE.md
 2bb87b9d04d7d0724eb6fee8cc117285b06976b92c27b9d38f757eb07810c337  ./AI-Development-Kit/workflows/AGENT-EXECUTION-LOOP.md
 e1daa19600aaeff1fd6779b1d73149c4a04ee6b1cb516b87b12c628110c0d3f8  ./AI-Development-Kit/workflows/FAILURE-PROTOCOL.md
-0bb6dcf10738251fdb6b61399189d5cff509e63fd5fc15eb8758e9e844f74e22  ./CURRENT-STATE.md
-533947427fa71ed21cda54e07ee4d1a09d9d90794646042dc5290dc9bafc2823  ./GATE-1-STATUS.md
+df66f83aff75d37a55650feccb4d03710fe933d548cebd2bd77ba5c1e1a85e0e  ./CURRENT-STATE.md
+d50ffbde1ee16a1348cecc1b2939614de7977e6d212530130b5d04981b0fbb19  ./GATE-1-STATUS.md
 91aebcd6312e6a5fd8100d3dbddb04336301abad8bf0c656215c114ec8e473f5  ./PASTE-KE-CHAT-BERIKUTNYA.txt
 6b834be7477f5f4523596aca6d8994af17b5fed1a5c591a515111d47fec71be7  ./PROJECT-HANDOFF.md
 818d1504f9c83a672557cc3c45452c033f04098ce52f609be506b3bbe7dfe7d6  ./UI-DESIGN-SYSTEM.md
@@ -444,12 +444,12 @@ ff08ddfbf8085f995e7cd4eb0055c7171e0d87d97d228d93ebfd55e95f83d7a9  ./docs/phoenix
 b7acf19bac1cce42c3a932880921b44474e5747382b677d14c98ff58c6f92343  ./docs/production-security.md
 9b112e2aaf4fa1b8d97c81370bcf7506e207bc5a48b8c6f5eb41bae7a9e38604  ./docs/project-state.md
 730bb0319a8be7b968779028331ad5f90b5e0ef8cb66077758b9b6a912a25568  ./docs/repository-historical-contract-architecture-remediation.md
-9f361624587a1353784d6c5904f3c0418bb4b49b579a9ce2653cd2e01fe4ab42  ./docs/roadmap.md
+c9738710213ad2eaef4b4c67f3cd738dedf91215854b99d882907124914d4837  ./docs/roadmap.md
 d1cc59e1de673749874e13c6a789fe6063d159f8256891a146dcc3d684823d39  ./docs/structured-logging.md
 b5f241c5bcf5e860dfef9e1b5ccf9deee8ffe60c05ae9767754d993462d23bbe  ./docs/telemetry-aggregation.md
 c6dfa1d4ff37b3f8800a0e868d7c2a8b6e8662759e6246f461b810fa83d22bf0  ./docs/telemetry-storage-strategy.md
 6cd206f3f9aec5adcbeebab3d6387535306b3b128a5e43159343875b8bfe54f3  ./docs/testing-strategy.md
-bbaa5aeef5f4d786edc240389ea3ba0f7b6c7720e6d017e29e5776bb92a4a846  ./docs/wave-02-core-runtime-closure.md
+aa67f7d9534a998515dad63ed8bd3379af6d85f79830e3c60762d200b221a808  ./docs/wave-02-core-runtime-closure.md
 893c7c6fb01f5c4bfda8c066b4d8217c286dbe7a56e4f63fa500edf9561c7644  ./docs/wave-03-esp32-ota-simulation.md
 8846eb270f035aa3725b3e544ede2a983d7abdb2d86b8f67c7b2bf1dad182725  ./jest.config.js
 d3bcd30f19ff6ad443bec5ef23f299872287538aece015d0e8bca0bed5d304ef  ./ops/acceptance/README.md
@@ -876,7 +876,7 @@ af093ef810c83de2f59ce46e052773afea3141d58596c06888202ca61cb82ac7  ./src/users/gu
 598dcee2de5ba4c3dc614fb79b2d3ebf8b748c9132dd50e9544965890cccff83  ./src/users/users.service.ts
 8766c0027813373889ffdaeeb4b3d626e61b19eda25e9456ab6f9a2903692019  ./test/application.smoke.e2e-spec.ts
 a7146c20bcaac9b7334779d528d91b790973fbfcdf9e2f08cd6af18a5dfbc572  ./test/ci-dependency-bootstrap.contract.spec.ts
-c249c749bf249c4bfb67eb9fc885ad6220c2bd3cb275a636bce5daa79eaba5bc  ./test/contract-surface-policy.json
+a4a17c9c06327fc4287b71785cc897084b0cff06e085b96f2faa7455fef8ae94  ./test/contract-surface-policy.json
 ef693928a55b95aaf66fa09673f6cae0ea63f4214bd56d69eb5a6bc5193dd131  ./test/database-testing.contract.spec.ts
 09e6218bd2e26e4bee32a31dd322956813f19d27698e74ca994ebf642c081eaf  ./test/deployment-recovery.contract.spec.ts
 139c87bcdb7b69fec310db9fa52ba40f8d7a5af7cacf8eb86a59def7e78ef71f  ./test/fixtures/historical-contract-policy/advanced-indirection.fixture.ts
@@ -968,6 +968,8 @@ c5ec26fb8075bd7dcae39c1952f2c0833401a73eeb1e2409283a80bfc7a6a0ba  ./test/module-
 831a5eab3ce2e77636206cf1ff5e290e4b4c1fe18d98a71588e2ce1083a4e881  ./test/module-11-automation-evaluation-foundation.contract.spec.ts
 9edbb1be3d1cb07b258f6507d7751db7d99b70edd5ad6d007560623571f6ff21  ./test/module-11-automation-execution-reservation-foundation.contract.spec.ts
 92de5bcfaa78521774a44c4952297edc4265ba00b50f90e24cd06b90b54e4efc  ./test/module-11-automation-persistence-foundation.contract.spec.ts
+62caaee52d49fce2a0f11823a7b34087b6555ef1264dd1df86537da653538daa  ./test/module-11-automation-retry-dispatch-closure-invariants.contract.spec.ts
+403acd71753573aa2f8cc8fdf96f5ad9a208e2200f1a4087f73abfd8d564c834  ./test/module-11-automation-retry-safety-closure-invariants.contract.spec.ts
 1ccc999a3d209ff1e6d18253820e0340e2bbb7acfb704558818baddcef325b99  ./test/module-11-automation-retry-safety-foundation.contract.spec.ts
 3377fce5c8f3ac9680c51536d95cc767cfcaf7fc050337aa0243933393d48b59  ./test/module-11-automation-runtime-safety-contract.contract.spec.ts
 0bb3b02b6b42800c5d7a790eb6b731de60e8f2b04619e34c49a737355785fa27  ./test/module-11-automation-telemetry-coordination-foundation-implementation.contract.spec.ts
@@ -1005,6 +1007,7 @@ e616d64bd133f7c6e606d11ee663a80f27b848394bab612bc95a06aa5684de3f  ./test/support
 d88762c642c621e162ce5419ba6ece519b9208df18c847bbaab2c6584bf95a6d  ./test/support/test-resource-names.ts
 fe9c813aa001ff118064dbad1c519e00be63215784eacbf4383aacf8dfe79701  ./test/telemetry-automation-wiring.contract.spec.ts
 03092111361921e91738158f250ac09e1c849902b114f312fc67b573391b7449  ./test/testing-strategy.contract.spec.ts
+67ea90b786dc829a8538f3734ae0ac3bb710f4b208c6d96a28797d15e6c6681e  ./test/wave-02-core-runtime-closure-invariants.contract.spec.ts
 4389a95b5ab28678218fedf97673aee036e93eebdd4cce682306f3c5fdecd82b  ./tools/activate-module.ps1
 b6a3a3280716abd8606c9a8772ce5a54107eeb0b2f7f00ddf0905308fa215365  ./tools/automation/Update-ProjectState.ps1
 cdfa6d8ae655a39603ff6e0e1a081bc5aa347faeda252e36751bf37eb161b9df  ./tools/automation/Update-RepositoryMemory.ps1
@@ -1054,4 +1057,4 @@ d526784499ba2f416a3fca603acb5dd534fb7450580e048a80abcba43f9ece63  ./tools/redis-
 0543e915f75a5ecc6acceb422f4bebbac2e6a4ca6a77c3b8a031191884d8996c  ./tsconfig.build.json
 7256486d18986f5c8b6c0d1548e30a2cdf8dfb0c4d1fb27e5dffd081ee67fa98  ./tsconfig.jest.json
 fb2278ad89fcdbeb387aa4a8e0f3c550b9ffd464d1ce83b2c2aee1ff72ddc14c  ./tsconfig.json
-661c70b85145caa82dfcea8f458d32bc4f58ac5747fb3a9e5a296baa9c8016ad  ./repository-tree.txt
+4ee79345c23c11a4931ea22dfa3e612466347b44da883bcd0f5d8dd5ef835fcb  ./repository-tree.txt

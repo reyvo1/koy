@@ -139,4 +139,24 @@ V9 replaces that foundation instead of patching the harness:
 - Local targeted tests exercise real HTTPS success, untrusted-certificate rejection, absolute timeout, and connect failure before any push.
 - PostgreSQL integration exercises both Webhook and Email Relay over the same real HTTPS client.
 
-Wave 2 remains ACTIVE until the V9 corrective push passes the full GitHub core job and downstream real-EMQX/full acceptance.
+Wave 2 is **CLOSED GREEN** after the V9 corrective push passed the full GitHub core job and downstream real-EMQX/full acceptance. The "Wave 2 remains ACTIVE" wording that previously closed this document is superseded.
+
+## Machine-readable closure invariants
+
+<!-- CLOSURE_INVARIANT:START -->
+CLOSURE_INVARIANT_WAVE_2_CORE_RUNTIME_CLOSURE_SCHEMA=1
+CLOSURE_INVARIANT_WAVE_2_CORE_RUNTIME_CLOSURE_CLOSED=true
+CLOSURE_INVARIANT_WAVE_2_NOTIFICATION_DELIVERY_RUNTIME_ACTIVATED=false
+CLOSURE_INVARIANT_WAVE_2_AUTOMATION_RETRY_RUNTIME_ACTIVATED=false
+CLOSURE_INVARIANT_WAVE_2_SCHEDULER_RUNTIME_ACTIVATED=false
+CLOSURE_INVARIANT_WAVE_2_PROVIDER_EMAIL_ADAPTERS_IMPLEMENTED=false
+CLOSURE_INVARIANT_WAVE_2_PRODUCTION_DEPLOYMENT_APPROVED=false
+CLOSURE_INVARIANT_WAVE_2_PHYSICAL_HARDWARE_PROVEN=false
+<!-- CLOSURE_INVARIANT:END -->
+
+The runtime capabilities described above are implemented and source-validated, but each stays
+opt-in behind its own `*_RUNTIME_ENABLED` flag, which is `false` by default. "CLOSED GREEN" is a
+claim about Wave 2's own exit criteria only. It is not a production approval, not a claim that
+notification or retry delivery has ever run in production, and not a claim that any physical
+board was exercised.
+

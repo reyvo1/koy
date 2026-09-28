@@ -67,6 +67,30 @@ jobs:
         timeout-minutes: 10
         run: bash ops/scripts/ci-bootstrap-dependencies.sh
 
+      - name: Verify gate verifier self-tests
+        # These are the self-tests for the verifiers this job itself runs. A `:verify`
+        # gate can only catch a regression if its own `:self-test` is green, and none of
+        # these were referenced by any workflow, so a broken verifier would have gone
+        # unnoticed until it silently stopped catching anything.
+        run: |
+          npm run security:stack:self-test
+          npm run security:web-stack:self-test
+          npm run fastify:v5:compat:self-test
+          npm run web:framework:contract:self-test
+          npm run wave1:prepush:self-test
+          npm run wave2:prisma:self-test
+          npm run gitignore:source-scope:self-test
+          npm run rescue:unit-types:self-test
+          npm run rescue:unit-regressions:self-test
+          npm run rescue:acceptance:self-test
+          npm run rescue:dashboard-integration:self-test
+          npm run rescue:emqx:webhooks:self-test
+          npm run rescue:failure-summary:self-test
+          npm run rescue:local:self-test
+          npm run rescue:runtime:self-test
+          npm run rescue:gate1-validator:self-test
+          npm run release:approval:self-test
+
       - name: Verify Wave 2 core runtime contract
         run: npm run wave2:core-runtime:self-test
 

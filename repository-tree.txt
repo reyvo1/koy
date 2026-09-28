@@ -968,6 +968,8 @@ test/module-11-automation-domain-contract.contract.spec.ts
 test/module-11-automation-evaluation-foundation.contract.spec.ts
 test/module-11-automation-execution-reservation-foundation.contract.spec.ts
 test/module-11-automation-persistence-foundation.contract.spec.ts
+test/module-11-automation-retry-dispatch-closure-invariants.contract.spec.ts
+test/module-11-automation-retry-safety-closure-invariants.contract.spec.ts
 test/module-11-automation-retry-safety-foundation.contract.spec.ts
 test/module-11-automation-runtime-safety-contract.contract.spec.ts
 test/module-11-automation-telemetry-coordination-foundation-implementation.contract.spec.ts
@@ -1005,6 +1007,7 @@ test/support/test-resource-names.spec.ts
 test/support/test-resource-names.ts
 test/telemetry-automation-wiring.contract.spec.ts
 test/testing-strategy.contract.spec.ts
+test/wave-02-core-runtime-closure-invariants.contract.spec.ts
 tools/activate-module.ps1
 tools/automation/Update-ProjectState.ps1
 tools/automation/Update-RepositoryMemory.ps1

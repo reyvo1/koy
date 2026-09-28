@@ -1,6 +1,6 @@
 # Master roadmap notice — 2026-09-15
 
-The authoritative active roadmap is now `docs/ENTERPRISE-WAVE-ROADMAP.md` (Wave 1–13). The detailed module/slice chronology below is historical engineering evidence. Old `TODO`, `Deferred`, `inactive`, or module-current statements must not be treated as current without checking source and the active wave document. Wave 1 is closed green; Wave 2 is active. One complete large wave precedes one GitHub push.
+The authoritative active roadmap is now `docs/ENTERPRISE-WAVE-ROADMAP.md` (Wave 1–13). The detailed module/slice chronology below is historical engineering evidence. Old `TODO`, `Deferred`, `inactive`, or module-current statements must not be treated as current without checking source and the active wave document. **Wave 1 and Wave 2 are both closed green; Wave 3 is ACTIVE and Wave 4 is blocked until Wave 3 heavy GitHub acceptance is green.** One complete large wave precedes one GitHub push.
 
 ---
 
