@@ -27,6 +27,7 @@ describe('Module 11 automation telemetry coordination implementation contract', 
   const runtimeReads = read(
     'src/automation/automation-runtime-read.repository.ts',
   );
+  const telemetryModule = read('src/telemetry/telemetry.module.ts');
   const evaluator = read('src/automation/automation-evaluator.ts');
   const evaluationTypes = read('src/automation/automation-evaluation.types.ts');
   const automationModule = read('src/automation/automation.module.ts');
@@ -114,15 +115,25 @@ describe('Module 11 automation telemetry coordination implementation contract', 
     );
   });
 
-  it('registers internal providers without application runtime reachability', () => {
+  it('registers the automation telemetry coordinator as a reachable runtime seam', () => {
     expect(automationModule).toContain('AutomationRuntimeReadRepository');
     expect(automationModule).toContain('AutomationTelemetryCoordinator');
     const exportsBlock = automationModule.slice(
       automationModule.indexOf('exports: ['),
       automationModule.indexOf('],', automationModule.indexOf('exports: [')),
     );
+    // AutomationRuntimeReadRepository stays internal: the coordinator consumes it
+    // directly, so nothing else should be able to import it.
     expect(exportsBlock).not.toContain('AutomationRuntimeReadRepository');
-    expect(exportsBlock).not.toContain('AutomationTelemetryCoordinator');
+    // AutomationTelemetryCoordinator MUST be exported. It used not to be, and
+    // TelemetryModule did not import AutomationModule either, so TelemetryService's
+    // @Optional() injection silently resolved to undefined and no automation could ever
+    // fire from real telemetry. That is a proven runtime failure, not a design
+    // preference, and test/telemetry-automation-wiring.contract.spec.ts locks the wiring.
+    expect(exportsBlock).toContain('AutomationTelemetryCoordinator');
+    expect(telemetryModule).toContain(
+      "import { AutomationModule } from '../automation/automation.module'",
+    );
     // Slice 11.13 — the ingestion wiring is allowed but must stay gated off
     // by default and fully failure-isolated from the ingest path.
     expect(telemetryService).toContain('AUTOMATION_RUNTIME_ENABLED');

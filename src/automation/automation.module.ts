@@ -32,6 +32,11 @@ import { AutomationTelemetryCoordinator } from './automation-telemetry-coordinat
     AutomationExecutionRepository,
     AutomationExecutionTransitionRepository,
     AutomationRepository,
+    // TelemetryModule injects the coordinator into TelemetryService with @Optional().
+    // Without this export the injection silently resolved to undefined and
+    // coordinateAutomationsSafely returned on its first line, so no automation could ever
+    // fire from real MQTT/HTTP telemetry ingest.
+    AutomationTelemetryCoordinator,
   ],
 })
 export class AutomationModule {}

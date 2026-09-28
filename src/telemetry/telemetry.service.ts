@@ -30,6 +30,12 @@ export class TelemetryService {
    */
   private readonly automationRuntimeEnabled =
     isAutomationRuntimeEnabled();
+  /**
+   * Per-device capabilityKey -> capabilityId map used to build valid automation
+   * coordination envelopes. Bounded so a large fleet cannot grow it without limit.
+   */
+  private readonly capabilityIdCache = new Map<string, Map<string, string>>();
+  private readonly CAPABILITY_CACHE_LIMIT = 10_000;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -171,12 +177,19 @@ export class TelemetryService {
         outcome: 'succeeded',
       });
 
-      this.coordinateAutomationsSafely({
+      // Fire-and-forget: automation coordination must never affect the ingest response.
+      void this.coordinateAutomationsSafely({
         tenantId,
         deviceId,
         telemetryId: telemetry.id,
         eventId: normalizedEventId,
         payload,
+        // AutomationRuntimeReadRepository.assertAcceptedTelemetry re-reads the persisted
+        // row and requires envelope.occurredAt to equal telemetry.createdAt exactly. A
+        // fresh `new Date()` here is always a few microseconds later, so every envelope
+        // was rejected with AUTOMATION_RUNTIME_READ_TELEMETRY_MISMATCH. Use the stored
+        // value so the envelope describes the row it claims to describe.
+        occurredAt: telemetry.createdAt,
       });
 
       return telemetry;
@@ -451,6 +464,41 @@ export class TelemetryService {
   private isUnsafeKey(key: string): boolean {
     return key === '__proto__' || key === 'prototype' || key === 'constructor';
   }
+
+  /**
+   * Resolve capabilityKey -> capabilityId for one device.
+   *
+   * The automation coordinator validates every report with `assertUuid(capabilityId)`,
+   * so ingestion must supply a real UUID. Previously this forwarded an empty string with
+   * the comment that the coordinator would resolve it; the coordinator does not, and
+   * `assertUuid('')` rejects the whole envelope, so every ingested event failed to
+   * coordinate. Capability identity is immutable per device in practice, so the map is
+   * cached per device and re-read whenever a key cannot be resolved from cache.
+   */
+  private async capabilityIdsForDevice(
+    deviceId: string,
+  ): Promise<Map<string, string>> {
+    const cached = this.capabilityIdCache.get(deviceId);
+    if (cached) return cached;
+
+    const rows = await this.prisma.capability.findMany({
+      where: { deviceId },
+      select: { id: true, key: true },
+    });
+    const map = new Map<string, string>();
+    for (const row of rows) map.set(row.key, row.id);
+    if (this.capabilityIdCache.size >= this.CAPABILITY_CACHE_LIMIT) {
+      // Cheap bounded eviction: drop the oldest entry rather than growing without limit.
+      const oldest = this.capabilityIdCache.keys().next();
+      if (!oldest.done) this.capabilityIdCache.delete(oldest.value);
+    }
+    this.capabilityIdCache.set(deviceId, map);
+    return map;
+  }
+
+  private invalidateCapabilityIds(deviceId: string): void {
+    this.capabilityIdCache.delete(deviceId);
+  }
   private isValidJsonValue(
     value: unknown,
     depth = 0,
@@ -530,14 +578,33 @@ export class TelemetryService {
    * telemetry persistence. Fully isolated from the ingest path: any failure is
    * logged with a bounded structured event and never propagates to the caller.
    */
-  private coordinateAutomationsSafely(input: {
+  private async coordinateAutomationsSafely(input: {
     tenantId: string;
     deviceId: string;
     telemetryId: string;
     eventId: string;
     payload: Record<string, unknown>;
-  }): void {
+    occurredAt: Date;
+  }): Promise<void> {
     if (!this.automationRuntimeEnabled || !this.automationCoordinator) {
+      return;
+    }
+
+    let capabilityIds: Map<string, string>;
+    try {
+      capabilityIds = await this.capabilityIdsForDevice(input.deviceId);
+    } catch (error) {
+      this.logger.warn({
+        event: 'telemetry.automation_coordination.capability_lookup_failed',
+        outcome: 'failed',
+        tenantId: input.tenantId,
+        deviceId: input.deviceId,
+        telemetryId: input.telemetryId,
+        errorCode:
+          error && typeof error === 'object' && 'code' in error
+            ? String((error as { code?: unknown }).code)
+            : 'CAPABILITY_LOOKUP_FAILED',
+      });
       return;
     }
 
@@ -549,15 +616,34 @@ export class TelemetryService {
         typeof value === 'number' ||
         typeof value === 'boolean'
       ) {
+        const capabilityId = capabilityIds.get(key);
+        // A payload key with no registered capability cannot form a valid report: the
+        // coordinator requires a UUID capabilityId, and inventing one would be worse than
+        // forwarding nothing. It is skipped, and the skip is logged below.
+        if (!capabilityId) continue;
         reports.push({
           capabilityKey: key,
-          // Capability identity is resolved tenant/device-bound by the runtime
-          // read repository inside the coordinator; ingestion only forwards
-          // the normalized primitive report.
-          capabilityId: '',
+          // The coordinator requires a UUID capabilityId (validateEnvelope calls
+          // assertUuid on every report). Capability identity must therefore be resolved
+          // here, tenant- and device-bound, rather than forwarded as an empty string:
+          // an empty value is rejected, which made every ingested telemetry event fail
+          // envelope validation even once the coordinator was actually injected.
+          capabilityId,
           value,
         });
       }
+    }
+
+    if (reports.length === 0) {
+      this.logger.warn({
+        event: 'telemetry.automation_coordination.no_mapped_capability',
+        outcome: 'skipped',
+        tenantId: input.tenantId,
+        deviceId: input.deviceId,
+        telemetryId: input.telemetryId,
+        payloadKeys: Object.keys(input.payload).length,
+      });
+      return;
     }
 
     const envelope: AutomationTelemetryCoordinationEnvelope = {
@@ -565,7 +651,7 @@ export class TelemetryService {
       telemetryId: input.telemetryId,
       deviceId: input.deviceId,
       eventId: input.eventId,
-      occurredAt: new Date(),
+      occurredAt: input.occurredAt,
       origin: 'EXTERNAL_ACCEPTED',
       ancestry: [],
       reports,

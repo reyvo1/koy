@@ -1003,6 +1003,7 @@ test/support/mqtt-test-environment.spec.ts
 test/support/mqtt-test-environment.ts
 test/support/test-resource-names.spec.ts
 test/support/test-resource-names.ts
+test/telemetry-automation-wiring.contract.spec.ts
 test/testing-strategy.contract.spec.ts
 tools/activate-module.ps1
 tools/automation/Update-ProjectState.ps1

@@ -667,7 +667,7 @@ cbf0d48cf48dd44815ea5472a213da61eeeccfbd9bc89a0e04256a670c0d6e41  ./src/automati
 50bbfcc633ee4cff340c067c842737e5fbeec5e56d13df197930c10e20cc35e3  ./src/automation/automation-telemetry-coordinator.spec.ts
 f4c9eb0743e7e16ddf40555e107004e728f9f867cbadb3f7d26f174855396a4c  ./src/automation/automation-telemetry-coordinator.ts
 adf8abfbd61d4a183c232f2c63b4e19eb3dde312d1af385a4574ebdf0ba6c969  ./src/automation/automation.controller.ts
-7a71b21deb0423b529fb13866f76806098ff78feb9e07b0f5c55b9fee715ef1e  ./src/automation/automation.module.ts
+94cd61ed9370b8ea5980e64d494c037bc60e1a76f8aee366b07a81ffb4a65577  ./src/automation/automation.module.ts
 f1e898424cb0e435f9e9cc479433b2ca4fb38e16d37dd471e89b58d78b34d3d3  ./src/automation/automation.persistence.error.ts
 317fabf0365e17c9ba8c1510d4ff72705da1580db225fd9188ac2cff796170ad  ./src/automation/automation.persistence.types.ts
 d90476e0ce555b1aff4970db9abf0d568c8256a6f2738ae02f07ffe1fb837905  ./src/automation/automation.repository.ts
@@ -864,9 +864,9 @@ ae67eda0fd97ea63e8965e2aae63d1566dd86b9279f0f3dfeb1c57be0047d3d4  ./src/telemetr
 a82ca4eaf9cdfd435a9fa6e8efa4a213e27e5eaa3f56eda8948d0763ee4f6163  ./src/telemetry/telemetry-stream.controller.ts
 173b659490d95b7e9c7bceced64cccf14d2b6e51f32c7acf069ae964a58199a1  ./src/telemetry/telemetry.controller.spec.ts
 0d2504146957742519e6e35374eace11b01ddfdd3e9f2c7b986d3a7587067272  ./src/telemetry/telemetry.controller.ts
-9487051179c0c0a0f472f6a3ac9c0caf154880140be08a15ef8ccac2ae6af793  ./src/telemetry/telemetry.module.ts
+fd104421699ef3339c3c5d8467c52fdae3f4872fdcd9c2529de253b86d6c0760  ./src/telemetry/telemetry.module.ts
 3c56ca31ba6ded76441c4ff9c4bb129890edfc1d242a4e17f60b0c821b9be35e  ./src/telemetry/telemetry.service.spec.ts
-30720719842c8ecc6ee34fdcec635775cc9089292ea6c4f4865db1e6e5d5c311  ./src/telemetry/telemetry.service.ts
+2edda7403421bcf028a1ee0635f275e4d29d4a7506c5c7f2155f702e8e4c9503  ./src/telemetry/telemetry.service.ts
 3404874178cc688b0d8084721fb611ebb002c5cab6533ac076adc946c6eeb085  ./src/users/dto/update-profile.dto.ts
 af093ef810c83de2f59ce46e052773afea3141d58596c06888202ca61cb82ac7  ./src/users/guards/tenant-context.guard.spec.ts
 6690649b79220609f757f6501e5e73b279a67a668370a3e5a6e1efd967e80652  ./src/users/guards/tenant-context.guard.ts
@@ -876,7 +876,7 @@ af093ef810c83de2f59ce46e052773afea3141d58596c06888202ca61cb82ac7  ./src/users/gu
 598dcee2de5ba4c3dc614fb79b2d3ebf8b748c9132dd50e9544965890cccff83  ./src/users/users.service.ts
 8766c0027813373889ffdaeeb4b3d626e61b19eda25e9456ab6f9a2903692019  ./test/application.smoke.e2e-spec.ts
 a7146c20bcaac9b7334779d528d91b790973fbfcdf9e2f08cd6af18a5dfbc572  ./test/ci-dependency-bootstrap.contract.spec.ts
-7df3bccfb953245bd60a5502819b5871a58d15c0317779ef62a74b0bd313ea50  ./test/contract-surface-policy.json
+c249c749bf249c4bfb67eb9fc885ad6220c2bd3cb275a636bce5daa79eaba5bc  ./test/contract-surface-policy.json
 ef693928a55b95aaf66fa09673f6cae0ea63f4214bd56d69eb5a6bc5193dd131  ./test/database-testing.contract.spec.ts
 09e6218bd2e26e4bee32a31dd322956813f19d27698e74ca994ebf642c081eaf  ./test/deployment-recovery.contract.spec.ts
 139c87bcdb7b69fec310db9fa52ba40f8d7a5af7cacf8eb86a59def7e78ef71f  ./test/fixtures/historical-contract-policy/advanced-indirection.fixture.ts
@@ -970,7 +970,7 @@ c5ec26fb8075bd7dcae39c1952f2c0833401a73eeb1e2409283a80bfc7a6a0ba  ./test/module-
 92de5bcfaa78521774a44c4952297edc4265ba00b50f90e24cd06b90b54e4efc  ./test/module-11-automation-persistence-foundation.contract.spec.ts
 1ccc999a3d209ff1e6d18253820e0340e2bbb7acfb704558818baddcef325b99  ./test/module-11-automation-retry-safety-foundation.contract.spec.ts
 3377fce5c8f3ac9680c51536d95cc767cfcaf7fc050337aa0243933393d48b59  ./test/module-11-automation-runtime-safety-contract.contract.spec.ts
-33e64789c679aae717f02028da623d7596e654630d0ca03fd231c9cceef4b5e9  ./test/module-11-automation-telemetry-coordination-foundation-implementation.contract.spec.ts
+0bb3b02b6b42800c5d7a790eb6b731de60e8f2b04619e34c49a737355785fa27  ./test/module-11-automation-telemetry-coordination-foundation-implementation.contract.spec.ts
 37a420e1e504c73d7579d160991aaedcbcb2b50755102d321594f9ac7ff09ced  ./test/module-11-automation-telemetry-coordination-foundation.contract.spec.ts
 2c032d8a6d3be88bec007199945dc5eda17541d1061021d3457f871d336b5add  ./test/module-30-esp32-sdk.contract.spec.ts
 5df309791220dc3be0cda6c91b35440b5183f24537a07ea8eb6a5f9aa52f4aa7  ./test/module-execution-efficiency.contract.spec.ts
@@ -1003,6 +1003,7 @@ c57c996e2e4c229f294b3db75bc14d3d35c5dc668d2cf2f5bef18bf80c6ad4a3  ./test/support
 7194b5f64f565957a6795d21bfc025bcebf064e8514bee664844859c5ef22437  ./test/support/mqtt-test-environment.ts
 e616d64bd133f7c6e606d11ee663a80f27b848394bab612bc95a06aa5684de3f  ./test/support/test-resource-names.spec.ts
 d88762c642c621e162ce5419ba6ece519b9208df18c847bbaab2c6584bf95a6d  ./test/support/test-resource-names.ts
+fe9c813aa001ff118064dbad1c519e00be63215784eacbf4383aacf8dfe79701  ./test/telemetry-automation-wiring.contract.spec.ts
 03092111361921e91738158f250ac09e1c849902b114f312fc67b573391b7449  ./test/testing-strategy.contract.spec.ts
 4389a95b5ab28678218fedf97673aee036e93eebdd4cce682306f3c5fdecd82b  ./tools/activate-module.ps1
 b6a3a3280716abd8606c9a8772ce5a54107eeb0b2f7f00ddf0905308fa215365  ./tools/automation/Update-ProjectState.ps1
@@ -1053,4 +1054,4 @@ d526784499ba2f416a3fca603acb5dd534fb7450580e048a80abcba43f9ece63  ./tools/redis-
 0543e915f75a5ecc6acceb422f4bebbac2e6a4ca6a77c3b8a031191884d8996c  ./tsconfig.build.json
 7256486d18986f5c8b6c0d1548e30a2cdf8dfb0c4d1fb27e5dffd081ee67fa98  ./tsconfig.jest.json
 fb2278ad89fcdbeb387aa4a8e0f3c550b9ffd464d1ce83b2c2aee1ff72ddc14c  ./tsconfig.json
-64246fe4d203d693fba7db0bd2f69ad5369681151dc6e48f37bae61b2d2b8b86  ./repository-tree.txt
+661c70b85145caa82dfcea8f458d32bc4f58ac5747fb3a9e5a296baa9c8016ad  ./repository-tree.txt
