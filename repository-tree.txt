@@ -592,7 +592,6 @@ scripts/verify-production-release.mjs
 scripts/verify-secure-fastify-stack.mjs
 scripts/verify-secure-next-stack.mjs
 scripts/verify-web-framework-contract-sync.mjs
-scripts/wave3-qemu-efuse-defaults.mjs
 src/admin-operations/admin-api-keys.controller.ts
 src/admin-operations/admin-billing-directory.controller.ts
 src/admin-operations/admin-device-provisioning.controller.ts

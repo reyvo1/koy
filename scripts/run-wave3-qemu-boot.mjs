@@ -1,9 +1,8 @@
 #!/usr/bin/env node
-import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { wave3QemuEfuseBytes } from './wave3-qemu-efuse-defaults.mjs';
 
 const EXPECTED_MARKERS = [
   'WAVE3_QEMU_BOOT_OK',
@@ -22,37 +21,17 @@ function parseArgs(argv) {
   return values;
 }
 
-// The runner must reproduce the argument contract that ESP-IDF v5.5.5's own
-// `idf.py qemu` frontend builds in tools/idf_py_actions/qemu_ext.py, minus the
-// monitor/gdb plumbing that does not apply to a marker-scanning boot.
-//
-//   esp32   : qemu-system-xtensa  -M esp32 -m 4M
-//   esp32c3 : qemu-system-riscv32 -M esp32c3  (+ -icount 3, mandatory)
-//
-// ESP32 takes `-m 4M` because the native frontend always passes it. Note this is
-// PSRAM, not internal SRAM: esp32_soc_init() always maps DRAM/IRAM/iCache/RTC
-// regardless of machine->ram_size, and only esp32_machine_init_psram() is gated on
-// it. The Wave 3 test app does not enable CONFIG_SPIRAM, so this argument is
-// native-contract parity rather than a functional prerequisite. Keeping it means a
-// future PSRAM-enabled build inherits the correct emulated window instead of
-// silently losing it.
-// ESP32-C3 has no PSRAM path, so it takes no -m and instead requires -icount 3
-// because that machine cannot run in free-running mode.
 function targetConfig(target) {
   if (target === 'esp32') {
     return {
       qemuBinary: 'qemu-system-xtensa',
-      qemuArgs: ['-nographic', '-machine', 'esp32', '-m', '4M'],
-      efuseDriver: 'nvram.esp32.efuse',
-      timerDriver: 'timer.esp32.timg',
+      qemuArgs: ['-nographic', '-machine', 'esp32'],
     };
   }
   if (target === 'esp32c3') {
     return {
       qemuBinary: 'qemu-system-riscv32',
       qemuArgs: ['-nographic', '-icount', '3', '-machine', 'esp32c3'],
-      efuseDriver: 'nvram.esp32c3.efuse',
-      timerDriver: 'timer.esp32c3.timg',
     };
   }
   throw new Error(`Unsupported Wave 3 QEMU target: ${target}`);
@@ -126,26 +105,11 @@ export async function runWave3QemuBoot({
     throw new Error(`ESP-IDF merged flash size mismatch: expected ${expectedFlashBytes}, got ${actualFlashBytes}`);
   }
 
-  // Materialise the eFuse image exactly as `idf.py qemu` does. QEMU refuses to
-  // start when a -drive file is missing, and an all-zero eFuse block is a
-  // different chip from the revision the ESP-IDF toolchain boots by default.
-  const efuseImage = path.join(buildDir, `wave3-qemu-${target}-efuse.bin`);
-  const efuseBytes = wave3QemuEfuseBytes(target);
-  writeFileSync(efuseImage, efuseBytes);
-  if (statSync(efuseImage).size !== efuseBytes.length) {
-    throw new Error(`Wave 3 QEMU eFuse image is truncated: ${efuseImage}`);
-  }
-
   const binary = qemuBinary || cfg.qemuBinary;
   const qemuArgs = [
     ...qemuPrefixArgs,
     ...cfg.qemuArgs,
     '-drive', `file=${flashImage},if=mtd,format=raw`,
-    '-drive', `file=${efuseImage},if=none,format=raw,id=efuse`,
-    '-global', `driver=${cfg.efuseDriver},property=drive,value=efuse`,
-    // The emulated TWDT would otherwise reset the SoC mid-boot, which reads as
-    // a silent marker timeout instead of an honest emulation failure.
-    '-global', `driver=${cfg.timerDriver},property=wdt_disable,value=true`,
   ];
 
   return await new Promise((resolve, reject) => {
@@ -183,7 +147,7 @@ export async function runWave3QemuBoot({
       settled = true;
       stop();
       cleanup();
-      resolve({ target, flashImage, efuseImage, output });
+      resolve({ target, flashImage, output });
     };
 
     const finishError = (error) => {
@@ -235,7 +199,6 @@ async function main() {
   });
   console.log(`PASS  Wave 3 ${target} firmware booted in Espressif QEMU with all contract markers`);
   console.log(`FLASH ${result.flashImage}`);
-  console.log(`EFUSE ${result.efuseImage}`);
 }
 
 const invoked = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
