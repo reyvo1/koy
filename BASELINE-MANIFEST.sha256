@@ -583,7 +583,7 @@ ae5c73a9a3a9f63e31fc2931c39beafb4bfd99c920d2c81ad17108a6fabd7b58  ./scripts/self
 eb610a2f6ae922766ff4c99969a2d12d733c72fa882ec3057579148a82cc9352  ./scripts/self-test-wave3-esp32-source.mjs
 6ca25bc759b0080811af5cbde2ef2c8a54bd431298f4c1c8c4d7b32cdbe9d9a4  ./scripts/self-test-wave3-qemu-boot-runner.mjs
 20ea361948a1e75c0218f6fc7c929678f5a2772482e27e686165ee013d5bd0c8  ./scripts/self-test-web-framework-contract-sync.mjs
-dfdc3d80a87a636f8acec72c607f1765603adc974f0048a8d3deb3502e436739  ./scripts/validate-rescue-02b-evidence.mjs
+eb8e000fc1baede4cd7f3ba70093b0c0c574f95949224f319f5d8e16535c939c  ./scripts/validate-rescue-02b-evidence.mjs
 e05eacc3a719ce573e86d289c489fee34d5ce5cb43393c97d0f0d398ba38680b  ./scripts/validate-rescue-baseline.mjs
 131e3de48ca0e1238757be43693b6c7c74a2c4d34f3ab3bd242e080069364240  ./scripts/validate-rescue-gate1-receipt.mjs
 5c2a36059e7d2772e49b523854e6d3748212cb88e709fe74f182d440b73aed21  ./scripts/verify-fastify-v5-compat.mjs

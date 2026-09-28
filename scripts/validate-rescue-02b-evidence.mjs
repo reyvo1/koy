@@ -102,6 +102,16 @@ function meaningfulEvidence(value) {
   return !/^(pass|passed|ok|done|n\/a|na|todo|pending|none)$/i.test(trimmed);
 }
 
+// A version string is a legitimate concrete value and is often shorter than 8 chars
+// ("5.9.2" is EMQX 5.9.2). Length-gate it separately so a real, verified broker version
+// is not rejected while free-text placeholders still fail.
+function meaningfulVersion(value) {
+  if (typeof value !== 'string') return false;
+  const trimmed = value.trim();
+  if (trimmed.length < 3) return false;
+  return /^\d+\.\d+(\.\d+)?([-+][0-9A-Za-z.-]+)?$/.test(trimmed);
+}
+
 function resolveEvidenceArtifact(reference) {
   const relative = path.resolve(path.dirname(evidencePath), reference);
   return existsSync(relative) ? relative : path.resolve(reference);
@@ -259,7 +269,7 @@ if (!meaningfulEvidence(evidence.runtimeFlow?.environment)) {
 }
 validateChecks('runtimeFlow', evidence.runtimeFlow, REQUIRED_RUNTIME_FLOW, automated?.generatedAt);
 
-if (!meaningfulEvidence(evidence.liveBroker?.emqxVersion)) {
+if (!meaningfulVersion(evidence.liveBroker?.emqxVersion)) {
   fail('liveBroker.emqxVersion must record the broker version actually tested.');
 }
 validateChecks('liveBroker', evidence.liveBroker, REQUIRED_BROKER, automated?.generatedAt);
