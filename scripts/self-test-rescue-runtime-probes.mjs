@@ -116,6 +116,9 @@ function writeEnv(ports, options = {}) {
     'EMQX_DASHBOARD_PASSWORD=fixture-dashboard-secret',
     `EMQX_API_URL=http://127.0.0.1:${ports.emqx}`,
     `API_PROBE_URL=http://127.0.0.1:${ports.api}/health/ready`,
+    // The control port. go2rtc answers `/api` on one port and SDP on another, and pointing the
+    // readiness probe at the WebRTC port reports "unreachable" against a perfectly healthy runtime.
+    ...(ports.media ? [`GO2RTC_URL=http://127.0.0.1:${ports.media}`] : []),
     'PORT=3000',
     '',
   ].join('\n');
@@ -188,6 +191,19 @@ async function startGoodServices({ mqttAcceptAll = false } = {}) {
       response.writeHead(404).end();
     }),
   );
+  // The `full` scope probes a media runtime, so the good fixture has to provide one. Added after the
+  // readiness row made this fixture fail: it stood in for the whole runtime while carrying one service
+  // fewer than it did, and the gap surfaced as a failing gate rather than as an incomplete fixture.
+  const media = await listen(
+    http.createServer((request, response) => {
+      if (request.url === '/api') {
+        response.writeHead(200, { 'content-type': 'application/json' });
+        response.end(JSON.stringify({ version: 'fixture-go2rtc' }));
+        return;
+      }
+      response.writeHead(404).end();
+    }),
+  );
   const api = await listen(
     http.createServer((request, response) => {
       if (request.url === '/health/ready') {
@@ -201,7 +217,7 @@ async function startGoodServices({ mqttAcceptAll = false } = {}) {
       response.writeHead(404).end();
     }),
   );
-  return { postgres, redis, mqtt, emqx, api };
+  return { postgres, redis, mqtt, emqx, media, api };
 }
 
 async function startBadServices() {
