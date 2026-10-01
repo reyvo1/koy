@@ -272,6 +272,24 @@ try {
   for (const name of probeNames) {
     assert(good.report.rows.find((row) => row.name === name)?.state === 'PASS', `${name} did not PASS good fixture`);
   }
+
+  // Asserted here rather than through `probeNames` because that list is reused for the bad fixture,
+  // which has no media stub. Adding the row there would make the assertion depend on whether
+  // something happens to be listening on the media port -- true on a developer machine with go2rtc
+  // running, false on a clean runner. A test that passes or fails based on the host is worse than no
+  // test.
+  //
+  // The version detail matters: a 200 from something that is not a media runtime must not pass, or
+  // the row proves only that an HTTP server answered.
+  const goodMedia = good.report.rows.find((row) => row.name === 'media runtime /api');
+  assert(
+    goodMedia?.state === 'PASS',
+    `media runtime /api did not PASS good fixture: ${goodMedia?.state ?? 'row absent'}`,
+  );
+  assert(
+    /^go2rtc .+ at https?:\/\//.test(goodMedia?.detail ?? ''),
+    `media runtime row did not report a version: ${goodMedia?.detail ?? 'no detail'}`,
+  );
   console.log('PASS  protocol-aware runtime checker accepts valid service fixtures (full scope)');
 
   await closeServers();
@@ -306,7 +324,17 @@ try {
   const bad = await runChecker('full');
   assert(bad.code !== 0, 'bad fixture checker must fail');
   for (const name of probeNames) {
-    assert(bad.report.rows.find((row) => row.name === name)?.state === 'FAIL', `${name} did not reject bad fixture`);
+    const observed = bad.report.rows.find((row) => row.name === name);
+    // The whole observed row set goes into the message. It previously printed only the missing name,
+    // and a CI failure then read as "PostgreSQL protocol did not reject bad fixture" with nothing
+    // indicating whether the row was PASS, absent, or renamed -- three different bugs, none of them
+    // guessable from the name, and the kind that gets "fixed" by loosening the assertion.
+    assert(
+      observed?.state === 'FAIL',
+      `${name} did not reject bad fixture; observed rows: ${JSON.stringify(
+        bad.report.rows.map((row) => [row.name, row.state]),
+      )}`,
+    );
   }
   console.log('PASS  protocol-aware runtime checker rejects raw/invalid service fixtures');
 } finally {
