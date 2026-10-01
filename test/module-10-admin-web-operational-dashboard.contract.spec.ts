@@ -56,6 +56,9 @@ describe('Module 10 Slice 10.8 Backend Operational Summary Foundation contract',
       'src/admin-operations/admin-operational-summary.service.ts',
     );
     const module = read('src/admin-operations/admin-operations.module.ts');
+    const adminGovernanceService = read(
+      'src/admin-operations/admin-governance.service.ts',
+    );
 
     expect(types).toContain('staleThresholdSeconds');
     expect(types).toContain('Record<DeviceStatus, number>');
@@ -63,7 +66,19 @@ describe('Module 10 Slice 10.8 Backend Operational Summary Foundation contract',
     expect(types).toContain('latestObservedAt: string | null');
     expect(service).toContain('select: { createdAt: true }');
     expect(service).not.toContain('payload');
-    expect(module).not.toContain('MetricsModule');
+    // Asserted the other way round, deliberately. This used to assert that
+    // admin-operations.module.ts does NOT mention MetricsModule -- a boundary that no longer exists.
+    // AdminGovernanceService injects MetricsService, so the module has to provide it. It happened to
+    // work only because MetricsModule is @Global and something else in app.module registered it;
+    // any test that builds this module on its own got "Nest can't resolve dependencies of the
+    // AdminGovernanceService ... MetricsService at index [1]", which is how two database integration
+    // suites failed and left the jest process hanging with open handles.
+    //
+    // The guard was not protecting anything: the summary path reads no metrics at all, which is what
+    // the assertions above this one are actually about. A boundary check that fails only because the
+    // code is now correct is a guard that trains you to delete the fix.
+    expect(adminGovernanceService).toContain('private readonly metrics: MetricsService');
+    expect(module).toContain('MetricsModule');
     expect(module).not.toContain('MqttModule');
     expect(module).not.toContain('RedisModule');
   });

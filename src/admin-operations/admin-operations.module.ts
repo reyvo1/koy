@@ -24,6 +24,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AdminGovernanceController } from './admin-governance.controller';
 import { AdminGovernanceService } from './admin-governance.service';
 import { CapabilityTemplateService } from './capability-template.service';
+import { MetricsModule } from '../metrics/metrics.module';
 
 @Module({
   imports: [
@@ -31,9 +32,15 @@ import { CapabilityTemplateService } from './capability-template.service';
     AnalyticsModule,
     PublicApiModule,
     TelemetryModule,
-    // CommandService for audited platform dispatch; MetricsService is @Global but is
-    // imported by name so the dependency is explicit rather than incidental.
+    // CommandService for audited platform dispatch.
     DeviceModule,
+    // MetricsService is @Global, but "global" only means "registered somewhere in this application".
+    // A test that builds a Nest module from AdminOperationsModule alone never registers it, so the
+    // provider silently vanishes and the failure arrives as "Nest can't resolve dependencies of the
+    // AdminGovernanceService ... MetricsService at index [1]" -- which reads like a missing provider
+    // in this file and sends you looking in the wrong place. Importing it by name makes the
+    // dependency explicit and this module self-contained.
+    MetricsModule,
     // AdminDirectoryController mints a FREE subscription when it creates a tenant, so a
     // new tenant is metered from the start. Dependency injection resolves per module, not
     // per application: app.module importing BillingModule is not enough for a provider

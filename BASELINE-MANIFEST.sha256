@@ -731,7 +731,7 @@ b4c888be5cd845c1c1ad4fa64dc23975d56a648ec0ba7700ff01f95da5769b87  ./src/admin-op
 79b661815d92f42a50641ec22229d4db22fe0c18e9c1a244ae6be72edb968825  ./src/admin-operations/admin-operational-summary.types.ts
 7ab86e6bb51506dc532a3a2386ab78f72e80d5a5ba1f9271da7d3c6ae4e3c6ce  ./src/admin-operations/admin-operations.controller.spec.ts
 1134ebe02de7ff572dd6da10d1424552147c8209e6b254f11722310eb29ebff0  ./src/admin-operations/admin-operations.controller.ts
-db6ae194a8280e108858528b2c031968e4e401b1db3d9378731258dfd6100eea  ./src/admin-operations/admin-operations.module.ts
+3631951b8404fdc4b446454b65e4c1669a18f7a54b1f788aaf2154064241c493  ./src/admin-operations/admin-operations.module.ts
 bf54f6e664caa4c79f113dd0586e0bd05a5069fa3def63f24bd3978f38c9e884  ./src/admin-operations/admin-platform-observability.controller.ts
 c098208bb7d2d39887cf118fafb560f1f54e49533f9e81ca7263c5d21550aa2a  ./src/admin-operations/admin-platform-observability.service.ts
 bec538cece7dbc882b4b16f5247587019c69a920dab4a914f71ad04dc44270aa  ./src/admin-operations/admin-role.guard.spec.ts
@@ -1144,7 +1144,7 @@ bc848e7a210c1c4ae86c9087ccb864f26afc02b56a719158bdd437dfc8a10f72  ./test/module-
 5013f5f4b43d140bf9d7d00b58b1387351839c4cd8876c8d0933eb200f9d0c2b  ./test/module-10-admin-web-login-route.spec.ts
 9566014aa404143486c8b51527431edf933370b11d043c9f3df136d558610aca  ./test/module-10-admin-web-operational-dashboard-ui-foundation.contract.spec.ts
 83673136236382e85b776ab24f6fde136295c82d5e540be3d3ebf305c339531f  ./test/module-10-admin-web-operational-dashboard-ui-proposal.contract.spec.ts
-3b32c2298c3e5f4b27353fc5bdeb5324550ef96f13ec545b26f2343568248055  ./test/module-10-admin-web-operational-dashboard.contract.spec.ts
+0b3dd8190d74426b5b5871d8eae114bb0359fe8afd9ad239fa6ba0c582c8716a  ./test/module-10-admin-web-operational-dashboard.contract.spec.ts
 66253d3878cb212a23a7db940825e867c5a5fd2e5b2396cc912fafac871f08e2  ./test/module-10-admin-web-operational-summary-route.spec.ts
 b9dfff1e7fa587ab712f854cdd9e70073b35f2d860f6f7a9a605e52809dc936d  ./test/module-10-admin-web-session-refresh.spec.ts
 ded619159f7bec3acbb2c90d9f93d7c77d3ec24e7104b4e7303404428d81556a  ./test/module-10-android-native-proof-preparation.contract.spec.ts
