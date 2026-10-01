@@ -690,7 +690,7 @@ d6a9b09621f704eef464a0d005ba40db1311851610a9788fc7cc5f16afefa1cc  ./scripts/self
 4f585fda6f5245a6db74a9236d1c5b33379e1e3e86912e945edb4ddad4b74af9  ./scripts/self-test-rescue-live-broker-smoke.mjs
 82ad5ea725bd682520814f5b6646a54c4d02607bf1c44a9d58cf66304d1128f9  ./scripts/self-test-rescue-local-runtime.mjs
 675bb9ac239d4335c4b8d0deefda59c3fff733eb87415548832c99adca711403  ./scripts/self-test-rescue-mqtt-operations.mjs
-e75066ed5696ebb6fc65a904f8b5fe74b21220feafe7bae60c761d194aed1ca1  ./scripts/self-test-rescue-runtime-probes.mjs
+c303b371d9165cd690131f567699934c6be78fb9c7c357b4dcf508edb60777d7  ./scripts/self-test-rescue-runtime-probes.mjs
 2e897b21e5b3d40354d293e6405ef7c0879718ad0651d331ecc743264fca4162  ./scripts/self-test-secure-fastify-stack.mjs
 91311dea948ac08cd40f2eb8cd4bb485779578718ff1946ab6f56c8df25fc60c  ./scripts/self-test-secure-next-stack.mjs
 ed0e26eeb48c4a6d34d1b2b67d93197689da8c90252a30089559f0a1b20aee1f  ./scripts/self-test-unit-runtime-regressions.mjs
