@@ -12,7 +12,7 @@
  * than asserting an email is on its way.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AuthAlert, AuthShell } from '../../components/auth-shell';
 
@@ -27,12 +27,20 @@ const ACCEPTED_MESSAGE =
 
 export default function ForgotPasswordPage() {
   const [status, setStatus] = useState<Status>({ kind: 'idle' });
+  // See app/login/page.tsx: the form must not be submittable before React hydrates, or a
+  // native submit would place the registered email in the URL.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setStatus({ kind: 'busy' });
 
-    const form = new FormData(event.currentTarget);
+    // React nulls `event.currentTarget` once this handler yields, so the element is held
+    // here and reused after the await. Reading it again post-await threw on a request
+    // that had already succeeded, and the surrounding catch reported that as a failure.
+    const formEl = event.currentTarget;
+    const form = new FormData(formEl);
     try {
       const response = await fetch('/api/auth/forgot-password', {
         method: 'POST',
@@ -49,7 +57,7 @@ export default function ForgotPasswordPage() {
       }
 
       setStatus({ kind: 'ok', message: ACCEPTED_MESSAGE });
-      event.currentTarget.reset();
+      formEl.reset();
     } catch (cause) {
       setStatus({
         kind: 'error',
@@ -61,7 +69,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <AuthShell title="Lupa password" subtitle="PULIHKAN AKSES">
-      <form onSubmit={onSubmit} className="space-y-5">
+      <form onSubmit={onSubmit} method="post" className="space-y-5">
         {[
           { name: 'tenantId', label: 'Tenant ID', type: 'text' },
           { name: 'email', label: 'Email terdaftar', type: 'email' },
@@ -88,7 +96,8 @@ export default function ForgotPasswordPage() {
         ) : null}
 
         <button
-          disabled={status.kind === 'busy'}
+          type="submit"
+          disabled={status.kind === 'busy' || !hydrated}
           className="w-full rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 py-3.5 text-[15px] font-bold text-white shadow-[0_6px_20px_rgba(20,184,166,.35)] transition-all hover:brightness-110 disabled:opacity-60"
         >
           {status.kind === 'busy' ? 'Memproses…' : 'Kirim tautan reset'}

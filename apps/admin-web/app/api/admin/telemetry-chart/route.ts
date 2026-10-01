@@ -4,14 +4,15 @@ import {
   clearSessionCookies,
 } from '@/lib/session';
 
-const MAX_RANGE_MS = 31 * 24 * 3600 * 1000;
-
 /**
  * GET /api/admin/telemetry-chart?deviceId=&capability=&hours=24
  *
  * Domain-bound proxy: resolves the first device carrying a numeric
  * capability when deviceId is omitted, then reads a bounded aggregation
  * from the backend (Modul 09 read-time aggregate, 1h buckets).
+ *
+ * The range bound is enforced by clamping `hours` below rather than by a separate
+ * constant, so the 31-day ceiling and the value actually used cannot drift apart.
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -58,7 +59,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ buckets: [] });
     }
     const payload = (await response.json()) as { buckets?: unknown[] };
-    void MAX_RANGE_MS;
     return NextResponse.json({ buckets: payload.buckets ?? [] });
   } catch (cause) {
     const status =

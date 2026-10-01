@@ -6,10 +6,12 @@
  * Domain-bound: devices/capabilities/telemetry/commands APIs only.
  */
 
-import { type FormEvent, useCallback, useEffect, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { CapabilityValueInput } from '@/components/capability-value-input';
+import DeviceSharePanel from '@/components/device-share-panel';
 import { parseCapabilityValue, readCapabilityConstraints } from '@/lib/capability-value';
+import { createLoadGuard } from '@/lib/safe-fetch';
 
 interface DeviceInfo {
   id: string;
@@ -95,7 +97,10 @@ export default function DeviceDetailContent() {
   const [commandInputs, setCommandInputs] = useState<Record<string, string>>({});
   const [health, setHealth] = useState<DeviceHealthStatus>('UNKNOWN');
 
+  const loadGuard = useRef(createLoadGuard());
+
   const load = useCallback(async () => {
+    const isCurrent = loadGuard.current.begin();
     try {
       setError(null);
       setCapabilityError(null);
@@ -110,6 +115,10 @@ export default function DeviceDetailContent() {
         fetch(`/api/admin/device-health?deviceId=${encodeURIComponent(deviceId)}`),
       ]);
       if (!dRes.ok) throw new Error(`device HTTP ${dRes.status}`);
+      // One generation per run. Every setState below is downstream of an await, so without
+      // this a slow earlier load can overwrite the state written by a later one, and a
+      // navigation away mid-flight writes to a component that is no longer mounted.
+      if (!isCurrent()) return;
       setDevice(await dRes.json());
       // Ask the API for the verdict rather than recomputing it from lastHeartbeatAt here.
       // The five-minute rule lives in DeviceService.checkHealth; duplicating it in the
@@ -154,6 +163,7 @@ export default function DeviceDetailContent() {
         setTelemetryError(`telemetry HTTP ${chartRes.status}`);
       }
     } catch (cause) {
+      if (!isCurrent()) return;
       setError(cause instanceof Error ? cause.message : 'gagal memuat');
     }
   }, [deviceId]);
@@ -280,6 +290,11 @@ export default function DeviceDetailContent() {
           </div>
         </div>
       </div>
+
+      {/* Device sharing (Module 18) — the operator hands this device to a member here.
+          Placed above the tabs because it applies to the device as a whole, not to one
+          tab: it grants or removes access to every capability below. */}
+      <DeviceSharePanel deviceId={device.id} />
 
       {/* Tabs */}
       <div className="mb-5 flex gap-1 rounded-xl border border-slate-800 bg-slate-900/70 p-1">

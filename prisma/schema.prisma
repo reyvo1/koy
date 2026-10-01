@@ -29,6 +29,7 @@ model Tenant {
   firmwareArtifacts     FirmwareArtifact[]
   otaRollouts           OtaRollout[]
   analyticsFindings     AnalyticsFinding[]
+  nocAcknowledgements   NocAcknowledgement[]
   spaces                Space[]
   shareGrants           DeviceShareGrant[]
   organizationBranches  OrganizationBranch[] @relation("BranchTenant")
@@ -40,7 +41,10 @@ model Tenant {
   billingSubscription   BillingSubscription?
   billingUsage          BillingUsage?
 
+  invoices                Invoice[]
+  meteringRecords         MeteringRecord[]
   @@map("tenants")
+  deviceLocations       DeviceLocation[]
 }
 
 model User {
@@ -60,6 +64,8 @@ model User {
   updatedAt               DateTime        @updatedAt
   memberships             Membership[]
   ownedDevices            Device[]
+  openedMaintenance       DeviceMaintenance[] @relation("MaintenanceOpenedBy")
+  resolvedMaintenance     DeviceMaintenance[] @relation("MaintenanceResolvedBy")
 
   @@unique([email, tenantId])
   @@index([tenantId])
@@ -132,6 +138,33 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
+/// One open maintenance window per device, addressed by tenant.
+///
+/// The unique index below is `id`-based, so it constrains nothing about how many windows may be
+/// open at once -- the "one open window per device" rule is enforced in the service by a conditional
+/// write, and this index exists so a record can be addressed by `(id, tenantId)` the way every other
+/// tenant-scoped table in this schema is.
+model DeviceMaintenance {
+  id              String           @id @default(uuid())
+  tenantId        String
+  deviceId        String
+  device          Device           @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  status          MaintenanceStatus @default(OPEN)
+  reason          String
+  openedByUserId  String
+  openedBy        User             @relation("MaintenanceOpenedBy", fields: [openedByUserId], references: [id])
+  openedAt        DateTime         @default(now())
+  resolvedByUserId String?
+  resolvedBy      User?            @relation("MaintenanceResolvedBy", fields: [resolvedByUserId], references: [id])
+  resolvedAt      DateTime?
+  resolutionNote  String?
+
+  @@unique([id, tenantId])
+  @@index([tenantId, status])
+  @@index([deviceId, status])
+  @@map("device_maintenance")
+}
+
 model Device {
   id                       String                   @id @default(uuid())
   name                     String
@@ -150,6 +183,7 @@ model Device {
   capabilities             Capability[]
   dashboardBindings        DashboardWidgetBinding[] @relation("DashboardBindingDevice")
   deviceGroupMembers       DeviceGroupMember[]
+  meteringRecords          MeteringRecord[]
   automationTriggers       Automation[]              @relation("AutomationTriggerDevice")
   automationActions          AutomationAction[]          @relation("AutomationActionDevice")
   automationExecutionTriggers AutomationExecution[]       @relation("AutomationExecutionTriggerDevice")
@@ -157,6 +191,7 @@ model Device {
   sceneActions              SceneAction[]              @relation("SceneActionDevice")
   spacePlacement            SpaceDevicePlacement?
   shareGrants               DeviceShareGrant[]
+  maintenanceWindows        DeviceMaintenance[]
   createdAt                DateTime                 @default(now())
   updatedAt                DateTime                 @updatedAt
 
@@ -164,6 +199,7 @@ model Device {
   @@index([tenantId])
   @@index([ownerId])
   @@map("devices")
+  deviceLocations          DeviceLocation[]
 }
 
 model DeviceCredential {
@@ -200,6 +236,82 @@ model DeviceCommand {
   @@index([status])
   @@index([status, sentAt])
   @@map("device_commands")
+}
+
+// ---------------------------------------------------------------------------
+// Wave 6 — Capability template lifecycle
+//
+// `Capability.schemaVersion` exists per device, and `@@unique([deviceId, key])` means every
+// device declares its own version. That is what makes drift possible: the same key can sit at
+// 1.0.0 on one device and 2.0.0 on another, with nothing recording which is correct. The drift
+// report has existed and been rendered; this is what gives it an answer.
+// ---------------------------------------------------------------------------
+
+enum CapabilityTemplateStatus {
+  DRAFT
+  PUBLISHED
+  DEPRECATED
+}
+
+/// The tenant-wide declaration of a capability key — what shape it should have, independent of
+/// any single device. `key` is unique per tenant, so a fleet converges on one description
+/// rather than each device inventing one.
+model CapabilityTemplate {
+  id          String   @id @default(uuid())
+  tenantId    String
+  key         String
+  semanticType String
+  dataType    String
+  unit        String?
+  description String?
+  /// Set when the key was deprecated from the template side. Distinct from the version's own
+  /// lifecycle status: a key can be alive while its latest version is deprecated.
+  archivedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  versions    CapabilityTemplateVersion[]
+
+  @@unique([tenantId, key])
+  @@index([tenantId])
+  @@map("capability_templates")
+}
+
+/// One published revision of a template's shape.
+///
+/// `status` is a column rather than something derived from `createdAt`, because "which version
+/// is the fleet standardising on" has to be answerable, and an old draft must not read as
+/// current merely by being old.
+///
+/// The `CREATE UNIQUE INDEX … WHERE status = 'PUBLISHED'` in the migration is what makes
+/// "publish" exclusive: without it two published versions can coexist and the fleet target
+/// becomes undefined. It is deliberately *not* `@@unique([templateId, status])` — that would
+/// also cap the template at one draft and one deprecated version, so the second deprecation of
+/// a template's life would fail on a constraint with no visible cause.
+///
+/// Deprecating a version flips its status and inserts the replacement in one transaction, so
+/// no caller can observe a template with two published versions.
+model CapabilityTemplateVersion {
+  id             String                   @id @default(uuid())
+  templateId     String
+  template       CapabilityTemplate       @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  version        String
+  status         CapabilityTemplateStatus @default(DRAFT)
+  constraints    Json?
+  isReadable     Boolean                  @default(true)
+  isWritable     Boolean                  @default(false)
+  isReportable   Boolean                  @default(true)
+  publishedAt    DateTime?
+  deprecatedAt   DateTime?
+  /// The semantic type this revision changed, when a publication altered it. Nullable: most
+  /// revisions do not change it.
+  previousSemanticType String?
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  @@unique([templateId, version])
+  @@index([status])
+  @@map("capability_template_versions")
 }
 
 model Capability {
@@ -394,6 +506,16 @@ enum DeviceType {
   ACTUATOR
   GATEWAY
   CAMERA
+}
+
+/// A maintenance window is a separate record rather than a `DeviceStatus` value because
+/// `DeviceService.updateHeartbeat` writes `status: ACTIVE` on every heartbeat. A maintenance member
+/// of `DeviceStatus` would be overwritten by the device's own next ping, so a window would close
+/// itself within seconds of opening. Maintenance is therefore state that outlives the heartbeat,
+/// and the device's liveness state stays exactly what it was.
+enum MaintenanceStatus {
+  OPEN
+  RESOLVED
 }
 
 enum DeviceStatus {
@@ -858,6 +980,51 @@ enum AnalyticsSeverity {
   CRITICAL
 }
 
+// ---------------------------------------------------------------------------
+// Wave 6 — NOC operations
+//
+// The NOC console renders `AnalyticsFinding` rows and had no verb for acting on one. The census
+// found 23 hits for "ack" that were all command acknowledgements, one `on-call` in auth.service,
+// and nothing at all for runbook, postmortem, escalation or bulk action -- so a console that
+// could see a CRITICAL finding had no way to record that a human had seen it.
+//
+// `NocAcknowledgement` is that record. It is a separate table rather than two columns on
+// `AnalyticsFinding` because the finding is detector-owned and append-only, and an operator's
+// action on it is a different fact with a different writer.
+// ---------------------------------------------------------------------------
+
+/// A human having seen a finding.
+///
+/// Separate from resolving it. Acknowledging means "I have looked"; resolving means "this is
+/// fixed". Collapsing the two lets a first responder close an incident by acknowledging it, and
+/// the next responder has no way to know -- so the fields are separate and resolving requires an
+/// acknowledgement to exist first.
+///
+/// Unique on `findingId`, which is what stops a second acknowledgement overwriting the actor and
+/// timestamp of the first. Re-acknowledging returns the existing row rather than rewriting it: the
+/// value of the record is "who was on duty when this was first seen".
+model NocAcknowledgement {
+  id                String   @id @default(uuid())
+  findingId         String
+  finding           AnalyticsFinding @relation(fields: [findingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  tenantId          String
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  /// From the authenticated session, never a request body: an acknowledgement is a claim about
+  /// who was on duty, and a body-supplied actor would let one operator record another's name.
+  actorMembershipId  String
+  acknowledgedAt    DateTime @default(now())
+  /// Optional operator note. Kept separate from the acknowledgement itself so a later note cannot
+  /// rewrite when the finding was first seen.
+  note              String?
+  /// Set when the incident is actually closed, and only ever after `acknowledgedAt` exists.
+  resolvedAt        DateTime?
+  resolvedBy        String?
+
+  @@unique([findingId])
+  @@index([tenantId, acknowledgedAt])
+  @@map("noc_acknowledgements")
+}
+
 model AnalyticsFinding {
   id                  String               @id @default(uuid())
   tenantId            String
@@ -871,6 +1038,9 @@ model AnalyticsFinding {
   detectorVersion     String
   evidenceTelemetryId String?
   createdAt           DateTime             @default(now())
+  /// The operator action, if any. Nullable because the finding exists before anyone looks, and the
+  /// detector writes this row without knowing whether a NOC is staffed tonight.
+  acknowledgement     NocAcknowledgement?
 
   @@index([tenantId, createdAt])
   @@index([tenantId, deviceId])
@@ -1114,6 +1284,13 @@ model WebhookDelivery {
   ok              Boolean
   attemptCount    Int             @default(1)
   signatureHeader String?
+  // Why the attempt failed, captured where it is still known.
+  //
+  // `ok: false, statusCode: null` is ambiguous on its own: it is what a refused connection
+  // looks like, and also what a receiver that was never reached looks like. The operator
+  // surface exists to separate those two, so the reason is written at the `catch` in
+  // `dispatch` where it exists, rather than reconstructed later from a null column.
+  reason          String?
   createdAt       DateTime        @default(now())
 
   @@index([tenantId, createdAt])
@@ -1185,6 +1362,67 @@ enum SubscriptionStatus {
   PAST_DUE
 }
 
+/// Where an invoice is in its life. `PENDING` is only ever reached from a provider response --
+/// there is no path that sets it locally without a payment actually existing.
+enum InvoiceStatus {
+  SIMULATED
+  PENDING
+  SETTLED
+  FAILED
+  EXPIRED
+}
+
+/// A single metered quantity for one device in one period.
+///
+/// Unique per (tenant, device, period) on purpose: a period that gets recounted must update the
+/// existing row rather than append a second one, or a re-run silently bills the tenant twice.
+model MeteringRecord {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  deviceId   String
+  device     Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  periodStart DateTime
+  quantity   Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([id, tenantId])
+  @@unique([tenantId, deviceId, periodStart])
+  @@index([tenantId, periodStart])
+  @@map("metering_records")
+}
+
+model Invoice {
+  id              String        @id @default(uuid())
+  tenantId        String
+  tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  subscriptionId  String?
+  subscription    BillingSubscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  /// The order id the platform asked the provider for. Unique per tenant, so a webhook can locate
+  /// the invoice by the id the provider echoes back without scanning the table.
+  providerOrderId String
+  /// The provider's own id when it differs from the reference we supplied. Null on a simulated
+  /// invoice, because no provider ever issued one.
+  providerRef     String?
+  /// Minor units as an integer. Never a float: money stored as a float is the defect that surfaces
+  /// years later in a reconciliation nobody can explain.
+  amountCents     Int
+  currency        String        @default("IDR")
+  status          InvoiceStatus @default(SIMULATED)
+  paymentUrl      String?
+  /// When the provider last told us something about this invoice, if anything.
+  settledAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([id, tenantId])
+  @@unique([tenantId, providerOrderId])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
+  @@map("invoices")
+}
+
 model BillingPlan {
   id                      String             @id @default(uuid())
   tier                    SubscriptionPlanTier @unique
@@ -1205,6 +1443,7 @@ model BillingSubscription {
   currentPeriodStart DateTime
   currentPeriodEnd   DateTime
   createdAt          DateTime            @default(now())
+  invoices           Invoice[]
 
   @@map("billing_subscriptions")
 }
@@ -1220,15 +1459,33 @@ model BillingUsage {
   @@map("billing_usage")
 }
 
-// ADR-004: additive device location (GPS) — optional per device
+// ADR-004: additive device location (GPS) — one row per reported fix, kept as history.
+//
+// Changed in Wave 9. The original was `deviceId @unique` with no `tenantId`, which made it two things
+// at once: unable to answer "where was this device when it went offline", because each fix
+// overwrote the last; and answerable by anyone holding a device id, because the row belonged to
+// nobody in particular. Both are fixed here — the row is tenant-owned, and it is append-only.
+//
+// `latitude`/`longitude` stay Float on purpose. Unlike money, a coordinate genuinely is fractional;
+// do not "fix" this the way amountCents had to be fixed.
 model DeviceLocation {
-  id        String   @id @default(cuid())
-  deviceId  String   @unique
-  latitude  Float
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  deviceId String
+  device   Device @relation(fields: [deviceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  latitude Float
   longitude Float
-  label     String?
+  /// Human-readable place name. Nullable because a GPS fix has no label of its own.
+  label String?
+  /// When the fix arrived, as opposed to when this row was written. Kept separate so a replayed or
+  /// backfilled device timestamp is visible rather than silently becoming "now".
+  recordedAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([id, tenantId])
+  @@index([tenantId, deviceId, recordedAt])
+  @@index([tenantId, recordedAt])
   @@map("device_locations")
 }
 
@@ -1246,6 +1503,58 @@ model DeviceGroup {
   @@unique([tenantId, name])
   @@index([tenantId])
   @@map("device_groups")
+}
+
+// ---------------------------------------------------------------------------
+// Wave 6 — Saved reports
+//
+// `platform-reports/tenant-summary` and the tenant CSV export both recompute from `now`. That
+// makes them honest about the present and useless for anything else: the number an operator read
+// on Monday cannot be retrieved on Tuesday, so a report cannot be reproduced, and a report that
+// cannot be reproduced cannot be used to reconcile two people who read it at different times.
+//
+// `SavedReport` stores the rendered payload together with the window that produced it. The
+// payload is stored rather than the query, because regenerating on download would let the number
+// move underneath the operator between saving and re-reading -- the exact failure this removes.
+// ---------------------------------------------------------------------------
+
+enum SavedReportKind {
+  TENANT_SUMMARY
+}
+
+/// A report as it was produced, kept so it can be read again.
+///
+/// `expiresAt` is set at write time rather than computed on read, so the row states its own
+/// expiry instead of the reader having to know the retention policy. Expired reports are hidden
+/// from the list and refused on download; the row is not deleted, because a report that vanishes
+/// silently is indistinguishable from one that was never run.
+///
+/// Deliberately no scheduling fields. The owner chose saved runs over scheduled ones, and a
+/// `cron` column that nothing reads would be a feature that looks available in the data model
+/// and is not available in the product.
+model SavedReport {
+  id                String           @id @default(uuid())
+  tenantId          String
+  kind              SavedReportKind
+  /// The window that produced this report. Part of the artifact, not a parameter that was passed
+  /// and forgotten -- without it the payload cannot be re-derived or checked against live data.
+  rangeFrom         DateTime
+  rangeTo           DateTime
+  /// Hours the operator asked for, kept because `rangeFrom`/`rangeTo` alone do not say whether
+  /// the report service clamped the request.
+  requestedHours    Int
+  /// Rendered output, stored as produced.
+  payload           Json
+  rowCount          Int              @default(0)
+  /// The membership that saved it. The report list is the one place a report body could be read
+  /// by someone other than the operator who generated it.
+  actorMembershipId String
+  createdAt         DateTime         @default(now())
+  expiresAt         DateTime
+
+  @@index([tenantId, createdAt])
+  @@index([expiresAt])
+  @@map("saved_reports")
 }
 
 model DeviceGroupMember {

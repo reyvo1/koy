@@ -7,7 +7,16 @@
  */
 
 import { useEffect, useState } from 'react';
+import {
+  Bell,
+  CircleUser,
+  House,
+  LayoutGrid,
+  Radio,
+  type LucideIcon,
+} from 'lucide-react';
 import { AdminShellV3 } from '@/components/admin-shell-v3';
+import { QuarantineBanner } from '@/components/quarantine-banner';
 
 interface DeviceRow {
   id: string;
@@ -16,12 +25,19 @@ interface DeviceRow {
   status: string;
 }
 
-const TABS = [
-  { key: 'home', label: 'Home', icon: '' },
-  { key: 'devices', label: 'Devices', icon: '' },
-  { key: 'realtime', label: 'Realtime', icon: '' },
-  { key: 'alerts', label: 'Alerts', icon: '' },
-  { key: 'profile', label: 'Profile', icon: '' },
+/**
+ * These five tabs are the real bottom-nav of the Expo app being previewed, so each one needs
+ * a recognisable icon. Every `icon` here was an empty string, which rendered as a bare
+ * `<span className="text-base">` with nothing inside: the nav showed five labels and five
+ * blank gaps above them. Icons are real components rather than emoji so the preview matches
+ * the density of the rest of the console.
+ */
+const TABS: Array<{ key: string; label: string; icon: LucideIcon }> = [
+  { key: 'home', label: 'Home', icon: House },
+  { key: 'devices', label: 'Devices', icon: LayoutGrid },
+  { key: 'realtime', label: 'Realtime', icon: Radio },
+  { key: 'alerts', label: 'Alerts', icon: Bell },
+  { key: 'profile', label: 'Profile', icon: CircleUser },
 ];
 
 export default function MobilePreviewPage() {
@@ -43,6 +59,18 @@ export default function MobilePreviewPage() {
       title="Mobile App Preview"
       subtitle="Blueprint section 5 — tampilan aplikasi HP (Expo React Native)"
     >
+      <QuarantineBanner
+        works={[
+          'Pratinjau statis dari lima tab aplikasi Expo sesuai blueprint section 5.',
+          'Data perangkat yang ditampilkan berasal dari direktori perangkat admin yang nyata.',
+        ]}
+        doesNotWork={[
+          'Tidak ada feed telemetri langsung — tidak ada SSE, tidak ada polling, tidak ada data yang bergerak.',
+          'Angka yang tampil adalah nilai tersimpan saat halaman dimuat, bukan kondisi perangkat saat ini.',
+          'Ini bukan emulator dan bukan sesi aplikasi yang bisa dipakai.',
+        ]}
+      />
+
       <div className="flex flex-wrap gap-8">
         {/* Phone frame */}
         <div className="mx-auto w-[340px] rounded-[44px] border-[10px] border-slate-950 bg-[#0b1120] shadow-[0_25px_60px_rgba(0,0,0,.5)]">
@@ -111,7 +139,10 @@ export default function MobilePreviewPage() {
 
               {tab === 'alerts' && (
                 <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 text-center">
-                  <div className="text-3xl"></div>
+                  <Bell
+                    className="mx-auto h-8 w-8 text-slate-600"
+                    strokeWidth={1.6}
+                  />
                   <div className="mt-2 text-[13px] text-slate-400">Preview tidak mensimulasikan alert.</div>
                 </div>
               )}
@@ -127,15 +158,18 @@ export default function MobilePreviewPage() {
 
             {/* bottom nav */}
             <div className="flex border-t border-slate-800 bg-[#0f172a] px-2 py-2.5">
-              {TABS.map((t) => (
-                <button key={t.key} onClick={() => setTab(t.key)}
-                  className={`flex flex-1 flex-col items-center gap-0.5 rounded-lg py-1.5 text-[10px] transition-colors ${
-                    tab === t.key ? 'font-bold text-teal-300' : 'text-slate-500'
-                  }`}>
-                  <span className="text-base">{t.icon}</span>
-                  {t.label}
-                </button>
-              ))}
+              {TABS.map((t) => {
+                const Icon = t.icon;
+                return (
+                  <button key={t.key} onClick={() => setTab(t.key)}
+                    className={`flex flex-1 flex-col items-center gap-1 rounded-lg py-1.5 text-[10px] transition-colors ${
+                      tab === t.key ? 'font-bold text-teal-300' : 'text-slate-500'
+                    }`}>
+                    <Icon className="h-4 w-4" strokeWidth={1.9} aria-hidden />
+                    {t.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

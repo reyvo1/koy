@@ -1,9 +1,17 @@
 @import "tailwindcss";
+/*
+ * The single source of visual truth. User Web renders `iot-shell`, `iot-card`,
+ * `iot-state-notice` and `iot-button` from @iot-platform/design-system, but this import
+ * was missing — so every one of those classes was unstyled and the surface rendered as
+ * unframed text, which is why User Web did not look like the rest of the product.
+ * apps/admin-web/app/globals.css already imports the same file.
+ */
+@import '@iot-platform/design-system/styles.css';
 
 body {
   margin: 0;
-  background: #f8fafc;
-  color: #0f172a;
+  background: var(--iot-color-bg, #f8fafc);
+  color: var(--iot-color-text, #0f172a);
   font-family: "Inter", "Segoe UI", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }

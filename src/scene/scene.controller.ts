@@ -25,6 +25,7 @@ import {
 } from './scene.repository';
 import { DomainConflictException, DomainNotFoundException } from '../common/errors/domain-exceptions';
 import { ERROR_CODES } from '../common/errors/error-code';
+import { RbacAuditService } from '../rbac/rbac-audit.service';
 
 @Controller('scenes')
 @UseGuards(JwtAuthGuard, TenantContextGuard)
@@ -32,16 +33,50 @@ export class SceneController {
   constructor(
     private readonly scenes: SceneRepository,
     private readonly execution: SceneExecutionService,
+    private readonly audit: RbacAuditService,
   ) {}
+
+  /**
+   * Records who changed a scene, without deciding who may.
+   *
+   * `Scene` has no owner column, so an owner-or-admin rule is not expressible and a role gate
+   * would either lock ordinary members out of the product's primary function or permit
+   * everything. Before this, these mutations left no trace at all: the policy engine is only
+   * reached through `RbacPermissionGuard`, so an edit left no row anywhere. The audit row states
+   * in its `detail` that permission came from tenant scope alone, so it is never mistaken for a
+   * role check that passed.
+   */
+  private recordSceneMutation(
+    request: any,
+    sceneId: string,
+    action: 'CREATE' | 'UPDATE' | 'DELETE',
+  ): void {
+    const { tenantId, membershipId } = request.user.tenantContext;
+    void this.audit.recordMutation({
+      tenantId,
+      membershipId,
+      resourceType: 'scene',
+      resourceId: sceneId,
+      action,
+      detail:
+        'permitted by active tenant membership; scene has no owner column and no role gate',
+    });
+  }
 
   @Post()
   async create(@Request() request: any, @Body() body: unknown) {
     const input = validateCreateSceneInput(body);
     try {
-      return await this.scenes.createScene(
+      const created = await this.scenes.createScene(
         request.user.tenantContext.tenantId,
         input,
       );
+      this.recordSceneMutation(
+        request,
+        typeof created === 'string' ? created : (created as { id: string }).id,
+        'CREATE',
+      );
+      return created;
     } catch (cause) {
       if (
         cause instanceof ScenePersistenceError &&
@@ -126,6 +161,7 @@ export class SceneController {
 
   @Delete(':sceneId')
   async remove(@Request() request: any, @Param('sceneId') sceneId: string) {
+    this.recordSceneMutation(request, sceneId, 'DELETE');
     const deleted = await this.scenes.deleteTenantScene(
       request.user.tenantContext.tenantId,
       sceneId,
@@ -142,6 +178,7 @@ export class SceneController {
     @Param('sceneId') sceneId: string,
     @Body() body: { enabled?: boolean },
   ) {
+    this.recordSceneMutation(request, sceneId, 'UPDATE');
     const updated = await this.scenes.setTenantSceneEnabled(
       request.user.tenantContext.tenantId,
       sceneId,

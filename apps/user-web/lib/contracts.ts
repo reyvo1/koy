@@ -307,3 +307,33 @@ export interface UserDeviceDetailPayload {
   commandHistory: UserDeviceCommandHistoryItem[];
   technicalHistory: UserDeviceTechnicalHistory;
 }
+
+/**
+ * Full `CommandStatus` vocabulary, mirrored from the Prisma enum.
+ *
+ * The mobile and user-web clients poll a submitted command until it settles, so the terminal
+ * set is derived from this list rather than written out. An explicit terminal list would
+ * treat any status added to the enum later as non-terminal, and the poll would never stop.
+ * Deriving defaults a new status to terminal, which fails safe.
+ *
+ * `scripts/validate-rescue-baseline.mjs` pins this list against the Prisma enum, so drift
+ * between the app and the backend is a gate failure rather than a stuck spinner.
+ */
+export const COMMAND_STATUSES = [
+  'PENDING',
+  'SENT',
+  'ACKNOWLEDGED',
+  'FAILED',
+  'TIMED_OUT',
+] as const;
+
+export type CommandStatus = (typeof COMMAND_STATUSES)[number];
+
+export const IN_FLIGHT_COMMAND_STATUSES = ['PENDING', 'SENT'] as const;
+
+export const TERMINAL_COMMAND_STATUSES: ReadonlySet<string> = new Set(
+  COMMAND_STATUSES.filter(
+    (status) =>
+      !(IN_FLIGHT_COMMAND_STATUSES as readonly string[]).includes(status),
+  ),
+);

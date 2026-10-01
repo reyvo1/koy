@@ -1,10 +1,36 @@
 # UAT CHECKLIST — IoT Platform (Staging)
 
 Untuk: Rey (UAT manual, klik-klik saja)
-Akses staging:
-- Web Admin: http://127.0.0.1:3100
-- Login: admin@demo.id / Demo12345! (tenant: Demo Home)
-- Backend health: http://127.0.0.1:3000/health/ready
+Diperbarui: 30 September 2026
+
+## Akses
+
+Buat baseline dulu (sekali saja, idempotent — password **tidak** berubah saat diulang):
+
+```
+set -a && source .env && set +a
+node scripts/seed-uat-baseline.mjs
+```
+
+Kredensial ditulis ke `.uat-credentials` (git-ignored, mode 600). **Baca dari file itu** —
+kredensial tidak sengaja ditulis di dokumen ini maupun di repository.
+
+- Web Admin: http://127.0.0.1:3100  (jalankan: `cd apps/admin-web && npm run dev`)
+- Backend health: http://127.0.0.1:5000/health
+
+| Peran | Email | Catatan |
+|---|---|---|
+| Tenant admin | `uat.admin@iot.local` | satu-satunya yang boleh membuat device |
+| Tenant member | `uat.member@iot.local` | akses baca; aksi tulis ditolak 403 |
+| Platform admin | `uat.superadmin@iot.local` | lintas tenant, `/super/*` |
+
+## Kenapa blok akses ini pernah salah
+
+Versi lama menyuruh login `admin@demo.id / Demo12345!` di tenant "Demo Home" pada port
+3100/3000. Tidak satu pun itu ada: user tersebut tidak ada di database, tenant "Demo Home"
+tidak ada, dan port API yang benar 5000. String `admin@demo.id` bahkan ada di daftar
+*forbidden* di `scripts/validate-rescue-baseline.mjs` — gate dan dokumen saling bertentangan,
+dan gate tetap hijau karena forbidden-check hanya memindai `.ts/.tsx/.js/.mjs`, bukan `.md`.
 
 Catatan: MQTT broker & device fisik belum jalan di staging, jadi data
 perangkat mungkin kosong — halaman harus tetap tampil rapi dengan pesan
@@ -16,7 +42,7 @@ Cara pakai: centang [x] kalau OK, tulis CATATAN kalau ada masalah.
 
 ## A. LOGIN (5 menit)
 - [ ] Buka http://127.0.0.1:3100/login — halaman tampil, tidak rusak
-- [ ] Login dengan akun di atas — berhasil masuk ke dashboard
+- [ ] Login dengan akun dari `.uat-credentials` — berhasil masuk ke dashboard
 - [ ] Logout — kembali ke halaman login
 
 ## B. TENANT ADMIN (15 menit)
@@ -45,11 +71,11 @@ Cara pakai: centang [x] kalau OK, tulis CATATAN kalau ada masalah.
 
 ## C. SUPER ADMIN (15 menit)
 - [ ] Dashboard (/super/dashboard) — metrik platform tampil
-- [ ] Tenants (/super/tenants) — tenant "Demo Home" terlihat
+- [ ] Tenants (/super/tenants) — tenant "UAT Staging" terlihat
 - [ ] Subscriptions (/super/subscriptions) — paket/langganan atau kosong rapi
 - [ ] Quotas (/super/quotas) — kuota per paket tampil
 - [ ] Billing (/super/billing) — halaman tampil
-- [ ] Users (/super/users) — pengguna admin@demo.id terlihat
+- [ ] Users (/super/users) — pengguna uat.admin@iot.local terlihat
 - [ ] Roles (/super/roles) — halaman tampil
 - [ ] API Keys (/super/api-keys) — daftar key / kosong rapi
 - [ ] Devices (/super/devices) — daftar perangkat tenant
@@ -76,6 +102,17 @@ Cara pakai: centang [x] kalau OK, tulis CATATAN kalau ada masalah.
 - [ ] Mobile Device Detail — capability/telemetry/command history/OTA evidence backend-backed; current firmware/protocol tetap "belum ada kontrak" bila source tidak ada
 - [ ] Mobile Alerts — hanya WARNING/CRITICAL Module 16 untuk device yang terotorisasi; UI tidak mengklaim notification-delivery history
 - [ ] Mobile Settings — tidak ada mutation end-user palsu; tetap fail-closed tanpa kontrak write nyata
+
+## D2. PERILAKU YANG PERLU DISUDAHI (5 menit)
+
+Baris ini bukan temuan, tapi perilaku yangconfirmed lewat probe. Kalau hasil UAT berbeda dari
+sini, **itu yang perlu dilaporkan** — bukan checklistnya yang salah.
+
+- [ ] Member mencoba membuat device → **403**, bukan 500 dan bukan success
+- [ ] Tenant UAT baru saja dibuat: paketnya FREE dengan kuota 10 perangkat
+- [ ] Melewati kuota perangkat → **402** `BILLING_DEVICE_QUOTA_EXCEEDED`
+- [ ] Tidak ada tombol hapus device — `revoke` satu-satunya cara, dan itu yang membebaskan kuota
+- [ ] Integrations: bisa daftar & hapus, tetapi registrasi connector belum ada (Wave 8)
 
 ## E. KENYAMANAN UMUM (5 menit)
 - [ ] Semua halaman konsisten (warna teal/hitam untuk super, terang untuk tenant)

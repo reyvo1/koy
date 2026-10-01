@@ -18,6 +18,7 @@ import {
   DomainNotFoundException,
 } from '../common/errors/domain-exceptions';
 import { ERROR_CODES } from '../common/errors/error-code';
+import { BillingQuotaService } from '../billing/billing-quota.service';
 import { IsString, MaxLength, MinLength } from 'class-validator';
 
 class CreateTenantDto {
@@ -51,7 +52,10 @@ const MAX_LIST_TAKE = 200;
 @Controller('admin')
 @UseGuards(JwtAuthGuard, TenantContextGuard, AdminRoleGuard, PlatformRoleGuard)
 export class AdminDirectoryController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly billingQuota: BillingQuotaService,
+  ) {}
 
   @Get('tenants')
   @ApiOperation({ summary: 'List tenants (bounded directory view)' })
@@ -92,6 +96,14 @@ export class AdminDirectoryController {
       data: { name: dto.name.trim() },
       select: { id: true, name: true, createdAt: true },
     });
+    // A tenant created without a subscription is unmetered: `checkDeviceQuota` has no plan
+    // to compare a device count against, and it fails closed. That makes the subscription
+    // part of creating a tenant rather than an optional later step — a platform admin who
+    // creates a tenant expects a working meter, not a tenant that cannot provision its
+    // first device. FREE is a seeded plan with a real allowance, and `ensureSubscription`
+    // throws if the plan row is missing, so a broken plan seeds surface here instead of
+    // silently yielding an unmetered tenant.
+    await this.billingQuota.ensureSubscription({ tenantId: tenant.id, planTier: 'FREE' });
     return { ...tenant, createdAt: tenant.createdAt.toISOString() };
   }
 

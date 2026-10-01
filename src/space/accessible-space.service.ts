@@ -145,7 +145,18 @@ export class AccessibleSpaceService {
 }
 
 function sanitizeDevice(
-  device: Device,
+  // The public device projection, not the full Prisma row. `DeviceService.findAll` now
+  // selects a column allowlist, so the record arriving here no longer carries the credential
+  // and ownership columns. Typing this as the full `Device` model both misdescribed the input
+  // and would have type-checked the leak back in: a mapper that accepts a wider type than it
+  // receives is a mapper nobody can tell is safe.
+  device: {
+    id: string;
+    name: string;
+    type: Device['type'];
+    status: Device['status'];
+    lastHeartbeatAt: Date | null;
+  },
   canControl: boolean,
   room: { id: string; name: string; path: string } | null,
 ): WorkspaceDevice {

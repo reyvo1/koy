@@ -72,6 +72,16 @@ services:
       TEST_DATABASE_URL: postgresql://${POSTGRES_USER:-iot}:${POSTGRES_PASSWORD:-iot_local_only}@postgres:5432/${POSTGRES_DB:-iot}
       REDIS_URL: redis://redis:6379
       MQTT_BROKER_URL: mqtt://emqx:1883
+      # The broker's management API, as seen from *inside this container*.
+      #
+      # `.env` holds `EMQX_API_URL=http://127.0.0.1:18083` because that is the right address for a
+      # process on the host. Inside the API container 127.0.0.1 is the container itself, so the
+      # management surface reported "broker unreachable" while the broker was running and a client
+      # was connected -- the exact failure the surface exists to detect, inverted.
+      #
+      # `${EMQX_API_URL_INTERNAL:-http://emqx:18083}` resolves the same way the other service names
+      # do, so the two can be reached from either side without one of them being a lie.
+      EMQX_API_URL: ${EMQX_API_URL_INTERNAL:-http://emqx:18083}
     ports:
       - "${PORT:-3000}:3000"
     depends_on:
@@ -92,6 +102,39 @@ services:
       retries: 30
       start_period: 10s
     restart: unless-stopped
+
+  # Wave 9, step 4: RTSP -> WebRTC media runtime.
+  #
+  # go2rtc rather than MediaMTX because Wave 9 needs exactly one thing: take an RTSP stream and hand
+  # it to a browser over WebRTC. go2rtc does that in a single small container with no configuration
+  # file. MediaMTX is the better choice the day recordings or a control API are needed; adding it
+  # later does not invalidate this decision, it only replaces this service.
+  #
+  # No volume is mounted deliberately. go2rtc holds stream configuration in a YAML file it writes to
+  # its working directory, and every stream a camera registers carries RTSP credentials. Persisting
+  # that to disk on a shared host would put camera passwords somewhere nothing else in this stack puts
+  # them. Streams are added per session instead, and disappear with it.
+  #
+  # Ports: 1984 is the control API, 8189 is the WebRTC endpoint a browser actually connects to,
+  # 8554 RTSP in and 8555 RTSP out. The control API and the WebRTC endpoint are *different* ports --
+  # the readiness probe and the media probe talk to 1984, and 8189 answers SDP but not `/api`.
+  go2rtc:
+    image: alexxit/go2rtc:latest
+    container_name: iot-rescue-go2rtc
+    restart: unless-stopped
+    ports:
+      - "${GO2RTC_API_PORT:-1984}:1984"
+      - "${GO2RTC_WEBRTC_PORT:-8189}:8189"
+    healthcheck:
+      test:
+        - CMD
+        - /bin/sh
+        - -c
+        - "wget -q -O - http://127.0.0.1:1984/api >/dev/null 2>&1 || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
 
 volumes:
   iot_rescue_postgres:

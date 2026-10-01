@@ -51,9 +51,13 @@ describe('Module 10 Slice 10.4 capability-driven widget resolution contract', ()
 
   it('exposes an authenticated tenant-isolated resolution endpoint', () => {
     expect(controller).toContain("@Get(':dashboardId/resolution')");
-    expect(controller).toContain(
-      '@UseGuards(JwtAuthGuard, TenantContextGuard)',
-    );
+    // Assert the guard list by membership, not as a pinned string. Pinning
+    // `JwtAuthGuard, TenantContextGuard)` meant that adding a third guard failed the test even
+    // though the extra guard only strengthens the boundary this assertion exists to protect.
+    // The intent is "authenticated and tenant-scoped"; that stays true as guards are added.
+    const guardList = controller.match(/@UseGuards\(([^)]*)\)/)?.[1] ?? '';
+    expect(guardList).toContain('JwtAuthGuard');
+    expect(guardList).toContain('TenantContextGuard');
     expect(controller).toContain("name: 'X-Tenant-Id'");
     expect(service).toContain("event: 'dashboard.api.resolved'");
     expect(moduleFile).toContain('DashboardWidgetResolver');

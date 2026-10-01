@@ -14,7 +14,7 @@ audits the existing coverage.
   authentication flow present.
 - Operational summary dashboard: `operational-summary-dashboard.tsx`,
   `operational-summary-experience.tsx`, backed by
-  `app/api/operational-summary` — the admin operational dashboard delivered
+  `app/api/admin/operational-summary` — the admin operational dashboard delivered
   in Module 10 checkpoints.
 - Covered by `web:typecheck` and `web:build` gates; full Jest green
   (148 suites / 1023 tests at HEAD `c08bfd9`).

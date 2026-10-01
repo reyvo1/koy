@@ -22,6 +22,7 @@ import {
 } from '../common/errors/domain-exceptions';
 import { ERROR_CODES } from '../common/errors/error-code';
 import { isSchedulerRuntimeEnabled } from './scheduler-runtime-policy';
+import { RbacAuditService } from '../rbac/rbac-audit.service';
 
 @Controller('schedules')
 @UseGuards(JwtAuthGuard, TenantContextGuard)
@@ -29,7 +30,34 @@ export class ScheduleController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly validator: ScheduleDomainValidator,
+    private readonly audit: RbacAuditService,
   ) {}
+
+  /**
+   * Records who changed a schedule, without deciding who may.
+   *
+   * `Schedule` has no owner column, so an owner-or-admin rule is not expressible and a role gate
+   * would either lock ordinary members out of scheduling or permit everything. These mutations
+   * previously left no trace at all, because the policy engine is only reached through
+   * `RbacPermissionGuard`. The `detail` says permission came from tenant scope alone, so the row
+   * is never mistaken for a role check that passed.
+   */
+  private recordScheduleMutation(
+    request: any,
+    scheduleId: string,
+    action: 'CREATE' | 'UPDATE' | 'DELETE',
+  ): void {
+    const { tenantId, membershipId } = request.user.tenantContext;
+    void this.audit.recordMutation({
+      tenantId,
+      membershipId,
+      resourceType: 'schedule',
+      resourceId: scheduleId,
+      action,
+      detail:
+        'permitted by active tenant membership; schedule has no owner column and no role gate',
+    });
+  }
 
   @Post()
   async create(@Request() request: any, @Body() body: Record<string, unknown>) {
@@ -48,7 +76,7 @@ export class ScheduleController {
     }
 
     const kind = body.kind as 'CRON' | 'COUNTDOWN';
-    return this.prisma.schedule.create({
+    const created = await this.prisma.schedule.create({
       data: {
         tenantId,
         name: String(body.name).trim(),
@@ -72,6 +100,8 @@ export class ScheduleController {
             : 'SKIP_TO_NEXT',
       },
     });
+    this.recordScheduleMutation(request, created.id, 'CREATE');
+    return created;
   }
 
   @Get()
@@ -101,6 +131,7 @@ export class ScheduleController {
     @Param('scheduleId') scheduleId: string,
     @Body() body: { enabled: boolean },
   ) {
+    this.recordScheduleMutation(request, scheduleId, 'UPDATE');
     const schedule = await this.prisma.schedule.findFirstOrThrow({
       where: {
         id: scheduleId,
@@ -164,6 +195,7 @@ export class ScheduleController {
 
   @Delete(':scheduleId')
   async remove(@Request() request: any, @Param('scheduleId') scheduleId: string) {
+    this.recordScheduleMutation(request, scheduleId, 'DELETE');
     const result = await this.prisma.schedule.deleteMany({
       where: { id: scheduleId, tenantId: request.user.tenantContext.tenantId },
     });

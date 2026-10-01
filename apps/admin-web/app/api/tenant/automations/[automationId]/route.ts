@@ -75,6 +75,12 @@ export async function PUT(
     (client) =>
       client.request(`/automations/${automationId}`, {
         method: 'PUT',
+        // Without an explicit JSON content type, Fastify does not parse the body, so
+        // `@Body()` arrived empty on the backend and the replace endpoint rejected every
+        // save with "expectedRevision wajib angka" — even though the client had sent a
+        // valid integer and the proxy's own guard had accepted it. The POST sibling route
+        // already sets this header; PUT was the odd one out.
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ expectedRevision, definition }),
       }),
     { unauthorized: 'Sesi tidak valid.', unavailable: 'Gagal memperbarui otomasi' },

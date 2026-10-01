@@ -169,6 +169,77 @@ export class MetricsService {
     );
   }
 
+  /**
+   * Structured snapshot of the recorded counters and histograms.
+   *
+   * The platform console needs to render runtime state as typed JSON rather than scrape the
+   * Prometheus text, but it must not invent worker health: this returns only values that
+   * were genuinely recorded, with an explicit `recorded: false` for a metric family that
+   * has seen no events yet, so "no data" is never rendered as "zero" or "healthy".
+   */
+  snapshot(): {
+    recordedAt: string;
+    families: Array<{
+      name: string;
+      help: string;
+      type: 'counter' | 'histogram';
+      recorded: boolean;
+      series: Array<{ labels: Record<string, string>; value: number; count?: number; sum?: number }>;
+    }>;
+  } {
+    const families: Array<{
+      name: string;
+      help: string;
+      type: 'counter' | 'histogram';
+      recorded: boolean;
+      series: Array<{ labels: Record<string, string>; value: number; count?: number; sum?: number }>;
+    }> = [];
+
+    for (const name of Array.from(this.counters.keys()).sort()) {
+      const definition = this.counters.get(name)!;
+      families.push({
+        name,
+        help: definition.help,
+        type: 'counter',
+        recorded: definition.values.size > 0,
+        series: Array.from(definition.values.values())
+          .sort((left, right) =>
+            this.serializeLabels(left.labels).localeCompare(
+              this.serializeLabels(right.labels),
+            ),
+          )
+          .map((entry) => ({
+            labels: entry.labels as Record<string, string>,
+            value: entry.value,
+          })),
+      });
+    }
+
+    for (const name of Array.from(this.histograms.keys()).sort()) {
+      const definition = this.histograms.get(name)!;
+      families.push({
+        name,
+        help: definition.help,
+        type: 'histogram',
+        recorded: definition.values.size > 0,
+        series: Array.from(definition.values.values())
+          .sort((left, right) =>
+            this.serializeLabels(left.labels).localeCompare(
+              this.serializeLabels(right.labels),
+            ),
+          )
+          .map((entry) => ({
+            labels: entry.labels as Record<string, string>,
+            value: entry.count,
+            count: entry.count,
+            sum: entry.sum,
+          })),
+      });
+    }
+
+    return { recordedAt: new Date().toISOString(), families };
+  }
+
   renderPrometheus(): string {
     const lines: string[] = [
       '# HELP iot_platform_info Static information about the IoT Platform service.',

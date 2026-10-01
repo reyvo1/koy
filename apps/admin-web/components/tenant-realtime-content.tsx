@@ -48,17 +48,17 @@ function Chart({
   return (
     <div>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Grafik telemetri 24 jam">
-        <line x1={PAD.l} y1={H - PAD.b} x2={W - PAD.r} y2={H - PAD.b} stroke="var(--iot-border)" />
-        <line x1={PAD.l} y1={PAD.t} x2={PAD.l} y2={H - PAD.b} stroke="var(--iot-border)" />
-        <polyline points={points.join(' ')} fill="none" stroke="var(--iot-primary)" strokeWidth={2} />
+        <line x1={PAD.l} y1={H - PAD.b} x2={W - PAD.r} y2={H - PAD.b} stroke="var(--iot-color-border)" />
+        <line x1={PAD.l} y1={PAD.t} x2={PAD.l} y2={H - PAD.b} stroke="var(--iot-color-border)" />
+        <polyline points={points.join(' ')} fill="none" stroke="var(--iot-color-accent)" strokeWidth={2} />
       </svg>
-      <div className="mt-1 flex items-center gap-2 text-[12px]" style={{ color: 'var(--iot-text-muted)' }}>
+      <div className="mt-1 flex items-center gap-2 text-[12px]" style={{ color: 'var(--iot-color-muted)' }}>
         <span
           className={`h-2 w-2 rounded-full ${live.connected ? 'animate-pulse bg-emerald-500' : 'bg-slate-300'}`}
         />
         {live.connected ? 'Live' : 'Menunggu data realtime'}
         {live.value !== null && (
-          <span className="ml-auto font-semibold" style={{ color: 'var(--iot-primary)' }}>
+          <span className="ml-auto font-semibold" style={{ color: 'var(--iot-color-accent)' }}>
             {live.value}
           </span>
         )}
@@ -141,7 +141,7 @@ export default function TenantRealtimeContent() {
           <ServerCrash className="h-8 w-8 text-slate-400" strokeWidth={1.5} />
         </span>
         <p className="mb-0 mt-5 text-[15px] font-bold">Data realtime tidak tersedia</p>
-        <p className="mt-2 mb-0 text-[13px]" style={{ color: 'var(--iot-text-muted)' }}>
+        <p className="mt-2 mb-0 text-[13px]" style={{ color: 'var(--iot-color-muted)' }}>
           Backend ({error}). Coba lagi nanti.
         </p>
       </div>
@@ -176,7 +176,7 @@ export default function TenantRealtimeContent() {
                 ? 'text-white shadow-md'
                 : 'bg-white text-slate-500 shadow-sm ring-1 ring-slate-200 hover:text-teal-700'
             }`}
-            style={device.id === selectedId ? { background: 'var(--iot-primary)' } : {}}
+            style={device.id === selectedId ? { background: 'var(--iot-color-accent)' } : {}}
           >
             {device.name ?? device.id.slice(0, 8)}
           </button>
@@ -201,8 +201,8 @@ export default function TenantRealtimeContent() {
 
       {/* Empty-state hint */}
       <div className="flex items-center gap-3 rounded-xl border border-dashed border-slate-300 px-4 py-3">
-        <Activity className="h-4 w-4 shrink-0" style={{ color: 'var(--iot-primary)' }} strokeWidth={2} />
-        <p className="m-0 text-[12.5px]" style={{ color: 'var(--iot-text-muted)' }}>
+        <Activity className="h-4 w-4 shrink-0" style={{ color: 'var(--iot-color-accent)' }} strokeWidth={2} />
+        <p className="m-0 text-[12.5px]" style={{ color: 'var(--iot-color-muted)' }}>
           Data realtime mengalir via SSE setelah perangkat online dan mengirim heartbeat.
         </p>
       </div>

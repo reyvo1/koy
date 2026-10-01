@@ -24,6 +24,29 @@ IoT Platform systemd service
 
 The NestJS application binds to `127.0.0.1`. Nginx is the only public HTTP listener. The application trusts forwarded addresses only from loopback, matching the same-host reverse-proxy contract.
 
+### Verifying the terminator
+
+`node scripts/verify-tls-terminator.mjs` (`npm run tls:verify`) starts nginx on the committed
+template — with only the two substitutions this document tells the operator to make, the
+example TLS path and the upstream address — and then exercises the listener: config accepted,
+no deprecation warning, HTTP/2 actually negotiated, proxy round trip, plain-HTTP redirect,
+`/metrics` refused off loopback, HSTS reaching the client, TLS 1.3 negotiable, TLS 1.0 refused.
+
+Two defects came out of running it that reading the file did not surface:
+
+- `listen 443 ssl http2;` is deprecated in current nginx. `nginx -t` still reports
+  *test is successful* while warning twice, so a template can be on its way to a hard failure
+  with nothing in the pipeline noticing.
+- The mechanical fix is easy to misplace. Moving `http2 on;` into the port-80 redirect block
+  also validates cleanly, completes a TLS handshake, and then serves **HTTP/1.1**. Measured on
+  the same certificate: `HTTP/1.1` with the directive in the wrong block, `HTTP/2` in the TLS
+  block.
+
+`test/nginx-tls-terminator.contract.spec.ts` pins the source shape statically. It lives under
+`test/` rather than beside the template because jest's `roots` are `src`, `test` and
+`apps/user-mobile/src` — a spec parked in `ops/` compiles, passes when run by hand, and is
+absent from the full suite.
+
 ## Least-Privilege Filesystem Contract
 
 Required identities and paths:
@@ -115,7 +138,26 @@ The drill requires:
 - `NODE_ENV=test`;
 - `RECOVERY_DRILL_TESTS_ALLOWED=true`;
 - `TEST_DATABASE_URL` or `DATABASE_URL` with database-creation privileges;
-- PostgreSQL client tools. On Windows, `PG_BIN_DIR` may point to the PostgreSQL `bin` directory; otherwise the runner discovers standard PostgreSQL installations.
+- PostgreSQL client tools. On Windows, `PG_BIN_DIR` may point to the PostgreSQL `bin` directory; otherwise the runner discovers standard PostgreSQL installations;
+- **client and server major versions that match.** This is checked before any work starts.
+
+### Why the client version must match the server
+
+The drill previously failed here with `pg_restore failed with exit code 1` and, one line below
+it, `unrecognized configuration parameter "transaction_timeout"`. That parameter was introduced
+in PostgreSQL 17, so the message was really "your `pg_dump` is newer than your server" — and
+nothing said so. An operator restoring onto a provisioned host would have had no way to tell
+that the fix was the client version rather than the dump, the restore flags, or the database.
+
+PostgreSQL supports a newer `pg_dump` against an older server for *backup*, but not for
+*restore*: the dump can carry settings the older server has never heard of. The drill now
+compares `pg_dump --version` with `SHOW server_version` and refuses to start when the majors
+differ, naming both versions and the fix. Verified here: a `pg_dump` 18.6 client against a
+PostgreSQL 16.15 server is rejected with that message, and the same drill passes end to end
+against an 18.6 server — 36 applied migrations and verified data.
+
+If the drill is run on a host whose client tools are newer than the server, install matching
+client tools and point `PG_BIN_DIR` at them.
 
 This transient CI drill validates dump and restore semantics. Production backups remain encrypted by the operational backup script.
 

@@ -71,26 +71,15 @@ export class AdminBillingDirectoryController {
     };
   }
 
-  @Get('api-keys')
-  @ApiOperation({ summary: "List the tenant's API keys (metadata only)" })
-  async listApiKeys(@Request() request: AdminOperationsRequest) {
-    const tenantId = request.user.tenantContext.tenantId;
-    const keys = await this.prisma.apiKey.findMany({
-      where: { tenantId },
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      take: MAX_LIST_TAKE,
-      select: {
-        id: true,
-        name: true,
-        keyPrefix: true,
-        status: true,
-        lastUsedAt: true,
-        expiresAt: true,
-        createdAt: true,
-      },
-    });
-    return { total: keys.length, items: keys };
-  }
+  // Tenant-scoped API-key listing lives in AdminApiKeysController, next to the create and
+  // revoke routes that share the same guard set.
+  //
+  // It used to sit here, behind this controller's class-level PlatformRoleGuard, while
+  // `POST /admin/api-keys` and `DELETE /admin/api-keys/:id` were guarded only by
+  // AdminRoleGuard. The result was a tenant admin who could mint a key, see the plaintext
+  // once, and then never list their own keys again — a role that can create and destroy a
+  // credential but not see it. Moving it keeps the whole tenant key surface on one
+  // authorisation rule.
 
   @Get('audit-logs')
   @ApiOperation({ summary: 'Recent RBAC + share audit entries (bounded)' })

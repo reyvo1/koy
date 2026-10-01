@@ -120,7 +120,7 @@ function TelemetrySparkline() {
       <div className="mb-2 flex items-center justify-between gap-3">
         <div>
           <div className="text-[13.5px] font-bold text-slate-100">Telemetri</div>
-          <div className="text-[11.5px]" style={{ color: 'var(--iot-text-muted)' }}>
+          <div className="text-[11.5px]" style={{ color: 'var(--iot-color-muted)' }}>
             rata-rata per jam · {rangeLabel}
           </div>
         </div>
@@ -233,7 +233,7 @@ export default function TenantDashboardPage() {
                 key={stat.label}
                 href={stat.href}
                 className="iot2-stat group block"
-                style={{ ['--accent' as string]: 'var(--iot-primary)' }}
+                style={{ ['--accent' as string]: 'var(--iot-color-accent)' }}
               >
                 <span className={`iot2-stat__icon ${stat.tone} transition-transform duration-200 group-hover:scale-110`}>
                   <Icon className="h-[19px] w-[19px]" strokeWidth={2} />

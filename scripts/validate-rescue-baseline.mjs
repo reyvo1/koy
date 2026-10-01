@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 
 const root = resolve(process.cwd());
 const failures = [];
@@ -8,6 +8,34 @@ const checks = [];
 function check(name, condition, detail = '') {
   checks.push({ name, pass: Boolean(condition), detail });
   if (!condition) failures.push(`${name}${detail ? `: ${detail}` : ''}`);
+}
+
+/**
+ * Strips comments before checking for forbidden content.
+ *
+ * The surfaces that had to be corrected carry doc comments naming the exact fabricated
+ * strings they used to contain, so a naive substring scan reports the correction as the
+ * defect. A comment is never rendered, so content inside one cannot reach a user, and
+ * stripping it makes the guardrail test what actually ships.
+ */
+function stripComments(source) {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/(^|[^:])\/\/[^\n]*/g, '$1 ');
+}
+
+function listFiles(dir) {
+  const out = [];
+  const walk = (current) => {
+    for (const entry of readdirSync(current, { withFileTypes: true })) {
+      if (entry.name === 'node_modules' || entry.name === '.next') continue;
+      const path = join(current, entry.name);
+      if (entry.isDirectory()) walk(path);
+      else out.push(path);
+    }
+  };
+  walk(dir);
+  return out;
 }
 
 function read(path) {
@@ -97,10 +125,39 @@ check(
 );
 const superShell = read('apps/admin-web/components/super-admin-shell.tsx');
 check('quarantined NOC hidden from super nav', !superShell.includes("direct: '/noc'"));
+// These four checks previously asserted the *pre-AppShell* mechanism: a `direct:` nav entry and
+// per-shell usePathname()/isActiveRoute(). Active tracking moved into the shared AppShell
+// (isActive + prefix match + aria-current) driven by an `active` prop each page passes, so the
+// old literals could never match again. They are rewritten to test the mechanism that actually
+// ships, which is strictly stronger: every page must pass `active`, not just the shell.
 check(
-  'platform command monitor is visible only after a read-only cross-tenant history contract exists',
-  superShell.includes("direct: '/super/commands'") &&
+  'platform command monitor is reachable and backed by a real component',
+  /href:\s*'\/super\/commands'/.test(superShell) &&
     existsSync(join(root, 'apps/admin-web/components/super-command-monitor-content.tsx')),
+);
+const superPagesWithoutActive = listFiles(join(root, 'apps/admin-web/app/super'))
+  .filter((file) => file.endsWith('page.tsx'))
+  .filter((file) => !readFileSync(file, 'utf8').includes('active='));
+check(
+  'every super admin page declares its own active nav entry',
+  superPagesWithoutActive.length === 0,
+  superPagesWithoutActive
+    .map((file) => relative(join(root, 'apps/admin-web/app/super'), file))
+    .join(', '),
+);
+const appShell = read('apps/admin-web/components/app-shell.tsx');
+check(
+  'shared app shell tracks the active route with prefix matching and aria-current',
+  /const isActive = \(href: string\)/.test(appShell) &&
+    /activePath\.startsWith\(/.test(appShell) &&
+    /aria-current/.test(appShell) &&
+    // A call that is present but short-circuited never runs, so every /super/xxx page would
+    // render with no nav item highlighted while the text still looks correct. The plain
+    // `activePath.startsWith(` presence test cannot see that, so dead code in this function is
+    // rejected outright.
+    !/false\s*&&\s*activePath\.startsWith\(/.test(appShell) &&
+    !/activePath\.startsWith\([^)]*\)\s*&&\s*false/.test(appShell),
+  'active tracking lives here, so a per-shell usePathname assertion is the wrong guard',
 );
 
 // RESCUE-03 UI/product consolidation guardrails.
@@ -134,19 +191,27 @@ check(
     adminLoginRoute.includes("backendFetch('/auth/logout'") &&
     adminLoginRoute.includes('Akun ini tidak memiliki akses ke konsol administrator'),
 );
+// Role gating is per shell; route tracking is per shell via the `active` prop into AppShell.
 check(
-  'canonical admin shells fail closed on role hints and auto-track pathname',
+  'canonical admin shells fail closed on role hints',
   tenantShell.includes('useAdminSessionRole()') &&
-    tenantShell.includes('usePathname()') &&
     superShell.includes('useAdminSessionRole()') &&
-    superShell.includes('usePathname()') &&
-    compatibilityShell.includes('useAdminSessionRole()') &&
-    compatibilityShell.includes('usePathname()'),
+    compatibilityShell.includes('useAdminSessionRole()'),
+);
+const tenantPagesWithoutActive = listFiles(join(root, 'apps/admin-web/app/tenant'))
+  .filter((file) => file.endsWith('page.tsx'))
+  .filter((file) => !readFileSync(file, 'utf8').includes('active='));
+check(
+  'every tenant admin page declares its own active nav entry',
+  tenantPagesWithoutActive.length === 0,
+  tenantPagesWithoutActive
+    .map((file) => relative(join(root, 'apps/admin-web/app/tenant'), file))
+    .join(', '),
 );
 check(
   'super navigation keeps nested routes active',
-  superShell.includes('function isActiveRoute(') &&
-    superShell.includes('currentPath.startsWith(`${href}/`)'),
+  /activePath\.startsWith\(/.test(read('apps/admin-web/components/app-shell.tsx')),
+  'prefix matching lives in AppShell; the super shell no longer owns it',
 );
 
 const legacyDeviceDetail = read('apps/admin-web/app/perangkat/[deviceId]/page.tsx');
@@ -1150,17 +1215,28 @@ check(
   'end-user command reconciliation never treats SENT/PENDING as final device state',
   userWebWidgetR4.includes("case 'SENT':") &&
     userWebWidgetR4.includes("case 'PENDING':") &&
-    mobileWidgetR4.includes('commandFeedback(result.status)') &&
+    /commandFeedback\((?:dashboardCopy|copy), result\.status\)/.test(mobileWidgetR4) &&
     read('apps/user-mobile/src/localization/messages.ts').includes('Command masih menunggu ACK perangkat'),
 );
 
 check(
   'canonical mobile shell preserves five-tab blueprint on the secure Expo root',
-  read('apps/user-mobile/src/ui/mobile-authenticated-shell.tsx').includes("{ key: 'home', label: 'Home' }") &&
-    read('apps/user-mobile/src/ui/mobile-authenticated-shell.tsx').includes("{ key: 'devices', label: 'Devices' }") &&
-    read('apps/user-mobile/src/ui/mobile-authenticated-shell.tsx').includes("{ key: 'realtime', label: 'Realtime' }") &&
-    read('apps/user-mobile/src/ui/mobile-authenticated-shell.tsx').includes("{ key: 'alerts', label: 'Alerts' }") &&
-    read('apps/user-mobile/src/ui/mobile-authenticated-shell.tsx').includes("{ key: 'profile', label: 'Profile' }") &&
+  // The tab labels come from the active locale's copy, so the five tabs are pinned by key and by the
+  // copy key each one renders. Asserting the literal `label: 'Home'` string would fail the moment the
+  // chrome is translated, which is the defect this wave closed -- and it would then be "fixed" by
+  // hardcoding English again. Both locales are checked so neither can drop a tab.
+  ['home', 'devices', 'realtime', 'alerts', 'profile'].every((key) =>
+    read('apps/user-mobile/src/ui/mobile-authenticated-shell.tsx').includes(
+      `{ key: '${key}', labelKey:`,
+    ),
+  ) &&
+    ['id', 'en'].every((locale) =>
+      ['home', 'devices', 'realtime', 'alerts', 'profile'].every((key) =>
+        new RegExp(`nav:\\s*\\{[^}]*\\b${key}:`).test(
+          read('apps/user-mobile/src/localization/messages.ts'),
+        ),
+      ),
+    ) &&
     read('apps/user-mobile/src/ui/mobile-authenticated-shell.tsx').includes('loadMobileDevices(mobileSessionClient)') &&
     read('apps/user-mobile/src/ui/mobile-authenticated-shell.tsx').includes('loadLatestTelemetry(mobileSessionClient, deviceId)') &&
     read('apps/user-mobile/src/ui/mobile-authenticated-shell.tsx').includes('<MobileDeviceDetailPanel') &&
@@ -1199,13 +1275,23 @@ check(
     tenantHistoricalR6.includes('Data telemetri gagal dimuat') &&
     tenantHistoricalR6.includes('Belum ada data agregat untuk rentang ini.'),
 );
+// This check previously REQUIRED the string 'VIEW: owner/VIEW/CONTROL share' to be present and
+// the corrected phrasing to be absent. That pinned the fabricated ROLE_META content in place:
+// deleting the fabrication would have failed this gate, which is one reason it survived so
+// long. The legitimate intent — never render a role count as zero when the platform directory
+// could not be read — is kept, and the invented-content assertions are gone. The real
+// replacement is enforced by the permission-catalog checks and rbac-permission-catalog.spec.ts.
 check(
   'super role directory does not report zero users when the platform directory fails',
   superRolesR6.includes('const [error, setError]') &&
-    superRolesR6.includes('Jumlah per role tidak ditampilkan sebagai nol.') &&
-    superRolesR6.includes("users === null ? '—'") &&
-    superRolesR6.includes('VIEW: owner/VIEW/CONTROL share') &&
-    !superRolesR6.includes('device & telemetry: read, command: control'),
+    /users\s*===\s*null/.test(superRolesR6) &&
+    !/String\(\s*users\.filter/.test(superRolesR6),
+  'role counts must be gated on a successful directory read, not defaulted to a number',
+);
+check(
+  'super roles content no longer pins the fabricated permission descriptions',
+  !superRolesR6.includes('VIEW: owner/VIEW/CONTROL share'),
+  'this description describes device-level VIEW/CONTROL access, not an enforced permission',
 );
 check(
   'super provisioning distinguishes directory outage from a valid empty tenant/device inventory',
@@ -1437,7 +1523,11 @@ check(
     notificationsUi.includes("fetch('/api/admin/analytics-findings?limit=50')") &&
     notificationsUi.includes('bukan riwayat delivery notifikasi') &&
     legacyNotificationsPageFoundation.includes("redirect('/tenant/temuan')") &&
-    !tenantShell.includes("href: '/tenant/notifikasi'"),
+    // The menu item for /tenant/notifikasi is deliberately present: the page is a real
+    // notification-delivery log (queue, worker attempts, failure codes), verified by reading
+    // the page, and docs/UI-ROUTE-MAP.md classifies it KEEP rather than MERGE. The old check
+    // asserted its absence, which is the opposite of the verified decision.
+    tenantShell.includes("href: '/tenant/notifikasi'"),
 );
 check(
   'firmware UI distinguishes stored digest/rollout state from byte verification and physical OTA proof',
@@ -1491,7 +1581,11 @@ check(
     userDeviceDetailFoundation.includes("capability.isWritable && capability.dataType.toLowerCase() === 'boolean'") &&
     userDeviceDetailFoundation.includes('Akses Anda VIEW saja. Backend juga akan menolak command tanpa CONTROL.') &&
     userDeviceDetailFoundation.includes('state akhir menunggu ACK/telemetry perangkat') &&
-    userDeviceDetailFoundation.includes('TERMINAL_COMMAND_STATES') &&
+    // Was pinned to the local `TERMINAL_COMMAND_STATES` list. The behaviour it protects — the
+    // view reconciling a terminal ACK instead of assuming success — is still required, but the
+    // literal list is now derived from the enum in lib/contracts so an added status cannot be
+    // missed. The terminal-set rule itself is enforced by the command status checks.
+    userDeviceDetailFoundation.includes('TERMINAL_COMMAND_STATUSES') &&
     userWorkspaceUiFoundation.includes("device.canControl ? 'VIEW + CONTROL' : 'VIEW'"),
 );
 
@@ -1956,7 +2050,12 @@ check(
   'local runtime orchestrator preserves fail-closed order through one-network compose API readiness',
   existsSync(join(root, 'scripts/manage-rescue-local-runtime.mjs')) &&
     localRuntimeManagerR7.includes('validate source/runtime prerequisites') &&
-    localRuntimeManagerR7.includes("composeArgs(compose, ['up', '-d', 'postgres', 'redis', 'emqx'])") &&
+    // 'go2rtc' is named explicitly alongside the other three, not left to a bare `up`. A bare `up`
+    // would start whatever a later commit adds to the compose file, which is how a media runtime
+    // ends up running in a gate that never decided to run it.
+    localRuntimeManagerR7.includes(
+      "composeArgs(compose, ['up', '-d', 'postgres', 'redis', 'emqx', 'go2rtc'])",
+    ) &&
     localRuntimeManagerR7.includes("waitForRuntimeScope(envPath, 'infra'") &&
     localRuntimeManagerR7.includes("composeArgs(compose, ['build', 'api'])") &&
     localRuntimeManagerR7.includes("composeArgs(compose, ['up', '-d', 'api'])") &&
@@ -2285,6 +2384,1340 @@ check(
     githubCiR30.includes('down --volumes --remove-orphans') &&
     githubCiSelfTestR30.includes('RESCUE GITHUB CI SELF-TEST PASS'),
 );
+
+// ---------------------------------------------------------------------------
+// Stray non-Latin characters in user-facing source.
+//
+// The console is Indonesian. During the governance work a CJK ideograph slipped into
+// user-facing copy three separate times, each one shipping past typecheck, lint, jest and both
+// builds because every one of them is a perfectly valid character in a valid string literal.
+// No existing gate can see this class of defect, so it is checked directly: these source trees
+// are Indonesian/English only, with a small allow-list of typographic punctuation and the
+// geometric icons the technician tabs use as glyphs.
+// ---------------------------------------------------------------------------
+
+const UI_SOURCE_ROOTS = ['apps/admin-web', 'apps/user-web', 'apps/user-mobile/src'];
+const ALLOWED_NON_LATIN = new Set([
+  '—', '·', '×', '→', '≥', '≤', '°', '±',
+  '‘', '’', '“', '”', '…', '§', '•',
+  '◈', '⚙', '⛭', '≣',
+  '✓', '✗', '✔', '✘',
+]);
+const STRAY_CHARACTER_PATTERN =
+  /[^\u0000-\u007f\u00a0-\u00ff\u2010-\u27bf\u2b00-\u2bff\ufeff]/g;
+
+function findStrayCharacters() {
+  const found = [];
+  for (const relativeRoot of UI_SOURCE_ROOTS) {
+    const absoluteRoot = join(root, relativeRoot);
+    if (!existsSync(absoluteRoot)) continue;
+    for (const file of listFiles(absoluteRoot)) {
+      if (!/\.(ts|tsx)$/.test(file)) continue;
+      for (const match of readFileSync(file, 'utf8').matchAll(STRAY_CHARACTER_PATTERN)) {
+        const code = match[0].codePointAt(0);
+        const character = String.fromCodePoint(code);
+        if (ALLOWED_NON_LATIN.has(character)) continue;
+        const hex = code.toString(16).toUpperCase().padStart(4, '0');
+        // listFiles returns absolute paths, so this must be relative(root, file) and not
+        // relative(join(root, file)): the single-argument form throws the moment a stray
+        // character is found, which killed the validator instead of reporting a failure. A
+        // guardrail that crashes is a guardrail that reports nothing.
+        found.push(relative(root, file) + ': U+' + hex + ' ' + character);
+      }
+    }
+  }
+  return found;
+}
+
+const strayCharacters = findStrayCharacters();
+check(
+  'user-facing source contains no stray non-Latin characters',
+  strayCharacters.length === 0,
+  strayCharacters.slice(0, 10).join(' | '),
+);
+
+// ---------------------------------------------------------------------------
+// A quarantined page must state its own non-production status.
+//
+// The console nav already groups /noc, /technician, /cctv and /mobile-preview under an honest
+// "belum produksi" label, but that label is only visible in the menu. Anyone arriving from a
+// bookmark, a shared link or a support ticket saw the page presented as a finished product —
+// subtitles like "Global operations monitoring" and "Daftarkan & pasangkan via scan QR" imply
+// capabilities the surfaces do not have: /noc has no map or geolocation at all, /cctv has no
+// RTSP/ONVIF/WebRTC/HLS implementation anywhere, and /mobile-preview reads the device directory
+// rather than any telemetry stream.
+// ---------------------------------------------------------------------------
+
+const QUARANTINE_PAGES = [
+  ['/noc', 'apps/admin-web/components/noc-content.tsx'],
+  ['/technician', 'apps/admin-web/app/technician/page.tsx'],
+  ['/cctv', 'apps/admin-web/app/cctv/page.tsx'],
+  ['/mobile-preview', 'apps/admin-web/app/mobile-preview/page.tsx'],
+];
+for (const [route, path] of QUARANTINE_PAGES) {
+  check(`quarantine page ${route} source is controlled`, existsSync(join(root, path)));
+  if (!existsSync(join(root, path))) continue;
+  const pageSource = read(path);
+  check(
+    `quarantine page ${route} states its own non-production status`,
+    pageSource.includes('<QuarantineBanner') && pageSource.includes('doesNotWork'),
+    'the nav group label is invisible to anyone arriving by direct link',
+  );
+}
+check(
+  'quarantine banner component is source-controlled',
+  existsSync(join(root, 'apps/admin-web/components/quarantine-banner.tsx')),
+);
+if (existsSync(join(root, 'apps/admin-web/components/quarantine-banner.tsx'))) {
+  const banner = read('apps/admin-web/components/quarantine-banner.tsx');
+  check(
+    'quarantine banner demands both what works and what does not',
+    /works:/.test(banner) && /doesNotWork:/.test(banner) && /Laboratorium/.test(banner),
+    'a generic disclaimer is not a truthful statement of the surface contract',
+  );
+}
+// Banner truthfulness, decided from implementation markers rather than topic words.
+//
+// The first version of this check searched the page for "rtsp|onvif|webrtc" and reported a
+// violation — because the banner NAMES those transports in order to say they are absent, so
+// the search matched the correction instead of the implementation. The lesson is the same one
+// the fabricated-permission checks taught: a guardrail that searches for content a fix
+// legitimately contains will fail on the fix.
+//
+// So the test is for constructs that only exist in real code: a <video> element, a MediaSource,
+// an RTCPeerConnection, a stream-URL fetch. Prose cannot satisfy those, and adding any of them
+// genuinely does mean the banner needs rewriting.
+const cctvBannerSource = read('apps/admin-web/app/cctv/page.tsx');
+const cctvHasTransport = /<video\b|MediaSource|RTCPeerConnection|\.m3u8|['"`]rtsp:\/\//.test(
+  cctvBannerSource,
+);
+const cctvClaimsNoStreaming = /tidak ada streaming/i.test(cctvBannerSource);
+check(
+  'cctv banner agrees with the cctv implementation about streaming',
+  cctvHasTransport ? !cctvClaimsNoStreaming : cctvClaimsNoStreaming,
+  cctvHasTransport
+    ? 'a real streaming construct exists but the banner still claims there is none'
+    : 'no streaming construct exists, so the banner must say so rather than imply a viewer',
+);
+const nocBannerSource = read('apps/admin-web/components/noc-content.tsx');
+const nocHasMap = /from ['"]leaflet['"]|<MapContainer|navigator\.geolocation/.test(nocBannerSource);
+const nocClaimsNoMap = /tidak ada peta dunia/i.test(nocBannerSource);
+check(
+  'noc banner agrees with the noc implementation about maps and location',
+  nocHasMap ? !nocClaimsNoMap : nocClaimsNoMap,
+  nocHasMap
+    ? 'a real map or geolocation construct exists but the banner still claims there is none'
+    : 'no map or geolocation construct exists, so the banner must say so rather than imply one',
+);
+
+// ---------------------------------------------------------------------------
+// Usage against quota is real: the billing endpoint already returns persisted BillingUsage
+// rows. The Quotas page previously rendered entitlement only, and its doc comment claimed the
+// usage read model "does not exist" — it does, the component simply did not declare it. These
+// checks stop the entitlement-only rendering, and that false claim, from returning.
+// ---------------------------------------------------------------------------
+
+const BILLING_COMPONENT = 'apps/admin-web/components/super-subscriptions-content.tsx';
+if (existsSync(join(root, BILLING_COMPONENT))) {
+  const billingSource = stripComments(read(BILLING_COMPONENT));
+  check(
+    'billing component declares the usage rows the api already returns',
+    /interface UsageRow/.test(billingSource) && /usage\?:\s*UsageRow\[\]/.test(billingSource),
+    'GET /admin/billing/subscriptions returns usage rows; the component must consume them',
+  );
+  check(
+    'billing component renders usage against quota',
+    /Pemakaian vs Kuota/.test(billingSource) &&
+      /latestUsageByTenant/.test(billingSource) &&
+      /deviceCount/.test(billingSource),
+  );
+  check(
+    'billing component selects the newest usage period instead of summing periods',
+    /row\.periodStart\s*>\s*current\.periodStart/.test(billingSource),
+    'summing periods would report cumulative devices as if they were live',
+  );
+  check(
+    'billing component reports an over-quota state',
+    /Melebihi kuota/.test(billingSource) && /used\s*>\s*quota/.test(billingSource),
+  );
+}
+// Read WITHOUT stripping comments here, deliberately. The fabricated-permission checks strip
+// comments because a fix's own doc comment names the strings it removed, but a false claim
+// lives in prose — reusing one stripped source for both makes the false-claim guardrail
+// incapable of seeing the thing it exists to catch.
+const billingPageProse = read('apps/admin-web/app/super/quotas/page.tsx');
+check(
+  'quotas page does not claim the usage read model is missing',
+  !/usage[^.]{0,80}read model[^.]{0,30}does not exist/.test(billingPageProse),
+  'BillingUsage rows are persisted and returned; claiming usage is unavailable is false',
+);
+check(
+  'usage read model is persisted and served by the billing endpoint',
+  /model BillingUsage/.test(read('prisma/schema.prisma')) &&
+    /usage:\s*usage\.map\(/.test(
+      read('src/admin-operations/admin-billing-directory.controller.ts'),
+    ),
+);
+
+// ---------------------------------------------------------------------------
+// Governance surfaces: the permission catalog, capability versioning, workers and platform
+// dispatch (blueprint §1).
+//
+// Each guardrail here exists because a real defect was found and fixed, and each is written so
+// the defect cannot come back quietly. The permission guardrails matter most: the console
+// displayed `dashboard:*, device:*, scene:*, automation:*, schedule:*` for ADMIN, none of which
+// appear anywhere in the API.
+// ---------------------------------------------------------------------------
+
+const RBAC_CATALOG_PATH = 'src/rbac/rbac-permission-catalog.ts';
+
+function collectRequirePermissionStrings() {
+  const found = new Set();
+  for (const file of listFiles(join(root, 'src'))) {
+    if (!file.endsWith('.controller.ts')) continue;
+    const source = readFileSync(file, 'utf8');
+    // The trailing `[^)]*` is required: `@RequirePermission` accepts an options object
+    // (`{ allowOwner: true }`), and requiring `)` straight after the string silently collected
+    // nothing from every owner-aware route. The parity check then reported four catalog entries
+    // as unenforced while the decorators were present and correct.
+    for (const match of source.matchAll(/@RequirePermission\(\s*'([^']+)'[^)]*\)/g)) {
+      found.add(match[1]);
+    }
+  }
+  return found;
+}
+
+check('rbac permission catalog is source-controlled', existsSync(join(root, RBAC_CATALOG_PATH)));
+
+if (existsSync(join(root, RBAC_CATALOG_PATH))) {
+  const catalogSource = read(RBAC_CATALOG_PATH);
+  const catalogued = new Set(
+    [...catalogSource.matchAll(/permission:\s*'([^']+)'/g)].map((m) => m[1]),
+  );
+  const decorated = collectRequirePermissionStrings();
+
+  check(
+    'rbac permission catalog is non-empty',
+    catalogued.size > 0,
+    `catalogued=${catalogued.size}`,
+  );
+  for (const permission of decorated) {
+    check(
+      `rbac permission catalog covers enforced @RequirePermission ${permission}`,
+      catalogued.has(permission),
+    );
+  }
+  for (const permission of catalogued) {
+    check(
+      `rbac permission catalog advertises only enforced permission ${permission}`,
+      decorated.has(permission),
+      'catalog entry is not enforced by any @RequirePermission decorator',
+    );
+  }
+  check(
+    'rbac permission catalog states base roles as wildcards',
+    catalogSource.includes('Wildcard') &&
+      /RbacPolicyService short-circuits to allowed=true/.test(catalogSource),
+    'ADMIN/PLATFORM_ADMIN must be documented as a blanket wildcard, not a domain grant list',
+  );
+}
+
+const FABRICATED_PERMISSION_STRINGS = ['dashboard:*', 'scene:*', 'automation:*', 'schedule:*'];
+const ROLES_CONTENT_PATH = 'apps/admin-web/components/super-roles-content.tsx';
+check(
+  'super roles content reads the permission catalog from the backend',
+  existsSync(join(root, ROLES_CONTENT_PATH)) &&
+    read(ROLES_CONTENT_PATH).includes('/api/super/rbac/permission-catalog'),
+);
+if (existsSync(join(root, ROLES_CONTENT_PATH))) {
+  const rolesCode = stripComments(read(ROLES_CONTENT_PATH));
+  for (const fabricated of FABRICATED_PERMISSION_STRINGS) {
+    check(
+      `super roles content does not hard-code fabricated permission ${fabricated}`,
+      !rolesCode.includes(fabricated),
+      'this permission is enforced nowhere in the API',
+    );
+  }
+  check(
+    'super roles content has no hard-coded permission matrix',
+    !/ROLE_META/.test(rolesCode),
+    'ROLE_META is the fabricated matrix this guardrail was written for',
+  );
+  check(
+    'super roles content reads the base role list from the backend instead of hard-coding it',
+    !/const\s+BASE_ROLES\s*(?::[^=]+)?=/.test(rolesCode) &&
+      /Object\.entries\(catalog\.baseRoleModel\)/.test(rolesCode),
+    'a pinned role list silently omits any base role the backend later adds',
+  );
+}
+
+const GOVERNANCE_BACKEND = [
+  ['admin governance controller', 'src/admin-operations/admin-governance.controller.ts'],
+  ['admin governance service', 'src/admin-operations/admin-governance.service.ts'],
+];
+for (const [label, path] of GOVERNANCE_BACKEND) {
+  check(`${label} is source-controlled`, existsSync(join(root, path)));
+}
+
+const GOVERNANCE_ROUTES = [
+  'admin/platform-rbac/permission-catalog',
+  'admin/platform-rbac/custom-roles',
+  'admin/platform-rbac/audit',
+  'admin/platform-capabilities/versions',
+  'admin/platform-runtime-signals',
+  'admin/platform-commands/dispatch',
+];
+if (existsSync(join(root, 'src/admin-operations/admin-governance.controller.ts'))) {
+  const controllerSource = read('src/admin-operations/admin-governance.controller.ts');
+  for (const route of GOVERNANCE_ROUTES) {
+    // GOVERNANCE_ROUTES records the full path (`admin` + the @Get segment), while the
+    // controller declares @Controller('admin') and @Get('<fragment>'), so the fragment is what
+    // actually appears in the source.
+    const fragment = route.replace(/^admin\//, '');
+    check(
+      `governance controller exposes ${route}`,
+      controllerSource.includes(fragment),
+      `missing @Get('${fragment}')`,
+    );
+  }
+  // Must test the @UseGuards decorator itself. Checking for the identifiers anywhere in the
+  // file was not enough: deleting the guard from the decorator while leaving the import intact
+  // still satisfied the old assertion.
+  const useGuardsMatch = stripComments(controllerSource).match(/@UseGuards\(([^)]*)\)/);
+  const useGuardsLine = useGuardsMatch ? useGuardsMatch[0] : '';
+  check(
+    'governance controller is platform-guarded',
+    /AdminRoleGuard/.test(useGuardsLine) && /PlatformRoleGuard/.test(useGuardsLine),
+    `@UseGuards is: ${useGuardsLine || '(absent)'}`,
+  );
+  // The service receives the actor as a parameter and cannot know where the controller got it
+  // from, so the guarantee is asserted where it is established.
+  const controllerCode = stripComments(controllerSource);
+  const actorAssignments = [
+    ...controllerCode.matchAll(/actorMembershipId\s*:\s*([^,\n]+)/g),
+  ].map((match) => match[1].trim());
+
+  // Two assertions, because the controller grew. Originally this checked `length === 1` with the
+  // value `request.user.tenantContext.membershipId`, which was exact when `platform-commands/dispatch`
+  // was the only platform route writing an audit record. The capability template lifecycle added
+  // four more, so the count check started failing on routes the original guarantee never covered --
+  // and the tempting fix, loosening it to "at least one", would have stopped asserting anything
+  // about the four new ones.
+  //
+  // So the guarantee is now stated for what it actually is: *every* actor read in this controller
+  // comes from the session, and never from a request body. A count is not the invariant; a count
+  // was a proxy for it that happened to hold when there was one route.
+  check(
+    'every platform audit route reads the actor from the authenticated session',
+    actorAssignments.length > 0 &&
+      actorAssignments.every(
+        (value) =>
+          value === 'request.user.tenantContext.membershipId' ||
+          // Lifecycle routes call the private helper, which reads the session and nothing else.
+          // Asserted here so adding a second definition of `actorOf` cannot quietly start
+          // taking the actor from somewhere else.
+          value === 'this.actorOf(request)',
+      ),
+    `actorMembershipId assignments: ${JSON.stringify(actorAssignments)}`,
+  );
+  check(
+    'the actor helper reads the session and takes nothing from the body',
+    /private actorOf\(request: AdminOperationsRequest\): string \{\s*return request\.user\.tenantContext\.membershipId;/.test(
+      controllerCode,
+    ),
+  );
+  check(
+    'platform dispatch does not read the actor from the request body',
+    !/body\.actorMembershipId/.test(controllerCode) &&
+      !/actorMembershipId\s*:\s*body\b/.test(controllerCode),
+  );
+}
+
+if (existsSync(join(root, 'src/admin-operations/admin-governance.service.ts'))) {
+  const governanceSource = read('src/admin-operations/admin-governance.service.ts');
+  check(
+    'platform dispatch requires an explicit target tenant',
+    /if\s*\(!tenantId\s*\|\|\s*!deviceId\)/.test(governanceSource),
+    'dispatch must fail closed when tenant or device is missing, never infer one',
+  );
+  check(
+    'platform dispatch requires a non-empty reason',
+    /if\s*\(!reason\)/.test(governanceSource),
+    'every cross-tenant actuation must be attributable',
+  );
+  check(
+    'platform dispatch verifies device ownership against the named tenant',
+    /findFirst\(\{[\s\S]{0,200}id:\s*deviceId,\s*tenantId\s*\}/.test(governanceSource),
+  );
+  check(
+    'platform dispatch service requires an actor membership and audits with it',
+    /actorMembershipId:\s*string;/.test(governanceSource) &&
+      /actorMembershipId:\s*input\.actorMembershipId/.test(governanceSource) &&
+      !/actorMembershipId\s*\?\s*:/.test(governanceSource),
+  );
+  check(
+    'platform dispatch writes an audit record',
+    (governanceSource.match(/rbacAuditLog\.create/g) ?? []).length >= 2,
+    'both the success and the failure path must be audited',
+  );
+  check(
+    'workers surface refuses to invent liveness',
+    governanceSource.includes('UNAVAILABLE_BY_CONTRACT') &&
+      governanceSource.includes('livenessSignal'),
+  );
+  // The invariant is that the listing is labelled as per-device *observed* metadata and that
+  // the console is told the truth about templates -- not that templates are absent.
+  //
+  // It used to assert `templateEntity: 'ABSENT'`, which was correct until
+  // `CapabilityTemplate` landed. Left in place it would have failed every future run while
+  // teaching the wrong lesson: the obvious "fix" is to put the string back, and then the console
+  // tells operators a product with a template lifecycle has no templates. Asserting the invariant
+  // instead means the guard survives the next lifecycle change -- and if someone does make the
+  // two claims contradict each other, the second half of this check is what notices.
+  check(
+    'capability versioning is labelled as per-device observed metadata',
+    governanceSource.includes('PER_DEVICE_METADATA') &&
+      governanceSource.includes('per-device observed metadata'),
+  );
+  check(
+    'the capability lifecycle contract does not claim templates are absent while they exist',
+    !governanceSource.includes("templateEntity: 'ABSENT'"),
+  );
+}
+
+if (existsSync(join(root, 'src/metrics/metrics.service.ts'))) {
+  const metricsSource = read('src/metrics/metrics.service.ts');
+  check('metrics service exposes a structured snapshot', /snapshot\(\)/.test(metricsSource));
+  // snapshot() emits one family per counter and one per histogram, so both branches must
+  // derive `recorded` from the values map. Matching the regex once was not enough.
+  const recordedAssignments = [
+    ...stripComments(metricsSource).matchAll(/recorded:\s*([^,\n;]+)[,;]/g),
+  ]
+    .map((match) => match[1].trim())
+    .filter((value) => value !== 'boolean');
+  check(
+    'metrics snapshot derives recorded for every family branch',
+    recordedAssignments.length === 2,
+    `expected 2 recorded assignments, found ${recordedAssignments.length}`,
+  );
+  check(
+    'metrics snapshot distinguishes unrecorded families from zero',
+    recordedAssignments.length === 2 &&
+      recordedAssignments.every((value) => /definition\.values\.size\s*>\s*0/.test(value)),
+    `recorded assignments: ${JSON.stringify(recordedAssignments)}`,
+  );
+}
+
+// The prepush gate runs `wave2:test:targeted`, which uses jest --runTestsByPath with an
+// explicit file list. A spec that is not in that list is never executed by the gate, so the
+// catalog's bidirectional test would silently stop protecting anything while still passing when
+// run by hand.
+const packageJson = JSON.parse(read('package.json'));
+const targetedTests = (packageJson.scripts?.['wave2:test:targeted'] ?? '')
+  .split('--runTestsByPath')[1]
+  ?.trim()
+  .split(/\s+/) ?? [];
+check(
+  'rbac permission catalog spec runs in the prepush gate',
+  targetedTests.includes('src/rbac/rbac-permission-catalog.spec.ts'),
+  'wave2:test:targeted uses --runTestsByPath, so an unlisted spec is never executed by the gate',
+);
+check('wave2 targeted test list is not empty', targetedTests.length > 0);
+
+// ---------------------------------------------------------------------------
+// Command status vocabulary.
+//
+// The user-web and mobile clients poll a submitted command until it settles, and they used to
+// carry a hand-written list of the three terminal statuses. A status added to the Prisma enum
+// later would have been treated as still-in-flight, so the poll would never return and the user
+// would see a spinner with no result — a silent failure on a user-facing write path. The
+// terminal set is now derived from the full vocabulary, defaulting a new status to terminal so
+// it fails safe.
+// ---------------------------------------------------------------------------
+
+function prismaEnumValues(enumName) {
+  const schema = read('prisma/schema.prisma');
+  const match = new RegExp(`enum\\s+${enumName}\\s*\\{([^}]*)\\}`).exec(schema);
+  if (!match) return null;
+  return match[1]
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('//'));
+}
+
+function constArrayValues(source, constName) {
+  const match = new RegExp(`${constName}\\s*(?::[^=]+)?=\\s*\\[([\\s\\S]*?)\\]`).exec(source);
+  if (!match) return null;
+  return [...match[1].matchAll(/'([^']+)'/g)].map((entry) => entry[1]);
+}
+
+const commandStatusEnum = prismaEnumValues('CommandStatus');
+check('prisma CommandStatus enum is readable', Array.isArray(commandStatusEnum));
+
+const COMMAND_STATUS_SOURCES = [
+  ['admin-web contracts', 'apps/admin-web/lib/contracts.ts'],
+  ['user-web contracts', 'apps/user-web/lib/contracts.ts'],
+  ['user-mobile contracts', 'apps/user-mobile/src/contracts.ts'],
+];
+for (const [label, path] of COMMAND_STATUS_SOURCES) {
+  if (!existsSync(join(root, path))) {
+    check(`${label} exists`, false);
+    continue;
+  }
+  const source = read(path);
+  const mirrored = constArrayValues(source, 'COMMAND_STATUSES');
+  check(
+    `${label} mirrors the prisma CommandStatus enum exactly`,
+    Array.isArray(mirrored) &&
+      Array.isArray(commandStatusEnum) &&
+      mirrored.length === commandStatusEnum.length &&
+      mirrored.every((value, index) => value === commandStatusEnum[index]),
+    `mirrored=${JSON.stringify(mirrored)} enum=${JSON.stringify(commandStatusEnum)}`,
+  );
+  const inFlight = constArrayValues(source, 'IN_FLIGHT_COMMAND_STATUSES');
+  check(`${label} declares the in-flight command statuses`, Array.isArray(inFlight) && inFlight.length > 0);
+  check(
+    `${label} derives the terminal command set instead of hard-coding it`,
+    /TERMINAL_COMMAND_STATUSES[\s\S]{0,400}COMMAND_STATUSES\.filter\(/.test(source) &&
+      !/TERMINAL_COMMAND_STATUSES\s*[:=][\s\S]{0,120}['"]ACKNOWLEDGED['"]/.test(source),
+    'a literal terminal list silently ignores enum members added later',
+  );
+}
+
+const COMMAND_CLIENTS = [
+  'apps/user-web/components/device-detail-experience.tsx',
+  'apps/user-web/components/widget-card.tsx',
+  'apps/user-mobile/src/device-control/mobile-device-client.ts',
+];
+for (const path of COMMAND_CLIENTS) {
+  check(
+    `command polling client ${path} has no hand-written terminal status list`,
+    existsSync(join(root, path)) &&
+      !read(path).includes('TERMINAL_COMMAND_STATES') &&
+      !/'ACKNOWLEDGED',\s*\n?\s*'FAILED',\s*\n?\s*'TIMED_OUT'/.test(read(path)),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Every API proxy must resolve to a real backend route.
+//
+// A proxy whose backend target does not exist is a page that can only ever fail: the fetch
+// resolves, the route runs, and the operator sees an error with no way to tell it apart from a
+// genuine backend outage. The route is composed of @Controller('<prefix>') plus the segment in
+// @Get/@Post, so a plain search for the joined path never matches.
+//
+// Note on routes with no in-app caller: that is not automatically dead. A stateless endpoint
+// such as the email-verification landing route is entered from a link in an email.
+// ---------------------------------------------------------------------------
+
+function backendRoutes() {
+  const routes = new Set();
+  for (const file of listFiles(join(root, 'src'))) {
+    if (!file.endsWith('.controller.ts')) continue;
+    const source = stripComments(readFileSync(file, 'utf8'));
+    const controller = /@Controller\(\s*'([^']+)'\s*\)/.exec(source);
+    if (!controller) continue;
+    const prefix = controller[1].replace(/\/$/, '');
+    for (const verb of source.matchAll(/@(Get|Post|Patch|Put|Delete)\(\s*'([^']*)'\s*\)/g)) {
+      const segment = verb[2].replace(/^\//, '').replace(/\/$/, '');
+      routes.add('/' + [prefix, segment].filter(Boolean).join('/'));
+    }
+  }
+  return routes;
+}
+
+const BACKEND_ROUTES = backendRoutes();
+check('backend route table is non-empty', BACKEND_ROUTES.size > 0, `discovered ${BACKEND_ROUTES.size} routes`);
+
+const TARGET_HINTS = [
+  { matcher: /\/api\/auth\/verify-email/, reason: 'external email-link entry point' },
+  { matcher: /\/api\/auth\/(login|logout|refresh)/, reason: 'session bootstrap' },
+];
+
+function collectProxyTargets() {
+  const found = [];
+  for (const app of ['admin-web', 'user-web']) {
+    const apiRoot = join(root, 'apps', app, 'app', 'api');
+    if (!existsSync(apiRoot)) continue;
+    for (const dir of listFiles(apiRoot)) {
+      if (!dir.endsWith('route.ts')) continue;
+      const source = stripComments(readFileSync(dir, 'utf8'));
+      const proxyPath = '/' + relative(apiRoot, dir).replace(/route\.ts$/, '');
+      for (const match of source.matchAll(/client\.request\(\s*[`'"]([^`'"]+)[`'"]/g)) {
+        found.push({ file: relative(join(root, 'apps', app), dir), proxyPath, target: match[1] });
+      }
+      for (const match of source.matchAll(/backendFetch\(\s*[`'"]([^`'"]+)[`'"]/g)) {
+        found.push({ file: relative(join(root, 'apps', app), dir), proxyPath, target: match[1] });
+      }
+    }
+  }
+  return found;
+}
+
+const proxyTargets = collectProxyTargets();
+const unresolvedProxyTargets = proxyTargets.filter((entry) => {
+  if (TARGET_HINTS.some((hint) => hint.matcher.test(entry.proxyPath))) return false;
+  const staticTarget = entry.target.split('?')[0].split('`')[0];
+  if (/\$\{/.test(staticTarget)) return false;
+  const bare = staticTarget.replace(/\$\{[^}]*\}/g, '').replace(/\/$/, '');
+  return !(
+    BACKEND_ROUTES.has(bare) ||
+    [...BACKEND_ROUTES].some(
+      (route) => route.startsWith(bare + '/') || bare.startsWith(route + '/'),
+    )
+  );
+});
+check(
+  'api proxy coverage is non-trivial',
+  proxyTargets.length >= 40,
+  `discovered ${proxyTargets.length} proxy targets`,
+);
+check(
+  'every statically-checkable api proxy target resolves to a real backend route',
+  unresolvedProxyTargets.length === 0,
+  `${proxyTargets.length - unresolvedProxyTargets.length}/${proxyTargets.length} resolved; unresolved: ${JSON.stringify(
+    unresolvedProxyTargets.map((entry) => entry.proxyPath + ' -> ' + entry.target),
+  )}`,
+);
+
+// ---------------------------------------------------------------------------
+// Billing routes must not render one surface under two menu labels.
+// ---------------------------------------------------------------------------
+
+const BILLING_PAGES = [
+  'apps/admin-web/app/super/subscriptions/page.tsx',
+  'apps/admin-web/app/super/quotas/page.tsx',
+];
+for (const path of BILLING_PAGES) {
+  check(`billing page ${path} is source-controlled`, existsSync(join(root, path)));
+}
+if (BILLING_PAGES.every((path) => existsSync(join(root, path)))) {
+  const subscriptionPage = read(BILLING_PAGES[0]);
+  const quotasPage = read(BILLING_PAGES[1]);
+  check(
+    'subscriptions page renders only the subscription view',
+    /<SuperSubscriptionsContent\s+view="subscriptions"\s*\/>/.test(subscriptionPage),
+  );
+  check(
+    'quotas page renders only the plan/quota view',
+    /<SuperSubscriptionsContent\s+view="plans"\s*\/>/.test(quotasPage),
+  );
+  check(
+    'billing routes no longer render an unscoped duplicate surface',
+    !/<SuperSubscriptionsContent\s*\/>/.test(subscriptionPage) &&
+      !/<SuperSubscriptionsContent\s*\/>/.test(quotasPage),
+  );
+}
+
+const GOVERNANCE_UI = [
+  ['capability versioning panel', 'SuperCapabilityVersionsPanel', 'apps/admin-web/app/super/capabilities/page.tsx'],
+  ['workers panel', 'SuperWorkersPanel', 'apps/admin-web/app/super/monitoring/page.tsx'],
+  ['platform dispatch panel', 'SuperCommandDispatchPanel', 'apps/admin-web/app/super/commands/page.tsx'],
+];
+for (const [label, component, path] of GOVERNANCE_UI) {
+  if (!existsSync(join(root, path))) {
+    check(`${label} page is source-controlled`, false);
+    continue;
+  }
+  const pageSource = read(path);
+  check(
+    `${label} is imported on its page`,
+    pageSource.includes(`from '@/components/${component.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()}'`),
+    `expected import of ${component} from @/components/`,
+  );
+  check(
+    `${label} is rendered on its page`,
+    new RegExp(`<${component}\\s*/?>`).test(pageSource),
+    'a built surface that is not mounted is unreachable',
+  );
+}
+
+const GOVERNANCE_UI_SOURCES = [
+  ['capability versioning panel', 'apps/admin-web/components/super-capability-versions-panel.tsx'],
+  ['workers panel', 'apps/admin-web/components/super-workers-panel.tsx'],
+  ['platform dispatch panel', 'apps/admin-web/components/super-command-dispatch-panel.tsx'],
+];
+for (const [label, path] of GOVERNANCE_UI_SOURCES) {
+  check(`${label} is source-controlled`, existsSync(join(root, path)));
+}
+
+const GOVERNANCE_PROXIES = [
+  'apps/admin-web/app/api/super/rbac/permission-catalog/route.ts',
+  'apps/admin-web/app/api/super/rbac/custom-roles/route.ts',
+  'apps/admin-web/app/api/super/rbac/audit/route.ts',
+  'apps/admin-web/app/api/super/capabilities/versions/route.ts',
+  'apps/admin-web/app/api/super/runtime-signals/route.ts',
+  'apps/admin-web/app/api/super/commands/dispatch/route.ts',
+];
+for (const path of GOVERNANCE_PROXIES) {
+  check(`governance proxy ${path} exists`, existsSync(join(root, path)));
+  if (!existsSync(join(root, path))) continue;
+  const proxySource = read(path);
+  // Checking only for the identifier was not enough: a mutation that rewrites the call site
+  // but leaves the import satisfies `includes('proxyBackend')`.
+  check(
+    `governance proxy ${path} forwards to the backend`,
+    /proxyBackend\(/.test(proxySource) &&
+      /export\s+async\s+function\s+(GET|POST)/.test(proxySource),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Menu foundation: every product page is reachable, and every menu entry resolves.
+//
+// These were lost when a file was truncated and only the last committed generation was
+// recoverable. They are the guardrails written for the original complaint — menus that did
+// not match the program foundation — so they are rebuilt here and, unlike the rest, every one
+// is re-proven below by a real mutation rather than by a green run.
+//
+// Three page classes are deliberately excluded from reachability: the app root and any page
+// that only forwards elsewhere, dynamic route segments (resolved to their static prefix), and
+// API routes, which are not navigation.
+// ---------------------------------------------------------------------------
+
+const NON_PRODUCTION_LABEL = /belum produksi|beta|laboratorium|quarantine|experimental/i;
+
+/** Shell component -> the app route tree it owns. */
+const ADMIN_SHELLS = [
+  { file: 'apps/admin-web/components/admin-shell-v3.tsx', app: 'apps/admin-web/app' },
+  { file: 'apps/admin-web/components/super-admin-shell.tsx', app: 'apps/admin-web/app' },
+  { file: 'apps/admin-web/components/tenant-shell.tsx', app: 'apps/admin-web/app' },
+];
+const SHELL_ROUTE_PREFIX = {
+  'admin-shell-v3.tsx': /^\/field/,
+  'super-admin-shell.tsx': /^\/super/,
+  'tenant-shell.tsx': /^\/tenant/,
+};
+
+/** Splits a shell's nav array into labelled groups of hrefs. */
+function parseNavGroups(source) {
+  const groups = [];
+  for (const match of source.matchAll(
+    /label:\s*'([^']+)'[\s\S]{0,200}?items:\s*\[([\s\S]*?)\]/g,
+  )) {
+    const hrefs = [...match[2].matchAll(/href:\s*'([^']+)'/g)].map((entry) => entry[1]);
+    groups.push({ label: match[1], hrefs });
+  }
+  return groups;
+}
+
+function pageRoutes(appRoot) {
+  const routes = [];
+  for (const file of listFiles(join(root, appRoot))) {
+    if (!file.endsWith('page.tsx')) continue;
+    // relative() returns the app root as bare 'page.tsx', with no leading separator, so the
+    // replacement below does not match it. Anchoring on the optional separator is what keeps
+    // the root from being reported as a route literally named '/page.tsx'.
+    const relativePath = relative(join(root, appRoot), file);
+    // The separator is optional on the left because the app root yields a bare 'page.tsx'.
+    const trimmed = relativePath.replace(/(^|[/\\])page\.tsx$/, '');
+    routes.push({
+      route: trimmed === '' ? '/' : '/' + trimmed.replace(/\/$/, ''),
+      file: relative(root, file),
+      source: readFileSync(file, 'utf8'),
+    });
+  }
+  return routes;
+}
+
+const ALL_ADMIN_PAGES = pageRoutes('apps/admin-web/app');
+const USER_WEB_PAGES = pageRoutes('apps/user-web/app');
+
+/** A page is a forwarding page if it exists only to redirect or hand off elsewhere. */
+function isForwardingPage(entry) {
+  return /redirect\(/.test(entry.source) || /<Redirect\s*\/?>/.test(entry.source);
+}
+
+// Route segments that are dynamic resolve to their static prefix: /perangkat-saya/[deviceId]
+// is reachable once /perangkat-saya is in the menu, so the dynamic leaf is not a separate
+// navigation target.
+function staticRoute(route) {
+  return route.replace(/\/\[[^\]]+\]/g, '');
+}
+
+const allNavHrefs = new Set();
+for (const shell of ADMIN_SHELLS) {
+  if (!existsSync(join(root, shell.file))) continue;
+  for (const group of parseNavGroups(read(shell.file))) {
+    for (const href of group.hrefs) allNavHrefs.add(href);
+  }
+}
+
+// Pre-login routes are destinations an operator types or follows from an error, never
+// navigation targets, so requiring them in a signed-in menu would be wrong. auth-shell is a
+// bare frame with no menu at all, which is the correct shape for the unauthenticated state.
+// `/verifikasi` belongs here for the same reason as the other three: it is reached from the
+// registration success message and from the login page, and an unverified account cannot
+// hold a session, so it can never appear in a signed-in shell menu.
+const PRE_LOGIN_ROUTES = [
+  '/login',
+  '/daftar',
+  '/lupa-password',
+  '/reset-password',
+  '/verifikasi',
+];
+
+const UNREACHABLE_ADMIN_PAGES = ALL_ADMIN_PAGES.filter(
+  (entry) =>
+    entry.route !== '/' &&
+    !entry.route.startsWith('/api') &&
+    !PRE_LOGIN_ROUTES.includes(entry.route) &&
+    !isForwardingPage(entry) &&
+    ![...allNavHrefs].some((href) => staticRoute(href) === staticRoute(entry.route)),
+);
+check(
+  'every non-legacy product page is reachable from a shell menu',
+  UNREACHABLE_ADMIN_PAGES.length === 0,
+  UNREACHABLE_ADMIN_PAGES.map((entry) => entry.route).join(', '),
+);
+
+// Every href a user can click must resolve to a real page or a real API route. A menu entry
+// that 404s is worse than a missing one: it advertises a capability that does not exist.
+const DEAD_MENU_ENTRIES = [];
+for (const shell of ADMIN_SHELLS) {
+  if (!existsSync(join(root, shell.file))) continue;
+  for (const group of parseNavGroups(read(shell.file))) {
+    for (const href of group.hrefs) {
+      const target = href.split('?')[0].split('#')[0].replace(/\/$/, '') || '/';
+      if (target.startsWith('/api')) continue;
+      const candidate = join(root, shell.app, target.replace(/^\//, ''), 'page.tsx');
+      if (existsSync(candidate)) continue;
+      // Dynamic segments: /x/[id] resolves if the folder /x exists with any page under it.
+      const base = join(root, shell.app, target.replace(/\/\[[^\]]+\]$/, ''));
+      if (existsSync(base) && listFiles(base).some((f) => f.endsWith('page.tsx'))) continue;
+      DEAD_MENU_ENTRIES.push(shell.file + ' -> ' + href);
+    }
+  }
+}
+check(
+  'every shell menu entry resolves to a real page',
+  DEAD_MENU_ENTRIES.length === 0,
+  DEAD_MENU_ENTRIES.slice(0, 8).join(', '),
+);
+
+const QUARANTINE_ROUTES = ['/noc', '/technician', '/cctv', '/mobile-preview'];
+for (const route of QUARANTINE_ROUTES) {
+  let owner = null;
+  for (const shell of ADMIN_SHELLS) {
+    if (!existsSync(join(root, shell.file))) continue;
+    const group = parseNavGroups(read(shell.file)).find((candidate) =>
+      candidate.hrefs.includes(route),
+    );
+    if (group) {
+      owner = { shell: shell.file, group };
+      break;
+    }
+  }
+  check(
+    `quarantined ${route} stays reachable from a labelled non-production group`,
+    owner !== null && NON_PRODUCTION_LABEL.test(owner.group.label),
+    owner === null
+      ? 'the route is not in any nav group at all'
+      : `found in group "${owner.group.label}", which is not labelled non-production`,
+  );
+}
+
+const QUARANTINE_IN_PRODUCT_GROUP = [];
+for (const shell of ADMIN_SHELLS) {
+  if (!existsSync(join(root, shell.file))) continue;
+  for (const group of parseNavGroups(read(shell.file))) {
+    if (NON_PRODUCTION_LABEL.test(group.label)) continue;
+    for (const href of group.hrefs) {
+      if (QUARANTINE_ROUTES.includes(href)) QUARANTINE_IN_PRODUCT_GROUP.push(href);
+    }
+  }
+}
+check(
+  'quarantined pages never sit in an unlabelled product navigation group',
+  QUARANTINE_IN_PRODUCT_GROUP.length === 0,
+  QUARANTINE_IN_PRODUCT_GROUP.join(', '),
+);
+
+// ---------------------------------------------------------------------------
+// User Web foundation.
+//
+// User Web originally shipped with no navigation at all: two competing frames, a dashboard that
+// rendered neither, the design-system stylesheet never loaded, and the documented light theme
+// never applied. These four checks hold that closed.
+// ---------------------------------------------------------------------------
+
+const USER_SHELL = 'apps/user-web/components/user-shell.tsx';
+check('User Web shell is source-controlled', existsSync(join(root, USER_SHELL)));
+if (existsSync(join(root, USER_SHELL))) {
+  const userShellSource = read(USER_SHELL);
+  check(
+    'User Web uses the shared design-system frame and one navigable menu',
+    /design-system/.test(userShellSource) &&
+      /from 'next\/link'/.test(userShellSource) &&
+      /aria-current/.test(userShellSource),
+    'a menu built on plain anchors cannot report its own active route to assistive tech',
+  );
+  check(
+    'User Web owns session logout in the shell',
+    /(logout|signOut|keluar)/i.test(userShellSource),
+  );
+  check(
+    'User Web page content does not duplicate session logout',
+    listFiles(join(root, 'apps/user-web'))
+      .filter((file) => file.endsWith('.tsx'))
+      .filter((file) => !file.endsWith(USER_SHELL))
+      .filter((file) => /(logout|signOut)/i.test(readFileSync(file, 'utf8')))
+      .filter((file) => !file.endsWith('page.tsx') || isForwardingPage({ source: readFileSync(file, 'utf8') }))
+      .map((file) => relative(root, file))
+      .join(', ') === '',
+    'two logout controls means two session handlers that can disagree',
+  );
+}
+
+const USER_PAGES_WITHOUT_SHELL = USER_WEB_PAGES.filter(
+  (entry) => entry.route !== '/' && !isForwardingPage(entry) && !entry.source.includes('<UserShell'),
+);
+check(
+  'every User Web page renders the one UserShell instead of a menu-less product frame',
+  USER_PAGES_WITHOUT_SHELL.length === 0,
+  USER_PAGES_WITHOUT_SHELL.map((entry) => entry.route).join(', '),
+);
+
+const userWebLayout = read('apps/user-web/app/layout.tsx');
+const userWebGlobals = read('apps/user-web/app/globals.css');
+check(
+  'User Web loads the design-system stylesheet and opts into the documented light theme',
+  /@iot-platform\/design-system\/styles\.css/.test(userWebGlobals) &&
+    /<html[^>]*\bdata-theme="light"/.test(userWebLayout),
+  'without the import the shell renders unstyled, and without the attribute it renders in the wrong theme',
+);
+
+// ---------------------------------------------------------------------------
+// Declared-but-unproduced response fields.
+//
+// Three real defects of exactly this shape existed and none of the earlier guardrails could
+// see them, because each one is a perfectly valid optional property:
+//
+//   - tenant-historical-content.tsx declared numericValue/boolValue/textValue/recordedAt and
+//     quality. The telemetry service emits value, unit and createdAt only, so `quality`
+//     rendered a table column that could only ever be an em dash, and readingValue() walked
+//     three permanently dead branches before reaching the field that did exist.
+//   - device-control.ts declared lastSeenAt. Device has lastHeartbeatAt; there is no
+//     lastSeenAt column.
+//   - super-command-dispatch-panel.tsx declared TenantRow.slug. Tenant has id, name and
+//     timestamps; there is no slug column.
+//
+// The test is a field-name cross-reference: every property on a non-presentational interface
+// in the three apps must occur somewhere in backend source or in the Prisma schema. Comments
+// are stripped first, because these fixes name the fields they removed in their own doc
+// comment and that is not a defect.
+// ---------------------------------------------------------------------------
+
+const UI_FIELD_ROOTS = ['apps/admin-web', 'apps/user-web', 'apps/user-mobile/src'];
+const NON_RESPONSE_INTERFACE_NAMES = /(Props|State|Options|Config|Context|Variant|Theme|Tokens?)$/;
+// Names that are legitimately not columns and not backend properties: React and layout keys, and
+// fields a client derives or invents about its own request.
+//
+// The Wave 7 entries are the second kind, and each is load-bearing rather than convenient — they are
+// the fields whose absence was the defect. `wasSent` exists so a row cannot claim delivery on the
+// strength of a stale `status` label; `destinationListed` states that the list route omits the
+// address on purpose; `droppedRows` lets the server's `total` and the client's rendered count be
+// reconciled; `appliedStatus` names the filter that actually went out, so a silently dropped filter
+// cannot pass for a working one. Each is pinned by a spec assertion, which is what distinguishes
+// them from the unproduced fields this check exists to catch.
+const NON_RESPONSE_FIELD_NAMES = new Set([
+  'children', 'key', 'ref', 'className', 'style', 'id', 'type', 'name', 'label', 'value',
+  'icon', 'href', 'path', 'title', 'description', 'error', 'message', 'ok', 'total', 'items',
+  'badge', 'tone', 'fetcher', 'sessionStore', 'apiOrigin', 'widgetData', 'selectedDashboardId',
+  'wasSent', 'destinationListed', 'droppedRows', 'appliedStatus',
+  // Device-local display settings. `locale` and `appearance` are read from the phone's own secure
+  // storage and never cross the wire, so no backend property of those names exists or should.
+  'locale', 'appearance',
+]);
+
+function backendCorpus() {
+  let corpus = '';
+  for (const relativeRoot of ['src', 'prisma']) {
+    const absoluteRoot = join(root, relativeRoot);
+    if (!existsSync(absoluteRoot)) continue;
+    for (const file of listFiles(absoluteRoot)) {
+      if (file.endsWith('.spec.ts')) continue;
+      corpus += readFileSync(file, 'utf8');
+    }
+  }
+  return corpus;
+}
+
+function unproducedUiFields(corpus) {
+  const found = [];
+  for (const relativeRoot of UI_FIELD_ROOTS) {
+    const absoluteRoot = join(root, relativeRoot);
+    if (!existsSync(absoluteRoot)) continue;
+    for (const file of listFiles(absoluteRoot)) {
+      if (!/\.(ts|tsx)$/.test(file) || file.endsWith('.spec.ts')) continue;
+      const code = stripComments(readFileSync(file, 'utf8'));
+      for (const match of code.matchAll(
+        /\b(?:interface|type)\s+([A-Z]\w*)\s*(?:=\s*)?\{([^}]{0,1400})\}/g,
+      )) {
+        const name = match[1];
+        if (NON_RESPONSE_INTERFACE_NAMES.test(name)) continue;
+        for (const field of match[2].matchAll(/^\s*([a-zA-Z_]\w*)\??\s*:/gm)) {
+          const property = field[1];
+          if (NON_RESPONSE_FIELD_NAMES.has(property)) continue;
+          if (new RegExp('\\b' + property + '\\b').test(corpus)) continue;
+          // listFiles returns absolute paths. `relative(join(root, file))` — one argument —
+          // throws the moment a field is actually unproduced, which kills the validator
+          // instead of reporting a failure. Second occurrence of this exact bug in one
+          // session, so the whole file is now swept for the pattern rather than just the
+          // function being written.
+          found.push(relative(root, file) + '::' + name + '.' + property);
+        }
+      }
+    }
+  }
+  return found;
+}
+
+const backendCorpusText = backendCorpus();
+const unproducedFields = unproducedUiFields(backendCorpusText);
+check(
+  'no ui response interface declares a field the backend never produces',
+  unproducedFields.length === 0,
+  `${unproducedFields.length} unproduced: ${unproducedFields.slice(0, 8).join(', ')}`,
+);
+
+// The historical telemetry table is the one place these fields were rendered, so a column
+// that can only be empty is asserted directly rather than left to the field cross-reference.
+if (existsSync(join(root, 'apps/admin-web/components/tenant-historical-content.tsx'))) {
+  const historical = stripComments(
+    read('apps/admin-web/components/tenant-historical-content.tsx'),
+  );
+  check(
+    'historical telemetry table declares only fields the telemetry service emits',
+    // The optional marker is part of the field, so the pattern must allow it. Written without
+    // it the check failed against its own correct fix.
+    /value\?:\s*unknown/.test(historical) &&
+      /createdAt\?:\s*string/.test(historical) &&
+      !/quality|numericValue|boolValue|textValue|recordedAt/.test(historical),
+    'GET /telemetry/history emits value, unit and createdAt only',
+  );
+  check(
+    'historical telemetry table has no permanently-empty column',
+    !/Kualitas/.test(historical),
+    'a column whose only possible value is an em dash is a surface claiming a signal it lacks',
+  );
+}
+check(
+  'device list item mirrors the device model heartbeat column',
+  /lastHeartbeatAt/.test(read('apps/admin-web/lib/device-control.ts')) &&
+    !/lastSeenAt/.test(stripComments(read('apps/admin-web/lib/device-control.ts'))),
+  'Device has lastHeartbeatAt and no lastSeenAt',
+);
+if (existsSync(join(root, 'apps/admin-web/components/super-command-dispatch-panel.tsx'))) {
+  const dispatch = stripComments(
+    read('apps/admin-web/components/super-command-dispatch-panel.tsx'),
+  );
+  check(
+    'tenant rows do not declare a slug the tenant model does not have',
+    !/\bslug\??\s*:/.test(dispatch),
+    'Tenant exposes id, name, createdAt and updatedAt',
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Proxy verb fidelity.
+//
+// A Next route handler whose verb the backend does not serve is either a naming lie or a real
+// break, and neither is visible from the proxy file alone. The one case found — a PATCH that
+// adapts onto POST /schedules/:id/enable — is legitimate but overstated, and is now documented
+// where a reader will see it.
+//
+// Two rules had to be corrected before this check could be trusted, both of which first
+// produced pure noise:
+//
+//   - Backend paths are declared with `:param`; proxies interpolate `${param}`. Both sides must
+//     be canonicalised to the same wildcard or every parameterised route reads as unmatched.
+//   - "the called verb must equal the exported verb" is wrong. A GET that adapts a query
+//     parameter into a backend POST is a valid stateless entry point (the email-verification
+//     link), and flagging it teaches you to ignore the check.
+// ---------------------------------------------------------------------------
+
+function canonicalRoutePath(value) {
+  return (
+    '/' +
+    value
+      .split('?')[0]
+      .replace(/\$\{[^}]*\}/g, ':param')
+      .replace(/:[A-Za-z_]\w*/g, ':param')
+      .split('/')
+      .filter(Boolean)
+      .map((segment) => (segment === 'param' ? ':param' : segment))
+      .join('/')
+  );
+}
+
+const backendVerbTable = (() => {
+  const table = new Map();
+  for (const file of listFiles(join(root, 'src'))) {
+    if (!file.endsWith('.controller.ts')) continue;
+    const source = stripComments(readFileSync(file, 'utf8'));
+    const controller = /@Controller\(\s*'([^']+)'\s*\)/.exec(source);
+    if (!controller) continue;
+    const prefix = controller[1].replace(/^\//, '').replace(/\/$/, '');
+    for (const verb of source.matchAll(/@(Get|Post|Patch|Put|Delete)\(\s*'([^']*)'\s*\)/g)) {
+      const full = canonicalRoutePath([prefix, verb[2]].filter(Boolean).join('/'));
+      if (!table.has(full)) table.set(full, new Set());
+      table.get(full).add(verb[1].toUpperCase());
+    }
+  }
+  return table;
+})();
+
+const VERB_ADAPTER_PROXIES = [
+  // (file, exported verb, backend verb, backend path) — deliberate adapters, each documented
+  // at its definition.
+  ['apps/admin-web/app/api/auth/verify-email/route.ts', 'GET', 'POST', '/auth/verify-email'],
+  [
+    'apps/admin-web/app/api/tenant/schedules/[scheduleId]/route.ts',
+    'PATCH',
+    'POST',
+    '/schedules/:param/enable',
+  ],
+];
+
+const verbMismatches = [];
+let verbCallsChecked = 0;
+for (const app of ['admin-web', 'user-web']) {
+  const apiRoot = join(root, 'apps', app, 'app', 'api');
+  if (!existsSync(apiRoot)) continue;
+  for (const file of listFiles(apiRoot)) {
+    if (!file.endsWith('route.ts')) continue;
+    const relativeFile = relative(root, file);
+    const source = stripComments(readFileSync(file, 'utf8'));
+    for (const handler of source.matchAll(
+      /export\s+async\s+function\s+(GET|POST|PATCH|PUT|DELETE)\s*\([^)]*\)\s*\{/g,
+    )) {
+      const exported = handler[1];
+      const next = /export\s+async\s+function\s+(?:GET|POST|PATCH|PUT|DELETE)\s*\(/.exec(
+        source.slice(handler.index + handler[0].length),
+      );
+      const body = next
+        ? source.slice(
+            handler.index + handler[0].length,
+            handler.index + handler[0].length + next.index,
+          )
+        : source.slice(handler.index + handler[0].length);
+      for (const call of body.matchAll(
+        /(?:client\.request|proxyBackend|backendFetch)\(\s*[`'"]([^`'"]+)[`'"]\s*(?:,\s*\{)?([\s\S]{0,240})/g,
+      )) {
+        const declared = /method:\s*'([A-Z]+)'/.exec(call[2]);
+        const verb = (declared ? declared[1] : exported).toUpperCase();
+        const path = canonicalRoutePath(call[1]);
+        verbCallsChecked += 1;
+        const isDocumentedAdapter = VERB_ADAPTER_PROXIES.some(
+          (entry) => entry[0] === relativeFile && entry[1] === exported && entry[3] === path,
+        );
+        if (isDocumentedAdapter) continue;
+        if (verb !== exported) {
+          verbMismatches.push(relativeFile + ': export ' + exported + ' calls ' + verb);
+        }
+        const served = backendVerbTable.get(path);
+        if (served && !served.has(verb)) {
+          verbMismatches.push(
+            relativeFile + ': ' + verb + ' ' + path + ' but backend serves ' + [...served].join('/'),
+          );
+        }
+      }
+    }
+  }
+}
+check(
+  'api proxy call coverage is non-trivial',
+  verbCallsChecked >= 60,
+  `checked ${verbCallsChecked} backend calls from proxy handlers`,
+);
+check(
+  'api proxy verbs match the backend routes they call',
+  verbMismatches.length === 0,
+  verbMismatches.slice(0, 8).join(' | '),
+);
+for (const [file, exported, backendVerb, backendPath] of VERB_ADAPTER_PROXIES) {
+  const absolute = join(root, file);
+  if (!existsSync(absolute)) {
+    check(`verb adapter ${file} is source-controlled`, false);
+    continue;
+  }
+  // An adapter is only acceptable while the mismatch is written down. Otherwise it is an
+  // unexplained naming lie, which is how a future caller comes to expect a general update.
+  // Read the raw source, comments included: the explanation lives in prose, so stripping
+  // comments here would make the check blind to exactly the thing it requires.
+  const adapterSource = readFileSync(absolute, 'utf8');
+  const handlerIndex = adapterSource.indexOf('export async function ' + exported);
+  const precedingComment = handlerIndex > 0 ? adapterSource.slice(Math.max(0, handlerIndex - 900), handlerIndex) : '';
+  const body = adapterSource.slice(handlerIndex, handlerIndex + 900);
+  check(
+    `verb adapter ${file} ${exported}->${backendVerb} ${backendPath} is documented`,
+    /(not a general update|stateless|adapts?|link landing|query parameter|only)/i.test(
+      precedingComment + body,
+    ),
+    'an undocumented verb mismatch is an unexplained naming lie: the handler name promises ' +
+      backendVerb + ' ' + backendPath + ' semantics it does not implement',
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Superseded proxies must not come back.
+//
+// Three Next proxies were removed because each one proxied a backend route that a surviving
+// proxy already served, and no in-app caller referenced them:
+//
+//   api/super/users              -> GET /admin/users          (superseded by api/super/platform-users)
+//   api/admin/directory/tenants  -> GET /admin/tenants        (superseded by api/super/tenants)
+//   api/operational-summary      -> GET /admin/operational-summary (by api/admin/operational-summary)
+//
+// The third also carried a loader-normalisation layer and a `{state: 'offline'}` envelope that
+// nothing read, because both live consumers derive their view state from the HTTP status. That
+// made `operational-summary-loader.ts` dead production code, so it went with the route.
+//
+// What let all three survive is the interesting part: each was referenced by exactly one test
+// and by no product code. The test kept asserting the file's existence, so "no caller" looked
+// like "covered". Absence is now asserted directly, and the surviving route is asserted too, so
+// deleting the wrong one fails.
+// ---------------------------------------------------------------------------
+
+const SUPERSEDED_PROXIES = [
+  ['apps/admin-web/app/api/super/users/route.ts', 'apps/admin-web/app/api/super/platform-users/route.ts'],
+  [
+    'apps/admin-web/app/api/admin/directory/tenants/route.ts',
+    'apps/admin-web/app/api/super/tenants/route.ts',
+  ],
+  [
+    'apps/admin-web/app/api/operational-summary/route.ts',
+    'apps/admin-web/app/api/admin/operational-summary/route.ts',
+  ],
+];
+for (const [removed, surviving] of SUPERSEDED_PROXIES) {
+  check(
+    `superseded proxy ${removed} stays deleted`,
+    !existsSync(join(root, removed)),
+    'a proxy with no caller and a surviving twin is a second HTTP contract for one payload',
+  );
+  check(
+    `surviving proxy ${surviving} is present`,
+    existsSync(join(root, surviving)),
+  );
+}
+check(
+  'the orphaned operational summary loader stays deleted',
+  !existsSync(join(root, 'apps/admin-web/lib/operational-summary-loader.ts')),
+  'it was only reachable from the deleted duplicate proxy',
+);
+check(
+  'the operational summary contract is asserted against the surviving proxy',
+  existsSync(join(root, 'test/module-10-admin-web-operational-dashboard-ui-foundation.contract.spec.ts')) &&
+    read('test/module-10-admin-web-operational-dashboard-ui-foundation.contract.spec.ts').includes(
+      "client.request('/admin/operational-summary')",
+    ),
+  'the field contract must be pinned to the route the UI actually reads',
+);
+
+// ---------------------------------------------------------------------------
+// The per-domain access model, pinned to what the code actually does.
+//
+// This started as a note that scene, schedule, automation and dashboard had no role or
+// permission guard at all. That is no longer true, and the difference between the domains is
+// not cosmetic:
+//
+//   automation  every route declares a permission; addressed routes also allow the owner.
+//               AutomationRepository filters every query by ownerMembershipId, so it is
+//               owner-only and an admin gets no automatic access to someone else's automation.
+//   dashboard   every route declares a permission; addressed routes also allow the owner.
+//               DashboardRepository additionally enforces its audience rule — PERSONAL is
+//               owner-only, TENANT_SHARED needs an admin role — and remains the authority.
+//   scene       no owner column and no role gate, so it stays open to any active member. Every
+//   schedule    mutation is recorded in RbacAuditLog instead.
+//
+// The scene/schedule asymmetry is a decision, not an oversight: with no owner column there is
+// nothing for "your own, or anyone's if admin" to compare against, and gating these on a role
+// would either lock members out of the product's primary function or permit everything. Pinning
+// it here means the next person has to make that choice deliberately.
+//
+// The check also fails if `allowOwner` is added to a route that addresses no resource, and if a
+// collection route is given one — a create route has no id, so ownership cannot apply to it and
+// silently allowing would turn it into an open door.
+// ---------------------------------------------------------------------------
+
+const OWNED_DOMAINS = [
+  ['src/automation/automation.controller.ts', 'automation', 7],
+  ['src/dashboard/dashboard.controller.ts', 'dashboard', 7],
+];
+for (const [controller, domain, expectedRoutes] of OWNED_DOMAINS) {
+  const source = read(controller);
+  const guardList = [...source.matchAll(/@UseGuards\(([^)]*)\)/g)].map((m) =>
+    m[1].replace(/\s+/g, ''),
+  );
+  check(
+    `${controller} runs the permission guard`,
+    guardList.some((g) => g.includes('JwtAuthGuard') && g.includes('TenantContextGuard') && g.includes('RbacPermissionGuard')),
+  );
+
+  const pairs = [...source.matchAll(/@(Get|Post|Put|Patch|Delete)\(([^)]*)\)[\s\S]{0,80}?@RequirePermission\(\s*'([^']+)'([^)]*)\)/g)];
+  check(
+    `${controller} declares a permission on every route (${expectedRoutes})`,
+    pairs.length === expectedRoutes,
+    `${pairs.length} routes carry @RequirePermission`,
+  );
+
+  for (const [, , route, permission, options] of pairs) {
+    const addressesResource = route.includes(':');
+    const allowsOwner = options.includes('allowOwner');
+    check(
+      `${controller} ${route} declares allowOwner exactly when it addresses a resource`,
+      addressesResource === allowsOwner,
+      `route "${route}" with ${allowsOwner ? 'allowOwner' : 'no allowOwner'}`,
+    );
+    check(
+      `${controller} ${route} declares a catalogued permission`,
+      read('src/rbac/rbac-permission-catalog.ts').includes(`permission: '${permission}'`),
+      `${permission} is not in the catalog`,
+    );
+  }
+}
+
+for (const [controller, domain] of [
+  ['src/scene/scene.controller.ts', 'scene'],
+  ['src/scheduler/schedule.controller.ts', 'schedule'],
+]) {
+  const source = read(controller);
+  check(
+    `${controller} stays ungated because it has no owner column`,
+    !/@RequirePermission\(/.test(source),
+    'a role gate here needs a decision about which role may do what; it is not expressible as owner-or-admin',
+  );
+  check(
+    `${controller} records every mutation in the audit log`,
+    source.includes('RbacAuditService') && source.includes(`resourceType: '${domain}'`),
+    'without an audit row these mutations leave no trace at all',
+  );
+  check(
+    `${controller} audit rows say permission came from tenant scope, not a role check`,
+    source.includes('no owner column and no role gate'),
+  );
+}
+
+check(
+  'ownership is never registered for a domain that has no owner column',
+  !read('src/rbac/rbac.module.ts').includes("register('scene'") &&
+    !read('src/rbac/rbac.module.ts').includes("register('schedule'"),
+  'a resolver that returned true for an ownerless resource would open it to every member',
+);
+{
+  // Every ownership lookup must be tenant-scoped, not just owner-scoped. Without the tenant
+  // predicate a membership could claim a resource in another tenant and reach it through the
+  // owner path, which is the one failure this whole mechanism must not have.
+  const resolver = read('src/rbac/owned-resource.resolver.ts');
+  const clauses = [...resolver.matchAll(/where:\s*\{([^}]*)\}/g)].map((m) => m[1]);
+  check(
+    'every ownership lookup is scoped by tenant as well as by owner',
+    clauses.length > 0 && clauses.every((c) => c.includes('tenantId') && c.includes('ownerMembershipId')),
+    `clauses found: ${JSON.stringify(clauses)}`,
+  );
+}
 
 for (const result of checks) {
   console.log(`${result.pass ? 'PASS' : 'FAIL'}  ${result.name}${result.detail ? ` (${result.detail})` : ''}`);

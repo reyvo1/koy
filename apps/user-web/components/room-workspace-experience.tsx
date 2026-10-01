@@ -89,14 +89,9 @@ export function RoomWorkspaceExperience({ mode }: { mode: WorkspaceMode }) {
             {payload.visibleDeviceCount} perangkat terlihat · {controllable} dapat dikontrol
           </div>
         </div>
-        <div className="flex gap-2">
-          <button className="rounded-xl border border-slate-200 px-3 py-2 text-[12px] font-semibold text-slate-600 hover:bg-slate-50" type="button" onClick={() => void load()}>
-            Perbarui
-          </button>
-          <button className="rounded-xl border border-slate-200 px-3 py-2 text-[12px] font-semibold text-slate-600 hover:bg-slate-50" type="button" onClick={() => void logout()}>
-            Keluar
-          </button>
-        </div>
+        <button className="rounded-xl border border-slate-200 px-3 py-2 text-[12px] font-semibold text-slate-600 hover:bg-slate-50" type="button" onClick={() => void load()}>
+          Perbarui
+        </button>
       </div>
 
       {payload.truncated ? (
@@ -114,11 +109,6 @@ export function RoomWorkspaceExperience({ mode }: { mode: WorkspaceMode }) {
       )}
     </div>
   );
-
-  async function logout() {
-    await fetch('/api/session/logout', { method: 'POST' }).catch(() => null);
-    setState({ kind: 'unauthorized' });
-  }
 }
 
 function HomeView({

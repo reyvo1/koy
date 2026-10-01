@@ -270,7 +270,7 @@ describe('Config Validation', () => {
       NOTIFICATION_CLAIM_TIMEOUT_MS: '60000',
       EMAIL_RELAY_TIMEOUT_MS: '10000',
       EMAIL_RELAY_URL: 'https://relay.example.com/v1/send',
-      EMAIL_RELAY_TOKEN: 'relay-production-secret',
+      EMAIL_RELAY_TOKEN: 'p4Wq9Nxc2HmT6vBxJ0kLpZf3DsA9uG1eV',
       EMAIL_FROM: 'no-reply@example.com',
     });
 
@@ -287,7 +287,7 @@ describe('Config Validation', () => {
         ...productionConfig,
         NOTIFICATION_RUNTIME_ENABLED: 'true',
         EMAIL_RELAY_URL,
-        EMAIL_RELAY_TOKEN: 'relay-production-secret',
+        EMAIL_RELAY_TOKEN: 'p4Wq9Nxc2HmT6vBxJ0kLpZf3DsA9uG1eV',
         EMAIL_FROM: 'no-reply@example.com',
       }),
     ).toThrow('EMAIL_RELAY_URL must use credential-free https://');
@@ -299,7 +299,7 @@ describe('Config Validation', () => {
         ...productionConfig,
         NOTIFICATION_RUNTIME_ENABLED: 'true',
         EMAIL_RELAY_URL: 'https://relay.example.com/v1/send',
-        EMAIL_RELAY_TOKEN: 'relay-production-secret',
+        EMAIL_RELAY_TOKEN: 'p4Wq9Nxc2HmT6vBxJ0kLpZf3DsA9uG1eV',
         EMAIL_FROM: 'not-an-email',
       }),
     ).toThrow('EMAIL_FROM must be a valid email address');

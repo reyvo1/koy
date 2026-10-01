@@ -12,11 +12,23 @@ import {
   type MobileDeviceSummary,
   type MobileTelemetryPoint,
 } from '../device-control/mobile-device-client';
-import { defaultMobileLocale, mobileMessages } from '../localization/messages';
+import {
+  loadMobileNotificationHistory,
+  loadMobileNotificationSummary,
+  type MobileNotificationHistory,
+  type MobileNotificationSummary,
+} from '../device-control/mobile-notification-client';
+import {
+  mobileMessages,
+  type MobileLocale,
+} from '../localization/messages';
+import type { MobileAppearance } from '../settings/mobile-settings-store';
 import { mobileSessionClient } from '../session';
 import { MobileDashboardScreen } from './mobile-dashboard-screen';
 import { MobileAlertsPanel } from './mobile-alerts-panel';
 import { MobileDeviceDetailPanel } from './mobile-device-detail-panel';
+import { MobileNotificationDeliveryPanel } from './mobile-notification-delivery-panel';
+import { MobileSettingsPanel } from './mobile-settings-panel';
 
 type MobileTab = 'home' | 'devices' | 'realtime' | 'alerts' | 'profile';
 
@@ -25,6 +37,15 @@ interface MobileAuthenticatedShellProps {
   isDark: boolean;
   pending: boolean;
   tenantId: string;
+  /** App owns the palette, so the resolved appearance comes in rather than being decided here. */
+  appearance: MobileAppearance;
+  locale: MobileLocale;
+  /** App owns both display settings, so the shell asks rather than writes. */
+  onSelectLocale(locale: MobileLocale): Promise<void>;
+  /** App performs the write, so App reports its outcome. */
+  settingsError: string | null;
+  storageUnavailable: boolean;
+  onSelectAppearance(appearance: MobileAppearance): Promise<void>;
   onLogout(): Promise<void>;
   onRefreshDashboard(dashboardId: string | null): Promise<void>;
   onSelectDashboard(dashboardId: string): Promise<void>;
@@ -35,28 +56,43 @@ interface MobileAuthenticatedShellProps {
   ): Promise<{ commandId: string; status: string }>;
 }
 
-const NAV_ITEMS: ReadonlyArray<{
-  key: MobileTab;
-  label: string;
-}> = [
-  { key: 'home', label: 'Home' },
-  { key: 'devices', label: 'Devices' },
-  { key: 'realtime', label: 'Realtime' },
-  { key: 'alerts', label: 'Alerts' },
-  { key: 'profile', label: 'Profile' },
+/**
+ * Tab labels come from the active locale's copy.
+ *
+ * They were literal English strings while every screen below them rendered Indonesian, so a
+ * default-locale operator saw a mixed-language shell. Deriving the labels keeps the chrome and the
+ * body in the same language instead of fixing only the half that already had a translation.
+ */
+const NAV_ITEMS: ReadonlyArray<{ key: MobileTab; labelKey: keyof typeof mobileMessages['en']['nav'] }> = [
+  { key: 'home', labelKey: 'home' },
+  { key: 'devices', labelKey: 'devices' },
+  { key: 'realtime', labelKey: 'realtime' },
+  { key: 'alerts', labelKey: 'alerts' },
+  { key: 'profile', labelKey: 'profile' },
 ];
 
 export function MobileAuthenticatedShell({
   dashboardState,
+  appearance,
   isDark,
+  locale,
+  onSelectAppearance,
+  onSelectLocale,
   pending,
+  settingsError,
+  storageUnavailable,
   tenantId,
   onLogout,
   onRefreshDashboard,
   onSelectDashboard,
   onSendCommand,
 }: MobileAuthenticatedShellProps) {
-  const copy = mobileMessages[defaultMobileLocale];
+  // The locale drives every string below, so it is read from the device before the first render of
+  // copy. Until it resolves the default is used, which is the same thing the store falls back to on
+  // a fresh install -- so there is no flash of a language the operator did not choose.
+
+
+  const copy = mobileMessages[locale];
   const [tab, setTab] = useState<MobileTab>('home');
   const [devices, setDevices] = useState<MobileDeviceSummary[]>([]);
   const [inventoryLoading, setInventoryLoading] = useState(false);
@@ -72,6 +108,16 @@ export function MobileAuthenticatedShell({
   const [alerts, setAlerts] = useState<MobileAlertsPayload | null>(null);
   const [alertsLoading, setAlertsLoading] = useState(false);
   const [alertsError, setAlertsError] = useState<string | null>(null);
+  // `null`, not `[]`: the history has not been read yet until a request has actually answered, and
+  // a first render must be distinguishable from a render after an outage.
+  const [notificationHistory, setNotificationHistory] =
+    useState<MobileNotificationHistory | null>(null);
+  const [notificationSummary, setNotificationSummary] =
+    useState<MobileNotificationSummary | null>(null);
+  const [notificationLoading, setNotificationLoading] = useState(false);
+  const [notificationHistoryError, setNotificationHistoryError] = useState<
+    string | null
+  >(null);
 
   const loadInventory = useCallback(async () => {
     setInventoryLoading(true);
@@ -148,6 +194,43 @@ export function MobileAuthenticatedShell({
     }
   }, []);
 
+  /**
+   * Load the delivery log and its summary together.
+   *
+   * The summary is a convenience and the history is the point, so a failed summary does not blank
+   * the rows: they are two requests answering two questions, and one of them failing is not a
+   * reason to report the other as unread.
+   */
+  const loadNotifications = useCallback(async () => {
+    setNotificationLoading(true);
+    setNotificationHistoryError(null);
+    try {
+      const [history, summary] = await Promise.all([
+        loadMobileNotificationHistory(mobileSessionClient),
+        loadMobileNotificationSummary(mobileSessionClient).catch(() => null),
+      ]);
+      setNotificationHistory(history);
+      setNotificationSummary(summary);
+    } catch (cause) {
+      // Both cleared, so a stale list from a previous read cannot sit under an error line.
+      setNotificationHistory(null);
+      setNotificationSummary(null);
+      setNotificationHistoryError(
+        cause instanceof Error
+          ? cause.message
+          : 'Riwayat pengiriman notifikasi belum dapat dimuat dari backend.',
+      );
+    } finally {
+      setNotificationLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (tab === 'alerts') {
+      void loadNotifications();
+    }
+  }, [tab, loadNotifications]);
+
   useEffect(() => {
     if (tab === 'devices' || tab === 'realtime') {
       void loadInventory();
@@ -171,6 +254,34 @@ export function MobileAuthenticatedShell({
       void loadAlerts();
     }
   }, [tab, loadAlerts]);
+
+  /**
+   * Read the device's display settings once, on mount.
+   *
+   * A failure here sets `storageUnavailable` rather than falling back silently. The difference
+   * matters to the profile screen: "you are on defaults" is a fact about the operator's choice,
+   * "I cannot read what you chose" is a fact about the phone, and showing the first while the second
+   * is true is a claim the app cannot support.
+   */
+  /**
+   * Choose a locale by asking App, which owns the setting.
+   *
+   * The shell does not write it. Two writers for one setting is two copies of the truth, and the
+   * one that forgets is the one an operator meets on their next sign-in.
+   */
+  const selectLocale = useCallback(
+    (next: MobileLocale) => {
+      void onSelectLocale(next);
+    },
+    [onSelectLocale],
+  );
+
+  const selectAppearance = useCallback(
+    (next: MobileAppearance) => {
+      void onSelectAppearance(next);
+    },
+    [onSelectAppearance],
+  );
 
   return (
     <View style={[styles.shell, isDark && styles.shellDark]}>
@@ -206,6 +317,7 @@ export function MobileAuthenticatedShell({
       >
         {tab === 'home' ? (
           <MobileDashboardScreen
+            locale={locale}
             isDark={isDark}
             onRefresh={onRefreshDashboard}
             onSelectDashboard={onSelectDashboard}
@@ -254,13 +366,26 @@ export function MobileAuthenticatedShell({
         ) : null}
 
         {tab === 'alerts' ? (
-          <MobileAlertsPanel
-            error={alertsError}
-            isDark={isDark}
-            loading={alertsLoading}
-            onRefresh={loadAlerts}
-            payload={alerts}
-          />
+          <View style={styles.sectionGap}>
+            <MobileAlertsPanel
+              error={alertsError}
+              isDark={isDark}
+              loading={alertsLoading}
+              onRefresh={loadAlerts}
+              payload={alerts}
+            />
+            {/* The delivery half. It sits under the analytics findings rather than on its own tab
+                because the two are read together: a finding is what the detector noticed, a delivery
+                row is whether the message about it left the building. */}
+            <MobileNotificationDeliveryPanel
+              error={notificationHistoryError}
+              history={notificationHistory}
+              isDark={isDark}
+              loading={notificationLoading}
+              onRefresh={loadNotifications}
+              summary={notificationSummary}
+            />
+          </View>
         ) : null}
 
         {tab === 'profile' ? (
@@ -274,6 +399,14 @@ export function MobileAuthenticatedShell({
               isDark={isDark}
               title={copy.authenticated.tenantLabel}
               description={tenantId}
+            />
+            <MobileSettingsPanel
+              appearance={appearance}
+              error={settingsError}
+              locale={locale}
+              onSelectAppearance={selectAppearance}
+              onSelectLocale={selectLocale}
+              storageUnavailable={storageUnavailable}
             />
             <Pressable
               accessibilityRole="button"
@@ -304,6 +437,7 @@ export function MobileAuthenticatedShell({
       >
         {NAV_ITEMS.map((item) => {
           const selected = item.key === tab;
+          const label = copy.nav[item.labelKey];
           return (
             <Pressable
               accessibilityRole="tab"
@@ -324,7 +458,7 @@ export function MobileAuthenticatedShell({
                   isDark && styles.textDark,
                 ]}
               >
-                {item.label}
+                {label}
               </Text>
             </Pressable>
           );

@@ -1,5 +1,6 @@
 'use client';
 
+import { TERMINAL_COMMAND_STATUSES } from '../lib/contracts';
 import { useCallback, useEffect, useState } from 'react';
 import { StateNotice } from '@iot-platform/design-system';
 import type { UserDeviceDetailPayload } from '../lib/contracts';
@@ -11,7 +12,6 @@ type State =
   | { kind: 'error'; message: string }
   | { kind: 'ready'; payload: UserDeviceDetailPayload };
 
-const TERMINAL_COMMAND_STATES = new Set(['ACKNOWLEDGED', 'FAILED', 'TIMED_OUT']);
 
 export function DeviceDetailExperience({ deviceId }: { deviceId: string }) {
   const [state, setState] = useState<State>({ kind: 'loading' });
@@ -246,7 +246,7 @@ export function DeviceDetailExperience({ deviceId }: { deviceId: string }) {
       const body = (await response.json().catch(() => ({}))) as { status?: string };
       if (!response.ok) return null;
       const status = body.status ?? 'UNKNOWN';
-      if (TERMINAL_COMMAND_STATES.has(status)) return status;
+      if (TERMINAL_COMMAND_STATUSES.has(status)) return status;
     }
     return null;
   }

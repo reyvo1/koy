@@ -213,11 +213,73 @@ function assertNonBlank(name: string, value: string): void {
   }
 }
 
+/**
+ * Floors for a secret that guards authentication or message integrity in production.
+ *
+ * These are floors, not a password policy. Length plus a distinct-symbol floor rejects the
+ * degenerate values that a denylist cannot enumerate — one character, one word repeated, a
+ * dictionary word padded with itself — while admitting the shape a generated secret actually
+ * has. A 32-character hex string has 16 distinct symbols and passes; demanding full
+ * character-class diversity would reject it, and a policy that rejects correctly-generated
+ * secrets teaches operators to route around the policy.
+ */
+const MIN_PRODUCTION_SECRET_LENGTH = 32;
+const MIN_PRODUCTION_SECRET_DISTINCT_SYMBOLS = 8;
+
+/**
+ * Long enough to clear a length check and still trivially guessable. Padding a common word out
+ * to 32 characters is the obvious way to defeat a length-only rule, so the whole value is
+ * reduced to a known password before the length floor is applied.
+ */
+const COMMON_PRODUCTION_SECRETS = new Set([
+  'password',
+  'passw0rd',
+  'secret',
+  'supersecret',
+  'topsecret',
+  'letmein',
+  'admin',
+  'administrator',
+  'default',
+  'qwerty',
+  'iot',
+]);
+
+/**
+ * The longest run of one repeated character, as a fraction of the value.
+ *
+ * `aaaa…` has one distinct symbol and is already caught by the distinct-symbol floor, but the
+ * separate check keeps the error message specific instead of a generic "too weak" for the most
+ * common accidental value.
+ */
 function assertProductionSecret(name: string, value: string): void {
   const normalized = value.trim().toLowerCase();
 
   if (PRODUCTION_PLACEHOLDER_SECRETS.has(normalized)) {
     throw new Error(`${name} must not use a placeholder value in production`);
+  }
+
+  if (value.length < MIN_PRODUCTION_SECRET_LENGTH) {
+    throw new Error(
+      `${name} must be at least ${MIN_PRODUCTION_SECRET_LENGTH} characters in production ` +
+        `(got ${value.length}); generate one with \`openssl rand -base64 32\``,
+    );
+  }
+
+  // Reduce before comparing, so `passwordpasswordpasswordpass` is recognised as the dictionary
+  // word it is rather than passing on length alone.
+  const collapsed = normalized.replace(/[^a-z0-9]/g, '');
+  if (COMMON_PRODUCTION_SECRETS.has(collapsed) || COMMON_PRODUCTION_SECRETS.has(normalized)) {
+    throw new Error(`${name} must not be based on a common word in production`);
+  }
+
+  const distinctSymbols = new Set(value).size;
+  if (distinctSymbols < MIN_PRODUCTION_SECRET_DISTINCT_SYMBOLS) {
+    throw new Error(
+      `${name} has only ${distinctSymbols} distinct characters in production; at least ` +
+        `${MIN_PRODUCTION_SECRET_DISTINCT_SYMBOLS} are required, so a repeated character ` +
+        'or a single repeated word cannot pass',
+    );
   }
 }
 

@@ -6,7 +6,7 @@
  * Posts to /api/session/login (same-origin, HttpOnly cookies).
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -14,6 +14,13 @@ export default function PremiumLoginPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Credential forms must be inert until React has hydrated. If the client bundle never
+  // loads, a native form submit would send the password as a GET query string, putting it
+  // in the URL, the history entry and the server log. `hydrated` gates the button, and the
+  // form carries method="post" with no action, so an un-hydrated submit cannot echo the
+  // secret back into the address bar either.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -120,7 +127,7 @@ export default function PremiumLoginPage() {
             disimpan di local storage.
           </p>
 
-          <form onSubmit={onSubmit} className="space-y-5">
+          <form onSubmit={onSubmit} method="post" className="space-y-5">
             {[
               { name: 'tenantId', label: 'Tenant ID', type: 'text' },
               { name: 'email', label: 'Email', type: 'email' },
@@ -146,7 +153,8 @@ export default function PremiumLoginPage() {
             ) : null}
 
             <button
-              disabled={busy}
+              type="submit"
+              disabled={busy || !hydrated}
               className="w-full rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 py-3.5 text-[15px] font-bold text-white shadow-[0_6px_20px_rgba(20,184,166,.35)] transition-all hover:brightness-110 disabled:opacity-60"
             >
               {busy ? 'Memproses…' : 'Masuk →'}
@@ -166,6 +174,16 @@ export default function PremiumLoginPage() {
               className="font-semibold text-slate-400 hover:text-teal-300"
             >
               Daftar akun
+            </Link>
+            {' · '}
+            {/* A registered-but-unverified account cannot log in at all, and the reason
+                surfaces as a plain credential error. This is the only place from the login
+                screen where someone in that state can recognise it and act. */}
+            <Link
+              href="/verifikasi"
+              className="font-semibold text-slate-400 hover:text-teal-300"
+            >
+              Verifikasi email
             </Link>
           </p>
 

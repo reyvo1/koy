@@ -23,9 +23,13 @@ describe('Module 10 Slice 10.5 telemetry widget query integration contract', () 
 
   it('exposes a tenant-isolated per-widget data endpoint', () => {
     expect(controller).toContain("@Get(':dashboardId/widgets/:widgetId/data')");
-    expect(controller).toContain(
-      '@UseGuards(JwtAuthGuard, TenantContextGuard)',
-    );
+    // Assert the guard list by membership, not as a pinned string. Pinning
+    // `JwtAuthGuard, TenantContextGuard)` meant that adding a third guard failed the test even
+    // though the extra guard only strengthens the boundary this assertion exists to protect.
+    // The intent is "authenticated and tenant-scoped"; that stays true as guards are added.
+    const guardList = controller.match(/@UseGuards\(([^)]*)\)/)?.[1] ?? '';
+    expect(guardList).toContain('JwtAuthGuard');
+    expect(guardList).toContain('TenantContextGuard');
     expect(service).toContain('findAuthorizedDashboardResolution');
     expect(service).toContain("event: 'dashboard.widget_query.completed'");
     expect(service).not.toContain('tenantId: dashboard.tenantId');

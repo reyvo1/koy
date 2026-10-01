@@ -43,7 +43,15 @@ describe('Deployment and Recovery Foundation contract', () => {
     const nginx = read('ops/nginx/iot-platform.conf.template');
     const environment = read('ops/env/iot-platform.env.example');
     expect(environment).toContain('HOST=127.0.0.1');
-    expect(nginx).toContain('listen 443 ssl http2');
+    // Assert the *supported* HTTP/2 form, not just the presence of a 443 listener.
+    // `listen 443 ssl http2` is deprecated in current nginx: it warns on every reload and
+    // `nginx -t` still reports success, so pinning the old string here protected a defect.
+    // The supported `http2 on;` form is what must be present, and it has to sit in the TLS
+    // block — in the port-80 block the config validates and silently serves HTTP/1.1.
+    // Placement is checked in test/nginx-tls-terminator.contract.spec.ts.
+    expect(nginx).toContain('listen 443 ssl;');
+    expect(nginx).not.toContain('listen 443 ssl http2');
+    expect(nginx).toContain('http2 on;');
     expect(nginx).toContain('ssl_protocols TLSv1.2 TLSv1.3');
     expect(nginx).toContain('server 127.0.0.1:3000');
     expect(nginx).toContain('location = /metrics');

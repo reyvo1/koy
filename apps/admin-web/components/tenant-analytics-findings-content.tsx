@@ -84,7 +84,7 @@ export default function TenantAnalyticsFindingsContent() {
           <ServerCrash className="h-8 w-8 text-slate-400" strokeWidth={1.5} />
         </span>
         <p className="mb-0 mt-5 text-[15px] font-bold">Temuan analitik tidak tersedia</p>
-        <p className="mt-2 mb-0 text-[13px]" style={{ color: 'var(--iot-text-muted)' }}>
+        <p className="mt-2 mb-0 text-[13px]" style={{ color: 'var(--iot-color-muted)' }}>
           {error}
         </p>
       </div>
@@ -98,7 +98,7 @@ export default function TenantAnalyticsFindingsContent() {
           <SearchX className="h-8 w-8 text-slate-400" strokeWidth={1.5} />
         </span>
         <p className="mb-0 mt-5 text-[15px] font-bold">Belum ada temuan analitik</p>
-        <p className="mt-2 mb-0 text-[13px]" style={{ color: 'var(--iot-text-muted)' }}>
+        <p className="mt-2 mb-0 text-[13px]" style={{ color: 'var(--iot-color-muted)' }}>
           Belum ada finding Module 16 pada data yang tersedia. Ini bukan status pengiriman notifikasi.
         </p>
       </div>
@@ -127,18 +127,18 @@ export default function TenantAnalyticsFindingsContent() {
             <div key={item.id ?? `finding-${index}`} className={`iot2-alert ${token.alert}`}>
               <span className="iot2-alert__dot" />
               <div className="min-w-0 flex-1">
-                <div className="text-[14px] font-bold" style={{ color: 'var(--iot-text)' }}>
+                <div className="text-[14px] font-bold" style={{ color: 'var(--iot-color-text)' }}>
                   {title}
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   <span className={`iot2-badge ${token.badge}`}>{token.label}</span>
                   {item.kind ? (
-                    <span className="text-[11.5px]" style={{ color: 'var(--iot-text-muted)' }}>
+                    <span className="text-[11.5px]" style={{ color: 'var(--iot-color-muted)' }}>
                       {item.kind}
                     </span>
                   ) : null}
                   {item.capabilityKey ? (
-                    <code className="text-[11px]" style={{ color: 'var(--iot-text-muted)' }}>
+                    <code className="text-[11px]" style={{ color: 'var(--iot-color-muted)' }}>
                       {item.capabilityKey}
                     </code>
                   ) : null}

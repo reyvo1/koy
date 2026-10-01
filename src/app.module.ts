@@ -12,6 +12,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { DeviceModule } from './device/device.module';
 import { CameraOnboardingModule } from './device/camera-onboarding.module';
+import { CameraMediaModule } from './camera/camera.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { MqttModule } from './mqtt/mqtt.module';
 import { TelemetryModule } from './telemetry/telemetry.module';
@@ -25,8 +26,10 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { OrgModule } from './org/org.module';
 import { OtaModule } from './ota/ota.module';
+import { DeviceMaintenanceModule } from './device-maintenance/device-maintenance.module';
 import { BillingModule } from './billing/billing.module';
 import { PublicApiModule } from './public-api/public-api.module';
+import { WebhookModule } from './webhook/webhook.module';
 import { RbacModule } from './rbac/rbac.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { SharingModule } from './sharing/sharing.module';
@@ -48,17 +51,20 @@ import { SceneModule } from './scene/scene.module';
     UsersModule,
     DeviceModule,
     CameraOnboardingModule,
+    CameraMediaModule,
     DashboardModule,
     AutomationModule,
     SceneModule,
     SchedulerModule,
     RbacModule,
     PublicApiModule,
+    WebhookModule,
     BillingModule,
     SpaceModule,
     SharingModule,
     NotificationModule,
     OtaModule,
+    DeviceMaintenanceModule,
     IntegrationsModule,
     OrgModule,
     AnalyticsModule,

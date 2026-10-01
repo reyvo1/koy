@@ -1,5 +1,6 @@
 import { ScheduleController } from './schedule.controller';
 import { PrismaService } from '../prisma/prisma.service';
+import { RbacAuditService } from '../rbac/rbac-audit.service';
 import { ScheduleDomainValidator } from './schedule-domain.validator';
 
 const originalFlag = process.env.SCHEDULER_RUNTIME_ENABLED;
@@ -8,6 +9,7 @@ describe('ScheduleController runtime activation', () => {
   const request = { user: { tenantContext: { tenantId: 'tenant-1' } } };
   let update: jest.Mock;
   let controller: ScheduleController;
+  let recordMutation: jest.Mock;
 
   beforeEach(() => {
     update = jest.fn().mockResolvedValue({ id: 'schedule-1', enabled: true });
@@ -22,9 +24,14 @@ describe('ScheduleController runtime activation', () => {
         update,
       },
     };
+    // The third argument is the audit recorder. Schedule has no owner column and no role gate,
+    // so these mutations are permitted by tenant scope alone and the audit row is the only
+    // record of who changed what. Stubbed here; its write-failure behaviour has its own spec.
+    recordMutation = jest.fn().mockResolvedValue(undefined);
     controller = new ScheduleController(
       prisma as unknown as PrismaService,
       {} as ScheduleDomainValidator,
+      { recordMutation } as unknown as RbacAuditService,
     );
   });
 

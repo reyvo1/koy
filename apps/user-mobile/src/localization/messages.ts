@@ -29,6 +29,55 @@ export const mobileMessages = {
       logoutAction: 'Keluar',
       pendingLogoutAction: 'Mengakhiri sesi…',
     },
+    nav: {
+      home: 'Home',
+      devices: 'Perangkat',
+      realtime: 'Realtime',
+      alerts: 'Alerts',
+      profile: 'Profil',
+      settings: 'Pengaturan',
+    },
+    settings: {
+      title: 'Pengaturan tampilan',
+      description:
+        'Preferensi tampilan perangkat ini. Tidak memengaruhi channel notifikasi, yang milik tenant.',
+      localeLabel: 'Bahasa',
+      localeDescription: 'Menentukan seluruh teks antarmuka, termasuk label tab.',
+      appearanceLabel: 'Tampilan',
+      appearanceDescription: 'Ikuti sistem, atau kunci terang/gelap.',
+      appearanceSystem: 'Ikuti sistem',
+      appearanceLight: 'Terang',
+      appearanceDark: 'Gelap',
+      localeUnavailable:
+        'Penyimpanan aman tidak tersedia, jadi pilihan tidak dapat dibaca atau disimpan.',
+      localeWriteFailed: 'Pilihan tampilan gagal disimpan.',
+      localeFallback:
+        'Perangkat melaporkan bahasa yang belum punya terjemahan; bahasa bawaan dipakai.',
+    },
+    panels: {
+      deviceDetail: {
+        telemetryEmpty: 'Belum ada telemetry terbaru.',
+        capabilityEmpty:
+          'Tidak ada capability boolean writable. Tipe lain tetap read-only pada Mobile saat ini.',
+        commandEmpty: 'Belum ada command.',
+        rolloutEmpty: 'Belum ada rollout yang menarget perangkat ini.',
+        rolloutCaveat:
+          'Rollout state bukan bukti instalasi firmware fisik pada hardware.',
+        findingCaveat:
+          'Tidak ada finding pada riwayat bounded; bukan jaminan all-clear.',
+      },
+      alerts: {
+        unavailableTitle: 'Alerts tidak tersedia',
+        emptyTitle: 'Tidak ada finding WARNING/CRITICAL',
+        emptyDescription:
+          'Hanya berarti tidak ada finding pada hasil bounded saat ini; bukan jaminan all-clear di luar cakupan riwayat.',
+        scopeDescription: 'Cakupan perangkat dibatasi {scope}; hasil tidak boleh diperlakukan sebagai daftar lengkap.',
+      },
+      delivery: {
+        summaryTitle: 'Ringkasan status',
+        totalLabel: 'Total tercatat',
+      },
+    },
     dashboard: {
       title: 'Dashboard',
       loadingDescription: 'Memuat dashboard tenant yang telah diotorisasi.',
@@ -121,6 +170,53 @@ export const mobileMessages = {
       logoutAction: 'Sign out',
       pendingLogoutAction: 'Ending session…',
     },
+    nav: {
+      home: 'Home',
+      devices: 'Devices',
+      realtime: 'Realtime',
+      alerts: 'Alerts',
+      profile: 'Profile',
+      settings: 'Settings',
+    },
+    settings: {
+      title: 'Display settings',
+      description:
+        'Display preferences for this device. They do not change notification channels, which belong to the tenant.',
+      localeLabel: 'Language',
+      localeDescription: 'Determines all interface text, including the tab labels.',
+      appearanceLabel: 'Appearance',
+      appearanceDescription: 'Follow the system, or pin light or dark.',
+      appearanceSystem: 'Follow system',
+      appearanceLight: 'Light',
+      appearanceDark: 'Dark',
+      localeUnavailable:
+        'Secure storage is unavailable, so choices cannot be read or saved.',
+      localeWriteFailed: 'The display choice could not be saved.',
+      localeFallback:
+        'The device reports a language this build has no copy for; the default is used.',
+    },
+    panels: {
+      deviceDetail: {
+        telemetryEmpty: 'No recent telemetry yet.',
+        capabilityEmpty:
+          'No writable boolean capability. Other types stay read-only on Mobile for now.',
+        commandEmpty: 'No commands yet.',
+        rolloutEmpty: 'No rollout targets this device yet.',
+        rolloutCaveat: 'Rollout state is not proof of physical firmware installation.',
+        findingCaveat: 'No findings in the bounded history; that is not an all-clear.',
+      },
+      alerts: {
+        unavailableTitle: 'Alerts are unavailable',
+        emptyTitle: 'No WARNING/CRITICAL findings',
+        emptyDescription:
+          'This only means no findings within the current bounded results; it is not an all-clear beyond that window.',
+        scopeDescription: 'Device scope is limited to {scope}; results must not be read as a complete list.',
+      },
+      delivery: {
+        summaryTitle: 'Status summary',
+        totalLabel: 'Total recorded',
+      },
+    },
     dashboard: {
       title: 'Dashboard',
       loadingDescription: 'Loading tenant-authorized dashboards.',
@@ -185,5 +281,50 @@ export const mobileMessages = {
 } as const;
 
 export type MobileLocale = keyof typeof mobileMessages;
+
+/**
+ * The locales this build actually has copy for, in the order the picker offers them.
+ *
+ * `id` leads because it is the platform's language of record, not because it is a better default —
+ * `defaultMobileLocale` says which one a fresh install uses.
+ */
+export const MOBILE_LOCALES = ['id', 'en'] as const satisfies ReadonlyArray<MobileLocale>;
+
+/**
+ * Exact match only, and that is the point.
+ *
+ * A permissive match here is how a picker ends up lying: the operator asks for something the app has
+ * no copy for, the lookup quietly returns `id`, and every later screen answers in Indonesian while
+ * the picker still shows their unsupported tag selected. Refusing is recoverable; a silent fallback
+ * is not. Regional tags are handled by `normalizeMobileLocale`, which reports the guess it made.
+ */
+export function isMobileLocale(candidate: unknown): candidate is MobileLocale {
+  return (
+    typeof candidate === 'string' &&
+    (MOBILE_LOCALES as ReadonlyArray<string>).includes(candidate)
+  );
+}
+
+/**
+ * Resolve a device language tag to a locale, reporting whether the tag was honoured.
+ *
+ * The one guess made is the language subtag, because `en-GB` really is English and refusing it would
+ * be pedantry that teaches operators the picker is broken. `matched: false` is the load-bearing
+ * part: it tells the UI to say the app fell back, instead of presenting an approximation as the
+ * operator's choice.
+ */
+export function normalizeMobileLocale(tag: unknown): {
+  locale: MobileLocale;
+  matched: boolean;
+} {
+  if (isMobileLocale(tag)) return { locale: tag, matched: true };
+
+  if (typeof tag === 'string') {
+    const language = tag.split('-')[0]?.toLowerCase();
+    if (isMobileLocale(language)) return { locale: language, matched: false };
+  }
+
+  return { locale: defaultMobileLocale, matched: false };
+}
 
 export const defaultMobileLocale: MobileLocale = 'id';

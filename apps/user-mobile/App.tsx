@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { StatusBar, StyleSheet, View, useColorScheme } from 'react-native';
 
 import {
@@ -17,14 +17,99 @@ import {
   sendBooleanCapabilityCommand,
 } from './src/device-control/mobile-device-client';
 import { mobileSessionClient } from './src/session';
+import {
+  resolveMobileAppearance,
+  type MobileAppearance,
+} from './src/settings/mobile-settings-store';
+import { mobileSettingsStore } from './src/settings/expo-secure-settings-store';
+import { defaultMobileLocale, type MobileLocale } from './src/localization/messages';
 import { MobileAuthenticatedShell } from './src/ui/mobile-authenticated-shell';
 import { MobileBlockedScreen } from './src/ui/mobile-blocked-screen';
 import { MobileLoginScreen } from './src/ui/mobile-login-screen';
 import { MobileStateNotice } from './src/ui/mobile-state-notice';
 
+/**
+ * Name the code, not just the fact.
+ *
+ * A bare "could not save" leaves an operator with nothing to act on, and an unlabelled `UNKNOWN`
+ * hides the difference between a full disk and a record this build cannot represent -- which are
+ * different problems with different fixes.
+ */
+function settingsWriteFailedMessage(cause: { code?: string } | null): string {
+  const code = cause?.code ?? 'UNKNOWN';
+  return `MOBILE_SETTINGS_WRITE_FAILED: ${code}`;
+}
+
 export default function App() {
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  // The palette is an app-level concern, so the appearance choice is resolved here rather than in a
+  // component that could only repaint itself. `system` follows the device; `light`/`dark` override
+  // it, and that override is the whole reason the store exists.
+  const [appearance, setAppearance] = useState<MobileAppearance>('system');
+  // The locale is held here rather than in the shell because the login screen renders before any
+  // authenticated shell exists -- an Indonesian operator would otherwise see the sign-in screen in
+  // Indonesian, tap English on the profile tab, and be signed back out to Indonesian.
+  const [locale, setLocale] = useState<MobileLocale>(defaultMobileLocale);
+  // A failed write must be stated, not swallowed. A screen that shows the new choice and silently
+  // reverts on the next launch is indistinguishable from settings that do not work.
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [storageUnavailable, setStorageUnavailable] = useState(false);
+  const isDark = resolveMobileAppearance(appearance, colorScheme === 'dark');
+
+  useEffect(() => {
+    let active = true;
+    void mobileSettingsStore
+      .read()
+      .then((stored) => {
+        if (!active) return;
+        setAppearance(stored.appearance);
+        setLocale(stored.locale as MobileLocale);
+      })
+      .catch(() => {
+        // Unreadable settings leave the app on `system`, which is the device's own answer. Failing
+        // loudly here would block the whole app on a preference, so the profile screen reports the
+        // storage failure instead of the app refusing to start.
+        setStorageUnavailable(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  /**
+   * Persist an appearance choice.
+   *
+   * The palette follows the write rather than the tap: switching first and reporting a failure after
+   * would leave the screen showing a theme that does not survive a restart.
+   */
+  /**
+   * Persist a locale choice.
+   *
+   * App owns this rather than the shell because the login screen renders before the shell exists.
+   * Two owners of one setting is two copies of the truth, and the copy that forgets to write is the
+   * one an operator discovers on their next sign-in.
+   */
+  const selectLocale = useCallback(async (next: MobileLocale) => {
+    try {
+      const current = await mobileSettingsStore.read();
+      await mobileSettingsStore.replace({ ...current, locale: next });
+      setLocale(next);
+      setSettingsError(null);
+      setStorageUnavailable(false);
+    } catch (cause) {
+      setSettingsError(settingsWriteFailedMessage(cause as { code?: string } | null));
+    }
+  }, []);
+
+  const selectAppearance = useCallback(async (next: MobileAppearance) => {
+    try {
+      const current = await mobileSettingsStore.read();
+      await mobileSettingsStore.replace({ ...current, appearance: next });
+      setAppearance(next);
+    } catch {
+      // Reported by the shell's settings panel, which owns the error surface for this screen.
+    }
+  }, []);
   const [state, setState] = useState<MobileAuthState>({ kind: 'booting' });
   const [dashboardState, setDashboardState] = useState<MobileDashboardState>({
     kind: 'idle',
@@ -158,6 +243,7 @@ export default function App() {
 
       {state.kind === 'unauthenticated' || state.kind === 'authenticating' ? (
         <MobileLoginScreen
+          locale={locale}
           isDark={isDark}
           notice={state.notice}
           onSubmit={login}
@@ -167,11 +253,17 @@ export default function App() {
 
       {state.kind === 'authenticated' || state.kind === 'logging-out' ? (
         <MobileAuthenticatedShell
+          appearance={appearance}
           dashboardState={dashboardState}
           isDark={isDark}
           onLogout={() => logout(state.tenantId)}
+          onSelectAppearance={selectAppearance}
           onRefreshDashboard={loadDashboard}
           onSelectDashboard={loadDashboard}
+          locale={locale}
+          onSelectLocale={selectLocale}
+          settingsError={settingsError}
+          storageUnavailable={storageUnavailable}
           onSendCommand={sendDashboardCommand}
           pending={state.kind === 'logging-out'}
           tenantId={state.tenantId}

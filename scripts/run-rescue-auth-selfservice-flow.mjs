@@ -113,11 +113,42 @@ async function apiLogin(email, password, tenantId) {
  * This does not weaken the lockout: the threshold itself is covered by
  * src/auth/login-lockout.service.spec.ts.
  */
+/**
+ * Reset the two Redis counters that stand between this runner and a deterministic result.
+ *
+ * The lockout key is per identity, but the sensitive-endpoint rate limiter is keyed by
+ * `sha256(path:clientIp)` under `iot:rate-limit:auth:` and is capped at
+ * `SENSITIVE_RATE_LIMIT_MAX` (10) per `SENSITIVE_RATE_LIMIT_WINDOW_MS` (60s). This runner
+ * makes five logins in a few seconds, so a second run inside the same minute tripped the
+ * limiter and the "new password works" assertion failed with 429 — a result that says nothing
+ * about the code under test.
+ *
+ * The whole `iot:rate-limit:auth:` prefix is cleared rather than the six individual paths.
+ * Recomputing `sha256(path:ip)` here would duplicate `SENSITIVE_AUTH_PATHS` in a second place,
+ * and that copy would silently stop matching the moment a path is added to the guard.
+ *
+ * This does not weaken either control: the thresholds themselves are covered by
+ * `src/auth/login-lockout.service.spec.ts` and
+ * `src/security/sensitive-endpoint-rate-limit.guard.spec.ts`. A test runner resetting its own
+ * throttle between assertions is not the same as a login path that does not throttle.
+ */
 async function clearLoginLockout(email, tenantId) {
   try {
     await redis.del(`iot:login-lockout:${tenantId}:${email.toLowerCase()}`);
   } catch {
     // Best-effort: a miss here only costs a retry on the next run.
+  }
+  try {
+    let cursor = '0';
+    do {
+      const [next, keys] = await redis.scan(cursor, 'MATCH', 'iot:rate-limit:auth:*', 'COUNT', 100);
+      cursor = next;
+      if (keys.length > 0) {
+        await redis.del(...keys);
+      }
+    } while (cursor !== '0');
+  } catch {
+    // Best-effort, same reasoning as the lockout key above.
   }
 }
 
@@ -142,6 +173,10 @@ async function main() {
 
   await prisma.tenant.create({ data: { id: tenantId, name: `Auth Flow ${runId.slice(0, 8)}` } });
 
+  // Declared out here because `finally` has to sweep the fixture even when the run throws
+  // partway, and a binding created inside `try` is not visible from `finally`.
+  let fixtureUserId = null;
+
   try {
     // 1. Register through the proxy. The proxy resolves the tenant id and then collapses
     //    the backend outcome, so a rejection here is generic by design.
@@ -161,6 +196,7 @@ async function main() {
       include: { credential: true },
     });
     assert(!!created, 'registration persisted a user row');
+    fixtureUserId = created.id;
 
     // 2. The account starts unverified, and unverified must not be able to sign in —
     //    otherwise verification is decorative and the email step proves nothing.
@@ -172,22 +208,53 @@ async function main() {
       `status=${beforeVerify.status}`,
     );
 
-    // 3. Issue a real verification token and redeem it through the proxy.
-    // Mirrors AuthService.register: argon2 hash for verification, sha256 for the
-    // unique lookup column. The plain token is kept here so the proxy can redeem it.
-    const verificationToken = randomBytes(32).toString('hex');
-    await prisma.user.update({
-      where: { id: created.id },
-      data: {
-        verificationTokenHash: await argon2.hash(verificationToken),
-        verificationTokenLookup: lookupToken(verificationToken),
-      },
+    // 3. Redeem the token the registration ACTUALLY issued.
+    //
+    // This used to mint its own: it overwrote `verificationTokenHash`/`verificationTokenLookup`
+    // with a token the runner invented, then redeemed that. Every check below passed, and the
+    // flow was still unfinishable — registration mailed a bare token and no page accepted it.
+    // The runner was blind to exactly the hop it existed to prove.
+    //
+    // The notification body is byte-for-byte what the relay mails
+    // (`body: \`Verification token: ${token}\``), so reading the row is reading the user's
+    // inbox, not bypassing the flow. No relay is required: the runtime being off only means
+    // nobody was emailed, not that the token was never issued.
+    const delivered = await prisma.notification.findFirst({
+      where: { destination: email, channel: 'EMAIL' },
+      orderBy: { createdAt: 'desc' },
     });
+    assert(
+      !!delivered,
+      'registration delivered a verification notification to the registrant',
+      `no EMAIL notification for ${email}`,
+    );
 
-    const verified = await webPost('/api/auth/verify-email', { token: verificationToken });
+    const body = delivered?.body ?? '';
+    // Accept a bare token, or a link carrying one, so a future email-template change does not
+    // silently turn this into a test that can never pass.
+    const issuedToken =
+      /Verification token:\s*([0-9a-f]{64})/.exec(body)?.[1] ??
+      /[?&]token=([0-9a-f]{16,})/.exec(body)?.[1] ??
+      null;
+    assert(
+      !!issuedToken,
+      'the delivered notification carries a token a person could act on',
+      issuedToken ? `token=${issuedToken.slice(0, 8)}…` : `body=${JSON.stringify(body).slice(0, 120)}`,
+    );
+
+    // And the page that receives it must exist. A source contract cannot fail when a route is
+    // deleted; an HTTP probe can, which is the whole reason this check lives here.
+    const verifyPage = await fetch(`${WEB_BASE}/verifikasi`).catch(() => null);
+    assert(
+      verifyPage?.ok === true,
+      'a page exists to accept the token (GET /verifikasi)',
+      `status=${verifyPage?.status ?? 'unreachable'}`,
+    );
+
+    const verified = await webPost('/api/auth/verify-email', { token: issuedToken });
     assert(
       verified.status === 200 && verified.body?.verified === true,
-      'verification succeeds through the proxy',
+      'the issued token redeems through the proxy',
       `status=${verified.status} body=${JSON.stringify(verified.body)}`,
     );
 
@@ -195,6 +262,25 @@ async function main() {
       where: { email_tenantId: { email, tenantId } },
     });
     assert(isVerifiedNow?.isVerified === true, 'verification set isVerified on the user row');
+
+    // The registration must also leave an account an administrator can actually promote. It
+    // used to create no Membership at all, so TenantContextGuard had nothing to resolve and
+    // `PATCH /admin/tenant-users/:userId` had nothing to update.
+    const withMembership = await prisma.user.findUnique({
+      where: { email_tenantId: { email, tenantId } },
+      include: { memberships: true },
+    });
+    const membership = withMembership?.memberships?.[0];
+    assert(
+      !!membership,
+      'registration created the membership the tenant-scoped guards resolve',
+      `memberships=${withMembership?.memberships?.length ?? 'n/a'}`,
+    );
+    assert(
+      membership?.role === 'MEMBER' && membership?.status === 'PENDING',
+      'that membership grants no console access on its own (no self-escalation)',
+      `role=${membership?.role} status=${membership?.status}`,
+    );
 
     // 4. A verified account can actually sign in — the whole point of the flow.
     const afterVerify = await apiLogin(email, password, tenantId);
@@ -297,9 +383,105 @@ async function main() {
       `status=${withOld.status}`,
     );
   } finally {
-    await prisma.user.deleteMany({ where: { email_tenantId: { email, tenantId } } }).catch(() => null);
-    await prisma.tenant.deleteMany({ where: { id: tenantId } }).catch(() => null);
+    // Order matters, and it used to be wrong in a way nothing reported.
+    //
+    // `user_credentials` has no cascade, so `user.deleteMany` raised a foreign-key violation
+    // that `.catch(() => null)` swallowed. Measured after a single run that reported PASS: one
+    // user, one credential, two notifications and one tenant left behind. The check meant to
+    // keep the fixture isolated was the one check that never ran, and it failed silently in
+    // the direction that let the database grow.
+    //
+    // A leak is now a reported failure. Best-effort is acceptable for a keyspace scan, not for
+    // removing rows this run created.
+    // A leak is verified by counting what is left, not by the absence of a thrown error. The
+    // first version of this block inverted that and reported its own successful deletions as
+    // leaks, which is the same class of mistake in the opposite direction: a check whose
+    // result means nothing.
+    const errors = [];
+    // A Prisma error renders as a multi-line block, and taking `.split('\n')[0]` of it yields
+    // an empty string — which is how the first version of this block reported "delete failed
+    // user: " and taught nobody anything. Print the code and the first meaningful line.
+    const describe = (error) => {
+      if (!error) return 'unknown error';
+      const code = error.code ? `${error.code} ` : '';
+      const lines = String(error.message ?? error)
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
+      const meaningful =
+        lines.find((line) => /constraint|Foreign key|violates|Unknown argument|Invalid/i.test(line)) ??
+        lines[0] ??
+        '(empty message)';
+      return `${code}${meaningful}`;
+    };
+    const sweep = async (label, run) => {
+      try {
+        await run();
+      } catch (error) {
+        errors.push(`${label}: ${describe(error)}`);
+      }
+    };
+
+    // `email_tenantId` is a compound unique, and Prisma only accepts one in the `where` of a
+    // *singular* operation (`findUnique`/`update`/`delete`). Handing it to `deleteMany` is an
+    // invocation error, not an empty result — which is what the original cleanup did, behind a
+    // `.catch(() => null)`, and why every run leaked its fixture. Both fields are plain scalar
+    // columns as well, so filtering on the pair is equivalent and actually accepted.
+    const fixture = { email, tenantId };
+    const userId = fixtureUserId;
+    if (userId) {
+      const families = await prisma.refreshTokenFamily
+        .findMany({ where: { userId }, select: { id: true } })
+        .catch(() => []);
+      const familyIds = families.map((family) => family.id);
+      if (familyIds.length > 0) {
+        await sweep('refreshToken', () =>
+          prisma.refreshToken.deleteMany({ where: { familyId: { in: familyIds } } }),
+        );
+      }
+      await sweep('refreshTokenFamily', () =>
+        prisma.refreshTokenFamily.deleteMany({ where: { userId } }),
+      );
+      await sweep('userCredential', () => prisma.userCredential.deleteMany({ where: { userId } }));
+      await sweep('membership', () => prisma.membership.deleteMany({ where: { userId } }));
+    }
+    await sweep('notification', () => prisma.notification.deleteMany({ where: { destination: email } }));
+    await sweep('user', () => prisma.user.deleteMany({ where: fixture }));
+    await sweep('tenant', () => prisma.tenant.deleteMany({ where: { id: tenantId } }));
     await clearLoginLockout(email, tenantId);
+
+    // Now count. Anything still here is a row this run created and failed to remove.
+    const leftovers = [];
+    const count = async (label, run) => {
+      try {
+        const n = await run();
+        if (n > 0) {
+          leftovers.push(`${label}=${n}`);
+        }
+      } catch (error) {
+        leftovers.push(`${label}: unreadable (${describe(error)})`);
+      }
+    };
+    await count('users', () => prisma.user.count({ where: fixture }));
+    await count('credentials', () =>
+      userId ? prisma.userCredential.count({ where: { userId } }) : Promise.resolve(0),
+    );
+    await count('memberships', () =>
+      userId ? prisma.membership.count({ where: { userId } }) : Promise.resolve(0),
+    );
+    await count('notifications', () => prisma.notification.count({ where: { destination: email } }));
+    await count('tenants', () => prisma.tenant.count({ where: { id: tenantId } }));
+
+    const leak = [...errors.map((e) => `delete failed ${e}`), ...leftovers];
+    if (leak.length > 0) {
+      failed += 1;
+      failures.push(`fixture cleanup left rows behind :: ${leak.join(', ')}`);
+      process.stdout.write(`  FAIL fixture cleanup left rows behind :: ${leak.join(', ')}\n`);
+    } else {
+      passed += 1;
+      process.stdout.write('  PASS fixture cleanup removed every row it created\n');
+    }
+
     await prisma.$disconnect();
     redis.disconnect();
   }

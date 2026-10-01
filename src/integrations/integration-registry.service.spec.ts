@@ -7,16 +7,45 @@ describe('IntegrationRegistryService', () => {
   let integrationCreate: jest.Mock;
   let integrationUpdateMany: jest.Mock;
   let syncUpsert: jest.Mock;
+  let integrationFindFirst: jest.Mock;
   let service: IntegrationRegistryService;
 
   beforeEach(() => {
     integrationCreate = jest.fn().mockResolvedValue({ id: 'int1' });
     integrationUpdateMany = jest.fn().mockResolvedValue({ count: 1 });
     syncUpsert = jest.fn().mockResolvedValue({});
+    integrationFindFirst = jest.fn().mockResolvedValue({
+      id: 'int1',
+      provider: 'MQTT_BRIDGE',
+      credentialRef: 'secret://tenant-a/mqtt',
+    });
     service = new IntegrationRegistryService({
-      integration: { create: integrationCreate, updateMany: integrationUpdateMany },
+      integration: {
+        create: integrationCreate,
+        updateMany: integrationUpdateMany,
+        // recordSync proves the integration belongs to the tenant before writing a mapping, so the
+        // mock needs the lookup. Returning a row keeps each test's original intent -- that a mapping
+        // is upserted -- rather than failing earlier on a guard the test never knew about.
+        findFirst: integrationFindFirst,
+      },
       integrationSyncState: { upsert: syncUpsert },
     } as unknown as PrismaService);
+  });
+
+  it('rejects a sync mapping whose integration is not in the tenant', async () => {
+    // The cross-tenant write this prevents: without the lookup, an integration id belonging to
+    // another tenant produced a mapping row pointing at it, and the upsert succeeded.
+    integrationFindFirst.mockResolvedValueOnce(null);
+    await expect(
+      service.recordSync({
+        tenantId,
+        integrationId: 'integration-of-another-tenant',
+        entityType: 'DEVICE',
+        externalEntityId: 'ext-1',
+        internalEntityId: 'dev-1',
+      }),
+    ).rejects.toThrow(/tidak ditemukan/i);
+    expect(syncUpsert).not.toHaveBeenCalled();
   });
 
   it('registers an integration with a credential reference', async () => {

@@ -4,9 +4,17 @@
  * Tenant Commands center (blueprint §2) — capability-driven send command UI
  * plus history/ACK status. Writable capability identity and typed values come
  * from the same device capability contract used by Device Detail/Scene.
+ *
+ * Each history row opens the command's full record. The backend has served
+ * `GET /devices/:id/commands/:commandId` since the command module shipped, but until now
+ * nothing in this console called it, so a command was only ever a one-line summary: the
+ * operator could see SENT or ACKED and nothing about the send, the acknowledgement, the
+ * elapsed time between them, or the payload the device actually received — which is exactly
+ * what a failed command needs in order to be diagnosable.
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { CapabilityValueInput } from '@/components/capability-value-input';
 import { parseCapabilityValue } from '@/lib/capability-value';
 
@@ -28,10 +36,32 @@ interface CapabilityRow {
 
 interface CommandItem {
   id: string;
+  /**
+   * The command's correlationId — the identifier the detail endpoint resolves on. This is
+   * NOT the same value as `id` (both are UUIDs in the Prisma model), so a row that carries
+   * only `id` cannot be opened.
+   */
+  commandId: string;
+  deviceId: string;
   deviceName: string;
   capabilityKey: string;
   status: string;
   createdAt: string | null;
+  acknowledgedAt?: string | null;
+}
+
+/** Full record from `GET /devices/:id/commands/:commandId`. */
+interface CommandDetail {
+  id?: string;
+  correlationId?: string;
+  deviceId?: string;
+  payload?: Record<string, unknown> | null;
+  status?: string;
+  idempotencyKey?: string | null;
+  createdAt?: string | null;
+  sentAt?: string | null;
+  acknowledgedAt?: string | null;
+  updatedAt?: string | null;
 }
 
 const STATUS_BADGE: Record<string, string> = {
@@ -58,6 +88,10 @@ export default function TenantCommandsContent() {
   const [value, setValue] = useState('');
   const [sending, setSending] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [openCommand, setOpenCommand] = useState<CommandItem | null>(null);
+  const [commandDetail, setCommandDetail] = useState<CommandDetail | null>(null);
+  const [commandDetailError, setCommandDetailError] = useState<string | null>(null);
+  const [commandDetailLoading, setCommandDetailLoading] = useState(false);
 
   const selectedCapability = useMemo(
     () => capabilities?.find((capability) => capability.id === capabilityId) ?? null,
@@ -75,6 +109,65 @@ export default function TenantCommandsContent() {
       setHistory([]);
       setHistoryError(cause instanceof Error ? cause.message : 'gagal memuat riwayat');
     }
+  }, []);
+
+  /**
+   * Open one command's full record.
+   *
+   * A 404 is surfaced as the backend's own wording rather than a generic failure: the
+   * endpoint answers 404 both for a command that does not exist and for one that belongs to
+   * another device, and that distinction is the answer to "why did my click do nothing".
+   */
+  const openCommandDetail = useCallback(async (item: CommandItem) => {
+    if (!item.commandId || !item.deviceId) {
+      setOpenCommand(item);
+      setCommandDetail(null);
+      setCommandDetailError(
+        'Perintah ini tidak punya identitas yang bisa dibuka. Muat ulang riwayat.',
+      );
+      return;
+    }
+
+    setOpenCommand(item);
+    setCommandDetail(null);
+    setCommandDetailError(null);
+    setCommandDetailLoading(true);
+    try {
+      const res = await fetch(
+        `/api/tenant/commands/${encodeURIComponent(
+          item.deviceId,
+        )}/${encodeURIComponent(item.commandId)}`,
+        { cache: 'no-store' },
+      );
+      const payload = (await res.json().catch(() => null)) as
+        | CommandDetail
+        | { message?: string; error?: { code?: string; message?: string } }
+        | null;
+      if (!res.ok) {
+        const problem = payload as { message?: string; error?: { message?: string } } | null;
+        throw new Error(
+          problem?.message ??
+            problem?.error?.message ??
+            (res.status === 404
+              ? 'Perintah tidak ditemukan untuk perangkat ini.'
+              : `backend ${res.status}`),
+        );
+      }
+      setCommandDetail(payload as CommandDetail);
+    } catch (cause) {
+      setCommandDetailError(
+        cause instanceof Error ? cause.message : 'Detail perintah tidak dapat dimuat',
+      );
+    } finally {
+      setCommandDetailLoading(false);
+    }
+  }, []);
+
+  const closeCommandDetail = useCallback(() => {
+    setOpenCommand(null);
+    setCommandDetail(null);
+    setCommandDetailError(null);
+    setCommandDetailLoading(false);
   }, []);
 
   useEffect(() => {
@@ -319,28 +412,58 @@ export default function TenantCommandsContent() {
           <div className="max-h-[480px] space-y-2 overflow-y-auto pr-1">
             {history.map((item) => {
               const status = item.status.toUpperCase();
+              const isOpen = openCommand?.id === item.id;
               return (
                 <div
                   key={item.id}
-                  className="flex items-center gap-3 rounded-xl border border-slate-100 px-4 py-3"
+                  className={`rounded-xl border px-4 py-3 transition-colors ${
+                    isOpen
+                      ? 'border-teal-300 bg-teal-50/40'
+                      : 'border-slate-100'
+                  }`}
                 >
-                  <div className="min-w-0">
-                    <div className="truncate text-[13.5px] font-semibold text-slate-900">
-                      {item.deviceName} · {item.capabilityKey}
-                    </div>
-                    <div className="text-[11.5px] text-slate-400">
-                      {item.createdAt
-                        ? new Date(item.createdAt).toLocaleString('id-ID')
-                        : '—'}
-                    </div>
+                  <div className="flex items-center gap-3">
+                    {/*
+                      The row is a button, not a div with a handler, so it is reachable by
+                      keyboard and announced as interactive. A row that only responds to a
+                      click target is invisible to anyone not using a mouse, on the one screen
+                      where a stuck command needs investigating.
+                    */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        isOpen ? closeCommandDetail() : void openCommandDetail(item)
+                      }
+                      aria-expanded={isOpen}
+                      className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                    >
+                      <div className="min-w-0">
+                        <div className="truncate text-[13.5px] font-semibold text-slate-900">
+                          {item.deviceName} · {item.capabilityKey}
+                        </div>
+                        <div className="text-[11.5px] text-slate-400">
+                          {item.createdAt
+                            ? new Date(item.createdAt).toLocaleString('id-ID')
+                            : '—'}
+                        </div>
+                      </div>
+                      <span
+                        className={`iot2-badge ml-auto shrink-0 ${
+                          STATUS_BADGE[status] ?? STATUS_BADGE.PENDING
+                        }`}
+                      >
+                        {status === 'ACKNOWLEDGED' ? 'ACK' : status}
+                      </span>
+                    </button>
                   </div>
-                  <span
-                    className={`iot2-badge ml-auto shrink-0 ${
-                      STATUS_BADGE[status] ?? STATUS_BADGE.PENDING
-                    }`}
-                  >
-                    {status === 'ACKNOWLEDGED' ? 'ACK' : status}
-                  </span>
+                  {isOpen ? (
+                    <CommandDetailPanel
+                      detail={commandDetail}
+                      error={commandDetailError}
+                      loading={commandDetailLoading}
+                      fallbackDevice={item.deviceName}
+                    />
+                  ) : null}
                 </div>
               );
             })}
@@ -349,4 +472,134 @@ export default function TenantCommandsContent() {
       </div>
     </div>
   );
+}
+
+/**
+ * The expanded command record.
+ *
+ * Two rules govern what appears here. First, a timestamp the backend never set is written
+ * as "belum" rather than as a formatted zero date — "01/01/1970 00:00" reads as a real event
+ * and is not one. Second, the payload is printed as received rather than interpreted: a
+ * command that sent `true` where the operator expected `false` is a real and common fault,
+ * and reformatting the value here would hide exactly the thing being investigated.
+ */
+function CommandDetailPanel({
+  detail,
+  error,
+  loading,
+  fallbackDevice,
+}: {
+  detail: CommandDetail | null;
+  error: string | null;
+  loading: boolean;
+  fallbackDevice: string;
+}) {
+  if (loading) {
+    return (
+      <div className="mt-3 flex items-center gap-2 border-t border-slate-200 pt-3 text-[12.5px] text-slate-500">
+        <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+        Memuat detail perintah…
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <p
+        role="alert"
+        className="mt-3 mb-0 border-t border-slate-200 pt-3 text-[12.5px] text-red-600"
+      >
+        {error}
+      </p>
+    );
+  }
+
+  if (!detail) return null;
+
+  const ackLatency = latencyOf(detail.sentAt, detail.acknowledgedAt);
+
+  return (
+    <div className="mt-3 border-t border-slate-200 pt-3">
+      <dl className="m-0 grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
+        <DetailRow label="Status" value={detail.status ?? '—'} />
+        <DetailRow label="Perangkat" value={fallbackDevice} />
+        <DetailRow label="Correlation ID" value={detail.correlationId ?? '—'} mono />
+        <DetailRow label="Idempotency key" value={detail.idempotencyKey ?? '—'} mono />
+        <DetailRow label="Dibuat" value={formatMoment(detail.createdAt)} />
+        <DetailRow label="Terkirim" value={formatMoment(detail.sentAt)} />
+        <DetailRow label="Di-ACK" value={formatMoment(detail.acknowledgedAt)} />
+        <DetailRow
+          label="Latensi ACK"
+          value={ackLatency ?? 'belum ada ACK'}
+        />
+        <div className="sm:col-span-2">
+          <dt className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            Payload diterima
+          </dt>
+          <dd className="mt-0.5 mb-0 break-words font-mono text-[12px] text-slate-700">
+            {formatPayload(detail.payload)}
+          </dd>
+        </div>
+      </dl>
+    </div>
+  );
+}
+
+function DetailRow({
+  label,
+  value,
+  mono,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+        {label}
+      </dt>
+      <dd
+        className={`mt-0.5 mb-0 truncate text-[12.5px] text-slate-700 ${mono ? 'font-mono' : ''}`}
+        title={value}
+      >
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+/** A timestamp the backend never set is stated as absent, not formatted as the epoch. */
+function formatMoment(value: string | null | undefined): string {
+  if (!value) return 'belum';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'waktu tidak diketahui';
+  return date.toLocaleString('id-ID');
+}
+
+function latencyOf(
+  sentAt: string | null | undefined,
+  acknowledgedAt: string | null | undefined,
+): string | null {
+  if (!sentAt || !acknowledgedAt) return null;
+  const sent = new Date(sentAt).getTime();
+  const ack = new Date(acknowledgedAt).getTime();
+  if (Number.isNaN(sent) || Number.isNaN(ack) || ack < sent) return null;
+  const ms = ack - sent;
+  if (ms < 1000) return `${ms} ms`;
+  if (ms < 60_000) return `${(ms / 1000).toFixed(1)} detik`;
+  return `${(ms / 60_000).toFixed(1)} menit`;
+}
+
+/**
+ * The payload exactly as the device was asked to act, with no coercion. A boolean stays
+ * `true`/`false` rather than becoming "Aktif"/"Nonaktif", because the point of the panel is
+ * to show what was sent, and translating the value is how a wrong value gets shipped.
+ */
+function formatPayload(payload: Record<string, unknown> | null | undefined): string {
+  if (payload === null || payload === undefined) return 'tidak ada payload';
+  if (typeof payload !== 'object' || Array.isArray(payload)) return String(payload);
+  const keys = Object.keys(payload);
+  if (keys.length === 0) return 'payload kosong';
+  return JSON.stringify(payload, null, 2);
 }

@@ -140,6 +140,57 @@ export class DeviceShareService {
     await this.audit(input.tenantId, input.grantId, 'REVOKED', input.actorMembershipId, null);
   }
 
+  /**
+   * Read surface added with the Module 18 REST controller.
+   *
+   * Revoking a grant requires knowing its id, and an operator cannot see an id they have
+   * no way to obtain. This is tenant-scoped and returns only what a tenant administrator
+   * needs to decide: who holds access, at which permission, and until when. It deliberately
+   * exposes no cross-tenant handle — the where clause pins `tenantId`, so a grant id from
+   * another tenant is not readable, it is simply absent.
+   */
+  async listGrants(input: {
+    tenantId: string;
+    deviceId: string;
+  }): Promise<
+    Array<{
+      id: string;
+      grantedToMembershipId: string;
+      permission: 'VIEW' | 'CONTROL';
+      status: string;
+      expiresAt: Date;
+      revokedAt: Date | null;
+      createdAt: Date;
+    }>
+  > {
+    this.assertUuid(input.tenantId);
+    this.assertUuid(input.deviceId);
+
+    const device = await this.prisma.device.findFirst({
+      where: { id: input.deviceId, tenantId: input.tenantId },
+      select: { id: true },
+    });
+    if (!device) {
+      throw Object.assign(new Error('device not found'), {
+        code: 'SHARE_DEVICE_NOT_FOUND',
+      });
+    }
+
+    return this.prisma.deviceShareGrant.findMany({
+      where: { tenantId: input.tenantId, deviceId: input.deviceId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        grantedToMembershipId: true,
+        permission: true,
+        status: true,
+        expiresAt: true,
+        revokedAt: true,
+        createdAt: true,
+      },
+    });
+  }
+
   private async audit(
     tenantId: string,
     grantId: string,

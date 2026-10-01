@@ -369,6 +369,49 @@ async function probeEmqxDashboard(env) {
   }
 }
 
+/**
+ * Is the media runtime up.
+ *
+ * Reported as a distinct row rather than folded into the API's own readiness, because "the media
+ * runtime is down" and "the platform is down" have different remedies and an operator reading a
+ * single green light has no way to tell which one they are looking at.
+ *
+ * Only in the `full` scope: the media runtime is optional for the core platform, so gating `infra` on
+ * it would fail every database-and-broker-only run for a service those runs never use.
+ */
+async function probeMediaRuntime(env) {
+  const raw = env.GO2RTC_URL ?? 'http://127.0.0.1:8189';
+  let url;
+  try {
+    url = new URL(raw);
+  } catch {
+    add('media runtime /api', 'FAIL', 'GO2RTC_URL is not a valid URL');
+    return;
+  }
+  if (['0.0.0.0', '::'].includes(url.hostname)) url.hostname = '127.0.0.1';
+  const target = `${url.origin}/api`;
+  try {
+    const response = await fetch(target, { signal: AbortSignal.timeout(probeTimeoutMs) });
+    if (!response.ok) {
+      add('media runtime /api', 'FAIL', `HTTP ${response.status} from ${target}`);
+      return;
+    }
+    const body = await response.json().catch(() => null);
+    // A version is what distinguishes a runtime that answered from a proxy that returned 200.
+    if (typeof body?.version === 'string' && body.version.length > 0) {
+      add('media runtime /api', 'PASS', `go2rtc ${body.version} at ${url.origin}`);
+      return;
+    }
+    add('media runtime /api', 'FAIL', `${target} responded 200 with no version field`);
+  } catch (cause) {
+    add(
+      'media runtime /api',
+      'FAIL',
+      `${target} unreachable: ${cause instanceof Error ? cause.message : String(cause)}`,
+    );
+  }
+}
+
 async function probeApiReadiness(env) {
   const fallbackHost = env.API_PROBE_HOST ?? '127.0.0.1';
   const host = ['0.0.0.0', '::'].includes(fallbackHost) ? '127.0.0.1' : fallbackHost;
@@ -531,6 +574,7 @@ if (probe) {
       mqttProbeFallbackPort,
     );
     await probeApiReadiness(env);
+    await probeMediaRuntime(env);
   }
 }
 

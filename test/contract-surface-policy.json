@@ -20,19 +20,51 @@
     "docs/development/module-execution-efficiency.md"
   ],
   "currentStateContracts": [
-    "test/module-lifecycle.contract.spec.ts"
+    "test/module-lifecycle.contract.spec.ts",
+    "test/capability-template-lifecycle.contract.spec.ts",
+    "test/saved-report.contract.spec.ts",
+    "test/mqtt-management-evidence.contract.spec.ts",
+    "test/noc-operations.contract.spec.ts",
+    "test/notification-operator-log.contract.spec.ts",
+    "test/wave7-mobile-notification-parity.contract.spec.ts",
+    "test/wave7-mobile-settings-parity.contract.spec.ts",
+    "test/wave7-technician-maintenance.contract.spec.ts",
+    "test/wave7-technician-commissioning-logs.contract.spec.ts",
+    "test/wave8-payment-invoice.contract.spec.ts",
+    "test/wave8-invoice-lifecycle.contract.spec.ts",
+    "test/wave8-integration-adapter.contract.spec.ts",
+    "test/wave9-device-location.contract.spec.ts",
+    "test/wave9-camera-onboarding.contract.spec.ts",
+    "test/wave9-onvif-media.contract.spec.ts"
   ],
   "policyEnforcementContracts": [
     "test/historical-contract-transition-safety.contract.spec.ts"
   ],
   "contractClasses": {
+    "src/admin-operations/api-key-revocation-tenant-scope.contract.spec.ts": "stable-contract",
+    "src/admin-operations/tenant-creation-meters.contract.spec.ts": "stable-contract",
+    "src/billing/billing-quota-enforcement.contract.spec.ts": "stable-contract",
+    "src/common/errors/billing-denial-translation.contract.spec.ts": "stable-contract",
     "src/common/errors/domain-error-code.contract.spec.ts": "stable-contract",
     "src/common/errors/error-contract.spec.ts": "stable-contract",
     "src/common/errors/error-handling-completion.contract.spec.ts": "historical-evidence",
     "src/common/logging/structured-logging.contract.spec.ts": "historical-evidence",
+    "src/config/production-secret-strength.contract.spec.ts": "stable-contract",
+    "src/integrations/integration-registry-surface.contract.spec.ts": "stable-contract",
     "src/metrics/observability.contract.spec.ts": "historical-evidence",
+    "src/org/organization-branch-visibility.contract.spec.ts": "stable-contract",
+    "src/ota/ota-rollout-failure.contract.spec.ts": "stable-contract",
+    "src/ota/ota-rollout-tenant-scope.contract.spec.ts": "stable-contract",
+    "src/rbac/tenant-role-management.contract.spec.ts": "stable-contract",
+    "test/admin-web-bff-content-type.contract.spec.ts": "stable-contract",
+    "test/admin-web-proxy-session.contract.spec.ts": "stable-contract",
+    "test/capability-template-lifecycle.contract.spec.ts": "current-state",
     "test/ci-dependency-bootstrap.contract.spec.ts": "historical-evidence",
+    "test/client-fetch-mount-safety.contract.spec.ts": "stable-contract",
+    "test/console-fail-closed-surfaces.contract.spec.ts": "stable-contract",
+    "test/credential-column-exposure.contract.spec.ts": "stable-contract",
     "test/database-testing.contract.spec.ts": "stable-contract",
+    "test/demo-seed-reentry.contract.spec.ts": "stable-contract",
     "test/deployment-recovery.contract.spec.ts": "historical-evidence",
     "test/g1-automation-scenes-screens.contract.spec.ts": "historical-evidence",
     "test/g1-billing-apikeys.contract.spec.ts": "historical-evidence",
@@ -50,6 +82,7 @@
     "test/historical-contract-transition-safety.contract.spec.ts": "policy-enforcement",
     "test/integration-e2e-testing-completion.contract.spec.ts": "historical-evidence",
     "test/ios-final-release-proof-policy.contract.spec.ts": "stable-contract",
+    "test/local-console-login-regression.contract.spec.ts": "historical-evidence",
     "test/module-09-completion-review.contract.spec.ts": "historical-evidence",
     "test/module-09-latest-telemetry-query.contract.spec.ts": "historical-evidence",
     "test/module-09-source-of-truth-reconciliation.contract.spec.ts": "historical-evidence",
@@ -94,19 +127,46 @@
     "test/module-execution-efficiency.contract.spec.ts": "stable-contract",
     "test/module-execution-framework.contract.spec.ts": "stable-contract",
     "test/module-lifecycle.contract.spec.ts": "current-state",
+    "test/mqtt-management-evidence.contract.spec.ts": "current-state",
+    "test/notification-operator-log.contract.spec.ts": "current-state",
+    "test/wave7-mobile-notification-parity.contract.spec.ts": "current-state",
+    "test/wave7-mobile-settings-parity.contract.spec.ts": "current-state",
+    "test/wave7-technician-maintenance.contract.spec.ts": "current-state",
+    "test/wave7-technician-commissioning-logs.contract.spec.ts": "current-state",
+    "test/wave8-payment-invoice.contract.spec.ts": "current-state",
+    "test/wave8-invoice-lifecycle.contract.spec.ts": "current-state",
+    "test/wave8-integration-adapter.contract.spec.ts": "current-state",
+    "test/wave9-device-location.contract.spec.ts": "current-state",
+    "test/wave9-onvif-media.contract.spec.ts": "current-state",
+    "test/wave9-camera-onboarding.contract.spec.ts": "current-state",
+
     "test/mqtt-production-transport-proposal.contract.spec.ts": "historical-evidence",
     "test/mqtt-testing.contract.spec.ts": "stable-contract",
+    "test/nginx-tls-terminator.contract.spec.ts": "stable-contract",
+    "test/noc-operations.contract.spec.ts": "current-state",
     "test/node-runtime.contract.spec.ts": "stable-contract",
     "test/operator-launcher.contract.spec.ts": "stable-contract",
+    "test/ota-rollout-surface.contract.spec.ts": "stable-contract",
+    "test/platform-tenant-identity.contract.spec.ts": "stable-contract",
     "test/production-configuration-lifecycle.contract.spec.ts": "historical-evidence",
     "test/production-readiness-completion.contract.spec.ts": "historical-evidence",
     "test/production-readiness-review.contract.spec.ts": "historical-evidence",
     "test/production-security-boundary.contract.spec.ts": "historical-evidence",
+    "test/public-api-sdk-contract.spec.ts": "stable-contract",
+    "test/saved-report.contract.spec.ts": "current-state",
+    "test/security-headers.contract.spec.ts": "stable-contract",
+    "test/self-service-auth-runner-honesty.contract.spec.ts": "stable-contract",
     "test/self-service-auth-surface.contract.spec.ts": "stable-contract",
+    "test/self-service-verification-reachability.contract.spec.ts": "stable-contract",
     "test/space-http.contract.spec.ts": "historical-evidence",
     "test/telemetry-automation-wiring.contract.spec.ts": "stable-contract",
+    "test/tenant-command-drilldown.contract.spec.ts": "stable-contract",
+    "test/tenant-dashboard-editor.contract.spec.ts": "stable-contract",
+    "test/tenant-isolation-at-query-layer.contract.spec.ts": "stable-contract",
+    "test/tenant-workspace-widget-readings.contract.spec.ts": "stable-contract",
     "test/testing-strategy.contract.spec.ts": "historical-evidence",
-    "test/wave-02-core-runtime-closure-invariants.contract.spec.ts": "stable-contract"
+    "test/wave-02-core-runtime-closure-invariants.contract.spec.ts": "stable-contract",
+    "test/webhook-surface.contract.spec.ts": "stable-contract"
   },
   "historicalStableDocumentOwners": {
     "test/module-10-activation.contract.spec.ts": [
@@ -129,13 +189,6 @@
     ]
   },
   "transitionProof": {
-    "mutableSummaryDocuments": [
-      "docs/project-state.md",
-      "docs/roadmap.md",
-      "AI-Development-Kit/bootstrap/PROJECT-BOOTSTRAP-v1.0.md",
-      "AI-Development-Kit/architecture/SYSTEM.md",
-      "AI-Development-Kit/agent/REPOSITORY-MEMORY.md"
-    ],
     "immutableEvidenceDocuments": [
       "docs/development/module-execution-efficiency.md",
       "docs/historical-contract-transition-safety.md",
@@ -170,15 +223,12 @@
       "docs/telemetry-storage-strategy.md",
       "docs/wave-02-core-runtime-closure.md"
     ],
-    "validationCommands": [
-      [
-        "run",
-        "module:validate"
-      ],
-      [
-        "run",
-        "test:historical-contract-state"
-      ]
+    "mutableSummaryDocuments": [
+      "docs/project-state.md",
+      "docs/roadmap.md",
+      "AI-Development-Kit/bootstrap/PROJECT-BOOTSTRAP-v1.0.md",
+      "AI-Development-Kit/architecture/SYSTEM.md",
+      "AI-Development-Kit/agent/REPOSITORY-MEMORY.md"
     ],
     "states": [
       {
@@ -332,6 +382,16 @@
         ],
         "churnCurrentSummaries": true
       }
+    ],
+    "validationCommands": [
+      [
+        "run",
+        "module:validate"
+      ],
+      [
+        "run",
+        "test:historical-contract-state"
+      ]
     ]
   }
 }

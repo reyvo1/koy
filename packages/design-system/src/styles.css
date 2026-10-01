@@ -1,26 +1,100 @@
-:root {
-  color-scheme: light dark;
-  --iot-color-bg: #f4f7fb;
-  --iot-color-surface: #ffffff;
-  --iot-color-surface-subtle: #e9eef7;
-  --iot-color-text: #172033;
-  --iot-color-muted: #59657a;
-  --iot-color-border: #cbd5e1;
-  --iot-color-accent: #0f766e;
-  --iot-color-accent-contrast: #ffffff;
-  --iot-color-warning: #a16207;
-  --iot-color-danger: #b42318;
-  --iot-color-focus: #2563eb;
+/*
+ * IoT Platform Design System — single source of visual truth.
+ *
+ * Dark-first by design (UI-DESIGN-SYSTEM.md §2): the admin console is a dark product, so
+ * dark is the DEFAULT token set rather than something gated behind prefers-color-scheme.
+ * An operator on a light-mode OS previously got a light admin shell, which is why the two
+ * applications looked like different products. Light remains available as an explicit opt-in
+ * via [data-theme="light"] for the user-facing surfaces that are designed light.
+ *
+ * Both applications import these tokens. Nothing may re-declare a colour literal: a token
+ * set that can be overridden per-app is not a design system, it is two design systems.
+ */
+
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* Surfaces — a deliberate depth ladder, not four near-identical greys. */
+  --iot-color-bg: #080d18;
+  --iot-color-bg-elevated: #0b1120;
+  --iot-color-surface: #111c2e;
+  --iot-color-surface-subtle: #17243a;
+  --iot-color-surface-hover: #1c2b44;
+
+  /* Text */
+  --iot-color-text: #e7edf7;
+  --iot-color-text-strong: #f8fafc;
+  --iot-color-muted: #94a3b8;
+  --iot-color-subtle: #64748b;
+
+  /* Lines */
+  --iot-color-border: #1e293b;
+  --iot-color-border-strong: #334155;
+
+  /*
+   * One accent. Status colours are reserved for status and must never be used as decoration
+   * (UI-DESIGN-SYSTEM.md §3) — that is what keeps a 56-page console readable at a glance.
+   */
+  --iot-color-accent: #2dd4bf;
+  --iot-color-accent-strong: #14b8a6;
+  --iot-color-accent-deep: #0d9488;
+  --iot-color-accent-contrast: #04211f;
+  --iot-color-accent-soft: rgb(45 212 191 / 0.12);
+
+  --iot-color-success: #34d399;
+  --iot-color-success-soft: rgb(52 211 153 / 0.12);
+  --iot-color-warning: #fbbf24;
+  --iot-color-warning-soft: rgb(251 191 36 / 0.12);
+  --iot-color-danger: #f87171;
+  --iot-color-danger-soft: rgb(248 113 113 / 0.12);
+  --iot-color-info: #60a5fa;
+  --iot-color-info-soft: rgb(96 165 250 / 0.12);
+
+  --iot-color-focus: #5eead4;
+
+  /*
+   * Radius scale. Pages used to mix rounded-xl, rounded-2xl, rounded-3xl and literal
+   * rounded-[34px]/[44px] in the same view; one scale removes that class of drift.
+   */
   --iot-radius-sm: 0.5rem;
   --iot-radius-md: 0.875rem;
-  --iot-shadow-surface: 0 0.75rem 2rem rgb(15 23 42 / 0.08);
+  --iot-radius-lg: 1rem;
+  --iot-radius-xl: 1.25rem;
+
+  /* Depth: a single layered shadow, not a per-component invention. */
+  --iot-shadow-surface: 0 1px 2px rgb(2 6 23 / 0.5), 0 8px 24px -8px rgb(2 6 23 / 0.6);
+  --iot-shadow-raised: 0 12px 36px -8px rgb(2 6 23 / 0.75);
+  --iot-shadow-inset: inset 0 1px 0 rgb(255 255 255 / 0.05);
+
   --iot-space-1: 0.25rem;
   --iot-space-2: 0.5rem;
   --iot-space-3: 0.75rem;
   --iot-space-4: 1rem;
+  --iot-space-5: 1.25rem;
   --iot-space-6: 1.5rem;
   --iot-space-8: 2rem;
-  --iot-content-width: 76rem;
+  --iot-space-10: 2.5rem;
+  --iot-space-12: 3rem;
+
+  /* Layout: standards call for 1200-1440px of content width and a collapsible 240px rail. */
+  --iot-content-width: 90rem;
+  --iot-sidebar-width: 15.5rem;
+  --iot-sidebar-width-collapsed: 4.25rem;
+
+  /*
+   * Type scale. Fourteen arbitrary font sizes (11, 11.5, 12, 12.5, 13, 13.5, 14, 15px …)
+   * were in circulation; these eight steps cover the same range with a real hierarchy.
+   */
+  --iot-text-xs: 0.6875rem;
+  --iot-text-sm: 0.75rem;
+  --iot-text-base: 0.8125rem;
+  --iot-text-md: 0.875rem;
+  --iot-text-lg: 1rem;
+  --iot-text-xl: 1.25rem;
+  --iot-text-2xl: 1.5rem;
+  --iot-text-3xl: 1.875rem;
+
   font-family:
     Inter,
     ui-sans-serif,
@@ -31,21 +105,46 @@
     sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --iot-color-bg: #0b1220;
-    --iot-color-surface: #111b2e;
-    --iot-color-surface-subtle: #17243a;
-    --iot-color-text: #e7edf7;
-    --iot-color-muted: #aebbd0;
-    --iot-color-border: #31415c;
-    --iot-color-accent: #5eead4;
-    --iot-color-accent-contrast: #042f2e;
-    --iot-color-warning: #fbbf24;
-    --iot-color-danger: #fda29b;
-    --iot-color-focus: #93c5fd;
-    --iot-shadow-surface: 0 0.75rem 2rem rgb(0 0 0 / 0.28);
-  }
+/*
+ * Light is opt-in, not automatic. The admin console is dark by product decision; only the
+ * user-facing surfaces set data-theme="light".
+ */
+[data-theme='light'] {
+  color-scheme: light;
+
+  --iot-color-bg: #f4f7fb;
+  --iot-color-bg-elevated: #ffffff;
+  --iot-color-surface: #ffffff;
+  --iot-color-surface-subtle: #e9eef7;
+  --iot-color-surface-hover: #dde5f2;
+
+  --iot-color-text: #172033;
+  --iot-color-text-strong: #0b1220;
+  --iot-color-muted: #59657a;
+  --iot-color-subtle: #7c8798;
+
+  --iot-color-border: #cbd5e1;
+  --iot-color-border-strong: #94a3b8;
+
+  --iot-color-accent: #0f766e;
+  --iot-color-accent-strong: #0d9488;
+  --iot-color-accent-deep: #115e59;
+  --iot-color-accent-contrast: #ffffff;
+  --iot-color-accent-soft: rgb(15 118 110 / 0.1);
+
+  --iot-color-success: #15803d;
+  --iot-color-success-soft: rgb(21 128 61 / 0.1);
+  --iot-color-warning: #a16207;
+  --iot-color-warning-soft: rgb(161 98 7 / 0.1);
+  --iot-color-danger: #b42318;
+  --iot-color-danger-soft: rgb(180 35 24 / 0.1);
+  --iot-color-info: #1d4ed8;
+  --iot-color-info-soft: rgb(29 78 216 / 0.1);
+
+  --iot-color-focus: #2563eb;
+
+  --iot-shadow-surface: 0 0.75rem 2rem rgb(15 23 42 / 0.08);
+  --iot-shadow-raised: 0 0.75rem 2rem rgb(15 23 42 / 0.12);
 }
 
 * {
@@ -93,6 +192,7 @@ a {
 }
 
 .iot-shell__header,
+.iot-shell__nav,
 .iot-shell__main {
   width: min(calc(100% - 2rem), var(--iot-content-width));
   margin-inline: auto;
@@ -117,6 +217,20 @@ a {
   display: grid;
   gap: var(--iot-space-6);
   padding-bottom: var(--iot-space-8);
+}
+
+/*
+ * Primary navigation for navigable surfaces. Rendered only when a surface passes `nav`,
+ * so loading/error/not-found chrome is unchanged. It sits inside the same content width
+ * as the header and main, and sticks so a long page does not strand the menu.
+ */
+.iot-shell__nav {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding-block: var(--iot-space-2);
+  background: var(--iot-color-bg);
+  border-bottom: 1px solid var(--iot-color-border);
 }
 
 .iot-environment-badge {
@@ -208,6 +322,194 @@ a {
   font-weight: 700;
   text-decoration: none;
 }
+
+/* ============================================================
+   Primitives shared by admin-web and user-web.
+   Added because both applications had been hand-rolling the same
+   surfaces with slightly different class strings.
+   ============================================================ */
+
+/* Surfaces */
+.iot-panel {
+  border: 1px solid var(--iot-color-border);
+  border-radius: var(--iot-radius-lg);
+  background: var(--iot-color-surface);
+  box-shadow: var(--iot-shadow-surface), var(--iot-shadow-inset);
+  padding: var(--iot-space-6);
+}
+.iot-panel--flush { padding: 0; overflow: hidden; }
+
+.iot-page {
+  width: min(100% - 2 * var(--iot-space-4), var(--iot-content-width));
+  margin-inline: auto;
+  padding-block: var(--iot-space-8) var(--iot-space-12);
+}
+
+/* Page header */
+.iot-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--iot-space-4);
+  margin-bottom: var(--iot-space-8);
+}
+.iot-page-header h1 {
+  margin: 0;
+  font-size: var(--iot-text-3xl);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--iot-color-text-strong);
+}
+.iot-page-header p {
+  margin: var(--iot-space-1) 0 0;
+  color: var(--iot-color-muted);
+  font-size: var(--iot-text-md);
+}
+
+/* Statistic: label above, value below, optional delta. */
+.iot-stat {
+  position: relative;
+  display: grid;
+  gap: var(--iot-space-1);
+  overflow: hidden;
+  border: 1px solid var(--iot-color-border);
+  border-radius: var(--iot-radius-lg);
+  background: var(--iot-color-surface);
+  box-shadow: var(--iot-shadow-surface), var(--iot-shadow-inset);
+  padding: var(--iot-space-5);
+  transition: border-color 0.18s ease, transform 0.18s ease;
+}
+.iot-stat__label {
+  font-size: var(--iot-text-sm);
+  font-weight: 600;
+  color: var(--iot-color-muted);
+}
+.iot-stat__value {
+  font-size: var(--iot-text-3xl);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--iot-color-text-strong);
+  font-variant-numeric: tabular-nums;
+}
+.iot-stat__hint {
+  font-size: var(--iot-text-sm);
+  color: var(--iot-color-subtle);
+}
+.iot-stat--accent { border-color: var(--iot-color-accent-soft); }
+
+/*
+ * Skeleton. 53 of 56 pages previously rendered nothing while their fetch was in flight, so a
+ * slow request looked like a broken page. Every list/detail surface must now reserve its
+ * layout with one of these instead of collapsing to nothing.
+ */
+.iot-skeleton {
+  border-radius: var(--iot-radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--iot-color-surface-subtle) 25%,
+    var(--iot-color-surface-hover) 37%,
+    var(--iot-color-surface-subtle) 63%
+  );
+  background-size: 400% 100%;
+  animation: iot-skeleton-sweep 1.4s ease infinite;
+}
+@keyframes iot-skeleton-sweep {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+/* Table: sticky header, quiet zebra, clear row hover. */
+.iot-table { width: 100%; border-collapse: collapse; font-size: var(--iot-text-md); }
+.iot-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-align: left;
+  padding: var(--iot-space-3) var(--iot-space-4);
+  font-size: var(--iot-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--iot-color-muted);
+  background: var(--iot-color-surface-subtle);
+  border-bottom: 1px solid var(--iot-color-border);
+}
+.iot-table td {
+  padding: var(--iot-space-4);
+  border-top: 1px solid var(--iot-color-border);
+  color: var(--iot-color-text);
+}
+.iot-table tbody tr:nth-child(even) { background: rgb(255 255 255 / 0.015); }
+.iot-table tbody tr { transition: background 0.12s ease; }
+.iot-table tbody tr:hover { background: var(--iot-color-surface-hover); }
+
+/* Badge — status only, never decoration. */
+.iot-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--iot-space-1);
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-size: var(--iot-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: var(--iot-color-surface-subtle);
+  color: var(--iot-color-muted);
+}
+.iot-badge--success { background: var(--iot-color-success-soft); color: var(--iot-color-success); }
+.iot-badge--warning { background: var(--iot-color-warning-soft); color: var(--iot-color-warning); }
+.iot-badge--danger { background: var(--iot-color-danger-soft); color: var(--iot-color-danger); }
+.iot-badge--info { background: var(--iot-color-info-soft); color: var(--iot-color-info); }
+.iot-badge--accent { background: var(--iot-color-accent-soft); color: var(--iot-color-accent); }
+
+/* Empty state — an explicit, styled absence rather than a blank region. */
+.iot-empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--iot-space-2);
+  border: 1px dashed var(--iot-color-border-strong);
+  border-radius: var(--iot-radius-lg);
+  padding: var(--iot-space-10) var(--iot-space-6);
+  text-align: center;
+}
+.iot-empty__title { font-weight: 700; color: var(--iot-color-text); }
+.iot-empty__body { max-width: 42ch; color: var(--iot-color-muted); font-size: var(--iot-text-md); }
+
+/* Forms */
+.iot-field {
+  width: 100%;
+  border-radius: var(--iot-radius-sm);
+  border: 1px solid var(--iot-color-border);
+  background: var(--iot-color-bg-elevated);
+  padding: 0.625rem 0.875rem;
+  color: var(--iot-color-text);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.iot-field::placeholder { color: var(--iot-color-subtle); }
+.iot-field:focus-visible {
+  border-color: var(--iot-color-accent);
+  box-shadow: 0 0 0 3px var(--iot-color-accent-soft);
+}
+.iot-label {
+  display: block;
+  margin-bottom: var(--iot-space-2);
+  font-size: var(--iot-text-base);
+  font-weight: 600;
+  color: var(--iot-color-text);
+}
+
+.iot-button--secondary {
+  background: transparent;
+  border: 1px solid var(--iot-color-border-strong);
+  color: var(--iot-color-text);
+}
+.iot-button--secondary:hover { border-color: var(--iot-color-accent); }
+
+.iot-button--danger { background: var(--iot-color-danger); color: #450a0a; }
+.iot-button--danger:hover { filter: brightness(1.08); }
 
 @media (prefers-reduced-motion: no-preference) {
   .iot-skip-link,

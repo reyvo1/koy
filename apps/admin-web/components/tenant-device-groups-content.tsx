@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Boxes, Loader2, Plus, Trash2, Unlink } from 'lucide-react';
 import { EmptyState, useToast } from '@/components/ui-polish';
+import { createLoadGuard } from '@/lib/safe-fetch';
 
 interface DeviceRow {
   id: string;
@@ -43,7 +44,10 @@ export default function TenantDeviceGroupsContent() {
   const [selectedDeviceByGroup, setSelectedDeviceByGroup] = useState<Record<string, string>>({});
   const toast = useToast();
 
+  const loadGuard = useRef(createLoadGuard());
+
   const load = useCallback(async () => {
+    const isCurrent = loadGuard.current.begin();
     try {
       const [groupsResponse, devicesResponse] = await Promise.all([
         fetch('/api/tenant/device-groups', { cache: 'no-store' }),
@@ -60,10 +64,12 @@ export default function TenantDeviceGroupsContent() {
 
       const groupsBody = (await groupsResponse.json()) as { items?: DeviceGroupRow[] };
       const devicesBody = (await devicesResponse.json()) as DeviceRow[] | { items?: DeviceRow[] };
+      if (!isCurrent()) return;
       setGroups(Array.isArray(groupsBody.items) ? groupsBody.items : []);
       setDevices(Array.isArray(devicesBody) ? devicesBody : (devicesBody.items ?? []));
       setLoadError(null);
     } catch (cause) {
+      if (!isCurrent()) return;
       setGroups([]);
       setDevices([]);
       setLoadError(cause instanceof Error ? cause.message : 'Grup perangkat tidak tersedia');

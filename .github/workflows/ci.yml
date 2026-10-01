@@ -364,6 +364,24 @@ jobs:
         timeout-minutes: 10
         run: npm run wave3:esp32:simulate -- --env=.env --firmware=artifacts/wave3-esp32/iot_sdk_wave3_test_app.bin
 
+      - name: Seed the UAT baseline
+        timeout-minutes: 10
+        # The Wave 9 camera and location probes authenticate as the seeded UAT admin, and a fresh CI
+        # database has no users. Added only once it was observed failing: the steps below returned
+        # `UAT login failed: HTTP 401` on a clean runner, which is indistinguishable from a broken
+        # login path and would have been read as a regression in the probes themselves.
+        run: npm run uat:seed
+
+      - name: Wave 9 media runtime RTSP to WebRTC
+        timeout-minutes: 10
+        run: npm run media:probe
+
+      - name: Wave 9 camera onboarding and device location
+        timeout-minutes: 10
+        run: |
+          npm run camera:probe
+          npm run location:probe
+
       - name: Gate 1 source-bound runtime receipt
         run: |
           npm run rescue:gate1

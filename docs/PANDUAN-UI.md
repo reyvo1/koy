@@ -1,12 +1,21 @@
 # PANDUAN PENGGUNAAN UI — IoT Platform Enterprise
 
 Panduan singkat menjelajahi aplikasi. Server lokal harus jalan:
-- Backend: http://localhost:3000
-- Admin Web: http://localhost:3100
+- Backend: http://127.0.0.1:5000
+- Admin Web: http://127.0.0.1:3100
 
-Login demo:
-- Tenant ID: `11111111-1111-4111-8111-111111111111`
-- Email: `admin@demo.id` · Password: `Demo12345!`
+Login UAT — kredensial ada di `.uat-credentials` (git-ignored), dibuat dengan
+`node scripts/seed-uat-baseline.mjs`:
+
+| Peran | Tenant ID | Email |
+|---|---|---|
+| Platform admin | `11111111-1111-4111-8111-111111111111` | `uat.superadmin@iot.local` |
+| Tenant admin | `44444444-4444-4444-8444-444444444444` | `uat.admin@iot.local` |
+| Tenant member | `44444444-4444-4444-8444-444444444444` | `uat.member@iot.local` |
+
+> Versi panduan ini sebelumnya menyebut `admin@demo.id / Demo12345!` di port API 3000. User itu tidak pernah ada
+> di database, dan string-nya justru ada di daftar *forbidden* `scripts/validate-rescue-baseline.mjs`.
+> Password juga sengaja tidak ditulis di dokumen: ada di `.uat-credentials`.
 
 ---
 
@@ -71,6 +80,9 @@ Preview interaktif tersedia di admin: `/mobile-preview`.
 
 ## Troubleshooting
 - **Halaman minta login terus** — sesi kedaluwarsa; login ulang.
-- **Port 3000 dipakai aplikasi lain** (mis. Toko360) — matikan dulu.
-- **CI merah?** Jalankan `npm run lint:check && npm run web:typecheck &&
-  npm test` sebelum push.
+- **Port 5000 dipakai aplikasi lain** — matikan dulu (`ss -ltnp | grep :5000`).
+- **Probe tiba-tiba 401** — `seed-demo-accounts.mjs` meregenerasi password tiap jalan; re-seed
+  lalu baca password barunya.
+- **Tidak ada tombol hapus device** — memang tidak ada `DELETE /devices/:id`; pakai
+  `PATCH /devices/:id/revoke`, itu juga yang membebaskan kuota.
+- **CI merah?** Jalankan `npm run lint:check && npm run web:typecheck && npm test` sebelum push.

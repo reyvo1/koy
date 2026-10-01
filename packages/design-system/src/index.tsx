@@ -7,6 +7,13 @@ export interface ApplicationShellProps {
   productName: string;
   surfaceName: string;
   statusLabel?: string;
+  /**
+   * Optional primary navigation rendered between the header and the main landmark.
+   * Additive on purpose: loading/error/not-found surfaces pass no nav and keep their
+   * current chrome, while navigable surfaces (User Web) get the same frame plus a
+   * real menu instead of a second, hand-rolled shell.
+   */
+  nav?: ReactNode;
   children: ReactNode;
 }
 
@@ -27,6 +34,7 @@ export function ApplicationShell({
   productName,
   surfaceName,
   statusLabel = 'Foundation',
+  nav,
   children,
 }: ApplicationShellProps) {
   return (
@@ -41,6 +49,7 @@ export function ApplicationShell({
         </div>
         <span className="iot-environment-badge">{statusLabel}</span>
       </header>
+      {nav ? <div className="iot-shell__nav">{nav}</div> : null}
       <main className="iot-shell__main" id="main-content" tabIndex={-1}>
         {children}
       </main>

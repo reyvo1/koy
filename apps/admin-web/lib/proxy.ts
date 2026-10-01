@@ -18,7 +18,15 @@ export async function proxyBackend(
       cause instanceof Error && 'status' in cause
         ? Number((cause as { status: number }).status)
         : 502;
-    if (status === 401 || status === 403) {
+    // A 401 and a 403 are different facts and must not share a remedy.
+    //
+    // 401 means the session is bad, and clearing the cookie is the correct response. 403 means
+    // the session is fine and this one request is not allowed — a tenant admin reading an
+    // organization that is not theirs, a MEMBER attempting a write. Answering a 403 by
+    // deleting the session signs the operator out of the console for being told they lack a
+    // permission they already hold, and it rewrites the reason so the console renders
+    // "UNAUTHORIZED" and bounces them to the login screen instead of showing the refusal.
+    if (status === 401) {
       const response = NextResponse.json(
         { error: { code: 'UNAUTHORIZED', message: messages.unauthorized } },
         { status: 401 },

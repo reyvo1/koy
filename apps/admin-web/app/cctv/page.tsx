@@ -6,9 +6,17 @@
  * Streaming itself stays fail-closed per the module-10 compatibility contract.
  */
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { AdminShellV3 } from '@/components/admin-shell-v3';
-import { EmptyState, FadeIn, useToast, shadow } from '@/components/ui-polish';
+import { QuarantineBanner } from '@/components/quarantine-banner';
+import {
+  EmptyState,
+  FadeIn,
+  SkeletonCard,
+  StatusPill,
+  useToast,
+  shadow,
+} from '@/components/ui-polish';
 
 import {
   Plus,
@@ -19,6 +27,7 @@ import {
   Wifi,
   ScanLine,
   CheckCircle2,
+  RefreshCw,
 } from 'lucide-react';
 
 const PAIRING_STEPS = [
@@ -28,12 +37,82 @@ const PAIRING_STEPS = [
   { icon: CheckCircle2, text: 'Kamera otomatis terdaftar — status berubah TERPASANG.' },
 ];
 
+interface CameraRow {
+  id: string;
+  name: string;
+  status: string;
+  vendor?: string | null;
+  model?: string | null;
+  lastHeartbeatAt?: string | null;
+  createdAt?: string | null;
+}
+
+/** Device status -> the tone the shared pill renders. Paired and active are the only
+ *  states that mean "this camera is reachable"; everything else is a setup step the
+ *  operator still owns, so it must not be drawn as a healthy camera. */
+function statusTone(status: string): 'online' | 'warn' | 'offline' {
+  const s = status.toUpperCase();
+  if (s === 'ACTIVE' || s === 'ONLINE') return 'online';
+  if (s === 'PAIRED' || s === 'PROVISIONING' || s === 'INACTIVE') return 'warn';
+  return 'offline';
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  ACTIVE: 'Online',
+  PAIRED: 'Terpasang',
+  PROVISIONING: 'Menunggu pairing',
+  INACTIVE: 'Tidak aktif',
+  REVOKED: 'Dicabut',
+};
+
+function heartbeatLabel(iso?: string | null): string {
+  if (!iso) return 'Belum pernah';
+  const ms = Date.now() - new Date(iso).getTime();
+  if (!Number.isFinite(ms) || ms < 0) return '—';
+  const minutes = Math.floor(ms / 60000);
+  if (minutes < 1) return 'Baru saja';
+  if (minutes < 60) return `${minutes} menit lalu`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} jam lalu`;
+  return `${Math.floor(hours / 24)} hari lalu`;
+}
+
 export default function CctvPage() {
   const [showForm, setShowForm] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pairingUri, setPairingUri] = useState<string | null>(null);
+  const [cameras, setCameras] = useState<CameraRow[] | null>(null);
+  const [listError, setListError] = useState<string | null>(null);
   const toast = useToast();
+
+  /**
+   * The camera directory. This fetch did not exist: the page rendered its empty state
+   * unconditionally, so a camera the operator had just registered — with a QR code and a
+   * success toast — was still reported as nonexistent on the same screen. The backend has
+   * served `GET /cameras` all along; only the proxy and this call were missing.
+   */
+  const loadCameras = useCallback(async () => {
+    try {
+      const response = await fetch('/api/cameras', { cache: 'no-store' });
+      if (!response.ok) throw new Error(`backend ${response.status}`);
+      const payload = await response.json();
+      setCameras(Array.isArray(payload) ? (payload as CameraRow[]) : []);
+      setListError(null);
+    } catch (cause) {
+      // A failed read is NOT an empty directory. Rendering the empty state here would
+      // tell the operator they have no cameras when in fact the list could not be
+      // fetched — the exact lie this page used to tell unconditionally.
+      setCameras(null);
+      setListError(
+        cause instanceof Error ? cause.message : 'gagal memuat daftar kamera',
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadCameras();
+  }, [loadCameras]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -60,6 +139,9 @@ export default function CctvPage() {
       const data = await response.json();
       setPairingUri(data.pairingUri ?? null);
       setShowForm(false);
+      // Re-read the directory so the new camera appears immediately. Without this the
+      // operator registers a camera, sees the QR, and the list below still says none.
+      void loadCameras();
       toast.push('success', `Kamera "${data.name}" terdaftar. Scan QR untuk pairing.`);
     } catch {
       setError('Koneksi ke server gagal.');
@@ -75,6 +157,18 @@ export default function CctvPage() {
       subtitle="Kamera keamanan — daftarkan & pasangkan via scan QR"
       active="/cctv"
     >
+      <QuarantineBanner
+        works={[
+          'Registrasi kamera dan penerbitan pairing URI sekali pakai yang benar-benar dari backend.',
+          'Kode QR pairing yang benar-benar dapat dipindai.',
+          'Daftar kamera beserta status dan metadata pairing yang tersimpan.',
+        ]}
+        doesNotWork={[
+          'Tidak ada streaming video sama sekali — tidak ada RTSP, ONVIF, WebRTC, atau HLS di seluruh aplikasi.',
+          'Daftar kamera adalah metadata, bukan penampil. Membuka kamera tidak menunjukkan apa pun.',
+        ]}
+      />
+
       {/* Setup bar */}
       <FadeIn>
         <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -198,13 +292,113 @@ export default function CctvPage() {
         </div>
       )}
 
-      {/* Camera grid empty state */}
+      {/* Camera directory. Loading, failure and empty are three different answers and
+          must not collapse into one: the page used to render the empty state in all
+          three cases, which is how a successfully registered camera stayed invisible. */}
       <FadeIn delay={120}>
-        <EmptyState
-          icon={MonitorOff}
-          title="Belum ada kamera online"
-          description="Setelah kamera selesai pairing dan mengirim heartbeat pertama, live view akan muncul di grid ini. Modul streaming (RTSP/ONVIF) menyusul pada fase berikutnya sesuai kontrak platform."
-        />
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h3 className="m-0 text-[16px] font-bold tracking-tight text-white">
+            Kamera Terdaftar
+          </h3>
+          <button
+            type="button"
+            onClick={() => void loadCameras()}
+            className="flex items-center gap-1.5 text-[11.5px] font-bold text-teal-400 transition-colors hover:text-teal-300"
+          >
+            <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.2} />
+            Muat ulang
+          </button>
+        </div>
+
+        {cameras === null ? (
+          listError ? (
+            <div
+              role="alert"
+              className="flex items-start gap-3 rounded-2xl border border-red-500/25 bg-red-500/[.06] px-5 py-4"
+            >
+              <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+              <div>
+                <p className="m-0 text-[13px] font-semibold text-red-200">
+                  Daftar kamera tidak dapat dimuat
+                </p>
+                <p className="mb-0 mt-1 text-[12px] text-red-300/70">
+                  {listError}. Ini bukan berarti tidak ada kamera — coba muat ulang.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+              {[0, 1, 2].map((index) => (
+                <SkeletonCard key={index} />
+              ))}
+            </div>
+          )
+        ) : cameras.length === 0 ? (
+          <EmptyState
+            icon={MonitorOff}
+            title="Belum ada kamera terdaftar"
+            description="Daftarkan kamera pertama dengan tombol Setup Kamera Baru. Setelah QR di-scan, kamera akan tampil di sini beserta status pairing dan heartbeat terakhirnya."
+          />
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {cameras.map((camera) => (
+              <article
+                key={camera.id}
+                className={`rounded-2xl border border-slate-800/80 bg-[#111c2e] p-5 ${shadow.card}`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-800/80 text-slate-400">
+                      <Camera className="h-5 w-5" strokeWidth={1.9} />
+                    </span>
+                    <div className="min-w-0">
+                      <h4 className="m-0 truncate text-[14px] font-bold text-white">
+                        {camera.name}
+                      </h4>
+                      <p className="m-0 mt-0.5 truncate text-[11.5px] text-slate-500">
+                        {[camera.vendor, camera.model].filter(Boolean).join(' · ') ||
+                          'Merek tidak dicatat'}
+                      </p>
+                    </div>
+                  </div>
+                  <StatusPill
+                    tone={statusTone(camera.status)}
+                    label={STATUS_LABEL[camera.status.toUpperCase()] ?? camera.status}
+                  />
+                </div>
+                <dl className="mb-0 mt-4 grid grid-cols-2 gap-3 text-[11.5px]">
+                  <div>
+                    <dt className="m-0 text-slate-500">Heartbeat</dt>
+                    <dd className="m-0 mt-0.5 font-semibold text-slate-300">
+                      {heartbeatLabel(camera.lastHeartbeatAt)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="m-0 text-slate-500">Terdaftar</dt>
+                    <dd className="m-0 mt-0.5 font-semibold text-slate-300">
+                      {camera.createdAt
+                        ? new Date(camera.createdAt).toLocaleDateString('id-ID')
+                        : '—'}
+                    </dd>
+                  </div>
+                </dl>
+                {camera.status.toUpperCase() === 'PROVISIONING' ? (
+                  <p className="mb-0 mt-3 flex items-start gap-1.5 text-[11.5px] leading-relaxed text-amber-300/80">
+                    <ScanLine className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={1.9} />
+                    Menunggu QR pairing dipindai. Status berubah setelah kamera menyelesaikan
+                    pairing.
+                  </p>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        )}
+
+        <p className="mb-0 mt-4 text-[11.5px] leading-relaxed text-slate-500">
+          Modul streaming (RTSP/ONVIF) belum tersedia. Daftar di atas menampilkan status
+          pairing dan heartbeat nyata dari backend; live view menyusul sesuai kontrak
+          platform.
+        </p>
       </FadeIn>
     </AdminShellV3>
   );

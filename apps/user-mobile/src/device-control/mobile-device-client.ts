@@ -4,6 +4,7 @@
  * and guarded by backend VIEW/CONTROL policy.
  */
 import { MobileApiError } from '../session/mobile-session-client';
+import { TERMINAL_COMMAND_STATUSES } from '../contracts';
 
 export interface MobileDeviceSummary {
   id: string;
@@ -256,11 +257,6 @@ export interface MobileCommandStatus {
   terminal: boolean;
 }
 
-const TERMINAL_COMMAND_STATES = new Set([
-  'ACKNOWLEDGED',
-  'FAILED',
-  'TIMED_OUT',
-]);
 
 export async function loadMobileCommandStatus(
   gateway: MobileDeviceGateway,
@@ -276,7 +272,7 @@ export async function loadMobileCommandStatus(
     return {
       commandId: result.correlationId ?? commandId,
       status,
-      terminal: TERMINAL_COMMAND_STATES.has(status),
+      terminal: TERMINAL_COMMAND_STATUSES.has(status),
     };
   } catch (cause) {
     if (cause instanceof MobileApiError) throw cause;

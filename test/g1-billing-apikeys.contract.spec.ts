@@ -10,12 +10,23 @@ describe('G1.7/G1.8 billing subscriptions + quotas + api keys screens', () => {
       'src/admin-operations/admin-billing-directory.controller.ts',
     );
     expect(controller).toContain("@Get('billing/subscriptions')");
-    expect(controller).toContain("@Get('api-keys')");
     expect(controller).toContain(
       '@UseGuards(JwtAuthGuard, TenantContextGuard, AdminRoleGuard, PlatformRoleGuard)',
     );
-    // Never leaks hashed secrets.
-    expect(controller).not.toContain('keyHash');
+    // Tenant-scoped API-key listing must NOT live behind the platform guard: the create
+    // and revoke routes are AdminRoleGuard-only, so a tenant admin could mint and revoke
+    // keys but got 403 listing them. It now sits with them in AdminApiKeysController.
+    expect(controller).not.toContain("@Get('api-keys')");
+    const keysController = read(
+      'src/admin-operations/admin-api-keys.controller.ts',
+    );
+    expect(keysController).toContain("@Get('api-keys')");
+    expect(keysController).toContain("request.user.tenantContext.tenantId");
+    // Never leaks hashed secrets. Matched as a Prisma field selector (`keyHash: true` or
+    // `keyHash,`) rather than a bare substring, so a comment that merely names the field
+    // does not read as a leak.
+    expect(controller).not.toMatch(/keyHash\s*[:,}]/);
+    expect(keysController).not.toMatch(/keyHash\s*[:,}]/);
     const moduleSource = read('src/admin-operations/admin-operations.module.ts');
     expect(moduleSource).toContain('AdminBillingDirectoryController');
   });

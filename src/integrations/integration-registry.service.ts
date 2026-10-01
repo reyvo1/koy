@@ -1,5 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { IntegrationStatus } from '@prisma/client';
+import { IntegrationProvider, IntegrationStatus } from '@prisma/client';
+
+import { ERROR_CODES } from '../common/errors/error-code';
+import { DomainNotFoundException } from '../common/errors/domain-exceptions';
 import { PrismaService } from '../prisma/prisma.service';
 
 export const INTEGRATION_LIMITS = {
@@ -55,20 +58,58 @@ export class IntegrationRegistryService {
     return { id: created.id };
   }
 
-  /** Marks CONNECTED or ERROR after an adapter's connect attempt. */
+  /**
+   * Marks CONNECTED or ERROR after an adapter's connect attempt.
+   *
+   * Throws when no row changed. It used to return `void` and ignore the result of `updateMany`, so an
+   * integration id belonging to another tenant — or one that did not exist — looked exactly like a
+   * successful status change. A caller could not tell "the provider is offline" from "that row was
+   * never yours", and the second is a security-relevant answer being reported as an operational one.
+   */
   async setStatus(input: {
     integrationId: string;
     tenantId: string;
     status: 'CONNECTED' | 'ERROR' | 'DISABLED';
     lastError?: string;
   }): Promise<void> {
-    await this.prisma.integration.updateMany({
+    const updated = await this.prisma.integration.updateMany({
       where: { id: input.integrationId, tenantId: input.tenantId },
       data: {
         status: input.status as IntegrationStatus,
         lastError: input.status === 'ERROR' ? (input.lastError ?? 'unknown') : null,
       },
     });
+
+    if (updated.count === 0) {
+      throw new DomainNotFoundException(
+        ERROR_CODES.IntegrationNotFound,
+        'Integration tidak ditemukan untuk tenant ini.',
+      );
+    }
+  }
+
+  /**
+   * Loads an integration and proves it belongs to the tenant.
+   *
+   * Exists because `recordSync` upserted with a caller-supplied `tenantId`: an integration id from
+   * another tenant would have produced a sync row pointing at an integration the caller never named,
+   * which is a cross-tenant write that succeeds rather than one that fails loudly.
+   */
+  async verifyIntegration(input: {
+    integrationId: string;
+    tenantId: string;
+  }): Promise<{ id: string; provider: IntegrationProvider; credentialRef: string }> {
+    const integration = await this.prisma.integration.findFirst({
+      where: { id: input.integrationId, tenantId: input.tenantId },
+      select: { id: true, provider: true, credentialRef: true },
+    });
+    if (!integration) {
+      throw new DomainNotFoundException(
+        ERROR_CODES.IntegrationNotFound,
+        'Integration tidak ditemukan untuk tenant ini.',
+      );
+    }
+    return integration;
   }
 
   /**
@@ -82,6 +123,12 @@ export class IntegrationRegistryService {
     externalEntityId: string;
     internalEntityId: string;
   }): Promise<void> {
+    // Provenance first. Without this, the tenantId on the row is whatever the caller passed.
+    await this.verifyIntegration({
+      integrationId: input.integrationId,
+      tenantId: input.tenantId,
+    });
+
     await this.prisma.integrationSyncState.upsert({
       where: {
         integrationId_entityType_externalEntityId: {

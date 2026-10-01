@@ -2,12 +2,24 @@ import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { Injectable, Logger } from '@nestjs/common';
 import { ApiKeyStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { DomainNotFoundException } from '../common/errors/domain-exceptions';
+import { ERROR_CODES } from '../common/errors/error-code';
 
 export const PUBLIC_API_LIMITS = {
   keyPrefixLength: 12,
   maxNameLength: 120,
   maxScopes: 4,
 } as const;
+
+/**
+ * Outcome of a revocation. `alreadyRevoked` is true when the key was already REVOKED, which is
+ * how the caller keeps its idempotent "sudah dicabut" answer without a second query.
+ */
+export interface ApiKeyRevocation {
+  id: string;
+  status: ApiKeyStatus;
+  alreadyRevoked: boolean;
+}
 
 /**
  * Module 21 Slice 21.1 — public API key lifecycle + webhook signing.
@@ -98,11 +110,51 @@ export class PublicApiService {
     return { tenantId: record.tenantId, scopes: record.scopes as string[] };
   }
 
-  async revokeApiKey(tenantId: string, apiKeyId: string): Promise<void> {
-    await this.prisma.apiKey.updateMany({
-      where: { id: apiKeyId, tenantId, status: ApiKeyStatus.ACTIVE },
+  /**
+   * Revoke a key that belongs to `tenantId`.
+   *
+   * Both the lookup and the write are scoped by tenant. The write is an `updateMany` because
+   * Prisma's `update` only accepts unique fields, and `id` alone would drop the tenant from
+   * the write — a revocation that reads scoped and writes unscoped is a cross-tenant hazard
+   * that happens to be safe today only because `ApiKey.tenantId` is immutable.
+   *
+   * The scope difference between this and {@link revokeApiKeyAsPlatform} is a property of the
+   * caller's authority, so it is two named methods rather than one with an optional tenant.
+   */
+  async revokeApiKey(tenantId: string, apiKeyId: string): Promise<ApiKeyRevocation> {
+    return this.revokeWithin({ id: apiKeyId, tenantId });
+  }
+
+  /**
+   * Revoke any key regardless of tenant.
+   *
+   * Only for a caller that is already authorised at platform level — the route behind this is
+   * guarded by `PlatformRoleGuard`. Named separately so an unscoped write is always visible
+   * at the call site.
+   */
+  async revokeApiKeyAsPlatform(apiKeyId: string): Promise<ApiKeyRevocation> {
+    return this.revokeWithin({ id: apiKeyId });
+  }
+
+  private async revokeWithin(scope: { id: string; tenantId?: string }): Promise<ApiKeyRevocation> {
+    const existing = await this.prisma.apiKey.findFirst({
+      where: scope,
+      select: { id: true, status: true },
+    });
+    if (!existing) {
+      // A real `HttpException`, not `Object.assign(new Error(msg), { code })`. The exception
+      // filter only translates `HttpException` subclasses and falls back to 500, so a plain
+      // error with a `code` property would turn "key not found" into a server fault.
+      throw new DomainNotFoundException(ERROR_CODES.NotFound, 'API key tidak ditemukan');
+    }
+    if (existing.status === ApiKeyStatus.REVOKED) {
+      return { id: scope.id, status: ApiKeyStatus.REVOKED, alreadyRevoked: true };
+    }
+    const { count } = await this.prisma.apiKey.updateMany({
+      where: { ...scope, status: ApiKeyStatus.ACTIVE },
       data: { status: ApiKeyStatus.REVOKED },
     });
+    return { id: scope.id, status: ApiKeyStatus.REVOKED, alreadyRevoked: count === 0 };
   }
 
   signWebhookPayload(signingSecret: string, payload: unknown): string {

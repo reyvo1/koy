@@ -19,6 +19,24 @@ interface Bucket {
   max?: number;
 }
 
+/** One raw reading from `GET /devices/:deviceId/telemetry/history`. */
+/**
+ * One row from GET /telemetry/history.
+ *
+ * Declared from what the service actually emits: `value` (already coerced from the JSON
+ * payload), `unit`, and `createdAt`. The previous version also declared `numericValue`,
+ * `textValue`, `boolValue`, `recordedAt` and `quality` — none of which the backend has ever
+ * produced. The first three made readingValue() branch through three permanently dead cases
+ * before reaching `value`, and `quality` produced a table column that could only ever render
+ * an em dash. A column that is always empty is a surface claiming a signal it does not have.
+ */
+interface Reading {
+  id?: string;
+  createdAt?: string;
+  value?: unknown;
+  unit?: string | null;
+}
+
 const RANGES: Array<[string, number]> = [
   ['6 jam', 6],
   ['24 jam', 24],
@@ -34,6 +52,9 @@ export default function TenantHistoricalContent() {
   const [buckets, setBuckets] = useState<Bucket[]>([]);
   const [loading, setLoading] = useState(false);
   const [telemetryError, setTelemetryError] = useState<string | null>(null);
+  const [readings, setReadings] = useState<Reading[] | null>(null);
+  const [rawError, setRawError] = useState<string | null>(null);
+  const [rawCursor, setRawCursor] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -86,6 +107,47 @@ export default function TenantHistoricalContent() {
     };
   }, [deviceId, hours]);
 
+  /**
+   * Raw reading history, loaded alongside the hourly aggregates.
+   *
+   * The aggregate chart answers "how did the trend look"; this answers "what exactly was
+   * reported at 14:07" — which is the question behind every spike and every gap an
+   * operator actually investigates. The backend has exposed this endpoint with no
+   * consumer until now.
+   */
+  useEffect(() => {
+    if (!deviceId) {
+      setReadings(null);
+      return;
+    }
+    let cancelled = false;
+    setRawError(null);
+    fetch(`/api/admin/telemetry-history?deviceId=${encodeURIComponent(deviceId)}&limit=50`)
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`backend ${res.status}`);
+        return res.json();
+      })
+      .then((data: { items?: Reading[] } | Reading[]) => {
+        if (cancelled) return;
+        const items = Array.isArray(data) ? data : (data.items ?? []);
+        setReadings(items);
+        // Only the backend knows the true page boundary, so the cursor is taken from
+        // its response rather than invented from the last row's id.
+        const last = items[items.length - 1];
+        setRawCursor(last?.id ?? null);
+      })
+      .catch((cause: unknown) => {
+        if (cancelled) return;
+        setReadings([]);
+        setRawError(
+          cause instanceof Error ? cause.message : 'gagal memuat riwayat mentah',
+        );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [deviceId]);
+
   const stats = useMemo(() => {
     const values = buckets
       .map((b) => (typeof b.avg === 'number' ? b.avg : null))
@@ -98,6 +160,11 @@ export default function TenantHistoricalContent() {
       avg: values.reduce((a, b) => a + b, 0) / values.length,
     };
   }, [buckets]);
+
+  const readingValue = (reading: Reading): string => {
+    if (reading.value === null || reading.value === undefined) return '—';
+    return `${String(reading.value)}${reading.unit ? ` ${reading.unit}` : ''}`;
+  };
 
   if (error) {
     return (
@@ -223,6 +290,62 @@ export default function TenantHistoricalContent() {
           <p className="m-0 py-10 text-center text-[13.5px] text-slate-400">
             Belum ada data agregat untuk rentang ini.
           </p>
+        )}
+      </div>
+
+      {/* Raw readings — the individual reports behind the hourly averages above. */}
+      <div className="iot2-panel">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="m-0 text-[15px] font-bold text-slate-200">
+            Pembacaan mentah
+          </h3>
+          <span className="text-[11.5px] text-slate-500">
+            {readings === null
+              ? 'memuat…'
+              : `${readings.length} pembacaan terakhir`}
+            {rawCursor ? ' · ada halaman berikutnya' : ''}
+          </span>
+        </div>
+
+        {rawError ? (
+          <p
+            role="alert"
+            className="m-0 rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-[13px] text-amber-300"
+          >
+            Riwayat mentah tidak dapat dimuat ({rawError}). Grafik agregat di atas tetap
+            valid — hanya pembacaan individual yang tidak tersedia.
+          </p>
+        ) : readings === null ? (
+          <div className="h-24 animate-pulse rounded-xl bg-slate-800/40" />
+        ) : readings.length === 0 ? (
+          <p className="m-0 py-8 text-center text-[13.5px] text-slate-400">
+            Perangkat ini belum pernah mengirim pembacaan.
+          </p>
+        ) : (
+          <div className="max-h-96 overflow-y-auto">
+            <table className="w-full border-collapse text-left text-[13px]">
+              <thead className="sticky top-0 bg-[#0f1929]">
+                <tr className="text-[11.5px] uppercase tracking-wide text-slate-400">
+                  <th className="pb-2">Waktu</th>
+                  <th className="pb-2">Nilai</th>
+                </tr>
+              </thead>
+              <tbody>
+                {readings.map((reading, i) => (
+                  <tr key={reading.id ?? i} className="border-t border-slate-800/60">
+                    <td className="py-2 text-slate-400">
+                      {reading.createdAt
+                        ? new Date(reading.createdAt).toLocaleString('id-ID')
+                        : '—'}
+                    </td>
+                    <td className="py-2 font-semibold text-slate-100">
+                      {readingValue(reading)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

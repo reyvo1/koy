@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { NotificationStatus, Prisma } from '@prisma/client';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { ERROR_CODES } from '../common/errors/error-code';
+import { DomainBadRequestException, DomainNotFoundException } from '../common/errors/domain-exceptions';
 
 export const NOTIFICATION_LIMITS = {
   maxBodyLength: 16 * 1024,
@@ -496,5 +498,116 @@ export class NotificationService {
   private authNotificationKey(kind: 'verify' | 'reset', token: string): string {
     const digest = crypto.createHash('sha256').update(token).digest('hex');
     return `auth:${kind}:${digest}`;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Operator read surface
+   *
+   * The queue was durable and fully implemented but had no HTTP surface at
+   * all, so "did the email actually go out?" was unanswerable from the
+   * product. These three methods expose the delivery log to a tenant admin.
+   * They never mutate: retry is the worker's job, and a hand-triggered
+   * "send now" would race the lease the worker already holds.
+   * ------------------------------------------------------------------ */
+
+  /**
+   * Bounded delivery log for one tenant.
+   *
+   * An unrecognised `status` is refused rather than dropped. The earlier version fell back to the
+   * unfiltered list, and its docblock defended that with a real concern — a filter typo must not
+   * render as "no notifications exist". But dropping the filter is the same lie wearing the
+   * opposite face: the operator asked for `FAILED`, got the whole log back, and every row's own
+   * status column says `PENDING`, so the filter they are holding looks like it works. Three
+   * answers, three meanings: a valid filter returns matching rows, a bad filter returns 400 naming
+   * the accepted values, and an absent filter returns everything.
+   */
+  async listForOperator(
+    tenantId: string,
+    status?: string,
+    limit?: number,
+  ): Promise<{ items: unknown[]; total: number }> {
+    const bounded = Math.min(Math.max(limit ?? 50, 1), 200);
+    // Trimmed, so `?status=%20FAILED%20` is the same request as `?status=FAILED`. An empty string
+    // is an absence — a UI that has not chosen a filter yet sends one — and is not a search for a
+    // status with no characters, which would return nothing and read as "no notifications exist".
+    const requested = status?.trim() ?? '';
+    if (requested && !this.isKnownStatus(requested)) {
+      throw new DomainBadRequestException(
+        ERROR_CODES.ValidationFailed,
+        `status must be one of ${Object.values(NotificationStatus).join(', ')}`,
+      );
+    }
+    const where = {
+      tenantId,
+      ...(requested ? { status: requested as NotificationStatus } : {}),
+    };
+    const [items, total] = await Promise.all([
+      this.prisma.notification.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        take: bounded,
+        // `destination` is a real address the operator supplied, not a
+        // credential, but it is still PII: it is not part of the list payload
+        // and the operator opens one record to see it.
+        select: {
+          id: true,
+          channel: true,
+          subject: true,
+          status: true,
+          attemptCount: true,
+          lastErrorCode: true,
+          sentAt: true,
+          createdAt: true,
+          templateKey: true,
+        },
+      }),
+      this.prisma.notification.count({ where }),
+    ]);
+    return { items, total };
+  }
+
+  /** Per-status counts, so the screen can lead with a number worth acting on. */
+  async summarize(tenantId: string): Promise<Record<string, number>> {
+    const grouped = await this.prisma.notification.groupBy({
+      by: ['status'],
+      where: { tenantId },
+      _count: { _all: true },
+    });
+    const summary: Record<string, number> = {};
+    for (const status of Object.values(NotificationStatus)) {
+      summary[status] = 0;
+    }
+    for (const row of grouped) {
+      summary[row.status] = row._count._all;
+    }
+    return summary;
+  }
+
+  /**
+   * Whether a caller-supplied string names a real delivery status.
+   *
+   * Compared against the enum's own values rather than with `in`, because `in` also answers true for
+   * inherited `Object.prototype` keys: `'toString' in NotificationStatus` is true, so the filter
+   * would have accepted the literal word `toString` and sent it to Prisma.
+   */
+  private isKnownStatus(value: string): value is NotificationStatus {
+    return (Object.values(NotificationStatus) as string[]).includes(value);
+  }
+
+  /** One delivery record, tenant-scoped. Includes the destination. */
+  async findForOperator(
+    tenantId: string,
+    notificationId: string,
+  ): Promise<Record<string, unknown>> {
+    const record = await this.prisma.notification.findFirst({
+      where: { id: notificationId, tenantId },
+    });
+    if (!record) {
+      throw new DomainNotFoundException(
+        ERROR_CODES.NotFound,
+        'Notification not found',
+      );
+    }
+    return record;
   }
 }

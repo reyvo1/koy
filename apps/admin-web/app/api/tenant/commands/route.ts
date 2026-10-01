@@ -36,6 +36,7 @@ export async function GET() {
             .map((raw) => {
               const row = raw as {
                 id?: string;
+                correlationId?: string;
                 capabilityKey?: string;
                 payload?: { capabilityKey?: string };
                 status?: string;
@@ -44,6 +45,11 @@ export async function GET() {
               };
               return {
                 id: row.id ?? `${device.id}-${row.createdAt ?? ''}`,
+                // The detail endpoint `GET /devices/:id/commands/:commandId` resolves on
+                // `correlationId`, not on the row's primary `id` — the two are distinct UUIDs
+                // in the Prisma model. A drill-down built from `id` alone would 404 on every
+                // click, so both identities are carried through and the UI uses the right one.
+                commandId: row.correlationId ?? row.id ?? '',
                 deviceId: device.id,
                 deviceName: byId.get(device.id) ?? device.id,
                 capabilityKey:
@@ -54,6 +60,7 @@ export async function GET() {
                     '—'),
                 status: row.status ?? 'PENDING',
                 createdAt: row.createdAt ?? null,
+                acknowledgedAt: row.acknowledgedAt ?? null,
               };
             });
         } catch {

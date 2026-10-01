@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { lstatSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -16,9 +17,47 @@ const excludedAnywhere = new Set(['.git', 'node_modules', 'dist', '.next', 'cove
 // the rescue job's independent `baseline:manifest:verify` rejects as unsealed source.
 const excludedDirectoryNames = new Set(['build']);
 const excludedTopLevel = new Set(['artifacts', 'reports']);
+// `.env` is excluded at any depth, not just the repository root: each Next workspace can
+// hold its own (apps/admin-web/.env, apps/user-web/.env) and every one of them is a local,
+// uncommitted secret file per .gitignore. Sealing a workspace .env would both publish local
+// configuration and make the manifest fail on every developer machine that has one.
 const excludedFiles = new Set(['repository-tree.txt', 'BASELINE-MANIFEST.sha256', '.env']);
 const excludedFilePatterns = [/\.tsbuildinfo$/i, /^next-env\.d\.ts$/i];
 const excludedTopLevelFilePatterns = [/^APPLY-.*\.txt$/i, /^README-HOTFIX\.txt$/i];
+
+/**
+ * Files Git already refuses to track, resolved once.
+ *
+ * The exclusion sets above are a hand-maintained list, which means every new git-ignored
+ * secret has to be added to it by hand — and until someone remembers, `collect()` treats the
+ * secret as source and `verify()` fails with "does not match source set". That failure pushes
+ * the operator towards committing the file, because the only visible way to make the gate green
+ * is to seal a credential. The tool was, in effect, arguing for leaking secrets.
+ *
+ * `backups/` was already listed, which is the only reason a database dump full of password and
+ * API-key hashes never got sealed. `.uat-credentials` was git-ignored moments before this
+ * change and appeared in the same failure.
+ *
+ * The correct definition of "repository tree" is the set of paths that would be committed, and
+ * the repository's own definition of that is `.gitignore`. So ask Git, once, instead of
+ * maintaining a parallel list that can drift. If Git is unavailable or the tree is not a
+ * repository, fall back to the walk: a missing exclusion set is a smaller problem than a
+ * manifest tool that refuses to run.
+ */
+function gitIgnoredPaths() {
+  try {
+    const out = execFileSync(
+      'git',
+      ['ls-files', '--others', '--ignored', '--exclude-standard', '-z'],
+      { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 64 * 1024 * 1024 },
+    );
+    return new Set(out.split('\0').filter(Boolean));
+  } catch {
+    return null;
+  }
+}
+
+const ignoredByGit = gitIgnoredPaths();
 
 function canonicalBytes(file, relativePath) {
   const raw = readFileSync(file);
@@ -57,6 +96,10 @@ function collect(directory = root, depth = 0) {
     if (depth === 0 && excludedFiles.has(entry.name)) continue;
     if (depth === 0 && excludedTopLevelFilePatterns.some((pattern) => pattern.test(entry.name))) continue;
     const absolute = path.join(directory, entry.name);
+    if (ignoredByGit) {
+      const relative = path.relative(root, absolute).split(path.sep).join('/');
+      if (ignoredByGit.has(relative)) continue;
+    }
     const stat = lstatSync(absolute);
     if (stat.isSymbolicLink()) {
       throw new Error(`Symlink is not allowed in sealed source baseline: ${path.relative(root, absolute)}`);

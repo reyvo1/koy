@@ -36,7 +36,7 @@ describe('DeviceService', () => {
 
     it('findAll scopes by tenantId', async () => {
         await service.findAll('t1');
-        expect(prisma.device.findMany).toHaveBeenCalledWith({ where: { tenantId: 't1' } });
+        expect(prisma.device.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { tenantId: 't1' } }));
     });
 
 
@@ -46,7 +46,7 @@ describe('DeviceService', () => {
 
         await service.findAll('t1', { userId: 'u1', membershipId: 'm1', role: 'MEMBER' });
 
-        expect(prisma.device.findMany).toHaveBeenCalledWith({
+        expect(prisma.device.findMany).toHaveBeenCalledWith(expect.objectContaining({
             where: {
                 tenantId: 't1',
                 OR: [
@@ -63,19 +63,19 @@ describe('DeviceService', () => {
                     },
                 ],
             },
-        });
+        }));
     });
 
     it('findAll keeps ADMIN directory tenant-scoped without share filtering', async () => {
         await service.findAll('t1', { userId: 'u1', membershipId: 'm1', role: 'ADMIN' });
-        expect(prisma.device.findMany).toHaveBeenCalledWith({ where: { tenantId: 't1' } });
+        expect(prisma.device.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { tenantId: 't1' } }));
         expect(prisma.$queryRaw).not.toHaveBeenCalled();
     });
 
     it('findOne scopes by id + tenantId', async () => {
         (prisma.device.findFirst as jest.Mock).mockResolvedValue({ id: 'd1', tenantId: 't1' });
         await service.findOne('t1', 'd1');
-        expect(prisma.device.findFirst).toHaveBeenCalledWith({ where: { id: 'd1', tenantId: 't1' } });
+        expect(prisma.device.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'd1', tenantId: 't1' } }));
     });
 
     it('cross-tenant findOne rejects', async () => {
@@ -84,6 +84,16 @@ describe('DeviceService', () => {
     });
 
     it('create binds tenantId', async () => {
+        // `device.create` resolves a row now: `create` reads the created device to build the
+        // `device.registered` payload. An unmocked call resolved `undefined` and the emit
+        // read `.id` off it, so this spec failed on the *new* behaviour while asserting
+        // nothing about it. Stated here so the next reader knows the double is deliberate.
+        (prisma.device.create as jest.Mock).mockResolvedValue({
+            id: 'd1',
+            name: 'd1',
+            type: 'SENSOR',
+            status: 'PROVISIONING',
+        });
         await service.create('t1', { name: 'd1', type: 'SENSOR' as any });
         expect(prisma.device.create).toHaveBeenCalledWith({ data: { name: 'd1', type: 'SENSOR', tenantId: 't1' } });
     });

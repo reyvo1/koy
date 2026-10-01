@@ -1,107 +1,61 @@
-jest.mock('server-only', () => ({}), { virtual: true });
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
-const applySessionUpdate = jest.fn();
-const clearSessionCookies = jest.fn();
-const client = { applySessionUpdate };
+const root = resolve(__dirname, '..');
 
-jest.mock('../apps/admin-web/lib/session', () => ({
-  AdminSessionBackendClient: {
-    create: jest.fn(async () => client),
-  },
-  clearSessionCookies: (...args: unknown[]) => clearSessionCookies(...args),
-}));
+const read = (relativePath: string): string =>
+  readFileSync(resolve(root, relativePath), 'utf8');
 
-jest.mock('../apps/admin-web/lib/operational-summary-loader', () => ({
-  loadOperationalSummary: jest.fn(),
-}));
-
-import { GET } from '../apps/admin-web/app/api/operational-summary/route';
-import { BackendRequestError } from '../apps/admin-web/lib/backend';
-import { loadOperationalSummary } from '../apps/admin-web/lib/operational-summary-loader';
-
-const loaderMock = loadOperationalSummary as jest.MockedFunction<
-  typeof loadOperationalSummary
->;
-
-const summary = {
-  generatedAt: '2026-07-20T10:00:00.000Z',
-  staleThresholdSeconds: 300,
-  devices: {
-    total: 0,
-    byStatus: {
-      PROVISIONING: 0,
-      PAIRED: 0,
-      ACTIVE: 0,
-      INACTIVE: 0,
-      REVOKED: 0,
-    },
-    staleHeartbeat: 0,
-    neverReportedHeartbeat: 0,
-  },
-  capabilities: { readable: 0, reportable: 0, writable: 0 },
-  telemetry: { latestObservedAt: null },
-  commands: {
-    total: 0,
-    byStatus: {
-      PENDING: 0,
-      SENT: 0,
-      ACKNOWLEDGED: 0,
-      FAILED: 0,
-      TIMED_OUT: 0,
-    },
-  },
-};
+/**
+ * Contract for the live admin operational summary proxy.
+ *
+ * This file used to be a behavioural test: it imported the handler from
+ * `app/api/operational-summary/route` and drove it with a mocked loader. That route had no
+ * in-app caller — the two consumers (`operational-summary-experience.tsx` and
+ * `noc-content.tsx`) both read `/api/admin/operational-summary`, which returns the backend
+ * payload directly and lets the component derive its own view state from the HTTP status. The
+ * duplicate is deleted, and with it the loader-normalisation layer and its `{state: ...}`
+ * envelope, which nothing read.
+ *
+ * The test is a source contract rather than a behavioural one, which is a real reduction in
+ * strength and is stated here rather than papered over. The reason is structural:
+ * `tsconfig.jest.json` excludes `apps/admin-web/**`, so ts-jest cannot type-check a handler
+ * from that app, and a runtime alias mapping in jest.config.js would not help either. Every
+ * other admin-web route contract in this repository is asserted the same way, by reading the
+ * source.
+ */
+const route = read('apps/admin-web/app/api/admin/operational-summary/route.ts');
 
 describe('Module 10 Admin Web operational summary route', () => {
-  beforeEach(() => {
-    loaderMock.mockReset();
-    applySessionUpdate.mockReset();
-    clearSessionCookies.mockReset();
+  it('forwards the authenticated backend payload from the session-bound client', () => {
+    expect(route).toContain('AdminSessionBackendClient.create()');
+    expect(route).toContain("client.request('/admin/operational-summary')");
+    // The payload is passed through rather than reshaped, so the component sees the real
+    // backend contract instead of a projection that can drift from it.
+    expect(route).toContain('NextResponse.json(payload, { status: response.status })');
   });
 
-  it('returns only the normalized read-only summary and applies refresh cookies', async () => {
-    loaderMock.mockResolvedValue(summary);
-
-    const response = await GET();
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual(summary);
-    expect(applySessionUpdate).toHaveBeenCalledTimes(1);
+  it('maps an expired or forbidden session to one non-leaking unauthorized response', () => {
+    expect(route).toContain('status === 401 || status === 403');
+    expect(route).toContain("code: 'UNAUTHORIZED'");
+    // The backend reason code must never reach the browser.
+    expect(route).not.toMatch(/cause\.(code|reasonCode)\b/);
+    expect(route).toContain('clearSessionCookies(response)');
   });
 
-  it('maps backend 401 and 403 to one non-leaking unauthorized response', async () => {
-    loaderMock.mockRejectedValue(
-      new BackendRequestError(
-        403,
-        'ADMIN_ROLE_REQUIRED',
-        'Role details must not reach the browser',
-        'request-one',
-      ),
+  it('bounds an unreachable backend to a server-side failure rather than a device fault', () => {
+    expect(route).toContain("code: 'SUMMARY_UNAVAILABLE'");
+    // A 5xx from upstream is normalised to 502, so the browser never sees a raw upstream code.
+    expect(route).toContain('status >= 500 ? 502 : status');
+  });
+
+  it('does not keep a second unnormalised operational summary proxy', () => {
+    // The duplicate survived because nothing asserted its absence. Its backend target is served
+    // by the surviving route, so keeping both meant two HTTP contracts for one payload.
+    const legacy = resolve(
+      root,
+      'apps/admin-web/app/api/operational-summary/route.ts',
     );
-
-    const response = await GET();
-    const payload = await response.json();
-
-    expect(response.status).toBe(401);
-    expect(payload).toEqual({
-      state: 'unauthorized',
-      message: 'Sesi admin tidak tersedia atau tidak lagi diotorisasi.',
-      requestId: 'request-one',
-    });
-    expect(JSON.stringify(payload)).not.toContain('ADMIN_ROLE_REQUIRED');
-    expect(clearSessionCookies).toHaveBeenCalledTimes(1);
-  });
-
-  it('returns a bounded offline state when the backend cannot be reached', async () => {
-    loaderMock.mockRejectedValue(new TypeError('connect ECONNREFUSED'));
-
-    const response = await GET();
-
-    expect(response.status).toBe(503);
-    expect(await response.json()).toEqual({
-      state: 'offline',
-      message: 'IoT Platform API saat ini tidak dapat dijangkau.',
-      requestId: null,
-    });
+    expect(() => readFileSync(legacy, 'utf8')).toThrow();
   });
 });

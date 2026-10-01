@@ -9,6 +9,7 @@ describe('OrganizationService', () => {
   let organizationCreate: jest.Mock;
   let branchCreate: jest.Mock;
   let branchFindMany: jest.Mock;
+  let branchFindFirst: jest.Mock;
   let service: OrganizationService;
 
   beforeEach(() => {
@@ -16,9 +17,14 @@ describe('OrganizationService', () => {
     organizationCreate = jest.fn().mockResolvedValue({ id: 'org1' });
     branchCreate = jest.fn().mockResolvedValue({ id: 'br1' });
     branchFindMany = jest.fn().mockResolvedValue([]);
+    branchFindFirst = jest.fn().mockResolvedValue(null);
     service = new OrganizationService({
       organization: { findUnique: orgFindUnique, create: organizationCreate },
-      organizationBranch: { create: branchCreate, findMany: branchFindMany },
+      organizationBranch: {
+        create: branchCreate,
+        findMany: branchFindMany,
+        findFirst: branchFindFirst,
+      },
       $transaction: jest.fn((cb: (tx: unknown) => unknown) =>
         cb({
           organization: { findUnique: orgFindUnique, create: organizationCreate },
@@ -75,5 +81,22 @@ describe('OrganizationService', () => {
       label: 'Branch B',
     });
     expect(branchCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses to attach a tenant that already belongs to another organization', async () => {
+    orgFindUnique.mockResolvedValue({ id: 'org1', ownerMembershipId: owner });
+    branchFindFirst.mockResolvedValue({ organizationId: 'someone-elses-org' });
+
+    await expect(
+      service.addBranch({
+        actorMembershipId: owner,
+        organizationId: 'org1',
+        tenantId: branchTenant,
+        label: 'Branch B',
+      }),
+    ).rejects.toMatchObject({ code: 'ORG_BRANCH_TENANT_CONFLICT' });
+
+    // The cross-tenant branch must not be written at all.
+    expect(branchCreate).not.toHaveBeenCalled();
   });
 });

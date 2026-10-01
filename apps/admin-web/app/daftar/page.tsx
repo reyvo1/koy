@@ -12,7 +12,7 @@
  * reach client-side storage.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AuthAlert, AuthShell } from '../../components/auth-shell';
 
@@ -24,12 +24,20 @@ type Status =
 
 export default function RegisterPage() {
   const [status, setStatus] = useState<Status>({ kind: 'idle' });
+  // See app/login/page.tsx: the form must not be submittable before React hydrates, or a
+  // native submit would place the chosen password in the URL.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setStatus({ kind: 'busy' });
 
-    const form = new FormData(event.currentTarget);
+    // React nulls `event.currentTarget` once this handler yields, so the element is held
+    // here and reused after the await. Reading it again post-await threw on a request
+    // that had already succeeded, and the surrounding catch reported that as a failure.
+    const formEl = event.currentTarget;
+    const form = new FormData(formEl);
     const password = String(form.get('password') ?? '');
     const confirm = String(form.get('confirmPassword') ?? '');
 
@@ -61,9 +69,9 @@ export default function RegisterPage() {
       setStatus({
         kind: 'ok',
         message:
-          'Pendaftaran berhasil. Periksa email Anda untuk verifikasi, lalu masuk dengan akun tersebut.',
+          'Pendaftaran berhasil. Buka email Anda, salin token verifikasi, lalu masukkan di halaman Verifikasi email.',
       });
-      event.currentTarget.reset();
+      formEl.reset();
     } catch (cause) {
       setStatus({
         kind: 'error',
@@ -74,7 +82,7 @@ export default function RegisterPage() {
 
   return (
     <AuthShell title="Daftar akun" subtitle="AKSES ADMINISTRATOR">
-      <form onSubmit={onSubmit} className="space-y-5">
+      <form onSubmit={onSubmit} method="post" className="space-y-5">
         {[
           { name: 'tenantId', label: 'Tenant ID', type: 'text', min: undefined },
           { name: 'email', label: 'Email', type: 'email', min: undefined },
@@ -99,11 +107,22 @@ export default function RegisterPage() {
           <AuthAlert kind="error" message={status.message} />
         ) : null}
         {status.kind === 'ok' ? (
-          <AuthAlert kind="ok" message={status.message} />
+          <>
+            <AuthAlert kind="ok" message={status.message} />
+            {/* The success message tells the user to go verify, so the destination has to
+                be one click away rather than something they have to guess the URL of. */}
+            <Link
+              href="/verifikasi"
+              className="block w-full rounded-xl border border-teal-500/40 bg-teal-500/10 px-4 py-3 text-center text-[13px] font-semibold text-teal-300 transition-all hover:bg-teal-500/20"
+            >
+              Buka halaman verifikasi email
+            </Link>
+          </>
         ) : null}
 
         <button
-          disabled={status.kind === 'busy'}
+          type="submit"
+          disabled={status.kind === 'busy' || !hydrated}
           className="w-full rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 py-3.5 text-[15px] font-bold text-white shadow-[0_6px_20px_rgba(20,184,166,.35)] transition-all hover:brightness-110 disabled:opacity-60"
         >
           {status.kind === 'busy' ? 'Memproses…' : 'Daftar'}

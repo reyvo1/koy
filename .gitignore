@@ -34,3 +34,14 @@ apps/admin-web/tmp-*.sh
 
 # Runtime acceptance evidence (operator-generated; may contain environment metadata)
 /reports/
+
+# Wave 4 — database dumps. A `pg_dump --format=custom` of this database contains password
+# hashes, API key hashes and device credentials: six such strings are present in a single
+# 260 KB dump of the seeded demo data. Dumps belong in storage, not in the repository, and
+# `scripts/backup-database.sh` writes them here by default.
+backups/
+*.dump
+# Wave 4 — UAT baseline credentials, written by scripts/seed-uat-baseline.mjs. A UAT baseline
+# needs a credential the owner can type, which is exactly why it must not live in the
+# repository or in a document.
+.uat-credentials

@@ -5,7 +5,7 @@
  * with per-device writable capabilities), run, delete. Dark unified v2.2.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Play,
   MoonStar,
@@ -22,6 +22,7 @@ import type { LucideIcon } from 'lucide-react';
 import { EmptyState, SkeletonCard, useToast, shadow } from '@/components/ui-polish';
 import { CapabilityValueInput } from '@/components/capability-value-input';
 import { parseCapabilityValue } from '@/lib/capability-value';
+import { createLoadGuard } from '@/lib/safe-fetch';
 
 interface SceneCard {
   id: string;
@@ -104,14 +105,19 @@ export default function TenantScenesContent() {
     }
   }, []);
 
+  const loadGuard = useRef(createLoadGuard());
+
   const load = useCallback(async () => {
+    const isCurrent = loadGuard.current.begin();
     try {
       const response = await fetch('/api/tenant/scenes');
       if (!response.ok) throw new Error(`backend ${response.status}`);
       const body = (await response.json()) as { items?: SceneCard[] } | SceneCard[];
+      if (!isCurrent()) return;
       setScenes(Array.isArray(body) ? body : (body.items ?? []));
       setError(null);
     } catch (cause) {
+      if (!isCurrent()) return;
       setScenes([]);
       setError(cause instanceof Error ? cause.message : 'gagal memuat scene');
     }

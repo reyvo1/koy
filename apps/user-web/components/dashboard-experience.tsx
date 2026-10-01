@@ -67,11 +67,6 @@ export function DashboardExperience() {
     void load();
   }, [load]);
 
-  async function logout() {
-    await fetch('/api/session/logout', { method: 'POST' }).catch(() => null);
-    setState({ kind: 'unauthorized' });
-  }
-
   if (state.kind === 'loading') {
     return (
       <StateNotice
@@ -155,13 +150,6 @@ export function DashboardExperience() {
             type="button"
           >
             Perbarui
-          </button>
-          <button
-            className="iot-button iot-button--secondary"
-            onClick={() => void logout()}
-            type="button"
-          >
-            Keluar
           </button>
         </div>
       </section>

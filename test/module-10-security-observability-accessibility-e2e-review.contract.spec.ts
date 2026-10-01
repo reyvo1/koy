@@ -34,9 +34,10 @@ describe('Module 10 Slice 10.13 repository review contract', () => {
       'docs/module-10-barcode-cctv-ui-compatibility-contract.md',
     );
 
-    expect(dashboardController).toContain(
-      '@UseGuards(JwtAuthGuard, TenantContextGuard)',
-    );
+    // Membership, not a pinned string — see the note in module-10-dashboard-api.contract.spec.ts.
+    const dashboardGuardList = dashboardController.match(/@UseGuards\(([^)]*)\)/)?.[1] ?? '';
+    expect(dashboardGuardList).toContain('JwtAuthGuard');
+    expect(dashboardGuardList).toContain('TenantContextGuard');
     expect(dashboardController).toContain('request.user.tenantContext');
     expect(adminController).toContain(
       '@UseGuards(JwtAuthGuard, TenantContextGuard, AdminRoleGuard)',

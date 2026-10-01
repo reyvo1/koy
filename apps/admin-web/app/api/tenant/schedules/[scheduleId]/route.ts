@@ -1,6 +1,13 @@
 import { proxyBackend } from '@/lib/proxy';
 
 /** PATCH/DELETE /api/tenant/schedules/[scheduleId] — enable/disable, delete. */
+/**
+ * Toggles a schedule's enabled flag. Despite the PATCH verb, this is not a general update:
+ * the backend exposes no PATCH /schedules/:id, only POST /schedules/:id/enable, so this route
+ * adapts the UI's PATCH onto that endpoint and forwards the body unchanged. The backend
+ * rejects anything that is not a boolean `enabled`, so a caller expecting a general update
+ * fails loudly rather than silently writing nothing.
+ */
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ scheduleId: string }> },

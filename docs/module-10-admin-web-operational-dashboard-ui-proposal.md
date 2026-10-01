@@ -40,7 +40,7 @@ The Admin Web will use server-only Next.js route handlers with an Admin-specific
 
 - `POST /api/session/login` accepts email, password, and tenant selector and forwards them to backend `POST /auth/login`;
 - `POST /api/session/logout` calls backend `POST /auth/logout` when available and always clears local session cookies;
-- `GET /api/operational-summary` calls backend `GET /admin/operational-summary`;
+- `GET /api/admin/operational-summary` calls backend `GET /admin/operational-summary`;
 - access, refresh, and tenant values use `HttpOnly`, `SameSite=Lax`, path-scoped cookies and `Secure` in production;
 - the server adapter sends `Authorization: Bearer ...` and `X-Tenant-Id` only from the server boundary;
 - one single-flight refresh attempt may follow a backend `401` response;
@@ -105,7 +105,7 @@ The implementation adds or modifies only the bounded Admin Web surface and its f
 - `apps/admin-web/lib/operational-summary-loader.ts`;
 - `apps/admin-web/app/api/session/login/route.ts`;
 - `apps/admin-web/app/api/session/logout/route.ts`;
-- `apps/admin-web/app/api/operational-summary/route.ts`;
+- `apps/admin-web/app/api/admin/operational-summary/route.ts`;
 - focused Admin Web components, page composition, and styles;
 - focused contract tests and synchronized documentation.
 

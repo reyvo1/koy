@@ -118,7 +118,17 @@ describe('Module 10 Slice 10.7 User Web Dynamic Dashboard contract', () => {
     expect(experience).toContain('aria-label="Kontrol dashboard"');
     expect(styles).toContain('.iot-dashboard-grid');
     expect(styles).toContain('@media (max-width: 639px)');
-    expect(layout).toContain('<html lang="id">');
+    // Asserted as the documented theme contract rather than as a literal opening tag. The
+    // previous `toContain('<html lang="id">')` pinned the element to have no attributes, so
+    // adding the documented light-theme opt-in failed this test — the same shape as the stale
+    // validator checks: a guardrail that pins the absence of a correct change. User Web shares
+    // one dark-first token set with the admin console and opts into light explicitly, so both
+    // the language attribute and the theme attribute are required.
+    expect(layout).toMatch(/<html[^>]*\blang="id"/);
+    expect(layout).toMatch(/<html[^>]*\bdata-theme="light"/);
+    // And the stylesheet it renders through must actually be the shared design system,
+    // otherwise the shell's iot-* classes resolve to nothing.
+    expect(styles).toContain("@import '@iot-platform/design-system/styles.css';");
   });
 
   it('documents deferred boundaries and the next gated slice', () => {

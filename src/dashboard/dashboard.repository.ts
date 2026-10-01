@@ -915,7 +915,13 @@ export class DashboardRepository {
     this.assertUuid(input.ownerMembershipId, 'ownerMembershipId');
     this.assertBoundedTrimmedString(input.name, 'name', 120);
 
-    if (input.description !== undefined) {
+    // `null` as well as `undefined`: `DashboardAggregateDto.description` is @IsOptional and
+    // nullable, and the aggregate read returns `null` for a dashboard with no description —
+    // so a read-modify-write sends back exactly the null the server handed it. Checking only
+    // `!== undefined` let that through to `value.trim()`, and a TypeError became a 500 instead
+    // of the 400 the DTO promised. `normalizeDescription` already treats null and undefined
+    // the same way downstream; this makes the check agree with it.
+    if (input.description != null) {
       this.assertBoundedTrimmedString(
         input.description,
         'description',
@@ -1145,8 +1151,12 @@ export class DashboardRepository {
     }
   }
 
-  private normalizeDescription(value: string | undefined): string | null {
-    if (value === undefined) {
+  private normalizeDescription(value: string | undefined | null): string | null {
+    // `!= null` rather than `=== undefined`: the aggregate read returns `null` for a dashboard
+    // with no description, so this is the value a read-modify-write sends back. The narrower
+    // check left it to reach `.trim()` below, which is a TypeError and therefore a 500 —
+    // and the same failure the validator guard above used to have.
+    if (value == null) {
       return null;
     }
 

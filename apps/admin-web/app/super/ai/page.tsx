@@ -35,11 +35,11 @@ const KIND_META: Record<string, [string, string]> = {
 };
 
 const ROADMAP = [
-  ['Failure Prediction', '◈', 'Prediksi kegagalan perangkat dari tren telemetry'],
-  ['Predictive Maintenance', '⛭', 'Jadwal perawatan sebelum kerusakan'],
-  ['Energy Optimization', '⚡', 'Rekomendasi hemat energi'],
-  ['AI Assistant', '✦', 'Asisten analitik percakapan'],
-];
+  ['Failure Prediction', 'Prediksi kegagalan perangkat dari tren telemetry'],
+  ['Predictive Maintenance', 'Jadwal perawatan sebelum kerusakan'],
+  ['Energy Optimization', 'Rekomendasi hemat energi'],
+  ['AI Assistant', 'Asisten analitik percakapan'],
+] as const;
 
 export default function AiCenterPage() {
   const [findings, setFindings] = useState<Finding[] | null>(null);
@@ -109,19 +109,43 @@ export default function AiCenterPage() {
         </div>
       )}
 
-      <h2 className="mb-3 text-[14px] font-bold text-white">Roadmap Analitik</h2>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {ROADMAP.map(([name, icon, desc]) => (
-          <div key={name} className="rounded-2xl border border-slate-800/80 bg-[#111c2e] p-5 transition-all hover:border-slate-600">
-            <div className="text-3xl">{icon}</div>
-            <div className="mt-3 text-[15px] font-bold text-white">{name}</div>
-            <p className="mt-1.5 text-[12.5px] leading-relaxed text-slate-500">{desc}</p>
-            <span className="mt-3 inline-block rounded-full border border-slate-600/40 bg-slate-800/50 px-2.5 py-0.5 text-[10.5px] font-bold text-slate-400">
-              Segera
-            </span>
-          </div>
-        ))}
-      </div>
+      {/*
+        Roadmap is labelled as a roadmap, not a feature list. These four cards sat under
+        the same "AI Center" heading as live findings, each with a hover border and a
+        "Segera" badge, so a glance read as four available capabilities that happened to
+        be unavailable. The detectors behind the findings above are the only thing on this
+        page that actually runs.
+      */}
+      <section aria-labelledby="ai-roadmap-heading">
+        <div className="mb-3 flex flex-wrap items-baseline gap-3">
+          <h2
+            id="ai-roadmap-heading"
+            className="m-0 text-[14px] font-bold text-white"
+          >
+            Belum tersedia
+          </h2>
+          <p className="m-0 text-[11.5px] text-slate-500">
+            Kemampuan berikut belum ada di platform ini. Tidak ada detektor, endpoint,
+            atau konfigurasi yang menghasilkannya.
+          </p>
+        </div>
+        <ul className="m-0 grid list-none gap-4 p-0 sm:grid-cols-2 lg:grid-cols-4">
+          {ROADMAP.map(([name, desc]) => (
+            <li
+              key={name}
+              className="rounded-2xl border border-dashed border-slate-800/80 bg-[#111c2e]/50 p-5"
+            >
+              <div className="text-[15px] font-bold text-slate-500">{name}</div>
+              <p className="mt-1.5 text-[12.5px] leading-relaxed text-slate-600">
+                {desc}
+              </p>
+              <span className="mt-3 inline-block rounded-full border border-slate-800 bg-slate-900/60 px-2.5 py-0.5 text-[10.5px] font-bold text-slate-600">
+                Belum ada
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
     </SuperAdminShell>
   );
 }

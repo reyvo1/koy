@@ -21,6 +21,11 @@ type Status =
 function ResetPasswordForm() {
   const [token, setToken] = useState('');
   const [status, setStatus] = useState<Status>({ kind: 'idle' });
+  // See app/login/page.tsx: without hydration the browser would natively submit this form
+  // and echo the new password into the URL. The button stays disabled until React is live.
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => setHydrated(true), []);
 
   useEffect(() => {
     const fromQuery = new URLSearchParams(window.location.search).get('token');
@@ -33,7 +38,11 @@ function ResetPasswordForm() {
     event.preventDefault();
     setStatus({ kind: 'busy' });
 
-    const form = new FormData(event.currentTarget);
+    // React nulls `event.currentTarget` once this handler yields, so the element is held
+    // here and reused after the await. Reading it again post-await threw on a request
+    // that had already succeeded, and the surrounding catch reported that as a failure.
+    const formEl = event.currentTarget;
+    const form = new FormData(formEl);
     const password = String(form.get('password') ?? '');
     const confirm = String(form.get('confirmPassword') ?? '');
 
@@ -62,7 +71,7 @@ function ResetPasswordForm() {
         kind: 'ok',
         message: 'Password diperbarui. Silakan masuk dengan password baru.',
       });
-      event.currentTarget.reset();
+      formEl.reset();
     } catch (cause) {
       setStatus({
         kind: 'error',
@@ -76,7 +85,7 @@ function ResetPasswordForm() {
 
   return (
     <AuthShell title="Atur password baru" subtitle="PULIHKAN AKSES">
-      <form onSubmit={onSubmit} className="space-y-5">
+      <form onSubmit={onSubmit} method="post" className="space-y-5">
         <label className="block">
           <span className="mb-1.5 block text-[13px] font-semibold text-slate-300">
             Token reset
@@ -119,7 +128,8 @@ function ResetPasswordForm() {
         ) : null}
 
         <button
-          disabled={status.kind === 'busy'}
+          type="submit"
+          disabled={status.kind === 'busy' || !hydrated}
           className="w-full rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 py-3.5 text-[15px] font-bold text-white shadow-[0_6px_20px_rgba(20,184,166,.35)] transition-all hover:brightness-110 disabled:opacity-60"
         >
           {status.kind === 'busy' ? 'Memproses…' : 'Simpan password baru'}

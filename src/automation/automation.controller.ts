@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RbacPermissionGuard, RequirePermission } from '../rbac/rbac-permission.guard';
 import { TenantContextGuard } from '../users/guards/tenant-context.guard';
 import { AutomationRepository } from './automation.repository';
 import {
@@ -50,20 +51,33 @@ class QueryLimitPipe {
 }
 
 @Controller('automations')
-@UseGuards(JwtAuthGuard, TenantContextGuard)
+@UseGuards(JwtAuthGuard, TenantContextGuard, RbacPermissionGuard)
+// Every route below declares a permission. `allowOwner` is set on the addressed routes because
+// AutomationRepository already filters by ownerMembershipId: a plain member keeps full access to
+// their own automations, and the guard now records who acted instead of leaving no trace. The
+// repository remains the authority — this adds an audit trail and a second, tenant-scoped
+// check, it does not widen what any caller may do.
 export class AutomationController {
   constructor(private readonly automations: AutomationRepository) {}
 
   @Post()
+  @RequirePermission('automation.create')
   async create(@Request() request: TenantRequest, @Body() body: { definition?: unknown }) {
-    return this.automations.createOwnedAutomation({
-      tenantId: request.user.tenantContext.tenantId,
-      ownerMembershipId: request.user.tenantContext.membershipId,
-      definition: body?.definition as never,
-    });
+    try {
+      return await this.automations.createOwnedAutomation({
+        tenantId: request.user.tenantContext.tenantId,
+        ownerMembershipId: request.user.tenantContext.membershipId,
+        definition: body?.definition as never,
+      });
+    } catch (cause) {
+      // createOwnedAutomation runs the same validator as replace, so an unresolvable
+      // trigger or a non-writable action target reaches here too — 400, not 500.
+      this.mapPersistenceError(cause);
+    }
   }
 
   @Get()
+  @RequirePermission('automation.read')
   async list(
     @Request() request: TenantRequest,
     @Query('limit', new QueryLimitPipe()) limit: number,
@@ -81,6 +95,7 @@ export class AutomationController {
   }
 
   @Post(':automationId/activate')
+  @RequirePermission('automation.update', { allowOwner: true })
   async activate(
     @Request() request: TenantRequest,
     @Param('automationId') automationId: string,
@@ -96,6 +111,7 @@ export class AutomationController {
   }
 
   @Post(':automationId/deactivate')
+  @RequirePermission('automation.update', { allowOwner: true })
   async deactivate(
     @Request() request: TenantRequest,
     @Param('automationId') automationId: string,
@@ -105,6 +121,7 @@ export class AutomationController {
   }
 
   @Get(':automationId')
+  @RequirePermission('automation.read', { allowOwner: true })
   async get(
     @Request() request: TenantRequest,
     @Param('automationId') automationId: string,
@@ -113,6 +130,7 @@ export class AutomationController {
   }
 
   @Put(':automationId')
+  @RequirePermission('automation.update', { allowOwner: true })
   async replace(
     @Request() request: TenantRequest,
     @Param('automationId') automationId: string,
@@ -125,27 +143,44 @@ export class AutomationController {
         'expectedRevision wajib angka',
       );
     }
-    return this.automations.replaceOwnedAutomation({
-      tenantId: request.user.tenantContext.tenantId,
-      ownerMembershipId: request.user.tenantContext.membershipId,
-      automationId,
-      expectedRevision,
-      definition: body.definition as never,
-    });
+    try {
+      return await this.automations.replaceOwnedAutomation({
+        tenantId: request.user.tenantContext.tenantId,
+        ownerMembershipId: request.user.tenantContext.membershipId,
+        automationId,
+        expectedRevision,
+        definition: body.definition as never,
+      });
+    } catch (cause) {
+      // Without this the error reaches the global filter, which only understands
+      // HttpException, so a stale revision or a vanished automation surfaced as
+      // 500 Internal Server Error. The console then told the operator the server was
+      // broken, when the real answer is "someone else edited this first" (409) or
+      // "it is gone" (404) — and activate/deactivate already answered correctly.
+      this.mapPersistenceError(cause);
+    }
   }
 
   @Delete(':automationId')
+  @RequirePermission('automation.delete', { allowOwner: true })
   async remove(
     @Request() request: TenantRequest,
     @Param('automationId') automationId: string,
   ) {
     const aggregate = await this.loadOwned(request, automationId);
-    await this.automations.deleteOwnedAutomation(
-      request.user.tenantContext.tenantId,
-      request.user.tenantContext.membershipId,
-      automationId,
-      aggregate.revision,
-    );
+    try {
+      await this.automations.deleteOwnedAutomation(
+        request.user.tenantContext.tenantId,
+        request.user.tenantContext.membershipId,
+        automationId,
+        aggregate.revision,
+      );
+    } catch (cause) {
+      // Same leak as replace: the revision read above can go stale between the read and
+      // the delete, which is precisely when this throws, so the conflict is a normal
+      // outcome of a correct optimistic-concurrency check — not a server fault.
+      this.mapPersistenceError(cause);
+    }
     return { id: automationId, deleted: true };
   }
 

@@ -10,23 +10,25 @@ import {
 
 import type { MobileAuthNotice } from '../app/mobile-auth-controller';
 import type { MobileLoginCredentials } from '../session';
-import { defaultMobileLocale, mobileMessages } from '../localization/messages';
+import { mobileMessages, type MobileLocale } from '../localization/messages';
 import { MobileStateNotice } from './mobile-state-notice';
 
 interface MobileLoginScreenProps {
   isDark: boolean;
+  locale: MobileLocale;
   notice: MobileAuthNotice | null;
   pending: boolean;
   onSubmit(credentials: MobileLoginCredentials): Promise<void>;
 }
 
 export function MobileLoginScreen({
+  locale,
   isDark,
   notice,
   pending,
   onSubmit,
 }: MobileLoginScreenProps) {
-  const copy = mobileMessages[defaultMobileLocale];
+  const copy = mobileMessages[locale];
   const [tenantId, setTenantId] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

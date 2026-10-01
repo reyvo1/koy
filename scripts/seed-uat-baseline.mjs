@@ -1,0 +1,286 @@
+#!/usr/bin/env node
+/**
+ * Wave 4 — the UAT baseline, made real.
+ *
+ * The previous baseline was fiction. `docs/UAT-CHECKLIST.md`, `docs/STAGING-RUNBOOK.md` and
+ * `docs/PANDUAN-UI.md` all told the operator to log in as `admin@demo.id / Demo12345!` on a
+ * tenant called "Demo Home" at ports 3100/3000. None of that existed:
+ *
+ *   - no user with that email, in any database;
+ *   - no tenant named "Demo Home";
+ *   - the real ports are 5000 for the API and 3100 for the admin web, the latter bound by
+ *     `apps/admin-web/package.json` (`next dev --port 3100`);
+ *   - and `admin@demo.id` is on the *forbidden* list in
+ *     `scripts/validate-rescue-baseline.mjs`, so the gate and the docs contradicted each
+ *     other. The forbidden check only scans `.ts/.tsx/.js/.mjs`, which is why the docs escaped
+ *     it and the gate stayed green.
+ *
+ * The other half of the problem: `seed-demo-accounts.mjs` deletes and recreates its users on
+ * every run, so it regenerates their passwords. No documented credential can survive a re-seed,
+ * which means no *stable* UAT baseline can be built on top of it. That is why this is a
+ * separate script rather than another flag on the demo seed.
+ *
+ * Behaviour, deliberately unlike the demo seed:
+ *   - create if absent, and **leave an existing account alone**;
+ *   - only touch a password when `--reset` is passed, or when the account is being created;
+ *   - never delete a user, so operator-created data under these accounts survives.
+ *
+ * Passwords are written to `.uat-credentials` (git-ignored) rather than committed or printed
+ * into a document. A UAT baseline needs a credential the owner can type; it does not need that
+ * credential in the repository.
+ *
+ * Usage:
+ *   node scripts/seed-uat-baseline.mjs              # create if absent
+ *   node scripts/seed-uat-baseline.mjs --reset      # also reset passwords
+ *   UAT_ADMIN_PASSWORD=... node scripts/seed-uat-baseline.mjs --reset
+ */
+import { readFileSync, writeFileSync, existsSync, chmodSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
+import { PrismaClient } from '@prisma/client';
+import argon2 from 'argon2';
+
+const prisma = new PrismaClient();
+const RESET = process.argv.includes('--reset');
+const CREDENTIALS_FILE = '.uat-credentials';
+
+const UAT_TENANT = {
+  id: '44444444-4444-4444-8444-444444444444',
+  name: 'UAT Staging',
+};
+
+const ACCOUNTS = [
+  {
+    email: 'uat.admin@iot.local',
+    name: 'UAT Admin',
+    role: 'ADMIN',
+    envVar: 'UAT_ADMIN_PASSWORD',
+  },
+  {
+    email: 'uat.member@iot.local',
+    name: 'UAT Member',
+    role: 'MEMBER',
+    envVar: 'UAT_MEMBER_PASSWORD',
+  },
+];
+
+const PLATFORM = {
+  email: 'uat.superadmin@iot.local',
+  name: 'UAT Platform Admin',
+  role: 'PLATFORM_ADMIN',
+  envVar: 'UAT_SUPERADMIN_PASSWORD',
+  tenantId: '11111111-1111-4111-8111-111111111111',
+  tenantName: 'Platform Operations',
+};
+
+const generate = () => `Uat-${randomBytes(12).toString('base64url')}`;
+
+async function resolvePassword(account) {
+  if (process.env[account.envVar]) return { password: process.env[account.envVar], changed: true };
+  return { password: generate(), changed: true };
+}
+
+async function ensureTenant(tenantId, tenantName) {
+  const tenant = await prisma.tenant.upsert({
+    where: { id: tenantId },
+    update: {},
+    create: { id: tenantId, name: tenantName },
+  });
+  // A tenant with no subscription is unmetered, and `checkDeviceQuota` now fails closed
+  // without one, so the UAT tenant would be unable to provision a device.
+  const freePlan = await prisma.billingPlan.findUnique({ where: { tier: 'FREE' } });
+  if (!freePlan) {
+    throw new Error(
+      'The FREE billing plan is missing, so the UAT tenant cannot be metered. Apply the ' +
+        'migrations that create the plan rows before seeding the UAT baseline.',
+    );
+  }
+  await prisma.billingSubscription.upsert({
+    where: { tenantId: tenant.id },
+    update: {},
+    create: {
+      tenantId: tenant.id,
+      planId: freePlan.id,
+      status: 'ACTIVE',
+      currentPeriodStart: new Date(),
+      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 3600 * 1000),
+    },
+  });
+  return tenant;
+}
+
+/**
+ * Create the account if it is absent, and otherwise leave it alone.
+ *
+ * `update: {}` rather than a credential rewrite is the whole point: the owner is expected to run
+ * the demo seed between UAT sessions, and a re-seed that rotated the UAT password would make
+ * the baseline unusable for exactly the person it is written for.
+ */
+async function ensureUser({ email, name, role, envVar }, tenantId) {
+  const existing = await prisma.user.findUnique({
+    where: { email_tenantId: { email, tenantId } },
+    select: { id: true },
+  });
+
+  if (existing && !RESET && !process.env[envVar]) {
+    const membership = await prisma.membership.findFirst({
+      where: { userId: existing.id },
+      select: { id: true, role: true },
+    });
+    return { email, tenantId, membershipId: membership?.id ?? null, role: membership?.role ?? role, password: null, action: 'kept' };
+  }
+
+  const { password } = await resolvePassword({ envVar });
+  const passwordHash = await argon2.hash(password);
+
+  // The nested write for a to-one relation accepts only `create`, `connect` and
+  // `connectOrCreate` on the create branch — neither `delete` nor `deleteMany` is an option
+  // there, and Prisma rejects the whole call rather than ignoring the unknown key. So the
+  // previous credential is cleared explicitly first, the same way the demo seed does it.
+  const existingForReset = await prisma.user.findUnique({
+    where: { email_tenantId: { email, tenantId } },
+    select: { id: true },
+  });
+  if (existingForReset) {
+    await prisma.userCredential.deleteMany({ where: { userId: existingForReset.id } });
+  }
+
+  const user = await prisma.user.upsert({
+    where: { email_tenantId: { email, tenantId } },
+    update: { name, isVerified: true },
+    create: { email, name, tenantId, isVerified: true, credential: { create: { passwordHash } } },
+    select: { id: true },
+  });
+
+  if (existingForReset) {
+    await prisma.userCredential.create({ data: { userId: user.id, passwordHash } });
+  }
+
+  const membership = await prisma.membership.upsert({
+    where: { userId_tenantId: { userId: user.id, tenantId } },
+    update: { role },
+    create: { userId: user.id, tenantId, role },
+    select: { id: true },
+  });
+
+  return { email, tenantId, membershipId: membership.id, role, password, action: existing ? 'reset' : 'created' };
+}
+
+async function main() {
+  await ensureTenant(UAT_TENANT.id, UAT_TENANT.name);
+  await ensureTenant(PLATFORM.tenantId, PLATFORM.tenantName);
+
+  const results = [];
+  for (const account of ACCOUNTS) {
+    results.push(await ensureUser(account, UAT_TENANT.id));
+  }
+  results.push(await ensureUser(PLATFORM, PLATFORM.tenantId));
+
+  // A member with no role override cannot do anything, because the permission guard reads
+  // `membership_role_overrides` and nothing else grants a MEMBER access. The UAT member needs
+  // one, or half the checklist is unfollowable.
+  const member = results.find((r) => r.role === 'MEMBER' && r.membershipId);
+  if (member) {
+    const role = await prisma.customRole.upsert({
+      where: { tenantId_name: { tenantId: UAT_TENANT.id, name: 'uat-viewer' } },
+      update: {},
+      create: {
+        tenantId: UAT_TENANT.id,
+        name: 'uat-viewer',
+        permissions: [
+          'device.read', 'telemetry.read', 'scene.read', 'automation.read',
+          'dashboard.read', 'dashboard.create', 'dashboard.update', 'dashboard.delete',
+        ],
+      },
+    });
+    await prisma.membershipRoleOverride.upsert({
+      where: { membershipId_roleId: { membershipId: member.membershipId, roleId: role.id } },
+      update: {},
+      create: { tenantId: UAT_TENANT.id, membershipId: member.membershipId, roleId: role.id },
+    });
+  }
+
+  // The known-good ports, read from the compose file rather than remembered, so the printed
+  // values cannot drift from the stack again.
+  // Both ports are read from the same files the runtime reads, so a printed port can never
+  // drift from the stack again. The web port is bound by `apps/admin-web/package.json`
+  // (`next dev --port 3100`), not by a value anyone remembered.
+  const ports = { api: 'unknown', web: 'unknown' };
+  if (existsSync('apps/admin-web/package.json')) {
+    const pkg = JSON.parse(readFileSync('apps/admin-web/package.json', 'utf8'));
+    const bound = /--port[= ](\d+)/.exec(Object.values(pkg.scripts ?? {}).join(' '))?.[1];
+    if (bound) ports.web = bound;
+  }
+  if (existsSync('docker-compose.rescue.yml')) {
+    const compose = readFileSync('docker-compose.rescue.yml', 'utf8');
+    const apiMatch = compose.match(/api:[\s\S]*?ports:\s*\n\s*- ["']?(\d+):(\d+)/);
+    if (apiMatch) ports.api = apiMatch[1];
+  }
+  if (existsSync('.env')) {
+    const env = readFileSync('.env', 'utf8');
+    const port = env.match(/^PORT=(\d+)/m);
+    if (port) ports.api = port[1];
+  }
+
+  // Preserve passwords already recorded for accounts this run did not touch.
+  //
+  // Rewriting the file with only the accounts whose password was just set erases the very
+  // value the file exists to hold: a no-op run (the common case, because the script is
+  // idempotent by design) would leave the owner with an account and no password. The first
+  // version did exactly that.
+  const previous = new Map();
+  if (existsSync(CREDENTIALS_FILE)) {
+    const blocks = readFileSync(CREDENTIALS_FILE, 'utf8').split(/\n(?=\S)/);
+    for (const block of blocks) {
+      const email = block.split('\n')[0]?.trim();
+      const pw = block.match(/^\s*password\s*:\s*(\S+)\s*$/m)?.[1];
+      if (email && pw) previous.set(email, pw);
+    }
+  }
+  for (const r of results) {
+    if (!r.password) r.password = previous.get(r.email) ?? null;
+  }
+
+  const created = results.filter((r) => r.action !== 'kept');
+  const lines = [
+    '# UAT baseline credentials — generated by scripts/seed-uat-baseline.mjs',
+    '# This file is git-ignored. Do not commit it, and do not paste it into a document.',
+    `# Generated: ${new Date().toISOString()}`,
+    `# API base:   http://127.0.0.1:${ports.api}`,
+    `# Admin web:  http://127.0.0.1:${ports.web}  (cd apps/admin-web && npm run dev)`,
+    '',
+  ];
+  for (const r of results) {
+    lines.push(`${r.email}`);
+    lines.push(`  tenant    : ${r.tenantId}`);
+    lines.push(`  role      : ${r.role}`);
+    lines.push(`  tenantName: ${r.tenantId === UAT_TENANT.id ? UAT_TENANT.name : PLATFORM.tenantName}`);
+    lines.push(`  password  : ${r.password ?? '(unknown — run with --reset to set a new one)'}`);
+    lines.push(`  state     : ${r.action}`);
+    lines.push('');
+  }
+  writeFileSync(CREDENTIALS_FILE, lines.join('\n'));
+  chmodSync(CREDENTIALS_FILE, 0o600);
+
+  console.log(`UAT baseline: tenant "${UAT_TENANT.name}" (${UAT_TENANT.id})`);
+  for (const r of results) {
+    console.log(`  ${r.email.padEnd(26)} ${r.role.padEnd(15)} ${r.action}`);
+  }
+  const missing = results.filter((r) => !r.password);
+  if (missing.length > 0) {
+    console.log(
+      `\nWARNING: no recorded password for ${missing.map((m) => m.email).join(', ')} — ` +
+        'run with --reset to set one',
+    );
+  }
+  console.log(`\ncredentials written to ${CREDENTIALS_FILE} (git-ignored, mode 600)`);
+  if (created.length === 0) {
+    console.log('no passwords changed — existing passwords preserved');
+  }
+}
+
+main()
+  .catch((error) => {
+    console.error(`UAT baseline seeding failed: ${error.message}`);
+    process.exitCode = 1;
+  })
+  .finally(() => prisma.$disconnect());

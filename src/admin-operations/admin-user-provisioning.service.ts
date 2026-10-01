@@ -128,6 +128,10 @@ export class AdminUserProvisioningService {
       take: boundedLimit,
       select: {
         id: true,
+        // The NOC console has to name the tenant it is acting on: the acknowledge verb resolves
+        // the finding inside the tenant given, and with only `tenantName` the console had no id to
+        // send and no way to act on a finding it was displaying.
+        tenantId: true,
         deviceId: true,
         capabilityKey: true,
         kind: true,
@@ -149,6 +153,7 @@ export class AdminUserProvisioningService {
         severity: finding.severity,
         summary: finding.summary,
         confidence: finding.confidence,
+        tenantId: finding.tenantId,
         tenantName: finding.tenant.name,
         createdAt: finding.createdAt.toISOString(),
       })),
@@ -295,7 +300,7 @@ export class AdminUserProvisioningService {
           name: true,
           isVerified: true,
           createdAt: true,
-          memberships: { select: { role: true, status: true } },
+          memberships: { select: { id: true, role: true, status: true } },
         },
       }),
       this.prisma.user.count({ where: { tenantId } }),
@@ -308,6 +313,10 @@ export class AdminUserProvisioningService {
         email: user.email,
         name: user.name,
         isVerified: user.isVerified,
+        // Exposed because device sharing grants are addressed to a membership, not a user:
+        // without the membership id an operator cannot build a share request at all.
+        membershipId:
+          user.memberships.find((m) => m.status === 'ACTIVE')?.id ?? null,
         role:
           user.memberships.find((m) => m.status === 'ACTIVE')?.role ?? 'MEMBER',
         status: user.memberships.find((m) => m.status === 'ACTIVE')?.status ?? 'ACTIVE',

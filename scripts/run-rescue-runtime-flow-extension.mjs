@@ -153,7 +153,7 @@ async function login(email, password, tenantId) {
 }
 
 async function provisionFixture() {
-  const platformTenantId = '22222222-2222-4222-8222-222222222222';
+  const platformTenantId = '11111111-1111-4111-8111-111111111111';
   const platformEmail = `rfe-platform-${runId.slice(-8)}@evidence.iot.test`;
   const platformPassword = randomSecret('Platform');
 

@@ -1,12 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Menu } from 'lucide-react';
-import { SuperLogoutButton } from '@/components/super-logout-button';
-import { useAdminSessionRole } from '@/components/use-admin-session-role';
-import { ShieldAlert } from 'lucide-react';
+import type { ReactNode } from 'react';
 import {
   LayoutDashboard,
   Building2,
@@ -14,80 +8,112 @@ import {
   RadioTower,
   TrendingUp,
   Globe,
-  MonitorSmartphone,
   ShieldCheck,
   BellRing,
   Bot,
   Settings,
-  Hexagon,
+  Activity,
+  MonitorSmartphone,
   type LucideIcon,
 } from 'lucide-react';
+import { AppShell, RoleGate, type AppShellNavGroup } from '@/components/app-shell';
+import { useAdminSessionRole } from '@/components/use-admin-session-role';
 
 /**
- * UI v4 (polish pass) — Enterprise Super Admin shell.
+ * Super Admin (platform) console shell.
+ *
+ * Shares the whole frame with the tenant console via AppShell; only the navigation model and
+ * the PLATFORM_ADMIN gate are platform-specific. The two consoles previously shipped different
+ * sidebars, different collapse behaviour and different page widths, which made one product
+ * look like two.
+ *
  * Blueprint: docs/UI-BLUEPRINT-ENTERPRISE.md §1 (Super Admin Platform).
- * Polish: lucide icons, layered shadows, hover transitions, page fade-in.
  */
 
-interface NavChild {
+interface NavItem {
   href: string;
   label: string;
+  icon: LucideIcon;
 }
+
 interface NavGroup {
   label: string;
-  icon: LucideIcon;
-  children?: NavChild[];
-  direct?: string;
+  items: NavItem[];
 }
 
 const SUPER_NAV: NavGroup[] = [
-  { label: 'Dashboard', icon: LayoutDashboard, direct: '/super/dashboard' },
+  {
+    // Label must stay unique across groups: AppShell keys each group by its label, and a
+    // duplicate made React drop one of the two from the reconciliation tree.
+    label: 'Overview',
+    items: [{ href: '/super/dashboard', label: 'Dashboard', icon: LayoutDashboard }],
+  },
   {
     label: 'Tenant Management',
-    icon: Building2,
-    children: [
-      { href: '/super/tenants', label: 'Tenants' },
-      { href: '/super/subscriptions', label: 'Subscriptions' },
-      { href: '/super/quotas', label: 'Quotas' },
-      { href: '/super/billing', label: 'Billing' },
+    items: [
+      { href: '/super/tenants', label: 'Tenants', icon: Building2 },
+      { href: '/super/subscriptions', label: 'Subscriptions', icon: TrendingUp },
+      { href: '/super/quotas', label: 'Quotas', icon: ShieldCheck },
+      { href: '/super/billing', label: 'Billing', icon: TrendingUp },
     ],
   },
   {
     label: 'User Management',
-    icon: Users,
-    children: [
-      { href: '/super/users', label: 'Users' },
-      { href: '/super/roles', label: 'Roles' },
-      { href: '/super/api-keys', label: 'API Keys' },
+    items: [
+      { href: '/super/users', label: 'Users', icon: Users },
+      { href: '/super/roles', label: 'Roles', icon: ShieldCheck },
+      { href: '/super/api-keys', label: 'API Keys', icon: ShieldCheck },
     ],
   },
   {
     label: 'Device Management',
-    icon: RadioTower,
-    children: [
-      { href: '/super/devices', label: 'Devices' },
-      { href: '/super/device-groups', label: 'Device Groups' },
-      { href: '/super/provisioning', label: 'Provisioning' },
-      { href: '/super/credentials', label: 'Credentials' },
-      { href: '/super/firmware', label: 'Firmware & OTA' },
-      { href: '/super/capabilities', label: 'Capability Registry' },
+    items: [
+      { href: '/super/devices', label: 'Devices', icon: RadioTower },
+      { href: '/super/device-groups', label: 'Device Groups', icon: RadioTower },
+      { href: '/super/provisioning', label: 'Provisioning', icon: RadioTower },
+      { href: '/super/credentials', label: 'Credentials', icon: ShieldCheck },
+      { href: '/super/firmware', label: 'Firmware & OTA', icon: RadioTower },
+      { href: '/super/capabilities', label: 'Capability Registry', icon: RadioTower },
     ],
   },
-  { label: 'Telemetry Center', icon: TrendingUp, direct: '/super/telemetry' },
-  { label: 'Command Monitor', icon: RadioTower, direct: '/super/commands' },
-  { label: 'MQTT Center', icon: Globe, direct: '/super/mqtt' },
-  { label: 'Monitoring', icon: MonitorSmartphone, direct: '/super/monitoring' },
-  { label: 'Alerts', icon: BellRing, direct: '/super/alerts' },
-  { label: 'Security & Audit', icon: ShieldCheck, direct: '/super/security' },
-  { label: 'AI Center', icon: Bot, direct: '/super/ai' },
-  { label: 'Reports', icon: TrendingUp, direct: '/super/reports' },
-  { label: 'Settings', icon: Settings, direct: '/super/settings' },
+  {
+    label: 'Observability',
+    items: [
+      { href: '/super/telemetry', label: 'Telemetry Center', icon: TrendingUp },
+      { href: '/super/commands', label: 'Command Monitor', icon: RadioTower },
+      { href: '/super/mqtt', label: 'MQTT Center', icon: Globe },
+      { href: '/super/monitoring', label: 'Monitoring', icon: Activity },
+      { href: '/super/alerts', label: 'Alerts', icon: BellRing },
+    ],
+  },
+  {
+    label: 'Intelligence',
+    items: [
+      { href: '/super/ai', label: 'AI Center', icon: Bot },
+      { href: '/super/reports', label: 'Reports', icon: TrendingUp },
+    ],
+  },
+  {
+    label: 'Platform',
+    items: [
+      { href: '/super/settings', label: 'Settings', icon: Settings },
+      { href: '/super/security', label: 'Security & Audit', icon: ShieldCheck },
+    ],
+  },
+  {
+    // docs/UI-ROUTE-MAP.md marks /noc QUARANTINE: the global dashboard tiles and live stream
+    // read real platform state, but the world-map/location contract is incomplete, so this
+    // is not canonical platform navigation. It is reachable from exactly one clearly
+    // labelled group instead of being a fully built page that only a typed URL can open.
+    label: 'Beta · belum produksi',
+    items: [{ href: '/noc', label: 'NOC / Control Room', icon: MonitorSmartphone }],
+  },
 ];
 
-function isActiveRoute(currentPath: string | undefined, href: string | undefined): boolean {
-  if (!currentPath || !href) return false;
-  return currentPath === href || currentPath.startsWith(`${href}/`);
-}
+const NAV: AppShellNavGroup[] = SUPER_NAV.map((group) => ({
+  label: group.label,
+  items: group.items,
+}));
 
 export function SuperAdminShell({
   title,
@@ -101,173 +127,46 @@ export function SuperAdminShell({
   children: ReactNode;
 }) {
   const role = useAdminSessionRole();
-  const pathname = usePathname();
-  const activePath = active ?? pathname;
-  const [drawerOpen, setDrawerOpen] = useState(false);
 
   if (role === undefined) {
-    return <div className="min-h-screen bg-[#0b1120]" />;
+    return <RoleGate state="loading" title="" description="" />;
   }
 
   if (role !== 'PLATFORM_ADMIN') {
     return (
-      <div className="grid min-h-screen place-items-center bg-[#0b1120] px-6 text-slate-200">
-        <div className="w-full max-w-md rounded-2xl border border-red-500/20 bg-[#111c2e] p-8 text-center">
-          <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-red-500/10">
-            <ShieldAlert className="h-6 w-6 text-red-400" strokeWidth={2} />
-          </div>
-          <h1 className="m-0 text-xl font-extrabold text-white">
-            Akses ditolak
-          </h1>
-          <p className="mt-2 text-[13.5px] leading-relaxed text-slate-400">
-            Halaman ini khusus Platform Admin. Akun Anda tidak memiliki peran
-            PLATFORM_ADMIN.
-          </p>
-          <a
-            href="/tenant/dashboard"
-            className="mt-6 inline-block rounded-xl bg-teal-500 px-5 py-2.5 text-[13px] font-bold text-white transition-all hover:brightness-110"
-          >
-            Kembali ke konsol tenant
-          </a>
-        </div>
-      </div>
+      <RoleGate
+        state="denied"
+        title="Akses ditolak"
+        description="Halaman ini khusus Platform Admin. Akun Anda tidak memiliki peran PLATFORM_ADMIN."
+      />
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-[#0b1120] text-slate-200">
-      {drawerOpen ? (
-        <button
-          type="button"
-          aria-label="Tutup menu"
-          onClick={() => setDrawerOpen(false)}
-          className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm md:hidden"
-        />
-      ) : null}
-      <aside
-        className={`fixed inset-y-0 left-0 z-40 flex h-screen w-[248px] shrink-0 flex-col overflow-y-auto border-r border-slate-800/80 bg-[#0a0f1c] px-3 py-5 shadow-[8px_0_32px_-24px_rgba(0,0,0,.8)] transition-transform duration-200 md:sticky md:top-0 md:translate-x-0 ${
-          drawerOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-          <Link
-            href="/super/dashboard"
-            className="mb-5 flex items-center gap-2.5 px-2 transition-opacity hover:opacity-90"
-            onClick={() => setDrawerOpen(false)}
-          >
-            <div className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-teal-400 to-emerald-600 shadow-lg shadow-emerald-500/25">
-              <Hexagon className="h-4.5 w-4.5 text-white" strokeWidth={2.5} fill="currentColor" />
-            </div>
-            <div>
-              <div className="text-[12px] font-extrabold tracking-wide text-teal-300">
-                IOT PLATFORM
-              </div>
-              <div className="text-[10px] text-slate-500">Enterprise Console</div>
-            </div>
-          </Link>
-
-        <div className="mb-3 rounded-xl border border-white/[.06] bg-white/[.04] px-3 py-2.5">
-          <span className="flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-amber-400">
-            <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2} />
-            SUPER ADMIN
-          </span>
+    <AppShell
+      groups={NAV}
+      active={active}
+      title={title}
+      subtitle={subtitle}
+      surfaceName="Platform Console"
+      roleLabel="Super Admin"
+      homeHref="/super/dashboard"
+      footer={
+        <div className="mb-2 flex items-center gap-2 px-3 text-[var(--iot-text-xs)] font-medium text-[var(--iot-color-subtle)]">
+          <span
+            aria-hidden="true"
+            className="h-2 w-2 rounded-full bg-[var(--iot-color-success)]"
+          />
+          v1.0 · Enterprise
         </div>
-
-        {SUPER_NAV.map((group) => {
-          const GroupIcon = group.icon;
-          return (
-            <div key={group.label} className="mb-1">
-              {group.children ? (
-                <>
-                  <div className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-slate-300">
-                    <GroupIcon className="h-4 w-4 text-slate-400" strokeWidth={1.8} />
-                    {group.label}
-                  </div>
-                  <div className="ml-5 border-l border-slate-800 pl-2">
-                    {group.children.map((child) => (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        onClick={() => setDrawerOpen(false)}
-                        className={`block rounded-lg px-3 py-[7px] text-[12.5px] transition-all duration-150 ${
-                          isActiveRoute(activePath, child.href)
-                            ? 'bg-teal-500/[.14] font-semibold text-teal-300'
-                            : 'text-slate-500 hover:translate-x-0.5 hover:bg-white/[.05] hover:text-slate-200'
-                        }`}
-                      >
-                        {child.label}
-                      </Link>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <Link
-                  href={group.direct ?? '#'}
-                  onClick={() => setDrawerOpen(false)}
-                  className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-semibold transition-all duration-150 ${
-                    isActiveRoute(activePath, group.direct)
-                      ? 'bg-teal-500/[.14] text-teal-300'
-                      : 'text-slate-300 hover:bg-white/[.05]'
-                  }`}
-                >
-                  <GroupIcon
-                    className={`h-4 w-4 ${isActiveRoute(activePath, group.direct) ? 'text-teal-300' : 'text-slate-400'}`}
-                    strokeWidth={1.8}
-                  />
-                  {group.label}
-                </Link>
-              )}
-            </div>
-          );
-        })}
-
-        <div className="mt-auto border-t border-slate-800/80 px-3 pt-4">
-          <div className="mb-3 flex items-center gap-2 text-[11px] font-medium text-slate-500">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,.8)]" />
-            v1.0 · Enterprise
-          </div>
-          <SuperLogoutButton />
-        </div>
-      </aside>
-
-      <main className="min-w-0 flex-1 px-4 py-5 sm:px-8 sm:py-7">
-        <div className="mb-6 flex items-center gap-3 md:hidden">
-          <button
-            type="button"
-            aria-label="Buka menu"
-            onClick={() => setDrawerOpen(true)}
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-800 bg-white/[.04] text-slate-300 transition-colors hover:bg-white/[.08]"
-          >
-            <Menu className="h-5 w-5" strokeWidth={2} />
-          </button>
-          <h1 className="m-0 min-w-0 truncate text-[18px] font-extrabold tracking-tight text-white">
-            {title}
-          </h1>
-        </div>
-        <div className="mb-7 hidden md:block">
-          <h1 className="m-0 text-[26px] font-extrabold tracking-tight text-white">
-            {title}
-          </h1>
-          {subtitle ? (
-            <p className="mt-1 mb-0 text-sm text-slate-400">{subtitle}</p>
-          ) : null}
-        </div>
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-200 ease-out">
-          {children}
-        </div>
-      </main>
-    </div>
+      }
+    >
+      {children}
+    </AppShell>
   );
 }
 
 /** Shared page-card wrapper for super admin pages. */
-export function SuperPage({
-  children,
-}: {
-  children: ReactNode;
-}) {
-  return (
-    <div className="rounded-2xl border border-slate-800/80 bg-[#111c2e] p-6 shadow-[0_1px_2px_rgba(0,0,0,.4),0_12px_40px_-12px_rgba(0,0,0,.6)]">
-      {children}
-    </div>
-  );
+export function SuperPage({ children }: { children: ReactNode }) {
+  return <div className="iot-panel">{children}</div>;
 }

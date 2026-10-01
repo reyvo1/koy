@@ -68,6 +68,21 @@ export class OrganizationService {
         code: 'ORG_NOT_OWNER',
       });
     }
+    // The caller's `tenantId` is not implied by the organization: the organization is
+    // addressed by id, and `OrganizationBranch.tenantId` is globally unique, so a branch
+    // pointing at another organization's tenant would either steal that tenant or fail
+    // with an opaque unique-violation. Resolve the tenant against the existing branches
+    // first and reject a mismatch explicitly.
+    const existing = await this.prisma.organizationBranch.findFirst({
+      where: { tenantId: input.tenantId },
+      select: { organizationId: true },
+    });
+    if (existing && existing.organizationId !== input.organizationId) {
+      throw Object.assign(
+        new Error('tenant already belongs to another organization'),
+        { code: 'ORG_BRANCH_TENANT_CONFLICT' },
+      );
+    }
     const branch = await this.prisma.organizationBranch.create({
       data: {
         organizationId: input.organizationId,
@@ -78,10 +93,55 @@ export class OrganizationService {
     return { id: branch.id };
   }
 
-  async listBranches(organizationId: string) {
-    return this.prisma.organizationBranch.findMany({
-      where: { organizationId },
+  /**
+   * List an organization's branches, for a caller with a claim to it.
+   *
+   * This takes the actor, which the previous `listBranches(organizationId)` could not: a
+   * method with no caller identity can only answer "what is in this organization", and the
+   * route in front of it was guarded by nothing stronger than "is this a tenant admin". A
+   * branch row is `{ organizationId, tenantId, label }`, so that combination disclosed which
+   * tenant ids sit in which organization to any admin on the platform — the tenant
+   * infrastructure of a business the platform hosts, which is not a thing a competitor
+   * should be able to enumerate.
+   *
+   * Two authorities are legitimate, and neither is "any tenant admin":
+   *  - the organization's **owner**, who may see every branch;
+   *  - a caller whose **own tenant is one of the branches**, who needs the group view to
+   *    work across it.
+   *
+   * The refusal is `DomainForbiddenException` rather than an empty list on purpose. A query
+   * scoped only to branches the caller may see would answer `[]` with 200, and "no branches"
+   * and "not yours" are different facts — only one of which may be disclosed to someone with
+   * no claim. This is the same silence that left the quota fail-open and the RBAC table inert
+   * looking healthy.
+   */
+  async listBranches(input: {
+    organizationId: string;
+    actorMembershipId: string;
+    actorTenantId: string;
+  }) {
+    const org = await this.prisma.organization.findUnique({
+      where: { id: input.organizationId },
+      select: { id: true, ownerMembershipId: true },
+    });
+    if (!org) {
+      throw Object.assign(new Error('organization not found'), { code: 'ORG_NOT_FOUND' });
+    }
+
+    const branches = await this.prisma.organizationBranch.findMany({
+      where: { organizationId: input.organizationId },
       orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
     });
+
+    const isOwner = org.ownerMembershipId === input.actorMembershipId;
+    const belongsToGroup = branches.some((branch) => branch.tenantId === input.actorTenantId);
+    if (!isOwner && !belongsToGroup) {
+      throw Object.assign(
+        new Error('caller is not a member of this organization'),
+        { code: 'ORG_NOT_A_MEMBER' },
+      );
+    }
+
+    return branches;
   }
 }

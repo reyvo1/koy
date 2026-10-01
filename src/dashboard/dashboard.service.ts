@@ -460,6 +460,13 @@ export class DashboardService {
         gap: layout.gap,
         items: layout.items.map((item) => ({
           id: item.id,
+          // `layoutId` is echoed even though the item is nested inside its layout. The write
+          // DTO carries layout items as a flat top-level `layoutItems` array in which the
+          // parent layout must be named explicitly (`DashboardLayoutItemDto.layoutId` is
+          // @IsUUID, not optional). A read response that omits it forces every client doing
+          // read-modify-write to re-attach the parent by hand, and the round-trip fails
+          // validation with "layoutId must be a UUID" on a document the server itself wrote.
+          layoutId: layout.id,
           widgetId: item.widgetId,
           x: item.x,
           y: item.y,
@@ -477,6 +484,11 @@ export class DashboardService {
         presentationConfig: widget.presentationConfig,
         bindings: widget.bindings.map((binding) => ({
           id: binding.id,
+          // Same reason as `layoutId` above: `DashboardBindingDto.widgetId` is a required
+          // UUID, and the write DTO takes bindings as a flat array with no nesting to imply
+          // the parent widget. Without it the aggregate is readable but not writable, and
+          // the failure ("widgetId must be a UUID") names a field the client was never given.
+          widgetId: widget.id,
           alias: binding.alias,
           intent: binding.intent,
           mode: binding.mode,

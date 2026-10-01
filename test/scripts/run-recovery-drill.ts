@@ -2,6 +2,49 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
+import {
+  assertCompatibleVersions,
+  parseClientMajor,
+  parseServerMajor,
+} from './postgres-version-compatibility';
+
+/** `pg_dump --version` output, e.g. `pg_dump (PostgreSQL) 18.6 (Ubuntu 18.6-0ubuntu0.26.04.1)`. */
+function toolVersion(tool: string): string {
+  const result = spawnSync(tool, ['--version'], {
+    encoding: 'utf8',
+    shell: false,
+    windowsHide: true,
+    timeout: 30_000,
+  });
+  const output = `${result.stdout ?? ''}${result.stderr ?? ''}`.trim();
+  if (result.status !== 0 || !output) {
+    throw new Error(`could not run ${tool} --version: ${output || `exit ${result.status}`}`);
+  }
+  return output;
+}
+
+/**
+ * `SHOW server_version` from the target server.
+ *
+ * Queried through the maintenance database rather than a drill database, because the check runs
+ * before any of those exist.
+ */
+async function serverVersionOf(maintenanceUrl: string): Promise<string> {
+  const prisma = createDatabaseClient(maintenanceUrl);
+  await prisma.$connect();
+  try {
+    const rows = await prisma.$queryRawUnsafe<Array<{ server_version: string }>>(
+      'SHOW server_version',
+    );
+    const version = rows[0]?.server_version;
+    if (!version) {
+      throw new Error('SHOW server_version returned no rows');
+    }
+    return version;
+  } finally {
+    await prisma.$disconnect();
+  }
+}
 
 
 interface DatabaseClient {
@@ -202,6 +245,15 @@ async function main(): Promise<void> {
   const dropdb = resolvePostgresTool('dropdb');
   const pgDump = resolvePostgresTool('pg_dump');
   const pgRestore = resolvePostgresTool('pg_restore');
+
+  // Check the client/server majors before doing any work, so a mismatch is a sentence naming
+  // both versions instead of `pg_restore failed with exit code 1` an hour later. See
+  // postgres-version-compatibility.ts for why a newer client is not merely a warning.
+  assertCompatibleVersions({
+    clientMajor: parseClientMajor(toolVersion(pgDump)),
+    serverMajor: parseServerMajor(await serverVersionOf(baseUrl)),
+  });
+
   const workingDirectory = mkdtempSync(join(tmpdir(), 'iot-recovery-drill-'));
   const archive = join(workingDirectory, 'recovery.dump');
 

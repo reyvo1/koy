@@ -1,5 +1,6 @@
 'use client';
 
+import { TERMINAL_COMMAND_STATUSES } from '../lib/contracts';
 import { useState } from 'react';
 import type {
   ResolvedWidget,
@@ -176,11 +177,6 @@ interface ReconciledCommand {
   terminal: boolean;
 }
 
-const TERMINAL_COMMAND_STATES = new Set([
-  'ACKNOWLEDGED',
-  'FAILED',
-  'TIMED_OUT',
-]);
 
 async function reconcileCommand(
   deviceId: string,
@@ -200,7 +196,7 @@ async function reconcileCommand(
         | null;
       if (!response.ok) break;
       status = payload?.status ?? 'UNKNOWN';
-      if (TERMINAL_COMMAND_STATES.has(status)) {
+      if (TERMINAL_COMMAND_STATUSES.has(status)) {
         return { status, terminal: true };
       }
     } catch {

@@ -54,6 +54,22 @@ export class AuthService {
           verificationTokenHash: vTokenHash,
           verificationTokenLookup: vTokenLookup,
           credential: { create: { passwordHash } },
+          // Self-registration creates the membership the tenant-scoped guards look for, but
+          // it deliberately grants neither console access nor tenant access:
+          //
+          //  - role stays MEMBER, so the admin-web login proxy refuses the account
+          //    (`role !== 'ADMIN' && role !== 'PLATFORM_ADMIN'`) even after verification.
+          //  - status starts PENDING, so `TenantContextGuard` — which requires ACTIVE —
+          //    rejects every tenant-scoped request.
+          //
+          // An administrator promotes the account through the ordinary user-management
+          // path (`PATCH /admin/tenant-users/:userId`, role/status). Handing ADMIN out at
+          // registration instead would let anyone who knows a tenant UUID escalate
+          // themselves to tenant administrator, which is why this is a two-step approval
+          // rather than a convenience default.
+          memberships: {
+            create: { tenantId: dto.tenantId, role: 'MEMBER', status: 'PENDING' },
+          },
         },
       });
       await this.notificationService.sendVerificationToken(

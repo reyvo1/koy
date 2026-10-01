@@ -13,26 +13,26 @@ Status meanings:
 |---|---|---|
 | `/super/dashboard` | KEEP | Platform-scoped tenant/device overview + real readiness evidence |
 | `/super/tenants` | KEEP | Tenant management |
-| `/super/subscriptions` | KEEP | Subscription state |
-| `/super/quotas` | KEEP | Quota state |
+| `/super/subscriptions` | KEEP | Per-tenant subscription rows only. Renders the `subscriptions` view of the billing read model; the plan/quota section lives on `/super/quotas` |
+| `/super/quotas` | KEEP | Plan quota definitions plus usage-against-quota from the persisted `BillingUsage` rows the billing endpoint already returns (latest period per tenant, with an over-quota marker). Previously rendered the whole billing page, making it byte-identical to `/super/subscriptions` |
 | `/super/billing` | KEEP | Billing foundation |
 | `/super/users` | KEEP | Platform users |
-| `/super/roles` | KEEP | Roles/RBAC |
+| `/super/roles` | KEEP | Roles & Permissions, read from the enforcement layer. The permission list is served by `GET /admin/platform-rbac/permission-catalog` and is pinned bidirectionally to the `@RequirePermission` decorators by `rbac-permission-catalog.spec.ts` |
 | `/super/api-keys` | KEEP | API key metadata/lifecycle |
 | `/super/devices` | KEEP | Platform-scoped device directory; no tenant fallback |
 | `/super/device-groups` | KEEP | Read-only cross-tenant directory of real tenant-owned device groups |
 | `/super/provisioning` | KEEP | Backend-issued provisioning |
 | `/super/credentials` | KEEP | Non-secret device credential lifecycle metadata; hashes/secrets never exposed |
 | `/super/firmware` | KEEP | Firmware/OTA |
-| `/super/capabilities` | KEEP | Observed per-device capability registry with schemaVersion/unit/constraints; no fake global template entity |
+| `/super/capabilities` | KEEP | Observed per-device capability registry plus a Versioning section reading `GET /admin/platform-capabilities/versions`: the schemaVersion actually installed per key and which keys disagree across devices. `templateEntity: ABSENT` — no global template lifecycle exists in the schema, so none is presented |
 | `/super/telemetry` | KEEP | Platform-scoped aggregate + bounded raw telemetry explorer/CSV by real device/capability |
 | `/super/mqtt` | KEEP | MQTT operational view |
-| `/super/monitoring` | KEEP | Real readiness dependencies + platform workload context |
+| `/super/monitoring` | KEEP | Real readiness dependencies + platform workload context + a Workers section reading `GET /admin/platform-runtime-signals`. Workers are on-demand tick workers with no liveness signal, so the surface reports recorded metric families and states `UNAVAILABLE_BY_CONTRACT` rather than a health tile |
 | `/super/alerts` | KEEP | Analytics-backed alerts |
 | `/super/security` | KEEP | Security/audit |
 | `/super/ai` | KEEP | Persisted analytics findings; roadmap cards are informational only |
 | `/super/settings` | KEEP | Platform settings |
-| `/super/commands` | KEEP | Read-only platform command queue/ACK/terminal history monitor; no cross-tenant dispatch |
+| `/super/commands` | KEEP | Read-only platform command queue/ACK/terminal history monitor, plus a platform dispatch section. Dispatch is deliberately tenant-crossing and therefore fail-closed: the operator must name the target tenant explicitly, the device must provably belong to it, a non-empty reason is required, and both the success and failure paths are written to the RBAC audit log with the actor taken from the session |
 | `/super/reports` | KEEP | Bounded server-generated tenant operational report rows + CSV from the same real rows |
 | `/noc` | QUARANTINE | Partial live data; global location/map contract incomplete |
 
@@ -55,10 +55,24 @@ Status meanings:
 | `/tenant/schedules` | KEEP | Schedules |
 | `/tenant/workspace` | KEEP | Dashboards/workspaces |
 | `/tenant/temuan` | KEEP | Canonical Module 16 analytics findings surface; not notification delivery |
-| `/tenant/notifikasi` | MERGE | Compatibility redirect to `/tenant/temuan` until a real notification-delivery read surface exists |
+| `/tenant/notifikasi` | KEEP | Real notification delivery log (queue, worker attempts, failure codes) from `GET /notifications` + `/notifications/summary`. Distinct from `/tenant/temuan`, which is analytics findings, not delivery history. |
 | `/tenant/laporan` | KEEP | Real aggregate export |
 | `/tenant/pengguna` | KEEP | Tenant user management |
 | `/tenant/grup-perangkat` | KEEP | Real tenant-scoped device groups; create/list/member/remove backed by `/device-groups` |
+
+## Menu ownership rule (enforced)
+
+`scripts/validate-rescue-baseline.mjs` derives the real page inventory from the filesystem
+and fails when either side of the menu contract breaks:
+
+- every non-legacy page is reachable from a shell menu (a built page reachable only by a
+  typed URL is a defect, not a bookmark);
+- every menu entry resolves to a real page (no dead links);
+- a QUARANTINE route may be linked, but only from a group whose own label says it is not
+  production, and never from an unlabelled product group.
+
+QUARANTINE pages therefore live in exactly two labelled groups: `Laboratorium · belum
+produksi` (`AdminShellV3`) and `Beta · belum produksi` (`SuperAdminShell`).
 
 ## Legacy / Compatibility
 

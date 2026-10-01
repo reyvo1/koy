@@ -1,17 +1,18 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { defaultMobileLocale, mobileMessages } from '../localization/messages';
+import { mobileMessages, type MobileLocale } from '../localization/messages';
 
 import type {
   MobileDashboardExperience,
   MobileDashboardState,
   MobileResolvedWidget,
 } from '../dashboard';
-import { MobileDashboardWidgetCard } from './mobile-dashboard-widget';
+import { MobileDashboardWidgetCard, type DashboardCopy } from './mobile-dashboard-widget';
 import { MobileStateNotice } from './mobile-state-notice';
 
 interface MobileDashboardScreenProps {
   isDark: boolean;
+  locale: MobileLocale;
   state: MobileDashboardState;
   onRefresh(selectedDashboardId: string | null): Promise<void>;
   onSelectDashboard(dashboardId: string): Promise<void>;
@@ -23,13 +24,14 @@ interface MobileDashboardScreenProps {
 }
 
 export function MobileDashboardScreen({
+  locale,
   isDark,
   state,
   onRefresh,
   onSelectDashboard,
   onSendCommand,
 }: MobileDashboardScreenProps) {
-  const copy = mobileMessages[defaultMobileLocale].dashboard;
+  const copy = mobileMessages[locale].dashboard;
 
   if (state.kind === 'idle' || state.kind === 'loading') {
     return (
@@ -85,6 +87,7 @@ export function MobileDashboardScreen({
       />
 
       <DashboardSelector
+        copy={copy}
         experience={experience}
         isDark={isDark}
         onSelectDashboard={onSelectDashboard}
@@ -101,6 +104,7 @@ export function MobileDashboardScreen({
         </View>
       ) : (
         <DashboardContent
+          locale={locale}
           experience={experience}
           isDark={isDark}
           onSendCommand={onSendCommand}
@@ -117,10 +121,12 @@ export function MobileDashboardScreen({
 }
 
 function DashboardSelector({
+  copy,
   experience,
   isDark,
   onSelectDashboard,
 }: {
+  copy: DashboardCopy;
   experience: MobileDashboardExperience;
   isDark: boolean;
   onSelectDashboard(dashboardId: string): Promise<void>;
@@ -130,12 +136,11 @@ function DashboardSelector({
   return (
     <View style={styles.selectorSection}>
       <Text style={[styles.selectorLabel, isDark && styles.textDark]}>
-        {mobileMessages[defaultMobileLocale].dashboard.selectorLabel}
+        {copy.selectorLabel}
       </Text>
       <ScrollView
         accessibilityLabel={
-          mobileMessages[defaultMobileLocale].dashboard
-            .selectorAccessibilityLabel
+          copy.selectorAccessibilityLabel
         }
         contentContainerStyle={styles.selector}
         horizontal
@@ -176,10 +181,12 @@ function DashboardSelector({
 function DashboardContent({
   experience,
   isDark,
+  locale,
   onSendCommand,
 }: {
   experience: MobileDashboardExperience;
   isDark: boolean;
+  locale: MobileLocale;
   onSendCommand(
     deviceId: string,
     capabilityKey: string,
@@ -224,6 +231,7 @@ function DashboardContent({
       ) : (
         orderedWidgets.map(({ data, resolution }) => (
           <MobileDashboardWidgetCard
+            locale={locale}
             data={data}
             isDark={isDark}
             key={resolution.id}

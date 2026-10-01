@@ -330,7 +330,10 @@ async function up({ envPath, timeoutMs, keepOnFailure }) {
     runChecked(
       'local infrastructure start',
       compose.command,
-      composeArgs(compose, ['up', '-d', 'postgres', 'redis', 'emqx']),
+      // go2rtc is named explicitly for the same reason postgres/redis/emqx are: the whole point of
+      // listing services is that `up` with no arguments would also start anything added later
+      // without anyone deciding to. The media runtime is in the `full` gate, so it belongs here.
+      composeArgs(compose, ['up', '-d', 'postgres', 'redis', 'emqx', 'go2rtc']),
       { env: executionEnv },
     );
     composeStarted = true;

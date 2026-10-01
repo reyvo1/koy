@@ -44,22 +44,26 @@ export class CameraOnboardingService {
     });
     // Safe presentation metadata lives in capability key-space, not in a
     // vendor-specific model: vendor/model are recorded as read-only caps.
+    // Capability has no scalar "value" column — a capability is a *declaration* of what
+    // a device can report, not a reading. The registration input is metadata, so it is
+    // persisted in the capability's constraints JSON under `value`. Previously the
+    // collected `value` was silently dropped on the floor: the capability row was created
+    // with no payload at all, so a registered camera could never tell anyone its vendor.
     const caps = [
-      { key: 'camera.vendor', semanticType: 'metadata', value: data.vendor },
-      ...(data.model
-        ? [{ key: 'camera.model', semanticType: 'metadata', value: data.model }]
-        : []),
+      { key: 'camera.vendor', value: data.vendor },
+      ...(data.model ? [{ key: 'camera.model', value: data.model }] : []),
     ];
     for (const cap of caps) {
       await this.prisma.capability.create({
         data: {
           deviceId: device.id,
           key: cap.key,
-          semanticType: cap.semanticType,
+          semanticType: 'metadata',
           dataType: 'string',
           isReadable: true,
           isWritable: false,
           isReportable: false,
+          constraints: { value: cap.value },
         },
       });
     }
@@ -145,7 +149,11 @@ export class CameraOnboardingService {
   }
 
   async listCameras(tenantId: string) {
-    return this.prisma.device.findMany({
+    // vendor/model are stored as read-only capabilities, so they are selected
+    // alongside the device and flattened here. The CCTV screen needs them to
+    // tell two identically-named cameras apart; without them the list is a
+    // column of repeated names.
+    const devices = await this.prisma.device.findMany({
       where: { tenantId, type: DeviceType.CAMERA },
       select: {
         id: true,
@@ -153,8 +161,25 @@ export class CameraOnboardingService {
         status: true,
         lastHeartbeatAt: true,
         createdAt: true,
+        capabilities: {
+          where: { key: { in: ['camera.vendor', 'camera.model'] } },
+          select: { key: true, constraints: true },
+        },
       },
       orderBy: { createdAt: 'desc' },
+    });
+
+    return devices.map(({ capabilities, ...device }) => {
+      const meta: Record<string, string | null> = {};
+      for (const c of capabilities) {
+        const stored = (c.constraints as { value?: unknown } | null)?.value;
+        meta[c.key] = typeof stored === 'string' ? stored : null;
+      }
+      return {
+        ...device,
+        vendor: meta['camera.vendor'] ?? null,
+        model: meta['camera.model'] ?? null,
+      };
     });
   }
 

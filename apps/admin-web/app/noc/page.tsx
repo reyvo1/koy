@@ -9,7 +9,7 @@ export default function NocPage() {
     <SuperAdminShell
       title="NOC / Control Room"
       subtitle="Global operations monitoring"
-      active="/super/noc"
+      active="/noc"
     >
       <NocContent />
     </SuperAdminShell>

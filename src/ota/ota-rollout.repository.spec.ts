@@ -13,6 +13,10 @@ describe('OtaRolloutRepository', () => {
   let createRollout: jest.Mock;
   let findFirst: jest.Mock;
   let updateMany: jest.Mock;
+  // `createRollout` resolves its targets against `device` before writing, so a rollout may
+  // only name devices of the caller's tenant. This double returns every target it is given;
+  // the refusal path is covered in `ota-rollout-tenant-scope.contract.spec.ts`.
+  let deviceFindMany: jest.Mock;
   let repo: OtaRolloutRepository;
 
   beforeEach(() => {
@@ -29,9 +33,18 @@ describe('OtaRolloutRepository', () => {
     createRollout = jest.fn().mockResolvedValue({ id: rolloutId });
     findFirst = jest.fn().mockResolvedValue(rolloutRow);
     updateMany = jest.fn().mockResolvedValue({ count: 1 });
+    deviceFindMany = jest.fn().mockImplementation(({ where }) =>
+      Promise.resolve(where.id.in.map((id: string) => ({ id }))),
+    );
     repo = new OtaRolloutRepository(
       {
-        firmwareArtifact: { create: createArtifact },
+        device: { findMany: deviceFindMany },
+        // No artifact carries this version, so the duplicate check finds nothing and the
+        // create proceeds; the refusal path is covered in ota-rollout-tenant-scope.
+        firmwareArtifact: {
+          create: createArtifact,
+          findFirst: jest.fn().mockResolvedValue(null),
+        },
         otaRollout: { create: createRollout, findFirst, updateMany },
       } as unknown as PrismaService,
       new OtaDomainValidator(),

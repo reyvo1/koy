@@ -1,0 +1,11 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "..",
+  "testRegex": "mobile-notification-parity\\.integration-spec\\.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": ["ts-jest", { "tsconfig": "tsconfig.jest.json" }]
+  },
+  "testEnvironment": "node",
+  "testTimeout": 60000,
+  "modulePathIgnorePatterns": ["<rootDir>/artifacts/"]
+}

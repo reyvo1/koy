@@ -1,62 +1,63 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import '@iot-platform/design-system/styles.css';
 
-:root {
-  --bg-app: #0b1120;
-  --bg-card: #111c2e;
-  --bg-sidebar: #0a0f1c;
-  --border-soft: #1e293b;
-  --text-main: #e2e8f0;
-  --text-muted: #94a3b8;
-  --accent: #2dd4bf;
-  --accent-deep: #14b8a6;
-}
+/*
+ * The shared design system owns every colour, radius, shadow, space and type token.
+ * It is imported first so the local rules below can only add surface treatment —
+ * never re-declare a token. The previous local :root block was a third token set
+ * that silently overrode the shared one, which is why light-mode and dark-mode
+ * rendering disagreed between the two applications.
+ */
+@import '@iot-platform/design-system/styles.css';
 
 body {
   margin: 0;
-  background: var(--bg-app);
-  color: var(--text-main);
-  font-family: var(--font-inter), "Inter", "Segoe UI", system-ui, sans-serif;
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  background: var(--iot-color-bg);
+  color: var(--iot-color-text);
+  font-family: var(--font-inter), 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ---------- Global premium polish (Linear-grade) ---------- */
+/* ---------- Global premium polish ---------- */
 
 ::selection {
-  background: rgba(20, 184, 166, .35);
-  color: #f0fdfa;
+  background: var(--iot-color-accent-soft);
+  color: var(--iot-color-text-strong);
 }
 
 *:focus-visible {
-  outline: 2px solid rgba(45, 212, 191, .7);
+  outline: 2px solid var(--iot-color-focus);
   outline-offset: 2px;
-  border-radius: 6px;
+  border-radius: var(--iot-radius-sm);
 }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: #0b1120; }
+::-webkit-scrollbar-track { background: var(--iot-color-bg); }
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: var(--iot-color-border);
   border-radius: 8px;
-  border: 2px solid #0b1120;
+  border: 2px solid var(--iot-color-bg);
 }
-::-webkit-scrollbar-thumb:hover { background: #334155; }
-* { scrollbar-width: thin; scrollbar-color: #1e293b #0b1120; }
+::-webkit-scrollbar-thumb:hover { background: var(--iot-color-border-strong); }
+* { scrollbar-width: thin; scrollbar-color: var(--iot-color-border) var(--iot-color-bg); }
 
 h1, h2, h3 { text-wrap: balance; }
 p, li { text-wrap: pretty; }
 
-/* Inner highlight untuk semua kartu gelap (super + tenant + modal) */
-[class*="111c2e"] {
-  box-shadow: 0 1px 2px rgba(2, 6, 23, .5), 0 8px 24px -8px rgba(2, 6, 23, .6),
-    inset 0 1px 0 rgba(255, 255, 255, .05);
-}
-
-/* Responsive contract (Modul 10.10): mobile-first adjustments */
-@media (max-width: 639px) {
-  body { font-size: 14px; }
-  .iot2-main { padding: 16px; }
+/*
+ * Inner highlight for dark cards.
+ *
+ * This previously matched `[class*="111c2e"]` — a selector keyed to one specific
+ * background hex, so a card that used any other surface silently lost its depth
+ * while looking identical. Matching the actual surface variable makes the treatment
+ * follow the token, so it survives a palette change and works in light mode too.
+ */
+.iot2-panel,
+.iot-panel,
+.iot-card,
+.iot-state-notice,
+[class*='rounded-2xl'][class*='border'][class*='bg-'] {
+  box-shadow: var(--iot-shadow-surface), var(--iot-shadow-inset);
 }

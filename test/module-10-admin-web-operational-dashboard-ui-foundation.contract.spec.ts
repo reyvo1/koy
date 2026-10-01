@@ -9,13 +9,12 @@ const adminWebSources = [
   'apps/admin-web/app/page.tsx',
   'apps/admin-web/app/api/session/login/route.ts',
   'apps/admin-web/app/api/session/logout/route.ts',
-  'apps/admin-web/app/api/operational-summary/route.ts',
+  'apps/admin-web/app/api/admin/operational-summary/route.ts',
   'apps/admin-web/components/admin-login-form.tsx',
   'apps/admin-web/components/operational-summary-dashboard.tsx',
   'apps/admin-web/components/operational-summary-experience.tsx',
   'apps/admin-web/lib/backend.ts',
   'apps/admin-web/lib/contracts.ts',
-  'apps/admin-web/lib/operational-summary-loader.ts',
   'apps/admin-web/lib/operational-summary-state.ts',
   'apps/admin-web/lib/session.ts',
 ]
@@ -64,20 +63,24 @@ describe('Module 10 Slice 10.10 Admin Web Operational Dashboard UI Foundation co
 
   it('serializes refresh-token rotation and keeps backend role enforcement authoritative', () => {
     const session = read('apps/admin-web/lib/session.ts');
-    const route = read('apps/admin-web/app/api/operational-summary/route.ts');
+    const route = read('apps/admin-web/app/api/admin/operational-summary/route.ts');
 
     expect(session).toContain('private refreshPromise: Promise<void> | null');
     expect(session).toContain('refreshAfterUnauthorized(accessToken)');
     expect(session).toContain('this.session.accessToken !== failedAccessToken');
     expect(session).toContain('ADMIN_WEB_AUTH_RESPONSE_INVALID');
-    expect(route).toContain('error.status === 401 || error.status === 403');
+    // Asserted as behaviour, not as the dead route's variable name. The previous expectation
+    // pinned `error.status === 401 || error.status === 403`, which only ever existed in the
+    // duplicate that imported the loader; the surviving route names the same value `status`.
+    // Pinning a local identifier made a correct rename look like a regression.
+    expect(route).toMatch(/status\s*===\s*401\s*\|\|\s*status\s*===\s*403/);
     expect(route).toContain('{ status: 401 }');
+    expect(route).toContain('clearSessionCookies(response)');
     expect(route).not.toContain('ADMIN role');
   });
 
-  it('consumes only a consistent normalized read-only operational summary', () => {
+  it('consumes only a consistent read-only operational summary', () => {
     const contracts = read('apps/admin-web/lib/contracts.ts');
-    const loader = read('apps/admin-web/lib/operational-summary-loader.ts');
 
     for (const field of [
       'generatedAt',
@@ -92,11 +95,16 @@ describe('Module 10 Slice 10.10 Admin Web Operational Dashboard UI Foundation co
       expect(contracts).toContain(field);
     }
 
-    expect(loader).toContain("client.request('/admin/operational-summary')");
-    expect(loader).toContain('parseOperationalSummary');
-    expect(loader).toContain('Number.isSafeInteger');
-    expect(loader).toContain('consistentTotal');
-    expect(loader).toContain('devices.heartbeatCounts');
+    // The normalising loader is gone. It was only ever called by the duplicate
+    // `/api/operational-summary` proxy, so its defences (safe-integer checks, consistent
+    // totals) were already not in effect for either live consumer — deleting it changed no
+    // runtime behaviour. What remains to guard is the field list the component reads and the
+    // single proxy that serves it, forwarded verbatim so the UI cannot show numbers that
+    // disagree with the backend's.
+    const route = read('apps/admin-web/app/api/admin/operational-summary/route.ts');
+    expect(route).toContain("client.request('/admin/operational-summary')");
+    expect(route).toContain('NextResponse.json(payload, { status: response.status })');
+    expect(() => read('apps/admin-web/lib/operational-summary-loader.ts')).toThrow();
     expect(adminWebSources).not.toMatch(
       /\/metrics|prometheus|mqtt:\/\/|mqtts:\/\/|rtsp:\/\//i,
     );
@@ -109,6 +117,11 @@ describe('Module 10 Slice 10.10 Admin Web Operational Dashboard UI Foundation co
     );
     const layout = read('apps/admin-web/app/layout.tsx');
     const styles = read('apps/admin-web/app/globals.css');
+    // The mobile breakpoint moved out of globals.css when the local :root token block was
+    // deleted. globals.css now only adds surface treatment, so the responsive contract for
+    // the console components lives in the adapter that defines them. Both files are checked
+    // because either may legitimately own a breakpoint.
+    const adapter = read('apps/admin-web/app/design-system-v2.css');
 
     for (const state of [
       'loading',
@@ -125,7 +138,7 @@ describe('Module 10 Slice 10.10 Admin Web Operational Dashboard UI Foundation co
     expect(experience).toContain('Perbarui');
     expect(experience).toContain('Keluar');
     expect(layout).toContain('<html lang="id"');
-    expect(styles).toContain('@media (max-width: 639px)');
+    expect(styles + adapter).toContain('@media (max-width: 639px)');
   });
 
   it('keeps actions, infrastructure access, and resource drill-down absent', () => {

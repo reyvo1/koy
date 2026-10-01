@@ -7,7 +7,14 @@ export interface AdminDeviceListItem {
   id: string;
   name: string;
   status: string;
-  lastSeenAt: string | null;
+  /**
+   * Device.lastHeartbeatAt, which is what the device list actually returns —
+   * deviceService.findAll returns the raw Prisma row and the model has no
+   * `lastSeenAt`. Declaring that name made this interface describe a response
+   * shape the backend cannot send, so any future consumer of it would have
+   * rendered a permanently blank timestamp.
+   */
+  lastHeartbeatAt: string | null;
 }
 
 export interface DeviceCommandResult {

@@ -78,7 +78,13 @@ export class AdminDeviceProvisioningController {
         schemaVersion: true,
         createdAt: true,
         updatedAt: true,
-        device: { select: { id: true, name: true, tenant: { select: { name: true } } } },
+        // The device's tenant is now selected as well as its name. A registry that spans
+        // tenants and reports only the tenant *display name* cannot be filtered or grouped by
+        // tenant id, which is exactly what deciding which fleet to apply a capability version to
+        // requires. `schemaVersion` was already selected above.
+        device: {
+          select: { id: true, name: true, tenant: { select: { id: true, name: true } } },
+        },
       },
     });
     return {
@@ -92,6 +98,11 @@ export class AdminDeviceProvisioningController {
         isWritable: cap.isWritable,
         isReportable: cap.isReportable,
         unit: cap.unit,
+        // Flat tenant id alongside the display name. The registry spans tenants, and deciding
+        // which fleet to apply a capability version to needs the id, not a label that two
+        // tenants may share. `Capability` has no tenant column of its own, so it comes from the
+        // device's tenant.
+        tenantId: cap.device.tenant.id,
         constraints: cap.constraints,
         schemaVersion: cap.schemaVersion,
         createdAt: cap.createdAt.toISOString(),

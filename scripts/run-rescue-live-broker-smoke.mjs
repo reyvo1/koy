@@ -437,7 +437,7 @@ function randomSecret(prefix = 'S') {
 }
 
 async function ensurePlatformFixture() {
-  const tenantId = '22222222-2222-4222-8222-222222222222';
+  const tenantId = '11111111-1111-4111-8111-111111111111';
   const email = `rr26-${runId.slice(-8)}@evidence.iot.test`;
   const password = randomSecret('Platform');
 

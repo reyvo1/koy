@@ -12,7 +12,7 @@ The Admin Web adds an isolated same-origin server boundary under `apps/admin-web
 
 - `POST /api/session/login` forwards bounded credentials to backend `POST /auth/login`;
 - `POST /api/session/logout` attempts backend logout and always clears local cookies;
-- `GET /api/operational-summary` calls backend `GET /admin/operational-summary`;
+- `GET /api/admin/operational-summary` calls backend `GET /admin/operational-summary`;
 - `apps/admin-web/lib/backend.ts` permits HTTPS, with plain HTTP allowed only for loopback development hosts;
 - `apps/admin-web/lib/session.ts` uses the Admin-specific `iot_admin_access`, `iot_admin_refresh`, and `iot_admin_tenant` cookie namespace;
 - access, refresh, and tenant cookies are `HttpOnly`, `SameSite=Lax`, path-scoped, and `Secure` in production;

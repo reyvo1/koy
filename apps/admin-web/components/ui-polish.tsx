@@ -8,7 +8,6 @@
 import {
   ReactNode,
   useEffect,
-  useRef,
   useState,
   createContext,
   useCallback,
@@ -18,10 +17,15 @@ import { LucideIcon } from 'lucide-react';
 
 /* ---------------- Shadow tokens (UI-DESIGN-SYSTEM.md compliant) ---------- */
 
+/**
+ * Depth is owned by the design-system tokens; these helpers exist only so the nine call
+ * sites that still reference them keep working. New surfaces should use `.iot-panel` (or the
+ * `--iot-shadow-*` variables directly) instead of carrying a shadow literal in a class
+ * string, because a literal cannot follow a palette or theme change.
+ */
 export const shadow = {
-  card: 'shadow-[0_1px_2px_rgba(2,6,23,.5),0_8px_24px_-8px_rgba(2,6,23,.6)]',
-  cardHover:
-    'hover:shadow-[0_2px_4px_rgba(2,6,23,.5),0_16px_40px_-8px_rgba(2,6,23,.8)]',
+  card: 'shadow-[var(--iot-shadow-surface)]',
+  cardHover: 'hover:shadow-[var(--iot-shadow-raised)]',
   overlay: 'shadow-[0_24px_64px_-12px_rgba(2,6,23,.85)]',
 };
 
@@ -55,12 +59,17 @@ export function CountUp({
   durationMs?: number;
   suffix?: string;
 }) {
-  const [display, setDisplay] = useState(0);
-  const startedRef = useRef(false);
+  const [display, setDisplay] = useState(value);
 
+  // Animate whenever `value` changes. An earlier "already started" ref guard was wrong
+  // under React StrictMode: the mount effect was cleaned up and re-run, the guard then
+  // short-circuited the second run, and the counter stayed frozen at its initial value.
+  // The dashboard therefore reported "Perangkat 0" while the API had already returned the
+  // real count. Restarting the animation per value is both correct and StrictMode-safe.
   useEffect(() => {
-    if (startedRef.current) return;
-    startedRef.current = true;
+    setDisplay(value);
+    if (value === 0) return;
+
     const start = performance.now();
     let raf = 0;
     const tick = (now: number) => {
@@ -84,18 +93,19 @@ export function CountUp({
 
 /* ---------------- Skeleton shimmer ---------------------------------------- */
 
+/*
+ * Skeletons use the shared `.iot-skeleton` token rather than a local `animate-pulse
+ * bg-slate-700/50`, so a loading placeholder looks identical to the loaded surface it will
+ * become. 53 of 56 admin pages previously rendered nothing at all while their fetch was in
+ * flight, which read as a broken page rather than a loading one.
+ */
 export function Skeleton({ className = '' }: { className?: string }) {
-  return (
-    <div
-      className={`animate-pulse rounded-lg bg-slate-700/50 ${className}`}
-      aria-hidden
-    />
-  );
+  return <div className={`iot-skeleton ${className}`} aria-hidden />;
 }
 
 export function SkeletonCard() {
   return (
-    <div className={`rounded-2xl border border-slate-800/80 bg-[#111c2e] p-5 ${shadow.card}`}>
+    <div className="iot-panel">
       <div className="flex items-center justify-between">
         <Skeleton className="h-3 w-24" />
         <Skeleton className="h-5 w-5 rounded-full" />
@@ -107,16 +117,31 @@ export function SkeletonCard() {
   );
 }
 
+/** Placeholder for a stat row — use whenever a KPI's value is still unknown. */
+export function SkeletonStats({ count = 4 }: { count?: number }) {
+  return (
+    <div className="iot2-stats">
+      {Array.from({ length: count }).map((_, index) => (
+        <div key={index} className="iot2-stat">
+          <Skeleton className="h-8 w-8 rounded-lg" />
+          <Skeleton className="mt-3 h-3 w-20" />
+          <Skeleton className="mt-2 h-8 w-14" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function SkeletonTable({ rows = 5 }: { rows?: number }) {
   return (
-    <div className={`overflow-hidden rounded-2xl border border-slate-800/80 bg-[#111c2e] ${shadow.card}`}>
-      <div className="border-b border-slate-800/60 p-4">
+    <div className="iot-panel--flush iot-panel">
+      <div className="border-b border-[var(--iot-color-border)] p-4">
         <Skeleton className="h-4 w-40" />
       </div>
       {Array.from({ length: rows }).map((_, i) => (
         <div
           key={i}
-          className="flex items-center gap-4 border-b border-slate-800/40 px-4 py-3.5 last:border-0"
+          className="flex items-center gap-4 border-b border-[var(--iot-color-border)] px-4 py-3.5 last:border-0"
         >
           <Skeleton className="h-9 w-9 rounded-xl" />
           <div className="flex-1 space-y-2">
@@ -144,25 +169,24 @@ export function EmptyState({
   action?: { label: string; onClick?: () => void; href?: string };
 }) {
   return (
-    <div
-      className={`flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-700/70 bg-[#111c2e]/60 px-6 py-14 text-center ${shadow.card}`}
-    >
-      <div className="grid h-16 w-16 place-items-center rounded-2xl bg-slate-800/70">
-        <Icon className="h-8 w-8 text-slate-500" strokeWidth={1.5} />
+    <div className="iot-empty">
+      <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[var(--iot-color-surface-subtle)]">
+        <Icon
+          className="h-7 w-7 text-[var(--iot-color-subtle)]"
+          strokeWidth={1.5}
+        />
       </div>
-      <h3 className="mt-5 text-[15px] font-bold text-slate-100">{title}</h3>
-      <p className="mt-1 max-w-sm text-[13px] leading-relaxed text-slate-400">
-        {description}
-      </p>
-      {action && (
+      <h3 className="iot-empty__title mt-2">{title}</h3>
+      <p className="iot-empty__body">{description}</p>
+      {action ? (
         <a
           href={action.href ?? '#'}
           onClick={action.onClick}
-          className="mt-5 rounded-lg bg-teal-500 px-4 py-2 text-[13px] font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-teal-400 hover:shadow-lg hover:shadow-teal-500/25"
+          className="iot-button mt-3"
         >
           {action.label}
         </a>
-      )}
+      ) : null}
     </div>
   );
 }

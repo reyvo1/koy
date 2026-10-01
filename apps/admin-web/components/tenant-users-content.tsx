@@ -87,7 +87,7 @@ export default function TenantUsersContent() {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="m-0 text-[13px]" style={{ color: 'var(--iot-text-muted)' }}>
+        <p className="m-0 text-[13px]" style={{ color: 'var(--iot-color-muted)' }}>
           {users ? `${users.length} anggota` : 'Memuat…'}
         </p>
         <button
@@ -110,22 +110,22 @@ export default function TenantUsersContent() {
           style={{ padding: 20 }}
         >
           <label className="block">
-            <span className="mb-1.5 block text-[12px] font-semibold" style={{ color: 'var(--iot-text-muted)' }}>Email *</span>
+            <span className="mb-1.5 block text-[12px] font-semibold" style={{ color: 'var(--iot-color-muted)' }}>Email *</span>
             <input name="email" type="email" required maxLength={320} placeholder="nama@tenant.id" style={inputStyle} />
           </label>
           <label className="block">
-            <span className="mb-1.5 block text-[12px] font-semibold" style={{ color: 'var(--iot-text-muted)' }}>Nama</span>
+            <span className="mb-1.5 block text-[12px] font-semibold" style={{ color: 'var(--iot-color-muted)' }}>Nama</span>
             <input name="name" type="text" maxLength={120} placeholder="Nama lengkap" style={inputStyle} />
           </label>
           <label className="block">
-            <span className="mb-1.5 block text-[12px] font-semibold" style={{ color: 'var(--iot-text-muted)' }}>Peran *</span>
+            <span className="mb-1.5 block text-[12px] font-semibold" style={{ color: 'var(--iot-color-muted)' }}>Peran *</span>
             <select name="role" required defaultValue="MEMBER" style={inputStyle}>
               <option value="MEMBER">MEMBER — akses dasar</option>
               <option value="ADMIN">ADMIN — kelola tenant</option>
             </select>
           </label>
           <label className="block">
-            <span className="mb-1.5 block text-[12px] font-semibold" style={{ color: 'var(--iot-text-muted)' }}>Password * (min. 8)</span>
+            <span className="mb-1.5 block text-[12px] font-semibold" style={{ color: 'var(--iot-color-muted)' }}>Password * (min. 8)</span>
             <input name="password" type="password" required minLength={8} maxLength={128} style={inputStyle} />
           </label>
           <div className="flex items-end sm:col-span-2">
@@ -149,7 +149,7 @@ export default function TenantUsersContent() {
       {error && !users ? (
         <div className="iot2-panel" style={{ padding: 32, textAlign: 'center' }}>
           <p className="m-0 text-[14px] font-semibold">Direktori pengguna tidak tersedia</p>
-          <p className="mt-2 mb-0 text-[12.5px]" style={{ color: 'var(--iot-text-muted)' }}>Backend ({error}).</p>
+          <p className="mt-2 mb-0 text-[12.5px]" style={{ color: 'var(--iot-color-muted)' }}>Backend ({error}).</p>
         </div>
       ) : null}
 
@@ -168,7 +168,7 @@ export default function TenantUsersContent() {
             <tbody>
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ textAlign: 'center', color: 'var(--iot-text-muted)' }}>
+                  <td colSpan={5} style={{ textAlign: 'center', color: 'var(--iot-color-muted)' }}>
                     Belum ada pengguna — tambahkan anggota pertama.
                   </td>
                 </tr>
@@ -176,12 +176,12 @@ export default function TenantUsersContent() {
                 users.map((m) => (
                   <tr key={m.id}>
                     <td style={{ fontWeight: 700 }}>
-                      <span className="mr-2 inline-flex align-middle" style={{ color: 'var(--iot-primary)' }}>
+                      <span className="mr-2 inline-flex align-middle" style={{ color: 'var(--iot-color-accent)' }}>
                         <UserCircle className="h-4 w-4" strokeWidth={1.9} />
                       </span>
                       {m.name ?? '—'}
                     </td>
-                    <td style={{ color: 'var(--iot-text-muted)' }}>{m.email ?? ''}</td>
+                    <td style={{ color: 'var(--iot-color-muted)' }}>{m.email ?? ''}</td>
                     <td><span className="iot2-badge iot2-badge--online">{(m.role ?? 'MEMBER').toUpperCase()}</span></td>
                     <td>
                       <span className="iot2-badge" style={m.status === 'REVOKED' ? { color: '#f87171' } : m.isVerified ? undefined : { color: '#fbbf24' }}>

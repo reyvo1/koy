@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useState } from 'react';
 
-import { defaultMobileLocale, mobileMessages } from '../localization/messages';
+import { mobileMessages, type MobileLocale } from '../localization/messages';
 
 import type {
   MobileResolvedWidget,
@@ -9,11 +9,22 @@ import type {
   MobileWidgetData,
 } from '../dashboard';
 
-const dashboardCopy = mobileMessages[defaultMobileLocale].dashboard;
+/**
+ * Copy for one widget, chosen by its caller rather than fixed at module load.
+ *
+ * A module-level constant is evaluated once, at import, which is exactly why it could never follow
+ * an operator's language choice: the value was frozen before anyone tapped anything.
+ */
+export type DashboardCopy = (typeof mobileMessages)[MobileLocale]['dashboard'];
+
+function dashboardCopyFor(locale: MobileLocale): DashboardCopy {
+  return mobileMessages[locale].dashboard;
+}
 
 interface MobileDashboardWidgetCardProps {
   data: MobileWidgetData;
   isDark: boolean;
+  locale: MobileLocale;
   resolution: MobileResolvedWidget;
   onSendCommand(
     deviceId: string,
@@ -23,21 +34,23 @@ interface MobileDashboardWidgetCardProps {
 }
 
 export function MobileDashboardWidgetCard({
+  locale,
   data,
   isDark,
   resolution,
   onSendCommand,
 }: MobileDashboardWidgetCardProps) {
+  const dashboardCopy = dashboardCopyFor(locale);
   return (
     <View
-      accessibilityLabel={`${resolution.title}. ${stateLabel(data.state)}`}
+      accessibilityLabel={`${resolution.title}. ${stateLabel(dashboardCopy, data.state)}`}
       accessibilityRole="summary"
       style={[styles.card, isDark && styles.cardDark]}
     >
       <View style={styles.header}>
         <View style={styles.heading}>
           <Text style={[styles.eyebrow, isDark && styles.textMutedDark]}>
-            {kindLabel(resolution.kind)}
+            {kindLabel(dashboardCopy, resolution.kind)}
           </Text>
           <Text
             accessibilityRole="header"
@@ -48,21 +61,22 @@ export function MobileDashboardWidgetCard({
         </View>
         <View style={[styles.badge, isDark && styles.badgeDark]}>
           <Text style={[styles.badgeText, isDark && styles.textDark]}>
-            {stateLabel(data.state)}
+            {stateLabel(dashboardCopy, data.state)}
           </Text>
         </View>
       </View>
 
-      {renderWidget(resolution, data, isDark, onSendCommand)}
+      {renderWidget(dashboardCopy, resolution, data, isDark, onSendCommand)}
 
       <Text style={[styles.timestamp, isDark && styles.textMutedDark]}>
-        {dashboardCopy.updatedPrefix} {formatDate(resolveTimestamp(data))}
+        {dashboardCopy.updatedPrefix} {formatDate(dashboardCopy, resolveTimestamp(data))}
       </Text>
     </View>
   );
 }
 
 function renderWidget(
+  dashboardCopy: DashboardCopy,
   resolution: MobileResolvedWidget,
   data: MobileWidgetData,
   isDark: boolean,
@@ -75,6 +89,7 @@ function renderWidget(
   if (resolution.kind === 'SWITCH') {
     return (
       <SwitchControl
+        dashboardCopy={dashboardCopy}
         isDark={isDark}
         onSendCommand={onSendCommand}
         resolution={resolution}
@@ -105,6 +120,7 @@ function renderWidget(
   if (resolution.kind === 'GAUGE') {
     return (
       <GaugeValue
+        dashboardCopy={dashboardCopy}
         binding={data.bindings[0]}
         isDark={isDark}
         resolution={resolution}
@@ -113,17 +129,19 @@ function renderWidget(
   }
 
   if (resolution.kind === 'CHART') {
-    return <SeriesValues bindings={data.bindings} isDark={isDark} />;
+    return <SeriesValues bindings={data.bindings} dashboardCopy={dashboardCopy} isDark={isDark} />;
   }
 
-  return <BindingValues bindings={data.bindings} isDark={isDark} />;
+  return <BindingValues bindings={data.bindings} dashboardCopy={dashboardCopy} isDark={isDark} />;
 }
 
 function SwitchControl({
+  dashboardCopy,
   isDark,
   onSendCommand,
   resolution,
 }: {
+  dashboardCopy: DashboardCopy;
   isDark: boolean;
   onSendCommand(
     deviceId: string,
@@ -157,7 +175,7 @@ function SwitchControl({
         capability!.key,
         value,
       );
-      setFeedback(commandFeedback(result.status));
+      setFeedback(commandFeedback(dashboardCopy, result.status));
     } catch {
       setFeedback(dashboardCopy.switchFailed);
     } finally {
@@ -214,7 +232,7 @@ function SwitchControl({
 }
 
 
-function commandFeedback(status: string): string {
+function commandFeedback(dashboardCopy: DashboardCopy, status: string): string {
   switch (status) {
     case 'ACKNOWLEDGED':
       return dashboardCopy.switchAcknowledged;
@@ -231,9 +249,11 @@ function commandFeedback(status: string): string {
 }
 
 function BindingValues({
+  dashboardCopy,
   bindings,
   isDark,
 }: {
+  dashboardCopy: DashboardCopy;
   bindings: MobileWidgetBindingData[];
   isDark: boolean;
 }) {
@@ -251,7 +271,7 @@ function BindingValues({
             {binding.alias}
           </Text>
           <Text style={[styles.value, isDark && styles.textDark]}>
-            {formatBindingValue(binding)}
+            {formatBindingValue(dashboardCopy, binding)}
           </Text>
         </View>
       ))}
@@ -260,10 +280,12 @@ function BindingValues({
 }
 
 function GaugeValue({
+  dashboardCopy,
   binding,
   isDark,
   resolution,
 }: {
+  dashboardCopy: DashboardCopy;
   binding: MobileWidgetBindingData | undefined;
   isDark: boolean;
   resolution: MobileResolvedWidget;
@@ -315,9 +337,11 @@ function GaugeValue({
 }
 
 function SeriesValues({
+  dashboardCopy,
   bindings,
   isDark,
 }: {
+  dashboardCopy: DashboardCopy;
   bindings: MobileWidgetBindingData[];
   isDark: boolean;
 }) {
@@ -348,10 +372,10 @@ function SeriesValues({
             {point.alias}
           </Text>
           <Text style={[styles.seriesValue, isDark && styles.textDark]}>
-            {formatUnknown(point.value)}
+            {formatUnknown(dashboardCopy, point.value)}
           </Text>
           <Text style={[styles.seriesTime, isDark && styles.textMutedDark]}>
-            {formatDate(point.observedAt)}
+            {formatDate(dashboardCopy, point.observedAt)}
           </Text>
         </View>
       ))}
@@ -372,14 +396,17 @@ function resolveTimestamp(data: MobileWidgetData): string {
   );
 }
 
-function formatBindingValue(binding: MobileWidgetBindingData): string {
-  if (!binding.data) return stateLabel(binding.state);
-  if ('value' in binding.data) return formatUnknown(binding.data.value);
-  if ('status' in binding.data) return formatUnknown(binding.data.status);
+function formatBindingValue(
+  dashboardCopy: DashboardCopy,
+  binding: MobileWidgetBindingData,
+): string {
+  if (!binding.data) return stateLabel(dashboardCopy, binding.state);
+  if ('value' in binding.data) return formatUnknown(dashboardCopy, binding.data.value);
+  if ('status' in binding.data) return formatUnknown(dashboardCopy, binding.data.status);
   const series = extractSeries(binding);
   return series.length > 0
-    ? formatUnknown(series[series.length - 1]?.value)
-    : stateLabel(binding.state);
+    ? formatUnknown(dashboardCopy, series[series.length - 1]?.value)
+    : stateLabel(dashboardCopy, binding.state);
 }
 
 function extractSeries(binding: MobileWidgetBindingData) {
@@ -411,7 +438,7 @@ function formatNumber(value: number, precision = 2): string {
   }).format(value);
 }
 
-function formatUnknown(value: unknown): string {
+function formatUnknown(dashboardCopy: DashboardCopy, value: unknown): string {
   if (typeof value === 'number') return formatNumber(value);
   if (typeof value === 'boolean')
     return value ? dashboardCopy.activeValue : dashboardCopy.inactiveValue;
@@ -421,7 +448,7 @@ function formatUnknown(value: unknown): string {
   return dashboardCopy.valueAvailable;
 }
 
-function formatDate(value: string): string {
+function formatDate(dashboardCopy: DashboardCopy, value: string): string {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
     ? dashboardCopy.unknownTime
@@ -431,11 +458,11 @@ function formatDate(value: string): string {
       }).format(date);
 }
 
-function stateLabel(state: string): string {
+function stateLabel(dashboardCopy: DashboardCopy, state: string): string {
   return (dashboardCopy.stateLabels as Record<string, string>)[state] ?? state;
 }
 
-function kindLabel(kind: string): string {
+function kindLabel(dashboardCopy: DashboardCopy, kind: string): string {
   return (dashboardCopy.kindLabels as Record<string, string>)[kind] ?? kind;
 }
 

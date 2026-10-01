@@ -14,7 +14,6 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { ApiKeyStatus } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantContextGuard } from '../users/guards/tenant-context.guard';
 import { PrismaService } from '../prisma/prisma.service';
@@ -26,8 +25,6 @@ import {
   CreateApiKeyDto,
   PlatformCreateApiKeyDto,
 } from './dto/admin-api-keys.dto';
-import { DomainNotFoundException } from '../common/errors/domain-exceptions';
-import { ERROR_CODES } from '../common/errors/error-code';
 
 /**
  * Admin API-key lifecycle (Modul 21 exposed to the panel): create returns the
@@ -102,6 +99,40 @@ export class AdminApiKeysController {
     return this.revoke(keyId);
   }
 
+  @Get('api-keys')
+  @UseGuards(JwtAuthGuard, TenantContextGuard, AdminRoleGuard)
+  @ApiOperation({ summary: "List the active tenant's API keys (metadata only)" })
+  async listTenantKeys(@Request() request: AdminOperationsRequest) {
+    // Same guard set as the create and revoke routes below, deliberately. This endpoint
+    // previously lived in AdminBillingDirectoryController, whose class-level guard also
+    // required PlatformRoleGuard — so a tenant admin could mint and revoke keys but got
+    // 403 when trying to list them. Metadata only; `keyHash` is never selected.
+    const keys = await this.prisma.apiKey.findMany({
+      where: { tenantId: request.user.tenantContext.tenantId },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: 200,
+      select: {
+        id: true,
+        name: true,
+        keyPrefix: true,
+        status: true,
+        scopes: true,
+        lastUsedAt: true,
+        expiresAt: true,
+        createdAt: true,
+      },
+    });
+    return {
+      total: keys.length,
+      items: keys.map((key) => ({
+        ...key,
+        lastUsedAt: key.lastUsedAt?.toISOString() ?? null,
+        expiresAt: key.expiresAt?.toISOString() ?? null,
+        createdAt: key.createdAt.toISOString(),
+      })),
+    };
+  }
+
   @Post('api-keys')
   @UseGuards(JwtAuthGuard, TenantContextGuard, AdminRoleGuard)
   @ApiOperation({ summary: 'Create an API key for the active tenant (tenant admin)' })
@@ -128,20 +159,24 @@ export class AdminApiKeysController {
   }
 
   private async revoke(keyId: string, tenantId?: string) {
-    const key = await this.prisma.apiKey.findUnique({
-      where: { id: keyId },
-      select: { id: true, tenantId: true, status: true },
-    });
-    if (!key || (tenantId && key.tenantId !== tenantId)) {
-      throw new DomainNotFoundException(ERROR_CODES.NotFound, 'API key tidak ditemukan');
-    }
-    if (key.status === ApiKeyStatus.REVOKED) {
-      return { id: keyId, status: 'REVOKED', message: 'Key sudah dicabut' };
-    }
-    await this.prisma.apiKey.update({
-      where: { id: keyId },
-      data: { status: ApiKeyStatus.REVOKED },
-    });
-    return { id: keyId, status: 'REVOKED', message: 'API key dicabut; integrasi aktif akan ditolak' };
+    // Delegates to the service instead of doing its own read-then-write.
+    //
+    // The previous body read the key with `findUnique({ where: { id } })` — loading any
+    // tenant's row before deciding ownership — and then wrote with
+    // `update({ where: { id } })`, which is not tenant-scoped at all. `PublicApiService` already
+    // had the correct one-statement form and no callers. The `tenantId` argument stays
+    // because the platform route is genuinely unscoped: that route is behind
+    // `PlatformRoleGuard`, so dropping the scope there is authority, not an oversight.
+    const result =
+      tenantId === undefined
+        ? await this.publicApi.revokeApiKeyAsPlatform(keyId)
+        : await this.publicApi.revokeApiKey(tenantId, keyId);
+    return {
+      id: result.id,
+      status: result.status,
+      message: result.alreadyRevoked
+        ? 'Key sudah dicabut'
+        : 'API key dicabut; integrasi aktif akan ditolak',
+    };
   }
 }

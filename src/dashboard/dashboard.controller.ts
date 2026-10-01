@@ -20,6 +20,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RbacPermissionGuard, RequirePermission } from '../rbac/rbac-permission.guard';
 import { TenantContextGuard } from '../users/guards/tenant-context.guard';
 import { DashboardRequest } from './dashboard-request-context';
 import { DashboardService } from './dashboard.service';
@@ -33,11 +34,17 @@ import { CreateDashboardDto, ReplaceDashboardDto } from './dto/dashboard.dto';
   description: 'Trusted tenant selector validated against active membership',
 })
 @Controller('dashboards')
-@UseGuards(JwtAuthGuard, TenantContextGuard)
+@UseGuards(JwtAuthGuard, TenantContextGuard, RbacPermissionGuard)
+// Every route declares a permission. `allowOwner` on the addressed routes lets the owner through
+// while DashboardRepository keeps its existing audience rule: PERSONAL is owner-only and
+// TENANT_SHARED still needs an admin role. The guard is strictly wider than the repository for a
+// TENANT_SHARED dashboard, and the repository remains the authority, so this adds the audit trail
+// and a tenant-scoped second check without changing who may act.
 export class DashboardController {
   constructor(private readonly service: DashboardService) {}
 
   @Post()
+  @RequirePermission('dashboard.create')
   @ApiOperation({ summary: 'Create a personal or tenant-shared dashboard' })
   @ApiResponse({ status: 201, description: 'Dashboard created' })
   @ApiResponse({ status: 403, description: 'Shared dashboard admin required' })
@@ -49,6 +56,7 @@ export class DashboardController {
   }
 
   @Get()
+  @RequirePermission('dashboard.read')
   @ApiOperation({ summary: 'List personal and readable shared dashboards' })
   @ApiResponse({ status: 200, description: 'Bounded dashboard summaries' })
   async list(
@@ -59,6 +67,7 @@ export class DashboardController {
   }
 
   @Get(':dashboardId/resolution')
+  @RequirePermission('dashboard.read', { allowOwner: true })
   @ApiOperation({
     summary: 'Resolve dashboard widgets against capability metadata',
   })
@@ -75,6 +84,7 @@ export class DashboardController {
   }
 
   @Get(':dashboardId/widgets/:widgetId/data')
+  @RequirePermission('dashboard.read', { allowOwner: true })
   @ApiOperation({
     summary: 'Execute bounded telemetry queries for one resolved widget',
   })
@@ -96,6 +106,7 @@ export class DashboardController {
   }
 
   @Get(':dashboardId')
+  @RequirePermission('dashboard.read', { allowOwner: true })
   @ApiOperation({ summary: 'Read an authorized dashboard aggregate' })
   @ApiResponse({ status: 200, description: 'Dashboard aggregate' })
   @ApiResponse({ status: 404, description: 'Dashboard not found' })
@@ -107,6 +118,7 @@ export class DashboardController {
   }
 
   @Put(':dashboardId')
+  @RequirePermission('dashboard.update', { allowOwner: true })
   @ApiOperation({ summary: 'Replace an authorized dashboard aggregate' })
   @ApiResponse({ status: 200, description: 'Dashboard updated' })
   @ApiResponse({ status: 409, description: 'Revision conflict' })
@@ -126,6 +138,7 @@ export class DashboardController {
   }
 
   @Delete(':dashboardId')
+  @RequirePermission('dashboard.delete', { allowOwner: true })
   @ApiOperation({ summary: 'Delete an authorized dashboard aggregate' })
   @ApiResponse({ status: 200, description: 'Dashboard deleted' })
   @ApiResponse({ status: 409, description: 'Revision conflict' })
