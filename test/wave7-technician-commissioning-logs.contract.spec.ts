@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import { readFileSync } from 'node:fs';
 
 /**
@@ -14,7 +15,7 @@ import { readFileSync } from 'node:fs';
  * exists to prevent.
  */
 
-const ROOT = '/home/ivo/Desktop/program/iot';
+const ROOT = resolve(__dirname, '..');
 const read = (relative: string): string => readFileSync(`${ROOT}/${relative}`, 'utf8');
 const exists = (relative: string): boolean => {
   try {

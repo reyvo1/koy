@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import { readFileSync } from 'node:fs';
 
 /**
@@ -13,7 +14,7 @@ import { readFileSync } from 'node:fs';
  * widget paints. That last claim needs a device, and it is stated as unproven rather than implied.
  */
 
-const ROOT = '/home/ivo/Desktop/program/iot';
+const ROOT = resolve(__dirname, '..');
 const read = (relative: string): string =>
   readFileSync(`${ROOT}/${relative}`, 'utf8');
 

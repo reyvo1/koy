@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 /**
@@ -59,11 +59,24 @@ describe('Local console login path regression guard', () => {
     it.each([
       'apps/admin-web/.env.example',
       'apps/user-web/.env.example',
-    ])('%s points at the API port the repository .env configures', (envPath) => {
+    ])('%s points at the API port the repository configures', (envPath) => {
       const env = read(envPath);
-      const port = /^PORT=(\d+)$/m.exec(read('.env'))?.[1];
+
+      // The tracked `.env.example` is the canonical statement of the port, because `.env` itself is
+      // gitignored and therefore does not exist on a CI checkout. Reading `.env` unconditionally made
+      // this suite throw ENOENT in CI: 10 suites failed to load and 175 tests never ran, which the
+      // green local runs hid perfectly.
+      const port = /^PORT=(\d+)$/m.exec(read('.env.example'))?.[1];
       expect(port).toBeTruthy();
       expect(env).toContain(`IOT_API_BASE_URL=http://127.0.0.1:${port}`);
+
+      // When a local `.env` does exist it must agree with the tracked one, so the example files cannot
+      // drift away from a running local stack. Not a replacement for the assertion above: that one
+      // runs everywhere, this one only has something to check on a developer machine.
+      if (existsSync(resolve(root, '.env'))) {
+        const localPort = /^PORT=(\d+)$/m.exec(read('.env'))?.[1];
+        expect(localPort).toBe(port);
+      }
     });
   });
 
