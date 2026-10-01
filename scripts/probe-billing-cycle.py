@@ -31,7 +31,7 @@ MARKER = "wave8-billing-probe"
 # exercise the positive path at all.
 KEY = os.environ.get("PROBE_MIDTRANS_KEY", "")
 LOGIN = json.load(
-    open(os.environ.get("PROBE_LOGIN_FILE", "/home/ivo/.hermes/cache/scratch/uat-login.json"))
+    open(os.environ.get("PROBE_LOGIN_FILE", "reports/probe-session.json"))
 )
 
 passed = 0

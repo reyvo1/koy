@@ -17,6 +17,7 @@
     "fastify:v5:compat:self-test": "node scripts/self-test-fastify-v5-compat.mjs",
     "fastify:v5:compat:verify": "node scripts/verify-fastify-v5-compat.mjs",
     "format": "prettier --write \"{src,apps,packages,test}/**/*.{ts,tsx}\"",
+    "uat:seed:env:self-test": "node scripts/self-test-uat-seed-env.mjs",
     "gitignore:source-scope:self-test": "node scripts/self-test-gitignore-source-scope.mjs",
     "lint": "eslint \"{src,apps,packages,libs,test}/**/*.{ts,tsx}\" --fix",
     "lint:check": "eslint --no-eslintrc --config .eslintrc.cjs \"{src,apps,packages,libs,test}/**/*.{ts,tsx}\"",

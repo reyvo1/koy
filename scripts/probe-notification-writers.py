@@ -30,7 +30,7 @@ OTHER_TENANT = "33333333-3333-4333-8333-333333333333"
 STAMP = str(int(time.time()))
 EMAIL = f"wave7-notif-{STAMP}@example.invalid"
 PASSWORD = "Wave7-" + STAMP + "-neverprinted"
-LOGIN = json.load(open(os.environ.get("PROBE_LOGIN_FILE", "/home/ivo/.hermes/cache/scratch/uat-login.json")))
+LOGIN = json.load(open(os.environ.get("PROBE_LOGIN_FILE", "reports/probe-session.json")))
 
 passed = failed = 0
 

@@ -80,6 +80,7 @@ jobs:
           npm run wave1:prepush:self-test
           npm run wave2:prisma:self-test
           npm run gitignore:source-scope:self-test
+          npm run uat:seed:env:self-test
           npm run rescue:unit-types:self-test
           npm run rescue:unit-regressions:self-test
           npm run rescue:acceptance:self-test

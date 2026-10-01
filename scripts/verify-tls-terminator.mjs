@@ -27,11 +27,11 @@
 import { execFileSync, execFile } from 'node:child_process';
 import { mkdtempSync, writeFileSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 
 const run = promisify(execFile);
-const ROOT = '/home/ivo/Desktop/program/iot';
+const ROOT = resolve(import.meta.dirname, '..');
 const TEMPLATE = join(ROOT, 'ops', 'nginx', 'iot-platform.conf.template');
 const CONTAINER = 'iot-tls-nginx-verify';
 const HTTPS_PORT = 8443;

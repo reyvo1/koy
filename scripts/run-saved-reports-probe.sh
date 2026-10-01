@@ -4,7 +4,7 @@
 # `seed-demo-accounts.mjs` regenerates both passwords on every invocation, so calling it twice
 # yields two different pairs and the second run invalidates the first. Seed once, read both.
 set -euo pipefail
-cd /home/ivo/Desktop/program/iot
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
 set -a; source .env 2>/dev/null || true; set +a
 
 SEED_OUT=$(node scripts/seed-demo-accounts.mjs 2>&1)

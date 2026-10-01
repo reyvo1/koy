@@ -2,7 +2,7 @@
 # Wave 9 step 4: RTSP->WebRTC, end to end. Brings the runtime up first -- a probe that assumes a
 # running container reports a connection refused, which is a fact about the probe, not the product.
 set -euo pipefail
-cd /home/ivo/Desktop/program/iot
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
 DIR="$(dirname "$0")"
 docker compose -f docker-compose.rescue.yml up -d go2rtc >/dev/null
 for _ in $(seq 1 20); do

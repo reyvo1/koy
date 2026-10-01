@@ -5,10 +5,11 @@
 # `alreadyBilled: false`, which is only meaningful if no invoice for the period already exists --
 # without the pre-sweep the assertion tests residue from the previous run, not the product.
 set -euo pipefail
-cd /home/ivo/Desktop/program/iot
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 API="${PROBE_API_BASE:-http://127.0.0.1:5000}"
-CREDS="${PROBE_LOGIN_FILE:-/home/ivo/.hermes/cache/scratch/uat-login.json}"
+CREDS="${PROBE_LOGIN_FILE:-reports/probe-session.json}"
+mkdir -p "$(dirname "$CREDS")"
 TENANT=44444444-4444-4444-8444-444444444444
 DIR="$(dirname "$0")"
 

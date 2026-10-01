@@ -9,7 +9,7 @@
 # database and nothing in the product writes it, so a probe over zero rows would report every check
 # green while proving nothing.
 set -euo pipefail
-cd /home/ivo/Desktop/program/iot
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
 set -a; source .env 2>/dev/null || true; set +a
 
 SEED_OUT=$(node scripts/seed-demo-accounts.mjs 2>&1)

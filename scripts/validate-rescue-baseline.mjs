@@ -2288,6 +2288,10 @@ check(
 
 // RESCUE-02B runtime-readiness R30 — GitHub-hosted heavy validation + real EMQX smoke.
 const githubCiR30 = read('.github/workflows/ci.yml');
+const uatSeedSource = read('scripts/seed-uat-baseline.mjs');
+const probeWrapperSources = readdirSync(resolve(root, 'scripts'))
+  .filter((name) => name.startsWith('run-') && name.endsWith('probe.sh'))
+  .map((name) => read(`scripts/${name}`));
 const liveBrokerSmokeR30 = read('scripts/run-rescue-live-broker-smoke.mjs');
 const githubCiSelfTestR30 = read('scripts/self-test-rescue-github-ci.mjs');
 const secureFastifyVerifierR30 = read('scripts/verify-secure-fastify-stack.mjs');
@@ -2315,6 +2319,54 @@ check(
     read('src/metrics/metrics.interceptor.ts').includes('request.routeOptions?.url') &&
     !read('src/metrics/metrics.interceptor.ts').includes('request.routerPath'),
 );
+// Registered so the fix cannot be silently undone. Without this, deleting the resolution or dropping
+// the self-test from the CI gate is a two-line diff that nothing in this repository would object to --
+// and the next runner to lack a DATABASE_URL dies at the seed again, after the whole acceptance job
+// has been waiting on it.
+// One check per condition, deliberately. Bundled into a single `&&` chain these conditions propped
+// each other up: deleting any single one still left four satisfied ones, so the check stayed green and
+// caught nothing. Every condition here was mutation-tested individually for exactly that reason.
+// Every live probe wrapper used to `cd /home/ivo/Desktop/program/iot`, which exists on exactly one
+// machine. On a runner that line fails outright, so the Wave 9 media, camera and location probes
+// could never have executed in CI -- they had only ever been run locally. Each wrapper now resolves
+// its own repository root, which is the same fix applied to the contract specs.
+// The wrappers also minted their session file into a scratch directory that exists on one machine.
+// probe_login writes curl's response there, so on a runner curl could not create the file and the probe
+// died as a mystery rather than as a configuration error. A session response belongs under the
+// git-ignored reports/ tree, and PROBE_LOGIN_FILE still overrides it.
+check(
+  'live probe wrappers keep their session file inside the repository',
+  probeWrapperSources.every((source) => !source.includes('/home/ivo/')),
+);
+
+check(
+  'no tracked script hardcodes this machine as its repository root',
+  readdirSync(resolve(root, 'scripts')).every((name) => {
+    if (!name.endsWith('.mjs') && !name.endsWith('.sh')) return true;
+    const source = read(`scripts/${name}`);
+    // The one remaining mention is prose in this validator explaining why the check exists.
+    return !/^const ROOT = '\/home\/ivo/m.test(source) && !/^cd \/home\/ivo/m.test(source);
+  }),
+);
+
+check(
+  'live probe wrappers resolve their own repository root',
+  probeWrapperSources.every(
+    (source) =>
+      source.includes('cd "$(dirname "${BASH_SOURCE[0]}")/.."') &&
+      !/^cd \/home\/[^\s]/m.test(source),
+  ),
+);
+
+check('UAT seed is registered as an npm script', read('package.json').includes('uat:seed:env:self-test'));
+check('UAT seed resolves DATABASE_URL from a .env file', /const databaseUrl = resolveDatabaseUrl\('\.env'\);/.test(uatSeedSource));
+check('UAT seed fails with the missing-DATABASE_URL cause named', /^if \(!databaseUrl\) \{/m.test(uatSeedSource));
+check(
+  'UAT seed env self-test asserts the resolution order',
+  read('scripts/self-test-uat-seed-env.mjs').includes('parseEnv(envFile).DATABASE_URL'),
+);
+check('CI runs the UAT seed env self-test in the gate step', githubCiR30.includes('npm run uat:seed:env:self-test'));
+
 check(
   'secure Next.js boundary is source-controlled at the August 2026 patched line',
   read('package.json').includes('security:web-stack:verify') &&

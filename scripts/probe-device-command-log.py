@@ -25,7 +25,7 @@ BASE = os.environ.get("PROBE_API_BASE", "http://127.0.0.1:5000")
 TENANT = os.environ.get("PROBE_TENANT", "44444444-4444-4444-8444-444444444444")
 FOREIGN = "33333333-3333-4333-8333-333333333333"
 LOGIN = json.load(
-    open(os.environ.get("PROBE_LOGIN_FILE", "/home/ivo/.hermes/cache/scratch/uat-login.json"))
+    open(os.environ.get("PROBE_LOGIN_FILE", "reports/probe-session.json"))
 )
 
 passed = 0

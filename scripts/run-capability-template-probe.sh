@@ -5,7 +5,7 @@
 # yields two different pairs — the second run invalidates the first, which is why an earlier
 # attempt died on a 401 for a password that had been correct a moment earlier.
 set -euo pipefail
-cd /home/ivo/Desktop/program/iot
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
 set -a; source .env 2>/dev/null || true; set +a
 
 SEED_OUT=$(node scripts/seed-demo-accounts.mjs 2>&1)

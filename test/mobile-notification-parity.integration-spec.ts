@@ -1,3 +1,6 @@
+import { resolve } from 'node:path';
+
+const root = resolve(__dirname, '..');
 import { readFileSync } from 'node:fs';
 import {
   loadMobileNotificationHistory,
@@ -49,9 +52,15 @@ interface MobileApiErrorShape extends ProbeError {
   code?: string;
 }
 
+// Written by scripts/run-mobile-notification-probe.sh via probe_login, under the git-ignored reports/
+// tree. It used to name a scratch directory that exists on one machine, so this integration spec could
+// only ever run there. PROBE_LOGIN_FILE overrides it, which is how the wrapper points at its own path.
 const login = (): { accessToken: string } =>
   JSON.parse(
-    readFileSync('/home/ivo/.hermes/cache/scratch/uat-login.json', 'utf8'),
+    readFileSync(
+      process.env.PROBE_LOGIN_FILE ?? resolve(root, 'reports/probe-session.json'),
+      'utf8',
+    ),
   );
 
 /**

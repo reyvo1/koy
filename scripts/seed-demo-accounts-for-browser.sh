@@ -8,7 +8,7 @@
 #
 # Writes: /tmp/iot_super_pw.txt (mode 600), and /tmp/iot_tenant_pw.txt for the tenant admin.
 set -euo pipefail
-cd /home/ivo/Desktop/program/iot
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
 set -a; source .env 2>/dev/null || true; set +a
 
 umask 077
