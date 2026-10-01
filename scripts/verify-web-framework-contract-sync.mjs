@@ -14,7 +14,7 @@ const doc = readFileSync(
   'utf8',
 );
 
-const expected = '16.3.5';
+const expected = '16.3.8';
 
 for (const [name, pkg] of [['admin-web', admin], ['user-web', user]]) {
   if (pkg.dependencies?.next !== expected) {

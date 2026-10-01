@@ -40,7 +40,7 @@ describe('Module 10 Slice 10.6 web workspace and design-system foundation contra
     }>(path);
 
     expect(app.name).toBe(name);
-    expect(app.dependencies.next).toBe('16.3.5');
+    expect(app.dependencies.next).toBe('16.3.8');
     expect(app.dependencies.react).toBe('19.2.7');
     expect(app.dependencies['react-dom']).toBe('19.2.7');
     expect(app.dependencies['@iot-platform/design-system']).toBe('0.0.0');

@@ -2300,11 +2300,11 @@ const userWebPackageR30 = JSON.parse(read('apps/user-web/package.json'));
 check(
   'active web workspace contract and foundation documentation track the security-approved Next.js line',
   read('package.json').includes('web:framework:contract:verify') &&
-    webFrameworkContractSyncVerifierR30.includes("const expected = '16.3.5'") &&
+    webFrameworkContractSyncVerifierR30.includes("const expected = '16.3.8'") &&
     read('test/module-10-web-workspace-design-system-foundation.contract.spec.ts').includes(
-      "expect(app.dependencies.next).toBe('16.3.5')",
+      "expect(app.dependencies.next).toBe('16.3.8')",
     ) &&
-    read('docs/module-10-web-workspace-design-system-foundation.md').includes('Next.js `16.3.5`'),
+    read('docs/module-10-web-workspace-design-system-foundation.md').includes('Next.js `16.3.8`'),
 );
 check(
   'Fastify v5 source compatibility guard rejects removed v4 request/reply APIs',
@@ -2318,9 +2318,9 @@ check(
 check(
   'secure Next.js boundary is source-controlled at the August 2026 patched line',
   read('package.json').includes('security:web-stack:verify') &&
-    adminWebPackageR30.dependencies?.next === '16.3.5' &&
-    userWebPackageR30.dependencies?.next === '16.3.5' &&
-    secureNextVerifierR30.includes("const REQUIRED = '16.3.5'") &&
+    adminWebPackageR30.dependencies?.next === '16.3.8' &&
+    userWebPackageR30.dependencies?.next === '16.3.8' &&
+    secureNextVerifierR30.includes("const REQUIRED = '16.3.8'") &&
     secureNextVerifierR30.includes("const MINIMUM = '16.3.3'"),
 );
 check(

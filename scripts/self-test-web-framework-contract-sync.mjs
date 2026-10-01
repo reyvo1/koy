@@ -44,9 +44,9 @@ function runCase(label, nextVersion, contractVersion, docVersion, expectedCode, 
 }
 
 try {
-  runCase('synchronized state passes', '16.3.5', '16.3.5', '16.3.5', 0, 'synchronized');
-  runCase('stale contract is rejected', '16.3.5', '16.2.10', '16.3.5', 1, 'contract is not synchronized');
-  runCase('stale documentation is rejected', '16.3.5', '16.3.5', '16.2.10', 1, 'documentation is not synchronized');
+  runCase('synchronized state passes', '16.3.8', '16.3.8', '16.3.8', 0, 'synchronized');
+  runCase('stale contract is rejected', '16.3.8', '16.2.10', '16.3.8', 1, 'contract is not synchronized');
+  runCase('stale documentation is rejected', '16.3.8', '16.3.8', '16.2.10', 1, 'documentation is not synchronized');
   console.log('WEB FRAMEWORK CONTRACT SYNC SELF-TEST PASS');
 } finally {
   rmSync(temp, { recursive: true, force: true });

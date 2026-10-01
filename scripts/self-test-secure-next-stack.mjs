@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 const verifier = resolve(import.meta.dirname, 'verify-secure-next-stack.mjs');
 const temp = mkdtempSync(join(tmpdir(), 'iot-secure-next-'));
 
-function fixture(name, { admin = '16.3.5', user = '16.3.5', locked = '16.3.5' } = {}) {
+function fixture(name, { admin = '16.3.8', user = '16.3.8', locked = '16.3.8' } = {}) {
   const adminPath = join(temp, `${name}.admin.json`);
   const userPath = join(temp, `${name}.user.json`);
   const lockPath = join(temp, `${name}.lock.json`);
@@ -43,7 +43,7 @@ function run(label, fx, expectedCode, expectedText) {
 
 try {
   run('patched Next.js stack passes', fixture('patched'), 0, 'secure Next.js boundary locked');
-  run('Next.js 16.2.10 is rejected', fixture('old-lock', { admin: '16.2.10', user: '16.2.10', locked: '16.2.10' }), 1, 'must declare exact next@16.3.5');
+  run('Next.js 16.2.10 is rejected', fixture('old-lock', { admin: '16.2.10', user: '16.2.10', locked: '16.2.10' }), 1, 'must declare exact next@16.3.8');
   run('stale lockfile is rejected', fixture('stale-lock', { locked: '16.2.10' }), 1, 'Vulnerable Next.js remains locked');
   console.log('SECURE NEXT STACK SELF-TEST PASS');
 } finally {

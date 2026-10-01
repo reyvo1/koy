@@ -11,7 +11,7 @@ const lock = JSON.parse(readFileSync(lockPath, 'utf8'));
 const admin = JSON.parse(readFileSync(adminPath, 'utf8'));
 const user = JSON.parse(readFileSync(userPath, 'utf8'));
 
-const REQUIRED = '16.3.5';
+const REQUIRED = '16.3.8';
 const MINIMUM = '16.3.3';
 
 function parse(version) {

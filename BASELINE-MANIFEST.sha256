@@ -307,7 +307,7 @@ b3864f932d5669e531fd4c4a8ecf52aec49c80117c0ad237fa4b45120159a250  ./apps/admin-w
 a840ff1a6c64a902f0350f230b4da5e6a4c3593ea4d5f313e29354c8b01df4ac  ./apps/admin-web/lib/tenant-resolver.ts
 57b60e6572cc371512af55c0a239177a4f0682d3ac927f061867051ded48050c  ./apps/admin-web/lib/use-telemetry-stream.ts
 8cc5555082d6f67b3fcfde34d24a7405408c90f6933b94c79f9afb53d1b5aa9a  ./apps/admin-web/next.config.mjs
-5fd16c92c43aa8fdcaa06a015e8f3d86bd1ea5bf217350f8ee3388ff89797bf2  ./apps/admin-web/package.json
+48677ba71c3557fc5a690b488f6712fbcbef1680833eb633f7370fb60cd8741d  ./apps/admin-web/package.json
 dfac7ac2d86d326a0e5adb024e7943c181393ed17a5fcb8f0315b24c7da6ddde  ./apps/admin-web/postcss.config.mjs
 38ee09e8ee48c7e75cab63bd076513018ca07b655295664d07c107e408606495  ./apps/admin-web/tsconfig.json
 627f37f80fbde2c0d4abd9f7c3489ef46f41ef8ec7d5fb20fcb5fba42a807a46  ./apps/user-mobile/.env.example
@@ -386,7 +386,7 @@ b90fc1e727e56d503e6b5c78926d0aead8e084867e1e00d7a5534dc18ed2cf7b  ./apps/user-we
 c41fe0b8acfca4facc1d52354cb941c2fa24f993333ef5ef75f84f0c2a295ca3  ./apps/user-web/lib/dashboard-loader.ts
 bead9f184b27083639c20803cac92b239a55bcea908cf442f5eed777f6b59df9  ./apps/user-web/lib/session.ts
 4a236edaf457c184169a2592df456347d58f54281b934b30b737263b32e040be  ./apps/user-web/next.config.mjs
-640c8e46d0c91debafc2f06127a8b8414c356b04eab9279522cfc258fae56675  ./apps/user-web/package.json
+01268576081ce66c1fa4686843e807e3913b3d449399c29f04633466378a7e1f  ./apps/user-web/package.json
 ccd2a17f28b9205adc19fbf05b2a9389dc24115b8ce40b6d958777af90bea7a1  ./apps/user-web/postcss.config.mjs
 7794f4a44d2c31c1f33e91477a00025f4e62687a88946b7c17f58f26257ef2e8  ./apps/user-web/public/icon.png
 38ee09e8ee48c7e75cab63bd076513018ca07b655295664d07c107e408606495  ./apps/user-web/tsconfig.json
@@ -438,7 +438,7 @@ c3255bd383823e4e38aa72782ab866065e88a632ef57bcd637357422dd36fc0b  ./docs/module-
 93a0a46f918e949f65e51d9c2fcb78487a01159c8bdcd440f816ae8ca06d13d4  ./docs/module-10-telemetry-widget-query-integration.md
 5689d7db3b549f10ad3ade8da32973458965f4cb3011a02083e8fe9f96c73c12  ./docs/module-10-tenant-isolated-dashboard-api.md
 c1083e1006f234c35eeed3141943d30baf423f602acf146a21603dabd2d86dc0  ./docs/module-10-user-web-dynamic-dashboard.md
-48403a9b02465858a078afc3695d20557769aea7c734368c4313000791c11dde  ./docs/module-10-web-workspace-design-system-foundation.md
+a66cd11c6a442048b29758851870e752c78f76f50b305a8ff2ec2734b62b1b74  ./docs/module-10-web-workspace-design-system-foundation.md
 054aadc9285925ee844ab01700a885e51bbc4995e04f91f7b6853533b19ad8e0  ./docs/module-11-automation-action-state-transition-foundation-closure.md
 9a0b2225e959dffb000ccf2b22925b1dcd156918a61006ca7a02e01d3eea8550  ./docs/module-11-automation-action-state-transition-foundation.md
 5f99e8c182a0b07108b4fe1a8a99b6b44a06dc9c45aa5cf6f42431bb169b9050  ./docs/module-11-automation-command-dispatch-foundation-closure.md
@@ -535,7 +535,7 @@ a9906963ca94d27cd8f6d68726bd5bc55acf6bac9fc14d1540770521ec6b67e2  ./ops/scripts/
 d296e3a0df131f20476c6d8c4ece1af57e861ed63b49659ab468ab3f038bc155  ./ops/systemd/iot-platform-backup.service
 23bb220ecf835b2f25caa9dd46b97c266b713dad591f5169df2872534b3844f0  ./ops/systemd/iot-platform-backup.timer
 c16ce529395244a7a5cdd9b4b86902273e232212695edd8c768c8de28cfbe78f  ./ops/systemd/iot-platform.service
-5d9dd83e400f2d09fc869b407fe07be002d9658561cb785756c5d3d0158f9018  ./package-lock.json
+529b16e4fab06d438a8249ffe5e846197a82cf9ea34974ff01ceef63bfeb747b  ./package-lock.json
 1910747a0cc90300eaf1f0cfa5de51051a45f4c5afeabddadea3f6c27a042777  ./package.json
 a119fdac221907cc9580b940bb96d031ae518f3a3f97dab501bfe3e94cef19d3  ./packages/design-system/package.json
 b63813a336d764f5fd0ecf92cf894829347e0485f5c7bc67cc5000e866c31b41  ./packages/design-system/src/design-system-v2.css
@@ -692,7 +692,7 @@ d6a9b09621f704eef464a0d005ba40db1311851610a9788fc7cc5f16afefa1cc  ./scripts/self
 675bb9ac239d4335c4b8d0deefda59c3fff733eb87415548832c99adca711403  ./scripts/self-test-rescue-mqtt-operations.mjs
 264d37dfc15bd0479ed5f702eadfa3160546ec692b0f1147edae0d8433608791  ./scripts/self-test-rescue-runtime-probes.mjs
 2e897b21e5b3d40354d293e6405ef7c0879718ad0651d331ecc743264fca4162  ./scripts/self-test-secure-fastify-stack.mjs
-91311dea948ac08cd40f2eb8cd4bb485779578718ff1946ab6f56c8df25fc60c  ./scripts/self-test-secure-next-stack.mjs
+7b693f9db87b9e12b2fa050692261a24398ab6a413069e973cb3b8e5461bce1e  ./scripts/self-test-secure-next-stack.mjs
 ed0e26eeb48c4a6d34d1b2b67d93197689da8c90252a30089559f0a1b20aee1f  ./scripts/self-test-unit-runtime-regressions.mjs
 0e91c2b2c540bd43a25b9ed229af1b8164e595157ac55d58435ae9a1b7915f89  ./scripts/self-test-unit-test-type-boundary.mjs
 29dd93b26da22398f7af85af296f7ce0dcd89fe4e8e7cb2bee848cad3307a9ee  ./scripts/self-test-wave1-prepush.mjs
@@ -704,18 +704,18 @@ d721280eeb79da7b26d49f0bf8c7a48552b3e7986c45d0a11106e582cfc4bd97  ./scripts/self
 ae5c73a9a3a9f63e31fc2931c39beafb4bfd99c920d2c81ad17108a6fabd7b58  ./scripts/self-test-wave3-esp32-simulation.mjs
 eb610a2f6ae922766ff4c99969a2d12d733c72fa882ec3057579148a82cc9352  ./scripts/self-test-wave3-esp32-source.mjs
 6ca25bc759b0080811af5cbde2ef2c8a54bd431298f4c1c8c4d7b32cdbe9d9a4  ./scripts/self-test-wave3-qemu-boot-runner.mjs
-20ea361948a1e75c0218f6fc7c929678f5a2772482e27e686165ee013d5bd0c8  ./scripts/self-test-web-framework-contract-sync.mjs
+272932d6980425b1454979ae0ca937d5f00cf30ca8e8f0cd4f765f2fb8af5daf  ./scripts/self-test-web-framework-contract-sync.mjs
 eb8e000fc1baede4cd7f3ba70093b0c0c574f95949224f319f5d8e16535c939c  ./scripts/validate-rescue-02b-evidence.mjs
-7f461f0c96ea51af4313c73e40db0959040239e2b223f62b04f307ce086e801f  ./scripts/validate-rescue-baseline.mjs
+6c0ef9d3633012ee75dd01140f1bca7f7b3b9ea58a9a0d7a52640e505ddefb53  ./scripts/validate-rescue-baseline.mjs
 131e3de48ca0e1238757be43693b6c7c74a2c4d34f3ab3bd242e080069364240  ./scripts/validate-rescue-gate1-receipt.mjs
 5c2a36059e7d2772e49b523854e6d3748212cb88e709fe74f182d440b73aed21  ./scripts/verify-fastify-v5-compat.mjs
 0384cbfaffdbae64203d8dd78dbee918e597dd14012b643e1a6996719dace316  ./scripts/verify-production-approval.mjs
 40ab7733b677406d8bb725f054c05b97afe2b5a5dae5a7ca28289c16968f7c9e  ./scripts/verify-production-release.mjs
 810062202873197ed0128b2ee3382ed8381d7bdae4ddaa83fabefb9f03b8b5d1  ./scripts/verify-secure-fastify-stack.mjs
-b99349ffcb6e423951b02d9556f812a1be918bf265b73045605cbe66aad622d8  ./scripts/verify-secure-next-stack.mjs
+fc3ffc1bbac1f2d6fa4d25f0ec692585b6fdb7e9aa4deafccddcbc86c3ec2033  ./scripts/verify-secure-next-stack.mjs
 6e666bb8a941a4993c1a88d5fd09a1a12c739b8175744afb45d5a4e95671e4eb  ./scripts/verify-tls-terminator.mjs
 c32c4872aa944359d3311192a177f338c086d7685edd62c3a6eb69a167a441ea  ./scripts/verify-uat-baseline.mjs
-b748831c44799da6e978cab51e0abf7b906f4cce9b5173894761c7b6ba0029f7  ./scripts/verify-web-framework-contract-sync.mjs
+264b7356b771deaf14cdd9b04d130e94150bf68df673683573e233d386ec71e2  ./scripts/verify-web-framework-contract-sync.mjs
 1511e925c226270443ec32fa596aaff5220a804ca0b0cedabd707e9bd0faf773  ./scripts/webhook-receiver-in-container.mjs
 06a020a34ddf8ababa8a30348834cc401092de2c65516afe6e1397d6ed1c7af4  ./scripts/wedged-receiver.mjs
 5ed1fee62105fb6e1d92c783516086aa8cee6c4e4d0f444498788d82dc67b1d4  ./src/admin-operations/admin-api-keys.controller.ts
@@ -1162,7 +1162,7 @@ e9ebcf234850023bd757f00e2cdc07aec5edec5060ea1e6c65b5e10e51d54df8  ./test/module-
 b3a314ae91bfd3de04cb590f1b77486f87ecb96652a9b1aa496a8753c8d3248d  ./test/module-10-telemetry-widget-query-integration.contract.spec.ts
 75d321e972faf96422707310ee664e18492dfea63e14448c1febbd24ad2e8f73  ./test/module-10-user-web-dynamic-dashboard.contract.spec.ts
 41363008a96f6b58223c4e45d3a9325598f530b3656199447db2b5158f37944b  ./test/module-10-user-web-session-refresh.spec.ts
-9183abbb170e0c0c31923c4e4a90e0f4213a28b69427e78f921cc696c681f49c  ./test/module-10-web-workspace-design-system-foundation.contract.spec.ts
+fb589f7b6d9d3a7fe922badb737347ffd71481d4d5ef5e23e4fd5637baae80f2  ./test/module-10-web-workspace-design-system-foundation.contract.spec.ts
 9a41f501ca0e98f7b5ef1ca8aa4dabdd9f2e7b2e58c39ba2827370218fa0e07a  ./test/module-10-widget-resolution.contract.spec.ts
 4178f4b1a959a004f353a6a4dd9474cd0a7f5237f5ff9a176cb738f548399641  ./test/module-11-automation-action-state-transition-foundation.contract.spec.ts
 7cef1238244ef0475576c036fecb7a113918c30cdd1de7bc93a2d0cce0d5a512  ./test/module-11-automation-command-dispatch-foundation-implementation.contract.spec.ts
