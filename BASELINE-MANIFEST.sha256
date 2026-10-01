@@ -683,7 +683,7 @@ d63324696a8c14fae4a519d3728c24c418a2c348367634f60baef6c9b47e0745  ./scripts/run-
 6ee8de5ac0861ec695d4d1e59e71356cdeff62579a1fee77337b197c0d8b3c8a  ./scripts/self-test-fastify-v5-compat.mjs
 5daa33992c827de675b4b71b743e265a68ee017f1bbfd0944762857e8cd84b3a  ./scripts/self-test-gitignore-source-scope.mjs
 040348fff39c047a832542d420cb15063ec157c46d8899f4b451b7f3304c6899  ./scripts/self-test-production-approval-receipt.mjs
-1250ef2b2cbda1e49504bb13237e926f5f50fff888f004bbc97d9fb41e0d5f5d  ./scripts/self-test-rescue-acceptance-runner.mjs
+f0c58e76f5de82de0491af6a15ff8b47902ec140e3b318cffdf4c7bb9f20a85b  ./scripts/self-test-rescue-acceptance-runner.mjs
 da6b961aa48fa715483ea6c686da3e58b151f7f62d363e73c8b247875187403a  ./scripts/self-test-rescue-failure-summary.mjs
 f6ec81a13cef553e7cbf44149210b65608a97a651e42cd4c440b3e79d1f1c91a  ./scripts/self-test-rescue-gate1-validator.mjs
 d6a9b09621f704eef464a0d005ba40db1311851610a9788fc7cc5f16afefa1cc  ./scripts/self-test-rescue-github-ci.mjs

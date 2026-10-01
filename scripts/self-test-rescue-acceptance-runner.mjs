@@ -125,6 +125,19 @@ async function startServices() {
       response.writeHead(404).end();
     }),
   );
+  // A media runtime stub, because the full runtime scope now includes one. Added rather than letting
+  // the probe skip: a fixture that omits a service the product now requires cannot catch a regression
+  // in that service's readiness row, and the omission first surfaced as a hard failure here.
+  const media = await listen(
+    http.createServer((request, response) => {
+      if (request.url === '/api') {
+        response.writeHead(200, { 'content-type': 'application/json' });
+        response.end(JSON.stringify({ version: 'fixture-go2rtc' }));
+        return;
+      }
+      response.writeHead(404).end();
+    }),
+  );
   const api = await listen(
     http.createServer((request, response) => {
       if (request.url === '/health/ready') {
@@ -135,7 +148,7 @@ async function startServices() {
       response.writeHead(404).end();
     }),
   );
-  return { postgres, redis, mqtt, emqx, api };
+  return { postgres, redis, mqtt, emqx, media, api };
 }
 
 function writeEnv(ports, mqttBrokerPort = ports.mqtt) {
@@ -159,6 +172,9 @@ function writeEnv(ports, mqttBrokerPort = ports.mqtt) {
     'EMQX_DASHBOARD_PASSWORD=fixture-dashboard-secret',
     `EMQX_API_URL=http://127.0.0.1:${ports.emqx}`,
     `API_PROBE_URL=http://127.0.0.1:${ports.api}/health/ready`,
+    // The control port, not the WebRTC port. go2rtc serves `/api` on one and SDP on the other, and
+    // pointing the readiness probe at the WebRTC port reports "unreachable" against a healthy runtime.
+    `GO2RTC_URL=http://127.0.0.1:${ports.media}`,
     '',
   ].join('\n');
   writeFileSync(path.join(fixture, '.env'), env);
