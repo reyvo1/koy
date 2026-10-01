@@ -125,11 +125,46 @@ function writeEnv(ports, options = {}) {
   writeFileSync(path.join(fixture, '.env'), env);
 }
 
+// The endpoints the fixture's own `.env` is responsible for. These are stripped from the checker's
+// environment so nothing ambient can answer a probe the fixture meant to control.
+//
+// This is not hygiene, it is the whole test. The CI `test` job runs real `postgres:16` and
+// `redis:7-alpine` service containers and exports `DATABASE_URL`/`REDIS_URL` at job level. Inheriting
+// those made the *bad* fixture connect to real PostgreSQL and Redis instead of its own broken stubs:
+// the SSLRequest got a real `N` and PING got a real `+PONG`, so both rows PASS. The fixture then
+// asserted nothing useful about postgres or redis rejection and the gate stayed green while testing
+// nothing -- a negative fixture that cannot fail is worse than no fixture, because it looks like
+// coverage.
+//
+// Locally there is no such job-level variable, which is why this passed 10/10 here and failed on every
+// CI run. A test whose result depends on the host's environment is not a test.
+const FIXTURE_OWNED_ENV = [
+  'DATABASE_URL',
+  'TEST_DATABASE_URL',
+  'REDIS_URL',
+  'MQTT_BROKER_URL',
+  'MQTT_USERNAME',
+  'MQTT_PASSWORD',
+  'RESCUE_MQTT_HOST_PORT',
+  'RESCUE_MQTT_BROKER_URL',
+  'EMQX_API_URL',
+  'EMQX_DASHBOARD_USERNAME',
+  'EMQX_DASHBOARD_PASSWORD',
+  'API_PROBE_URL',
+  'GO2RTC_URL',
+];
+
+function fixtureOwnedEnv() {
+  const child = { ...process.env };
+  for (const key of FIXTURE_OWNED_ENV) delete child[key];
+  return child;
+}
+
 function runChecker(scope = 'full') {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [checker, '--strict', `--probe-scope=${scope}`, '--json', '--env=.env'], {
       cwd: fixture,
-      env: process.env,
+      env: fixtureOwnedEnv(),
       windowsHide: true,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
