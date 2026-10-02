@@ -17,6 +17,7 @@ model Tenant {
   deviceGroups DeviceGroup[]
   telemetry   Telemetry[]
   telemetryRollups TelemetryRollup[]
+  regions                  Region[]
   commands    DeviceCommand[]
   memberships Membership[]
   automations          Automation[]
@@ -210,6 +211,8 @@ model Device {
   @@index([ownerId])
   @@map("devices")
   deviceLocations          DeviceLocation[]
+  region                   Region?                 @relation(fields: [regionId], references: [id])
+  regionId                 String?
 }
 
 model DeviceCredential {
@@ -578,6 +581,25 @@ enum DeviceHealth {
   DEGRADED
   UNHEALTHY
   OFFLINE
+}
+
+/// A deployment region a tenant's devices actually live in. `regionCode` is the platform's stable handle
+/// for it; `isActive` is what makes the list authoritative, so a decommissioned region stops being
+/// assignable rather than lingering as an option in a picker.
+model Region {
+  id           String   @id @default(uuid())
+  regionCode   String   @unique
+  displayName  String
+  timezone     String
+  isActive     Boolean  @default(true)
+  tenants      Tenant[]
+  devices      Device[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // The rest of the schema names its tables in lower case; without this Prisma would map the model to a
+  // table literally called `Region` and every query would fail against the migrated `regions` table.
+  @@map("regions")
 }
 
 /// How much attention a device needs soon. NOT_ESTABLISHED is the honest default: too few observations to

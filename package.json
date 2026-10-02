@@ -147,7 +147,8 @@
     "anomaly:probe": "ts-node --transpile-only scripts/probe-anomaly-detection.ts",
     "health:probe": "ts-node --transpile-only scripts/probe-device-health.ts",
     "risk:probe": "ts-node --transpile-only scripts/probe-device-risk.ts",
-    "energy:probe": "ts-node --transpile-only scripts/probe-energy-intelligence.ts"
+    "energy:probe": "ts-node --transpile-only scripts/probe-energy-intelligence.ts",
+    "region:probe": "ts-node --transpile-only scripts/probe-region-boundaries.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

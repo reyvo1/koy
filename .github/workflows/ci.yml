@@ -391,6 +391,14 @@ jobs:
         run: |
           npm run retention:probe
 
+      - name: Wave 12 region boundaries
+        timeout-minutes: 10
+        # Also the only gate for the regions table, its seeded row, and the foreign key on devices.regionId.
+        # A fake Prisma cannot show that the migration created them, nor that the seeded region is the one
+        # this platform actually runs in.
+        run: |
+          npm run region:probe
+
       - name: Wave 11 energy intelligence
         timeout-minutes: 10
         # Reads the Wave 10 rollups through a tenant-scoped join. A fake Prisma cannot show that the join

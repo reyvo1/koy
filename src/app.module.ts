@@ -23,6 +23,7 @@ import { AdminOperationsModule } from './admin-operations/admin-operations.modul
 import { AutomationModule } from './automation/automation.module';
 import { NotificationModule } from './notification/notification.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { RegionModule } from './region/region.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { OrgModule } from './org/org.module';
 import { OtaModule } from './ota/ota.module';
@@ -68,6 +69,7 @@ import { SceneModule } from './scene/scene.module';
     IntegrationsModule,
     OrgModule,
     AnalyticsModule,
+    RegionModule,
     AdminOperationsModule,
     MqttModule,
     TelemetryModule,

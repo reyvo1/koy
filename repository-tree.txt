@@ -501,6 +501,7 @@ docs/phoenix/adr/ADR-005-device-groups-additive.md
 docs/phoenix/adr/ADR-006-user-room-centric-accessible-space-read-model.md
 docs/phoenix/adr/ADR-007-device-technical-evidence-and-user-analytics-alert-read-models.md
 docs/phoenix/adr/ADR-008-platform-observability-read-models.md
+docs/phoenix/adr/ADR-009-region-boundaries.md
 docs/phoenix/phoenix-doctor.ps1
 docs/product-vision.md
 docs/production-configuration.md
@@ -605,6 +606,7 @@ prisma/migrations/20261001140000_device_location_tenant_history/migration.sql
 prisma/migrations/20261002000000_wave10_telemetry_rollups/migration.sql
 prisma/migrations/20261002120000_wave11_device_health/migration.sql
 prisma/migrations/20261002150000_wave11_device_risk/migration.sql
+prisma/migrations/20261002200000_wave12_region_boundaries/migration.sql
 prisma/migrations/migration_lock.toml
 prisma/schema.prisma
 prisma/seed.ts
@@ -656,6 +658,7 @@ scripts/probe-noc-operations.mts
 scripts/probe-notification-cleanup.sql
 scripts/probe-notification-writers.py
 scripts/probe-public-api-sdk.mts
+scripts/probe-region-boundaries.ts
 scripts/probe-saved-reports-cleanup.sql
 scripts/probe-saved-reports.mts
 scripts/probe-telemetry-retention.ts
@@ -1027,6 +1030,9 @@ src/redis/redis-lifecycle.service.spec.ts
 src/redis/redis-lifecycle.service.ts
 src/redis/redis.module.spec.ts
 src/redis/redis.module.ts
+src/region/region-assignment.service.spec.ts
+src/region/region-assignment.service.ts
+src/region/region.module.ts
 src/scene/scene-domain.validator.spec.ts
 src/scene/scene-domain.validator.ts
 src/scene/scene-execution.service.spec.ts
@@ -1255,6 +1261,7 @@ test/wave11-device-health-scoring.contract.spec.ts
 test/wave11-device-risk-forecasting.contract.spec.ts
 test/wave11-energy-intelligence.contract.spec.ts
 test/wave11-telemetry-anomaly-detection.contract.spec.ts
+test/wave12-region-boundaries.contract.spec.ts
 test/wave7-mobile-notification-parity.contract.spec.ts
 test/wave7-mobile-settings-parity.contract.spec.ts
 test/wave7-technician-commissioning-logs.contract.spec.ts
