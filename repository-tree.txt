@@ -627,6 +627,7 @@ scripts/lib/wave3-sim-core.mjs
 scripts/manage-baseline-manifest.mjs
 scripts/manage-module-state.mjs
 scripts/manage-rescue-local-runtime.mjs
+scripts/probe-anomaly-detection.ts
 scripts/probe-billing-cleanup.sql
 scripts/probe-billing-cycle.py
 scripts/probe-camera-cleanup.sql
@@ -759,6 +760,8 @@ src/analytics/accessible-analytics.service.ts
 src/analytics/analytics-ingestion.service.spec.ts
 src/analytics/analytics-ingestion.service.ts
 src/analytics/analytics.module.ts
+src/analytics/telemetry-anomaly-detector.service.spec.ts
+src/analytics/telemetry-anomaly-detector.service.ts
 src/app.controller.spec.ts
 src/app.controller.ts
 src/app.module.ts
@@ -1237,6 +1240,7 @@ test/tenant-workspace-widget-readings.contract.spec.ts
 test/testing-strategy.contract.spec.ts
 test/wave-02-core-runtime-closure-invariants.contract.spec.ts
 test/wave10-telemetry-retention.contract.spec.ts
+test/wave11-telemetry-anomaly-detection.contract.spec.ts
 test/wave7-mobile-notification-parity.contract.spec.ts
 test/wave7-mobile-settings-parity.contract.spec.ts
 test/wave7-technician-commissioning-logs.contract.spec.ts

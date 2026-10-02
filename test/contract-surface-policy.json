@@ -140,7 +140,6 @@
     "test/wave9-device-location.contract.spec.ts": "current-state",
     "test/wave9-onvif-media.contract.spec.ts": "current-state",
     "test/wave9-camera-onboarding.contract.spec.ts": "current-state",
-
     "test/mqtt-production-transport-proposal.contract.spec.ts": "historical-evidence",
     "test/mqtt-testing.contract.spec.ts": "stable-contract",
     "test/nginx-tls-terminator.contract.spec.ts": "stable-contract",
@@ -167,7 +166,8 @@
     "test/tenant-workspace-widget-readings.contract.spec.ts": "stable-contract",
     "test/testing-strategy.contract.spec.ts": "historical-evidence",
     "test/wave-02-core-runtime-closure-invariants.contract.spec.ts": "stable-contract",
-    "test/webhook-surface.contract.spec.ts": "stable-contract"
+    "test/webhook-surface.contract.spec.ts": "stable-contract",
+    "test/wave11-telemetry-anomaly-detection.contract.spec.ts": "current-state"
   },
   "historicalStableDocumentOwners": {
     "test/module-10-activation.contract.spec.ts": [

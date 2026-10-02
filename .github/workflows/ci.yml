@@ -391,6 +391,14 @@ jobs:
         run: |
           npm run retention:probe
 
+      - name: Wave 11 anomaly detection
+        timeout-minutes: 10
+        # Also the only gate for the SQL and the enum writes. The unit suite drives a fake Prisma, so it
+        # cannot show that a finding row is accepted by the real schema, or that `evidenceTelemetryId`
+        # resolves back to a telemetry row. Run it against the real database.
+        run: |
+          npm run anomaly:probe
+
       - name: Gate 1 source-bound runtime receipt
         run: |
           npm run rescue:gate1

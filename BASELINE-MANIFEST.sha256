@@ -4,7 +4,7 @@ fd016ab2eb6c5bdd61829cba15bb1ea95b59d1a8252bdbf9a23ee21ba8e8c10b  ./.editorconfi
 d772431114bf446abfb602f416111404206b31a113c8f07014453ed5aa513bc6  ./.eslintrc.cjs
 17b3e3dce96cb969fabf043293e17380873e3b1a43a147506c7731c308085568  ./.eslintrc.js
 50d3c6e4c8c9678cb4963022b108a01df72332c1e5783f90c9deb92550d63efd  ./.gitattributes
-4a5ad2795fc9b92f927fe2311bc72876b0aa0f5585c542a28be840f0cfefca43  ./.github/workflows/ci.yml
+2a4a34766c022e329ac9a0223570a5a2a2393937cdea44ba188aac9b29601a54  ./.github/workflows/ci.yml
 04131227b4ec1dc184359af59d170edc2146f526be7aabd9fbd8308fda0a9cf4  ./.gitignore
 7d2df647f25529bd87500319c41564e032e2be642e565350fa6136d7a1ec4d10  ./.node-version
 7d2df647f25529bd87500319c41564e032e2be642e565350fa6136d7a1ec4d10  ./.nvmrc
@@ -536,7 +536,7 @@ d296e3a0df131f20476c6d8c4ece1af57e861ed63b49659ab468ab3f038bc155  ./ops/systemd/
 23bb220ecf835b2f25caa9dd46b97c266b713dad591f5169df2872534b3844f0  ./ops/systemd/iot-platform-backup.timer
 c16ce529395244a7a5cdd9b4b86902273e232212695edd8c768c8de28cfbe78f  ./ops/systemd/iot-platform.service
 529b16e4fab06d438a8249ffe5e846197a82cf9ea34974ff01ceef63bfeb747b  ./package-lock.json
-286d2c48e6473776eb1326e09038591a93c23d772e463860b987abf7bb24a6a0  ./package.json
+57e6f81181f016463f787a6637d3facb1dd99a65d3e4f6a5174af7982d79b8b8  ./package.json
 a119fdac221907cc9580b940bb96d031ae518f3a3f97dab501bfe3e94cef19d3  ./packages/design-system/package.json
 b63813a336d764f5fd0ecf92cf894829347e0485f5c7bc67cc5000e866c31b41  ./packages/design-system/src/design-system-v2.css
 a2574974c0648838df5a7c81d643ee4be69d72bcec27d3fea940bed763a2692d  ./packages/design-system/src/index.tsx
@@ -627,6 +627,7 @@ e4e98678a050074227e25d7cbe7367dc4064f7e599df076c0db3a61591f21195  ./scripts/lib/
 85f85b2ff3295e27f3cd98acbf35d5e16a95c1555e993d1c8d9e6016f5ff5129  ./scripts/manage-baseline-manifest.mjs
 a3a94cca3d75d0a4bb9f5609fc4004cc1886318e73610a32444e33e908dc4540  ./scripts/manage-module-state.mjs
 b88011344085a26425b890d1f3fdc643dad5bf2c54e03a32faac04a34d4ce919  ./scripts/manage-rescue-local-runtime.mjs
+ec6c41617a6921a663c2aad1a9ae58d885db8c80595fe09df0797d6c75f26b81  ./scripts/probe-anomaly-detection.ts
 bb55fc393d89c6f86bbdf273c3c3d9a815e898ec716b9c93b099b561f14c839b  ./scripts/probe-billing-cleanup.sql
 01bdcea60c1855c22bc0b4111ae9cb5ff2aad98c567e9a5a544d25e6d85efca5  ./scripts/probe-billing-cycle.py
 7ff4cfcb006e568a52f20db017f7bf12dfbf4df560370142271140bb314496a7  ./scripts/probe-camera-cleanup.sql
@@ -758,7 +759,9 @@ afd00d333747a71893fad97fca53faaeba37077f35fd05bad3da00f348a3f669  ./src/analytic
 54e054fefd659015004be72c2e74ddb3f5700c1355cd190f72a89b57ddfd60f5  ./src/analytics/accessible-analytics.service.ts
 5a2cb2ab21102b01250e8b072771e5441b91af58b0c345b1eeaf92e88eba3fd2  ./src/analytics/analytics-ingestion.service.spec.ts
 1a1bc05f0ad80bd145a4e17cb8a2c2d3628897f552d969196ba7b35a089154d1  ./src/analytics/analytics-ingestion.service.ts
-2d7e85dec3296699c0a18a8722f3d2169af11d7141709f42dab074fe30eb8cac  ./src/analytics/analytics.module.ts
+7bec28a4077933ee727acb5285419583bc7eef71b0a36e9207141b9f25d1418b  ./src/analytics/analytics.module.ts
+4af1ffd2b14f8cd228bcdfde9e62077f3e529c7d320e6764857397f23ea4e97e  ./src/analytics/telemetry-anomaly-detector.service.spec.ts
+21fa708aa00681c4ec02b8b0c23f731ea01c38957dbd761de38137ddcda783af  ./src/analytics/telemetry-anomaly-detector.service.ts
 88faf5523fd7f5dae5a6c78be2dd1709eb6c20ee82c64fc399f8a2e8fb767527  ./src/app.controller.spec.ts
 260f889b9e2b69f77be1155348eb345166aec664b3efff6720053c6844a41f28  ./src/app.controller.ts
 2f7b1b2141d48e579078f7989d674390f2786ede30f54b39493efe7d9d75c221  ./src/app.module.ts
@@ -1081,7 +1084,7 @@ d405c1765c5eed10853800a3ad137e936431133bfc230c5b53268be164eb03e0  ./test/admin-w
 a7146c20bcaac9b7334779d528d91b790973fbfcdf9e2f08cd6af18a5dfbc572  ./test/ci-dependency-bootstrap.contract.spec.ts
 f9435954f20b91eca8b0b50f9318d39d121f9b0a8014a216c6df4df0e4f4badd  ./test/client-fetch-mount-safety.contract.spec.ts
 d3178aed893dc29e72dba70fcf5ebb5868c75f7ac8b92e4156516b0047609575  ./test/console-fail-closed-surfaces.contract.spec.ts
-14dd3fd3154f2ff0bbbf5e754e920485a8ce8c1376e192f4595799690e84e281  ./test/contract-surface-policy.json
+aef234679298d95e0734ae98d36e65fa4a5c223cc38f1bba6354ad5155b251d4  ./test/contract-surface-policy.json
 f89733d829433e0fdb0cd0bde0ba37d1392376bbd0b7292e6b36cb30fb50abb9  ./test/credential-column-exposure.contract.spec.ts
 ef693928a55b95aaf66fa09673f6cae0ea63f4214bd56d69eb5a6bc5193dd131  ./test/database-testing.contract.spec.ts
 c4c2d251b73610910aff95bc0cfb4954fb1f3934e96969b81136da5610f9f6a7  ./test/demo-seed-reentry.contract.spec.ts
@@ -1237,6 +1240,7 @@ fe9c813aa001ff118064dbad1c519e00be63215784eacbf4383aacf8dfe79701  ./test/telemet
 03092111361921e91738158f250ac09e1c849902b114f312fc67b573391b7449  ./test/testing-strategy.contract.spec.ts
 67ea90b786dc829a8538f3734ae0ac3bb710f4b208c6d96a28797d15e6c6681e  ./test/wave-02-core-runtime-closure-invariants.contract.spec.ts
 da89ce0c71385194eb880ab4c158270d2da4d907cd7ea2e80664ad4777b64142  ./test/wave10-telemetry-retention.contract.spec.ts
+d64677b7eb1a2baed441c95351281614e685ea32de1d68dd9a119a2dbdbdaeda  ./test/wave11-telemetry-anomaly-detection.contract.spec.ts
 4787d2554f2d2e9af44fafd8d42f335b8930d4de40674df25b44a00eff6e1b49  ./test/wave7-mobile-notification-parity.contract.spec.ts
 0d6a59d85dd06956dd5a63155ea681910750de26f3bb5a482c85c51dafca750b  ./test/wave7-mobile-settings-parity.contract.spec.ts
 6de3a198b835bc19350099570f3446ea574b0482597adb6645117f2f485d147e  ./test/wave7-technician-commissioning-logs.contract.spec.ts
@@ -1297,4 +1301,4 @@ d526784499ba2f416a3fca603acb5dd534fb7450580e048a80abcba43f9ece63  ./tools/redis-
 0543e915f75a5ecc6acceb422f4bebbac2e6a4ca6a77c3b8a031191884d8996c  ./tsconfig.build.json
 7256486d18986f5c8b6c0d1548e30a2cdf8dfb0c4d1fb27e5dffd081ee67fa98  ./tsconfig.jest.json
 fb2278ad89fcdbeb387aa4a8e0f3c550b9ffd464d1ce83b2c2aee1ff72ddc14c  ./tsconfig.json
-07f96702a41e18940cbf0cb09f9b568018ed5a5ec82c1b738d76ed0503505c9f  ./repository-tree.txt
+b1a5125ff5340e9fed8f9de20a6f853c37e96fc71b51ab5ff5721e39c5ab69ee  ./repository-tree.txt
