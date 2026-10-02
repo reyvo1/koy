@@ -153,7 +153,8 @@
     "twin:probe": "ts-node --transpile-only scripts/probe-device-twin.ts",
     "crossregion:probe": "ts-node --transpile-only scripts/probe-cross-region-operations.ts",
     "load:gate": "ts-node --transpile-only scripts/run-load-gate.ts",
-    "security:secrets:scan": "node scripts/run-secret-scan.mjs"
+    "security:secrets:scan": "node scripts/run-secret-scan.mjs",
+    "release:approval:gate:self-test": "node scripts/self-test-production-approval-gate.mjs"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

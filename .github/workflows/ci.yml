@@ -91,6 +91,7 @@ jobs:
           npm run rescue:runtime:self-test
           npm run rescue:gate1-validator:self-test
           npm run release:approval:self-test
+          npm run release:approval:gate:self-test
 
       - name: Verify Wave 2 core runtime contract
         run: npm run wave2:core-runtime:self-test

@@ -4,7 +4,7 @@ fd016ab2eb6c5bdd61829cba15bb1ea95b59d1a8252bdbf9a23ee21ba8e8c10b  ./.editorconfi
 d772431114bf446abfb602f416111404206b31a113c8f07014453ed5aa513bc6  ./.eslintrc.cjs
 17b3e3dce96cb969fabf043293e17380873e3b1a43a147506c7731c308085568  ./.eslintrc.js
 50d3c6e4c8c9678cb4963022b108a01df72332c1e5783f90c9deb92550d63efd  ./.gitattributes
-403785f287e5875c4829d2b8a2bc4fa23e0edd5af211f8126e8207eb87c51592  ./.github/workflows/ci.yml
+d78ad9f51ae6b23320bb2fde9780ce57465968be75a173771c7701a8fd9ce1bf  ./.github/workflows/ci.yml
 04131227b4ec1dc184359af59d170edc2146f526be7aabd9fbd8308fda0a9cf4  ./.gitignore
 7d2df647f25529bd87500319c41564e032e2be642e565350fa6136d7a1ec4d10  ./.node-version
 7d2df647f25529bd87500319c41564e032e2be642e565350fa6136d7a1ec4d10  ./.nvmrc
@@ -544,7 +544,7 @@ d296e3a0df131f20476c6d8c4ece1af57e861ed63b49659ab468ab3f038bc155  ./ops/systemd/
 23bb220ecf835b2f25caa9dd46b97c266b713dad591f5169df2872534b3844f0  ./ops/systemd/iot-platform-backup.timer
 c16ce529395244a7a5cdd9b4b86902273e232212695edd8c768c8de28cfbe78f  ./ops/systemd/iot-platform.service
 b9b726b3f1dd579aa600faa6c255f4dac951acb42c246a0a2f45f69067f54cd3  ./package-lock.json
-f2619859bfdfde3d1004681a02b89599674c06ebde01fe0d046930fbcf773744  ./package.json
+97574e257afa3b87defe9a08098d27fff12123ec7cf364230e2020b885972f7d  ./package.json
 a119fdac221907cc9580b940bb96d031ae518f3a3f97dab501bfe3e94cef19d3  ./packages/design-system/package.json
 b63813a336d764f5fd0ecf92cf894829347e0485f5c7bc67cc5000e866c31b41  ./packages/design-system/src/design-system-v2.css
 a2574974c0648838df5a7c81d643ee4be69d72bcec27d3fea940bed763a2692d  ./packages/design-system/src/index.tsx
@@ -707,6 +707,7 @@ b499e0dd8d5b78193db1ea5738632fb3215565e91a49c57346c9135514ba6985  ./scripts/seed
 54a770266b30dc979960944999afc30f77bcc6b4f6d497c9ad0c40db796a9cc9  ./scripts/self-test-emqx-webhooks.mjs
 6ee8de5ac0861ec695d4d1e59e71356cdeff62579a1fee77337b197c0d8b3c8a  ./scripts/self-test-fastify-v5-compat.mjs
 5daa33992c827de675b4b71b743e265a68ee017f1bbfd0944762857e8cd84b3a  ./scripts/self-test-gitignore-source-scope.mjs
+82ba07e9553a5c2598a83d7340812eca4470e59766e83096f2dbc0aafa446883  ./scripts/self-test-production-approval-gate.mjs
 040348fff39c047a832542d420cb15063ec157c46d8899f4b451b7f3304c6899  ./scripts/self-test-production-approval-receipt.mjs
 f0c58e76f5de82de0491af6a15ff8b47902ec140e3b318cffdf4c7bb9f20a85b  ./scripts/self-test-rescue-acceptance-runner.mjs
 da6b961aa48fa715483ea6c686da3e58b151f7f62d363e73c8b247875187403a  ./scripts/self-test-rescue-failure-summary.mjs
@@ -1349,4 +1350,4 @@ d526784499ba2f416a3fca603acb5dd534fb7450580e048a80abcba43f9ece63  ./tools/redis-
 0543e915f75a5ecc6acceb422f4bebbac2e6a4ca6a77c3b8a031191884d8996c  ./tsconfig.build.json
 7256486d18986f5c8b6c0d1548e30a2cdf8dfb0c4d1fb27e5dffd081ee67fa98  ./tsconfig.jest.json
 fb2278ad89fcdbeb387aa4a8e0f3c550b9ffd464d1ce83b2c2aee1ff72ddc14c  ./tsconfig.json
-00fdf5dfba0138decfa54eba52e11d3fc8646dba8a48b35bc0cc5b1a53506de6  ./repository-tree.txt
+1cd26edaf471a6e87b1da2a5cdb639e7a96efe343eba955febdce33ac458ae78  ./repository-tree.txt
