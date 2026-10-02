@@ -15,7 +15,8 @@ import { CrossRegionOperationsService } from './cross-region-operations.service'
   controllers: [AccessibleAnalyticsController],
   providers: [AnalyticsIngestionService, AccessibleAnalyticsService, TelemetryAnomalyDetector, DeviceHealthScoringService,
     DeviceRiskForecastingService,
-    EnergyIntelligenceService],
+    EnergyIntelligenceService,
+    CrossRegionOperationsService],
   exports: [
     AnalyticsIngestionService,
     AccessibleAnalyticsService,

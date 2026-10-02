@@ -40,8 +40,15 @@ Smart Hotel / TAMASYA is intentionally outside Wave 1–13 and starts only after
 
 - Wave 1: **CLOSED / GREEN**.
 - Wave 2: **CLOSED / GREEN** after V9 heavy GitHub acceptance.
-- Wave 3: **ACTIVE — ESP32 + OTA Automated Simulation**.
-- Waves 4–13: not active; do not pull their implementation into Wave 3 unless required to preserve a Wave 3 contract.
+- Wave 3: **CLOSED / GREEN** — ESP-IDF compile, QEMU boot and OTA simulation all run on every push. Physical
+  ESP32/HIL remains unproven and is deferred to Wave 13; see the production boundary below.
+- Waves 4–11: **CLOSED / GREEN**, each slice landed with a live PostgreSQL probe and a green GitHub run.
+- Wave 12: **IMPLEMENTED, verifying on the runner** — multi-region boundaries (ADR-009), edge gateway
+  identity and attribution (ADR-010), device twin reconciliation (ADR-011), and cross-region operations
+  reporting (ADR-012). These report and record; they do not fail over, route, or bridge, and each ADR says so
+  explicitly.
+- Wave 13: not started. It requires physical hardware evidence and an explicit production approval, neither of
+  which can be produced by a green pipeline.
 
 ## Production boundary
 
