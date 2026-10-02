@@ -151,7 +151,8 @@
     "region:probe": "ts-node --transpile-only scripts/probe-region-boundaries.ts",
     "edge:probe": "ts-node --transpile-only scripts/probe-edge-gateway.ts",
     "twin:probe": "ts-node --transpile-only scripts/probe-device-twin.ts",
-    "crossregion:probe": "ts-node --transpile-only scripts/probe-cross-region-operations.ts"
+    "crossregion:probe": "ts-node --transpile-only scripts/probe-cross-region-operations.ts",
+    "load:gate": "ts-node --transpile-only scripts/run-load-gate.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
@@ -184,12 +185,14 @@
     "@nestjs/cli": "11.0.24",
     "@nestjs/schematics": "11.1.0",
     "@nestjs/testing": "11.2.3",
+    "@types/autocannon": "^7.12.7",
     "@types/jest": "^29.5.2",
     "@types/node": "^20.3.1",
     "@types/supertest": "^6.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "aedes": "1.1.1",
+    "autocannon": "^8.0.0",
     "eslint": "^8.42.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",

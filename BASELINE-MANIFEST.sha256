@@ -4,7 +4,7 @@ fd016ab2eb6c5bdd61829cba15bb1ea95b59d1a8252bdbf9a23ee21ba8e8c10b  ./.editorconfi
 d772431114bf446abfb602f416111404206b31a113c8f07014453ed5aa513bc6  ./.eslintrc.cjs
 17b3e3dce96cb969fabf043293e17380873e3b1a43a147506c7731c308085568  ./.eslintrc.js
 50d3c6e4c8c9678cb4963022b108a01df72332c1e5783f90c9deb92550d63efd  ./.gitattributes
-af6219402d992dc6c20c7cfda37867fbc78218b6034e139bd813220b4e68ac91  ./.github/workflows/ci.yml
+6fe5a6af2f601a8056197a004b8f7b476dac27f8e93879588fb1b4c5ab78880c  ./.github/workflows/ci.yml
 04131227b4ec1dc184359af59d170edc2146f526be7aabd9fbd8308fda0a9cf4  ./.gitignore
 7d2df647f25529bd87500319c41564e032e2be642e565350fa6136d7a1ec4d10  ./.node-version
 7d2df647f25529bd87500319c41564e032e2be642e565350fa6136d7a1ec4d10  ./.nvmrc
@@ -391,6 +391,7 @@ ccd2a17f28b9205adc19fbf05b2a9389dc24115b8ce40b6d958777af90bea7a1  ./apps/user-we
 7794f4a44d2c31c1f33e91477a00025f4e62687a88946b7c17f58f26257ef2e8  ./apps/user-web/public/icon.png
 38ee09e8ee48c7e75cab63bd076513018ca07b655295664d07c107e408606495  ./apps/user-web/tsconfig.json
 363009d6a0cb6d8442f0fb60227be9447b2192609f06a4438966635002b7f4b2  ./chat-session.md
+08395048b09eab1f15b7264df8b76ae8b4e99634c0f516aa3ce775042bd1859e  ./config/performance-budget.json
 57e9cc3083ac5d0b99e00ed9afa5f740d958130437c0d6a1b52d7ed89ad04fb5  ./docker-compose.rescue.yml
 12b78207cb3ce4d59fefc85abb8fb5fe7412c497252d1b0bc61a189996b84f30  ./docker-compose.yml
 8d1dad056193039e50a9dfbc43cabeecff25481cbc11b015e8bd2151be5560af  ./docs/ENTERPRISE-ACCEPTANCE-EVIDENCE.md
@@ -539,8 +540,8 @@ a9906963ca94d27cd8f6d68726bd5bc55acf6bac9fc14d1540770521ec6b67e2  ./ops/scripts/
 d296e3a0df131f20476c6d8c4ece1af57e861ed63b49659ab468ab3f038bc155  ./ops/systemd/iot-platform-backup.service
 23bb220ecf835b2f25caa9dd46b97c266b713dad591f5169df2872534b3844f0  ./ops/systemd/iot-platform-backup.timer
 c16ce529395244a7a5cdd9b4b86902273e232212695edd8c768c8de28cfbe78f  ./ops/systemd/iot-platform.service
-529b16e4fab06d438a8249ffe5e846197a82cf9ea34974ff01ceef63bfeb747b  ./package-lock.json
-aa17b33ea1b55cf5d063d37c3edd2dcb5d27b3e42f75271bc1c55f794176b0aa  ./package.json
+c140530514a228c2d43e1d7b4db52689f60595861b21163b712504dd440a81f6  ./package-lock.json
+cbb435e3b534dd43e9f431de092e0af58433e91e94f90690050355986ef29174  ./package.json
 a119fdac221907cc9580b940bb96d031ae518f3a3f97dab501bfe3e94cef19d3  ./packages/design-system/package.json
 b63813a336d764f5fd0ecf92cf894829347e0485f5c7bc67cc5000e866c31b41  ./packages/design-system/src/design-system-v2.css
 a2574974c0648838df5a7c81d643ee4be69d72bcec27d3fea940bed763a2692d  ./packages/design-system/src/index.tsx
@@ -680,6 +681,7 @@ a675e18083123ee29002053a46c2e24fc1bccda3629754b1775cf07a435009ed  ./scripts/run-
 784a6c62530e18c1d2fdd7f70be4a6415bd21b9ff46a2c272b5731834a2b86b7  ./scripts/run-capability-template-probe.sh
 ce4571d73f8a8a798bb9e2e2091f3a6affcf07b0ede9a520acb7de471f7e2bd1  ./scripts/run-device-location-probe.sh
 cec5ce6fd05d6ab74ad32c42ee6b4ed8b07b68576669a3ccc836e3b01439e853  ./scripts/run-device-maintenance-probe.sh
+57bc41ccdc1d68ec525f9a1e18da0c03131cead983692ce41800da49ddfe860c  ./scripts/run-load-gate.ts
 f1d8ec2e38ea1e69d60dd0573a0618b1782e33d0fa74d4ae7813a2edf3a1b650  ./scripts/run-media-probe.sh
 1d8dff0792ceada7cccd03241489efd8eb539af6ac2be604a30ed3408f8058a3  ./scripts/run-mobile-notification-probe.sh
 918221943956fb885e28a11316f32e90c5ac3fcc77fccc470fb580338d04befc  ./scripts/run-mqtt-management-probe.sh
@@ -1117,7 +1119,7 @@ d405c1765c5eed10853800a3ad137e936431133bfc230c5b53268be164eb03e0  ./test/admin-w
 a7146c20bcaac9b7334779d528d91b790973fbfcdf9e2f08cd6af18a5dfbc572  ./test/ci-dependency-bootstrap.contract.spec.ts
 f9435954f20b91eca8b0b50f9318d39d121f9b0a8014a216c6df4df0e4f4badd  ./test/client-fetch-mount-safety.contract.spec.ts
 d3178aed893dc29e72dba70fcf5ebb5868c75f7ac8b92e4156516b0047609575  ./test/console-fail-closed-surfaces.contract.spec.ts
-1f2bfe248e35b4417ad77e2a03c77db132efcef0d38fb3a23918cf737765a0cb  ./test/contract-surface-policy.json
+66d81511b99b77707fd9329b4f10772f0dd0bccdb35c7202ee2e2e9474cbab00  ./test/contract-surface-policy.json
 f89733d829433e0fdb0cd0bde0ba37d1392376bbd0b7292e6b36cb30fb50abb9  ./test/credential-column-exposure.contract.spec.ts
 ef693928a55b95aaf66fa09673f6cae0ea63f4214bd56d69eb5a6bc5193dd131  ./test/database-testing.contract.spec.ts
 c4c2d251b73610910aff95bc0cfb4954fb1f3934e96969b81136da5610f9f6a7  ./test/demo-seed-reentry.contract.spec.ts
@@ -1281,6 +1283,7 @@ d64677b7eb1a2baed441c95351281614e685ea32de1d68dd9a119a2dbdbdaeda  ./test/wave11-
 14843653a79d283ab51fed16e571a7d17ab26837f7240de192c9582beaab7259  ./test/wave12-device-twin.contract.spec.ts
 7217f8ce95f04a8a475583bf408dc15f8d1cc64ff806092c495f8edcef325cc6  ./test/wave12-edge-gateway.contract.spec.ts
 8b300156d2b856295d30de97e9c436b581a3cf86344797dd8c5ad72e6897ab91  ./test/wave12-region-boundaries.contract.spec.ts
+70c5d76180ff42b6237a95c67795abdc83f86b40a1e71ca78254cbdcacab6d23  ./test/wave13-load-gate.contract.spec.ts
 4787d2554f2d2e9af44fafd8d42f335b8930d4de40674df25b44a00eff6e1b49  ./test/wave7-mobile-notification-parity.contract.spec.ts
 0d6a59d85dd06956dd5a63155ea681910750de26f3bb5a482c85c51dafca750b  ./test/wave7-mobile-settings-parity.contract.spec.ts
 6de3a198b835bc19350099570f3446ea574b0482597adb6645117f2f485d147e  ./test/wave7-technician-commissioning-logs.contract.spec.ts
@@ -1341,4 +1344,4 @@ d526784499ba2f416a3fca603acb5dd534fb7450580e048a80abcba43f9ece63  ./tools/redis-
 0543e915f75a5ecc6acceb422f4bebbac2e6a4ca6a77c3b8a031191884d8996c  ./tsconfig.build.json
 7256486d18986f5c8b6c0d1548e30a2cdf8dfb0c4d1fb27e5dffd081ee67fa98  ./tsconfig.jest.json
 fb2278ad89fcdbeb387aa4a8e0f3c550b9ffd464d1ce83b2c2aee1ff72ddc14c  ./tsconfig.json
-8b963aa615a459002abc31732bc9967e46232137bbf0344bad44203c3b461e8e  ./repository-tree.txt
+4a29ada6223b1d59518cb965abff61514263eb0308d5e9c85675966cdde81e8a  ./repository-tree.txt

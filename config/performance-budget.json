@@ -1,0 +1,31 @@
+{
+  "$comment": [
+    "Wave 13 performance budgets. Every number here is a CLAIM this platform is asserting, not a measured",
+    "baseline -- the first load gate run produces the measurement, and these values must then be revised to",
+    "match reality or the platform tightened. A budget nobody chose is not a budget; that is why this file",
+    "exists instead of defaults in code.",
+    "",
+    "Targets are deliberately cheap endpoints: a load gate that hammers a database write path measures the",
+    "load generator more than the platform. If these hold, the interesting paths are worth measuring next."
+  ],
+  "scenarios": [
+    {
+      "name": "health endpoint under read load",
+      "target": "/health",
+      "connections": 20,
+      "durationSeconds": 15,
+      "maxP95Ms": 250,
+      "minRequestsPerSecond": 100,
+      "$comment": "Unauthenticated liveness. A p95 above 250ms here means the process is not keeping up at all."
+    },
+    {
+      "name": "API docs served from memory",
+      "target": "/docs",
+      "connections": 10,
+      "durationSeconds": 15,
+      "maxP95Ms": 500,
+      "minRequestsPerSecond": 40,
+      "$comment": "Swagger UI is a static document; this should be trivially fast and catches per-request allocation regressions."
+    }
+  ]
+}

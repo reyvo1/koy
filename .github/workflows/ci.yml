@@ -391,6 +391,16 @@ jobs:
         run: |
           npm run retention:probe
 
+      - name: Wave 13 load gate
+        timeout-minutes: 10
+        # Measures the LIVE rescue API with autocannon and holds it to config/performance-budget.json.
+        # Deliberately not skipped when the target is down: a load gate that quietly passes on an
+        # unreachable API would manufacture performance evidence out of nothing.
+        env:
+          LOAD_TARGET_BASE_URL: http://127.0.0.1:3000
+        run: |
+          npm run load:gate
+
       - name: Wave 12 cross-region operations
         timeout-minutes: 10
         # The only gate for the completeness claim. Only a real join across findings -> devices -> regions

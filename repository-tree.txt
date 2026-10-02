@@ -391,6 +391,7 @@ apps/user-web/postcss.config.mjs
 apps/user-web/public/icon.png
 apps/user-web/tsconfig.json
 chat-session.md
+config/performance-budget.json
 docker-compose.rescue.yml
 docker-compose.yml
 docs/ENTERPRISE-ACCEPTANCE-EVIDENCE.md
@@ -680,6 +681,7 @@ scripts/run-camera-probe.sh
 scripts/run-capability-template-probe.sh
 scripts/run-device-location-probe.sh
 scripts/run-device-maintenance-probe.sh
+scripts/run-load-gate.ts
 scripts/run-media-probe.sh
 scripts/run-mobile-notification-probe.sh
 scripts/run-mqtt-management-probe.sh
@@ -1281,6 +1283,7 @@ test/wave12-cross-region-operations.contract.spec.ts
 test/wave12-device-twin.contract.spec.ts
 test/wave12-edge-gateway.contract.spec.ts
 test/wave12-region-boundaries.contract.spec.ts
+test/wave13-load-gate.contract.spec.ts
 test/wave7-mobile-notification-parity.contract.spec.ts
 test/wave7-mobile-settings-parity.contract.spec.ts
 test/wave7-technician-commissioning-logs.contract.spec.ts
