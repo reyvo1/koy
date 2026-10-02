@@ -394,7 +394,7 @@ ccd2a17f28b9205adc19fbf05b2a9389dc24115b8ce40b6d958777af90bea7a1  ./apps/user-we
 57e9cc3083ac5d0b99e00ed9afa5f740d958130437c0d6a1b52d7ed89ad04fb5  ./docker-compose.rescue.yml
 12b78207cb3ce4d59fefc85abb8fb5fe7412c497252d1b0bc61a189996b84f30  ./docker-compose.yml
 8d1dad056193039e50a9dfbc43cabeecff25481cbc11b015e8bd2151be5560af  ./docs/ENTERPRISE-ACCEPTANCE-EVIDENCE.md
-30e3457cd8fc4f54a27019c34d6a6278635e3284fc0e07aaa7c5fe4f177e61c5  ./docs/ENTERPRISE-WAVE-ROADMAP.md
+13aae8a86134300edf6e4f0a28142d0da22f6238c6ace5f25cb5409c31b7cd07  ./docs/ENTERPRISE-WAVE-ROADMAP.md
 0e57fceaa8e08f2923036d138cbda0d6911038b264471016c9ce5d79a2801839  ./docs/KOMERCIAL-RINGKAS.md
 19dae84216433f106757db87b12bd352ffd948939f81407584b0b8ba61550b0e  ./docs/NIGHT-CHECKPOINT-20260822.md
 582dc68d22f7e101177bfc33e1e245ada639f53e2f667ede95016489ec132999  ./docs/PANDUAN-UI.md
@@ -775,7 +775,7 @@ afd00d333747a71893fad97fca53faaeba37077f35fd05bad3da00f348a3f669  ./src/analytic
 54e054fefd659015004be72c2e74ddb3f5700c1355cd190f72a89b57ddfd60f5  ./src/analytics/accessible-analytics.service.ts
 5a2cb2ab21102b01250e8b072771e5441b91af58b0c345b1eeaf92e88eba3fd2  ./src/analytics/analytics-ingestion.service.spec.ts
 1a1bc05f0ad80bd145a4e17cb8a2c2d3628897f552d969196ba7b35a089154d1  ./src/analytics/analytics-ingestion.service.ts
-5a2a9a0ad434870211b43f4b2f9fb12f430bc312a14e8eecbc368db416420cb6  ./src/analytics/analytics.module.ts
+a197af8edcb828d636921c6d4c13f9530dbdf39637fd91b3d8564681e150ea8f  ./src/analytics/analytics.module.ts
 f718e3722818b9254520f64e51dcde7e882003773f87577165a779577e005463  ./src/analytics/cross-region-operations.service.spec.ts
 8c6c9edd9a162a4d343c7d4171d675c2fe0b2e8118ec0811c209312577793287  ./src/analytics/cross-region-operations.service.ts
 414a99d1f4810d52050c4d4fd3df9d55c3ba3f5100f48180bc5f92d104daebfd  ./src/analytics/device-health-scoring.service.spec.ts
