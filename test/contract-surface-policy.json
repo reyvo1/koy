@@ -173,7 +173,8 @@
     "test/wave11-energy-intelligence.contract.spec.ts": "current-state",
     "test/wave12-region-boundaries.contract.spec.ts": "current-state",
     "test/wave12-edge-gateway.contract.spec.ts": "current-state",
-    "test/wave12-device-twin.contract.spec.ts": "current-state"
+    "test/wave12-device-twin.contract.spec.ts": "current-state",
+    "test/wave12-cross-region-operations.contract.spec.ts": "current-state"
   },
   "historicalStableDocumentOwners": {
     "test/module-10-activation.contract.spec.ts": [

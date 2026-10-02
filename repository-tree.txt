@@ -504,6 +504,7 @@ docs/phoenix/adr/ADR-008-platform-observability-read-models.md
 docs/phoenix/adr/ADR-009-region-boundaries.md
 docs/phoenix/adr/ADR-010-edge-gateway-identity-and-attribution.md
 docs/phoenix/adr/ADR-011-device-twin-reconciliation.md
+docs/phoenix/adr/ADR-012-cross-region-operations-reporting.md
 docs/phoenix/phoenix-doctor.ps1
 docs/product-vision.md
 docs/production-configuration.md
@@ -645,6 +646,7 @@ scripts/probe-capability-restore-demo-fleet.sql
 scripts/probe-capability-template-cleanup.sql
 scripts/probe-capability-template-lifecycle.mts
 scripts/probe-common.sh
+scripts/probe-cross-region-operations.ts
 scripts/probe-device-command-log.py
 scripts/probe-device-health.ts
 scripts/probe-device-location-cleanup.sql
@@ -774,6 +776,8 @@ src/analytics/accessible-analytics.service.ts
 src/analytics/analytics-ingestion.service.spec.ts
 src/analytics/analytics-ingestion.service.ts
 src/analytics/analytics.module.ts
+src/analytics/cross-region-operations.service.spec.ts
+src/analytics/cross-region-operations.service.ts
 src/analytics/device-health-scoring.service.spec.ts
 src/analytics/device-health-scoring.service.ts
 src/analytics/device-risk-forecasting.service.spec.ts
@@ -1273,6 +1277,7 @@ test/wave11-device-health-scoring.contract.spec.ts
 test/wave11-device-risk-forecasting.contract.spec.ts
 test/wave11-energy-intelligence.contract.spec.ts
 test/wave11-telemetry-anomaly-detection.contract.spec.ts
+test/wave12-cross-region-operations.contract.spec.ts
 test/wave12-device-twin.contract.spec.ts
 test/wave12-edge-gateway.contract.spec.ts
 test/wave12-region-boundaries.contract.spec.ts

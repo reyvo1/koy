@@ -8,6 +8,7 @@ import { TelemetryAnomalyDetector } from './telemetry-anomaly-detector.service';
 import { DeviceHealthScoringService } from './device-health-scoring.service';
 import { DeviceRiskForecastingService } from './device-risk-forecasting.service';
 import { EnergyIntelligenceService } from './energy-intelligence.service';
+import { CrossRegionOperationsService } from './cross-region-operations.service';
 
 @Module({
   imports: [PrismaModule, DeviceModule],
@@ -22,6 +23,7 @@ import { EnergyIntelligenceService } from './energy-intelligence.service';
     DeviceHealthScoringService,
     DeviceRiskForecastingService,
     EnergyIntelligenceService,
+    CrossRegionOperationsService,
   ],
 })
 export class AnalyticsModule {}

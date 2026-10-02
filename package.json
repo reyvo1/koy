@@ -150,7 +150,8 @@
     "energy:probe": "ts-node --transpile-only scripts/probe-energy-intelligence.ts",
     "region:probe": "ts-node --transpile-only scripts/probe-region-boundaries.ts",
     "edge:probe": "ts-node --transpile-only scripts/probe-edge-gateway.ts",
-    "twin:probe": "ts-node --transpile-only scripts/probe-device-twin.ts"
+    "twin:probe": "ts-node --transpile-only scripts/probe-device-twin.ts",
+    "crossregion:probe": "ts-node --transpile-only scripts/probe-cross-region-operations.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

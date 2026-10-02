@@ -391,6 +391,14 @@ jobs:
         run: |
           npm run retention:probe
 
+      - name: Wave 12 cross-region operations
+        timeout-minutes: 10
+        # The only gate for the completeness claim. Only a real join across findings -> devices -> regions
+        # can show that an unplaced device makes the rollup report itself incomplete instead of quietly
+        # shrinking the fleet.
+        run: |
+          npm run crossregion:probe
+
       - name: Wave 12 device twin
         timeout-minutes: 10
         # The only gate for STALE and DIVERGENT as real verdicts. A mocked suite can assert a branch was
