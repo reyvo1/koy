@@ -89,4 +89,21 @@ describe('Wave 10 telemetry retention and rollups', () => {
       expect(service).toMatch(/(createdAt: *\{ *lt:|createdAt *<)/);
     });
   });
+  describe('timezone', () => {
+    // Found by deploying to a server whose PostgreSQL runs in Asia/Makassar. `createdAt` is a
+    // `timestamp without time zone` holding UTC, but a bare `${cutoff}` is bound as timestamptz and
+    // PostgreSQL converts it into the session zone first -- 11:00 UTC became 19:00 local, so a live
+    // sample at 11:50 fell inside the window and was rolled up and pruned. The whole suite was green on
+    // a machine running UTC, which is what made this invisible until it reached a real deployment.
+    it('converts every raw bound value from timestamptz into naive UTC', () => {
+      const conversions = service.match(/AT TIME ZONE 'UTC'/g) ?? [];
+      // Four: the cut-off and both bounds of the last-value lookup, plus the bucket epoch.
+      expect(conversions.length).toBe(4);
+    });
+
+    it('compares the raw rows against a converted cut-off, never a bare one', () => {
+      expect(service).not.toMatch(/"createdAt" < \$\{cutoff\}/);
+      expect(service).not.toMatch(/"createdAt" < \$\{bucketEnd\}/);
+    });
+  });
 });

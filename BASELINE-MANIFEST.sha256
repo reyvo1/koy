@@ -1055,7 +1055,7 @@ a088ecacc8c30245e2970e511a4b88af5a32a5ec4170bd8a7e7f98dbfdeaf5ae  ./src/telemetr
 16f590db3bc50fdeba99791bd3907ed2ccb9c84102c3915573de52038ceba720  ./src/telemetry/telemetry-aggregation.service.ts
 36f9d186f255fde2fab56b04437c78de0a802e91c77f57b9b385fc9d21b04529  ./src/telemetry/telemetry-aggregation.spec.ts
 455d4e7ff5d2ddb9675e56721b0021f4c89369c914e11d8d39da41e15372010d  ./src/telemetry/telemetry-retention.service.spec.ts
-4a080de630f19620de7c980ce7f036735dbaed90fa1b27bea13b49b067636d68  ./src/telemetry/telemetry-retention.service.ts
+bab1bcc23f0351774ed62cf7869feaba34609a0600b8a52735de5f343a29361d  ./src/telemetry/telemetry-retention.service.ts
 ae67eda0fd97ea63e8965e2aae63d1566dd86b9279f0f3dfeb1c57be0047d3d4  ./src/telemetry/telemetry-stream.controller.spec.ts
 a82ca4eaf9cdfd435a9fa6e8efa4a213e27e5eaa3f56eda8948d0763ee4f6163  ./src/telemetry/telemetry-stream.controller.ts
 173b659490d95b7e9c7bceced64cccf14d2b6e51f32c7acf069ae964a58199a1  ./src/telemetry/telemetry.controller.spec.ts
@@ -1236,7 +1236,7 @@ fe9c813aa001ff118064dbad1c519e00be63215784eacbf4383aacf8dfe79701  ./test/telemet
 2881deb7b7c2f5a24622655e5e85173bef274cb1da4096d396c2cf0f52b94402  ./test/tenant-workspace-widget-readings.contract.spec.ts
 03092111361921e91738158f250ac09e1c849902b114f312fc67b573391b7449  ./test/testing-strategy.contract.spec.ts
 67ea90b786dc829a8538f3734ae0ac3bb710f4b208c6d96a28797d15e6c6681e  ./test/wave-02-core-runtime-closure-invariants.contract.spec.ts
-0732ccc5cb9724479044677b4184c8a294febdcf5301437a3a5a5322add14923  ./test/wave10-telemetry-retention.contract.spec.ts
+da89ce0c71385194eb880ab4c158270d2da4d907cd7ea2e80664ad4777b64142  ./test/wave10-telemetry-retention.contract.spec.ts
 4787d2554f2d2e9af44fafd8d42f335b8930d4de40674df25b44a00eff6e1b49  ./test/wave7-mobile-notification-parity.contract.spec.ts
 0d6a59d85dd06956dd5a63155ea681910750de26f3bb5a482c85c51dafca750b  ./test/wave7-mobile-settings-parity.contract.spec.ts
 6de3a198b835bc19350099570f3446ea574b0482597adb6645117f2f485d147e  ./test/wave7-technician-commissioning-logs.contract.spec.ts
