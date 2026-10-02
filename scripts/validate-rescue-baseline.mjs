@@ -2378,7 +2378,16 @@ check(
 check(
   'secure NestJS/Fastify boundary is source-controlled and has no standing critical acceptance',
   read('package.json').includes('security:stack:verify') &&
-    secureFastifyVerifierR30.includes("'@nestjs/platform-fastify', '11.2.3'") &&
+    // Assert the ADVISORY FLOORS, not the versions that happened to be pinned when this check was written.
+    // Pinning a literal here made the guard fail the moment the security fix landed, which is the wrong
+    // moment for a source-bound rescue guard to change. The floors are what the guarantee actually is.
+    //   GHSA-9c5c-9qcx-q35q  middleware bypass  (@nestjs/platform-fastify < 11.2.4)
+    //   GHSA-p68q-wchp-6fh7  auth bypass       (fastify < 5.12.2)
+    //   GHSA-4mh8-r7rc-xpvc  HTTP/2 trailer DoS (fastify < 5.12.5)
+    secureFastifyVerifierR30.includes("'@nestjs/platform-fastify', '11.2.4'") &&
+    secureFastifyVerifierR30.includes("'fastify', '5.12.5'") &&
+    // The override is what actually closes the chain: platform-fastify resolves its own fastify.
+    secureFastifyVerifierR30.includes('pkg.overrides?.fastify') &&
     secureFastifyVerifierR30.includes("compare(version, '9.3.3') < 0") &&
     Array.isArray(productionAuditPolicyR30.acceptedCriticalFindings) &&
     productionAuditPolicyR30.acceptedCriticalFindings.length === 0,
