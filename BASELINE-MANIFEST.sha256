@@ -540,8 +540,8 @@ a9906963ca94d27cd8f6d68726bd5bc55acf6bac9fc14d1540770521ec6b67e2  ./ops/scripts/
 d296e3a0df131f20476c6d8c4ece1af57e861ed63b49659ab468ab3f038bc155  ./ops/systemd/iot-platform-backup.service
 23bb220ecf835b2f25caa9dd46b97c266b713dad591f5169df2872534b3844f0  ./ops/systemd/iot-platform-backup.timer
 c16ce529395244a7a5cdd9b4b86902273e232212695edd8c768c8de28cfbe78f  ./ops/systemd/iot-platform.service
-c140530514a228c2d43e1d7b4db52689f60595861b21163b712504dd440a81f6  ./package-lock.json
-cbb435e3b534dd43e9f431de092e0af58433e91e94f90690050355986ef29174  ./package.json
+0059079cdaf0005890544dd2cc0cf90f15b8a030016896e18205b330e4ef5c3b  ./package-lock.json
+4970a855d021fcf08c1d8fa53a59269575e5b1fedb5adf5343f53e9342e70b08  ./package.json
 a119fdac221907cc9580b940bb96d031ae518f3a3f97dab501bfe3e94cef19d3  ./packages/design-system/package.json
 b63813a336d764f5fd0ecf92cf894829347e0485f5c7bc67cc5000e866c31b41  ./packages/design-system/src/design-system-v2.css
 a2574974c0648838df5a7c81d643ee4be69d72bcec27d3fea940bed763a2692d  ./packages/design-system/src/index.tsx
@@ -1123,7 +1123,7 @@ d3178aed893dc29e72dba70fcf5ebb5868c75f7ac8b92e4156516b0047609575  ./test/console
 f89733d829433e0fdb0cd0bde0ba37d1392376bbd0b7292e6b36cb30fb50abb9  ./test/credential-column-exposure.contract.spec.ts
 ef693928a55b95aaf66fa09673f6cae0ea63f4214bd56d69eb5a6bc5193dd131  ./test/database-testing.contract.spec.ts
 c4c2d251b73610910aff95bc0cfb4954fb1f3934e96969b81136da5610f9f6a7  ./test/demo-seed-reentry.contract.spec.ts
-81bb9cd48da00793f7b6bc155db1ed713f4dd9f7ff73d372425130ddf3154209  ./test/deployment-recovery.contract.spec.ts
+26ef7ea391185508135312fa91138b778b5f1e46425e1fb8b2fe1386d59fe94a  ./test/deployment-recovery.contract.spec.ts
 139c87bcdb7b69fec310db9fa52ba40f8d7a5af7cacf8eb86a59def7e78ef71f  ./test/fixtures/historical-contract-policy/advanced-indirection.fixture.ts
 f297fe5bed9623ec700366915e0573decf4031ed3372a615327ff7d38704ea3f  ./test/fixtures/historical-contract-policy/alias-helper-loop.fixture.ts
 7954cabbf62e269e82a56264e52919f16b2d2a0759a007a1cf5602632cff69fe  ./test/fixtures/historical-contract-policy/direct-sha.fixture.ts

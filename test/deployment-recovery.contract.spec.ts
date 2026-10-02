@@ -1,6 +1,19 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+/** True when `spec` (e.g. "^11.2.7") is at or above major.minor.patch. */
+function atLeast(spec: string, major: number, minor: number, patch: number): boolean {
+  const actual = spec.replace(/^[\^~>=<\s]+/, '').split('.');
+  const target = [major, minor, patch];
+  for (let i = 0; i < 3; i += 1) {
+    const value = Number(actual[i]);
+    if (!Number.isFinite(value)) return false;
+    if (value > target[i]) return true;
+    if (value < target[i]) return false;
+  }
+  return true;
+}
+
 const root = resolve(__dirname, '..');
 function read(relativePath: string): string {
   return readFileSync(resolve(root, relativePath), 'utf8');
@@ -121,12 +134,22 @@ describe('Deployment and Recovery Foundation contract', () => {
     const packageJson = JSON.parse(read('package.json')) as {
       dependencies: Record<string, string>;
       scripts: Record<string, string>;
+      overrides?: Record<string, string>;
     };
     expect(audit).toContain('Unreviewed critical production dependency');
     expect(audit).toContain('Critical dependency acceptance expired');
     expect(policy.acceptedCriticalFindings).toEqual([]);
-    expect(packageJson.dependencies['@nestjs/platform-fastify']).toBe('11.2.3');
-    expect(packageJson.dependencies.fastify).toBe('5.10.0');
+    // Floors, not exact pins. An exact pin says "we fixed this once"; a floor says "and it must stay fixed",
+    // so downgrading to a vulnerable version now fails the gate instead of quietly reinstating it.
+    //   GHSA-9c5c-9qcx-q35q  path-scoped middleware bypass via absolute-form request targets  (< 11.2.4)
+    //   GHSA-p68q-wchp-6fh7  authentication bypass via malformed URLs                  (fastify < 5.12.2)
+    //   GHSA-4mh8-r7rc-xpvc  DoS via unhandled HTTP/2 trailer exception                (fastify < 5.12.5)
+    expect(atLeast(packageJson.dependencies['@nestjs/platform-fastify'], 11, 2, 4)).toBe(true);
+    expect(atLeast(packageJson.dependencies.fastify, 5, 12, 5)).toBe(true);
+
+    // platform-fastify pulls its own fastify, so fixing only the direct pin leaves a vulnerable transitive
+    // copy in the tree. The override is what actually closes the chain.
+    expect(packageJson.overrides?.fastify).toBe('$fastify');
     expect(packageJson.scripts['security:stack:verify']).toBe(
       'node scripts/verify-secure-fastify-stack.mjs',
     );
