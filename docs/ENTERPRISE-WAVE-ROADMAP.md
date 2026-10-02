@@ -43,12 +43,25 @@ Smart Hotel / TAMASYA is intentionally outside Wave 1–13 and starts only after
 - Wave 3: **CLOSED / GREEN** — ESP-IDF compile, QEMU boot and OTA simulation all run on every push. Physical
   ESP32/HIL remains unproven and is deferred to Wave 13; see the production boundary below.
 - Waves 4–11: **CLOSED / GREEN**, each slice landed with a live PostgreSQL probe and a green GitHub run.
-- Wave 12: **IMPLEMENTED, verifying on the runner** — multi-region boundaries (ADR-009), edge gateway
-  identity and attribution (ADR-010), device twin reconciliation (ADR-011), and cross-region operations
-  reporting (ADR-012). These report and record; they do not fail over, route, or bridge, and each ADR says so
-  explicitly.
-- Wave 13: not started. It requires physical hardware evidence and an explicit production approval, neither of
-  which can be produced by a green pipeline.
+- Wave 12: **CLOSED / GREEN** — multi-region boundaries (ADR-009), edge gateway identity and attribution
+  (ADR-010), device twin reconciliation (ADR-011), and cross-region operations reporting (ADR-012). These
+  report and record; they do not fail over, route, or bridge, and each ADR says so explicitly.
+- Wave 13: **IN PROGRESS, software deliverables only** — the software-side certification items are being built
+  and measured; the hardware side is not started because no physical device is available.
+  - Performance evidence: landed. `npm run load:gate` measures the live API with autocannon and holds it to
+    `config/performance-budget.json`. The gate can fail: an impossible budget exits 1 by scenario name, and an
+    unreachable target exits 1 rather than skipping.
+  - Security evidence: an authentication-bypass chain in the production HTTP stack was found and closed
+    (`GHSA-p68q-wchp-6fh7`, `GHSA-9c5c-9qcx-q35q`, `GHSA-4mh8-r7rc-xpvc`). Production high findings went
+    18 -> 10. The remaining 10 are transitively required by Expo's CLI and have no non-breaking fix; they are
+    recorded as open rather than quietly deferred.
+  - Already gated from earlier waves and re-verified here: E2E, release artifact sealing, production artifact
+    startup smoke, the PostgreSQL recovery drill, and the MQTT publisher TLS integration test. The TLS test
+    stands up a real `node:tls` server with a certificate fixture and connects over `mqtts://` with
+    `MQTT_CA_FILE`; it is not a mock.
+  - Physical ESP32/HIL, a physical camera, and real CCTV frames: **UNPROVEN**, deferred. A green pipeline
+    cannot produce them, and Wokwi is a browser simulator — CI records that boundary explicitly and never
+    claims a Wokwi PASS.
 
 ## Production boundary
 
