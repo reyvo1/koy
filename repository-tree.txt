@@ -647,6 +647,7 @@ scripts/probe-device-maintenance-cleanup.sql
 scripts/probe-device-maintenance.py
 scripts/probe-device-name-audit.sql
 scripts/probe-device-risk.ts
+scripts/probe-energy-intelligence.ts
 scripts/probe-media-runtime.py
 scripts/probe-mqtt-management.mts
 scripts/probe-noc-cleanup.sql
@@ -768,6 +769,8 @@ src/analytics/device-health-scoring.service.spec.ts
 src/analytics/device-health-scoring.service.ts
 src/analytics/device-risk-forecasting.service.spec.ts
 src/analytics/device-risk-forecasting.service.ts
+src/analytics/energy-intelligence.service.spec.ts
+src/analytics/energy-intelligence.service.ts
 src/analytics/telemetry-anomaly-detector.service.spec.ts
 src/analytics/telemetry-anomaly-detector.service.ts
 src/app.controller.spec.ts
@@ -1250,6 +1253,7 @@ test/wave-02-core-runtime-closure-invariants.contract.spec.ts
 test/wave10-telemetry-retention.contract.spec.ts
 test/wave11-device-health-scoring.contract.spec.ts
 test/wave11-device-risk-forecasting.contract.spec.ts
+test/wave11-energy-intelligence.contract.spec.ts
 test/wave11-telemetry-anomaly-detection.contract.spec.ts
 test/wave7-mobile-notification-parity.contract.spec.ts
 test/wave7-mobile-settings-parity.contract.spec.ts

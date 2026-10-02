@@ -391,6 +391,14 @@ jobs:
         run: |
           npm run retention:probe
 
+      - name: Wave 11 energy intelligence
+        timeout-minutes: 10
+        # Reads the Wave 10 rollups through a tenant-scoped join. A fake Prisma cannot show that the join
+        # actually returns only this tenant's capabilities in a real database, nor that two rollup buckets on
+        # different days land in different periods.
+        run: |
+          npm run energy:probe
+
       - name: Wave 11 maintenance risk forecasting
         timeout-minutes: 10
         # Also the only gate for the DeviceRisk enum and the four risk columns. The unit suite drives a fake

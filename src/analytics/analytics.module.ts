@@ -7,17 +7,21 @@ import { AnalyticsIngestionService } from './analytics-ingestion.service';
 import { TelemetryAnomalyDetector } from './telemetry-anomaly-detector.service';
 import { DeviceHealthScoringService } from './device-health-scoring.service';
 import { DeviceRiskForecastingService } from './device-risk-forecasting.service';
+import { EnergyIntelligenceService } from './energy-intelligence.service';
 
 @Module({
   imports: [PrismaModule, DeviceModule],
   controllers: [AccessibleAnalyticsController],
-  providers: [AnalyticsIngestionService, AccessibleAnalyticsService, TelemetryAnomalyDetector, DeviceHealthScoringService, DeviceRiskForecastingService],
+  providers: [AnalyticsIngestionService, AccessibleAnalyticsService, TelemetryAnomalyDetector, DeviceHealthScoringService,
+    DeviceRiskForecastingService,
+    EnergyIntelligenceService],
   exports: [
     AnalyticsIngestionService,
     AccessibleAnalyticsService,
     TelemetryAnomalyDetector,
     DeviceHealthScoringService,
     DeviceRiskForecastingService,
+    EnergyIntelligenceService,
   ],
 })
 export class AnalyticsModule {}
