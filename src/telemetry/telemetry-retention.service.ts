@@ -90,7 +90,7 @@ export class TelemetryRetentionService {
         t."deviceId"       AS "deviceId",
         entry.key          AS "capabilityKey",
         to_timestamp(
-          floor(extract(epoch FROM t."createdAt") * 1000 / ${bucketMs}::bigint)
+          floor(extract(epoch FROM t."createdAt" AT TIME ZONE 'UTC') * 1000 / ${bucketMs}::bigint)
             * ${bucketMs}::bigint / 1000
         )                  AS "bucketStart",
         count(*)::int      AS "sampleCount",
@@ -103,7 +103,7 @@ export class TelemetryRetentionService {
       FROM "telemetry" t
       CROSS JOIN LATERAL jsonb_each_text(t."payload") AS entry(key, value)
       WHERE t."tenantId" = ${tenantId}
-        AND t."createdAt" < ${cutoff}
+        AND t."createdAt" < (${cutoff}::timestamptz AT TIME ZONE 'UTC')
         AND entry.value ~ '^-?[0-9]+(\\.[0-9]+)?([eE][-+]?[0-9]+)?$'
       GROUP BY t."tenantId", t."deviceId", entry.key, "bucketStart"
     `;
@@ -136,8 +136,8 @@ export class TelemetryRetentionService {
         WHERE t."tenantId" = ${row.tenantId}
           AND t."deviceId" = ${row.deviceId}
           AND entry.key = ${row.capabilityKey}
-          AND t."createdAt" < ${bucketEnd}
-          AND t."createdAt" >= ${bucketStart}
+          AND t."createdAt" < (${bucketEnd}::timestamptz AT TIME ZONE 'UTC')
+          AND t."createdAt" >= (${bucketStart}::timestamptz AT TIME ZONE 'UTC')
           AND entry.value ~ '^-?[0-9]+(\\.[0-9]+)?([eE][-+]?[0-9]+)?$'
         ORDER BY t."createdAt" DESC
         LIMIT 1
