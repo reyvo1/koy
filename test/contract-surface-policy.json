@@ -175,7 +175,8 @@
     "test/wave12-edge-gateway.contract.spec.ts": "current-state",
     "test/wave12-device-twin.contract.spec.ts": "current-state",
     "test/wave12-cross-region-operations.contract.spec.ts": "current-state",
-    "test/wave13-load-gate.contract.spec.ts": "current-state"
+    "test/wave13-load-gate.contract.spec.ts": "current-state",
+    "test/wave13-secret-scan.contract.spec.ts": "current-state"
   },
   "historicalStableDocumentOwners": {
     "test/module-10-activation.contract.spec.ts": [

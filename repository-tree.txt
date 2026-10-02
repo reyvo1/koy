@@ -9,6 +9,7 @@
 .node-version
 .nvmrc
 .prettierrc
+.secretlintrc.json
 AGENTS.md
 AI-Development-Kit/02-Project-Requirements.md
 AI-Development-Kit/03-Development-Roadmap.md
@@ -404,6 +405,7 @@ docs/RESCUE-02-RUNTIME-RUNBOOK.md
 docs/RESCUE-WORKFLOW.md
 docs/ROADMAP-COMPLETE.md
 docs/ROADMAP-SMART-HOTEL.md
+docs/SECRET-SCAN-POLICY.md
 docs/SESSION-CHECKPOINT.md
 docs/STAGING-RUNBOOK.md
 docs/UAT-CHECKLIST.md
@@ -537,6 +539,7 @@ ops/scripts/postgres-backup.sh
 ops/scripts/postgres-restore.sh
 ops/scripts/rollback-release.sh
 ops/security/production-audit-policy.json
+ops/security/secret-scan-allowlist.json
 ops/systemd/iot-platform-backup.service
 ops/systemd/iot-platform-backup.timer
 ops/systemd/iot-platform.service
@@ -692,6 +695,7 @@ scripts/run-rescue-gate1.mjs
 scripts/run-rescue-live-broker-smoke.mjs
 scripts/run-rescue-runtime-flow-extension.mjs
 scripts/run-saved-reports-probe.sh
+scripts/run-secret-scan.mjs
 scripts/run-wave3-esp32-simulation.mjs
 scripts/run-wave3-qemu-boot.mjs
 scripts/seed-demo-accounts-for-browser.sh
@@ -1284,6 +1288,7 @@ test/wave12-device-twin.contract.spec.ts
 test/wave12-edge-gateway.contract.spec.ts
 test/wave12-region-boundaries.contract.spec.ts
 test/wave13-load-gate.contract.spec.ts
+test/wave13-secret-scan.contract.spec.ts
 test/wave7-mobile-notification-parity.contract.spec.ts
 test/wave7-mobile-settings-parity.contract.spec.ts
 test/wave7-technician-commissioning-logs.contract.spec.ts

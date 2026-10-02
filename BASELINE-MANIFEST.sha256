@@ -4,11 +4,12 @@ fd016ab2eb6c5bdd61829cba15bb1ea95b59d1a8252bdbf9a23ee21ba8e8c10b  ./.editorconfi
 d772431114bf446abfb602f416111404206b31a113c8f07014453ed5aa513bc6  ./.eslintrc.cjs
 17b3e3dce96cb969fabf043293e17380873e3b1a43a147506c7731c308085568  ./.eslintrc.js
 50d3c6e4c8c9678cb4963022b108a01df72332c1e5783f90c9deb92550d63efd  ./.gitattributes
-6fe5a6af2f601a8056197a004b8f7b476dac27f8e93879588fb1b4c5ab78880c  ./.github/workflows/ci.yml
+403785f287e5875c4829d2b8a2bc4fa23e0edd5af211f8126e8207eb87c51592  ./.github/workflows/ci.yml
 04131227b4ec1dc184359af59d170edc2146f526be7aabd9fbd8308fda0a9cf4  ./.gitignore
 7d2df647f25529bd87500319c41564e032e2be642e565350fa6136d7a1ec4d10  ./.node-version
 7d2df647f25529bd87500319c41564e032e2be642e565350fa6136d7a1ec4d10  ./.nvmrc
 b97c7e53de22fe5d478d45994b10f8c4e3a5238b7f369ff93e86e892d2810b9a  ./.prettierrc
+b88c144ac6fe52ba58e7b2ae89c25a4f169e9e1ea2701ebce9d178053de305a6  ./.secretlintrc.json
 bbcbc6bd14c8a3e0e72766cc63ad721827accad12355ad69aca6f7f1204852b7  ./AGENTS.md
 77690fa9fec411e4745590a43931c0fe04f09781b031731bd8bcc7e78c94ad8e  ./AI-Development-Kit/02-Project-Requirements.md
 4540cdc73ce16631973664b8665cb77b8f97feb5469258ae5c546710279f9ad8  ./AI-Development-Kit/03-Development-Roadmap.md
@@ -404,6 +405,7 @@ fef9ece6f6fc0842eb8105405c4b17b2ebea0d3a2368da015a121b1e3cca1bcc  ./docs/README.
 e609750984b6a528a218c343a0e3614403e010751dd1529cdc17da3d9148d2cf  ./docs/RESCUE-WORKFLOW.md
 2fd52fea04918f5e778492de8879f074e594fb72c449993eef7b4ef3e8e33921  ./docs/ROADMAP-COMPLETE.md
 b7c50d5ecd0ef5538e96d0c7c2b40311e951e764d53f6f16f27f516f3eb1c911  ./docs/ROADMAP-SMART-HOTEL.md
+6149db8093c4f5835d3ee5bf7a76ae1f90c6fad4f00cdf96d00ddb491a087574  ./docs/SECRET-SCAN-POLICY.md
 8c4c6f6ffd28164f8e4a152835dcda33c0dd2f0ef3d24ee52fe9133e2dde20c0  ./docs/SESSION-CHECKPOINT.md
 cd10d7f8f6d54c0fcb4ebae4302df425a663a67de6ab5ef213f1e7dfe23a4e5f  ./docs/STAGING-RUNBOOK.md
 1053309885f9a01b8c903c86c16f29a3eed7053f3c631acea5bc8bd29850df6e  ./docs/UAT-CHECKLIST.md
@@ -537,11 +539,12 @@ ac360d2f240f11bb438c73f79f9f10881bc48abc4b6227fd6912692c7218496b  ./ops/scripts/
 a9906963ca94d27cd8f6d68726bd5bc55acf6bac9fc14d1540770521ec6b67e2  ./ops/scripts/postgres-restore.sh
 66a667db6f44d6909a90f48148f7ebb1f725b881c34cc09aeb1566a364e53de5  ./ops/scripts/rollback-release.sh
 064ca190b01d1e27553f0f439bf8977c4e3ead1e726311006b13d9006639855e  ./ops/security/production-audit-policy.json
+56d308f335c5346516fc1a345c36b382491abc8f3075a29ac441a1f3a19e3ab8  ./ops/security/secret-scan-allowlist.json
 d296e3a0df131f20476c6d8c4ece1af57e861ed63b49659ab468ab3f038bc155  ./ops/systemd/iot-platform-backup.service
 23bb220ecf835b2f25caa9dd46b97c266b713dad591f5169df2872534b3844f0  ./ops/systemd/iot-platform-backup.timer
 c16ce529395244a7a5cdd9b4b86902273e232212695edd8c768c8de28cfbe78f  ./ops/systemd/iot-platform.service
-0059079cdaf0005890544dd2cc0cf90f15b8a030016896e18205b330e4ef5c3b  ./package-lock.json
-4970a855d021fcf08c1d8fa53a59269575e5b1fedb5adf5343f53e9342e70b08  ./package.json
+b9b726b3f1dd579aa600faa6c255f4dac951acb42c246a0a2f45f69067f54cd3  ./package-lock.json
+f2619859bfdfde3d1004681a02b89599674c06ebde01fe0d046930fbcf773744  ./package.json
 a119fdac221907cc9580b940bb96d031ae518f3a3f97dab501bfe3e94cef19d3  ./packages/design-system/package.json
 b63813a336d764f5fd0ecf92cf894829347e0485f5c7bc67cc5000e866c31b41  ./packages/design-system/src/design-system-v2.css
 a2574974c0648838df5a7c81d643ee4be69d72bcec27d3fea940bed763a2692d  ./packages/design-system/src/index.tsx
@@ -692,6 +695,7 @@ ad9446511f68907e2ff875e73c993d4c6388e343bd3b3f9d8e60b45616bb298f  ./scripts/run-
 c69815631691a1a3552e3a4d62b942693b34878d4f95c70fe7e39d60db603334  ./scripts/run-rescue-live-broker-smoke.mjs
 8e7cffecfed084d836ebaea9bf43ea595663d258fd7ad2f53c54920075f8e124  ./scripts/run-rescue-runtime-flow-extension.mjs
 524d30172ee6989255ceaf04053d1027941ed10e63256bbf8c5900f88d076d83  ./scripts/run-saved-reports-probe.sh
+b7f7119f80d0a4e9341e4f295f3fd0d7554e8b0054cbf1ccb5f55959001ee336  ./scripts/run-secret-scan.mjs
 d63324696a8c14fae4a519d3728c24c418a2c348367634f60baef6c9b47e0745  ./scripts/run-wave3-esp32-simulation.mjs
 6ce455e472c2ee9238284a0f3c3a823c9a4cde0f868a69037bcc40d02b50e78d  ./scripts/run-wave3-qemu-boot.mjs
 b499e0dd8d5b78193db1ea5738632fb3215565e91a49c57346c9135514ba6985  ./scripts/seed-demo-accounts-for-browser.sh
@@ -1119,7 +1123,7 @@ d405c1765c5eed10853800a3ad137e936431133bfc230c5b53268be164eb03e0  ./test/admin-w
 a7146c20bcaac9b7334779d528d91b790973fbfcdf9e2f08cd6af18a5dfbc572  ./test/ci-dependency-bootstrap.contract.spec.ts
 f9435954f20b91eca8b0b50f9318d39d121f9b0a8014a216c6df4df0e4f4badd  ./test/client-fetch-mount-safety.contract.spec.ts
 d3178aed893dc29e72dba70fcf5ebb5868c75f7ac8b92e4156516b0047609575  ./test/console-fail-closed-surfaces.contract.spec.ts
-66d81511b99b77707fd9329b4f10772f0dd0bccdb35c7202ee2e2e9474cbab00  ./test/contract-surface-policy.json
+6782bc29c53461b6cc4ede4c535bf9c914caf9b384c864dc9aabe208c4e3b124  ./test/contract-surface-policy.json
 f89733d829433e0fdb0cd0bde0ba37d1392376bbd0b7292e6b36cb30fb50abb9  ./test/credential-column-exposure.contract.spec.ts
 ef693928a55b95aaf66fa09673f6cae0ea63f4214bd56d69eb5a6bc5193dd131  ./test/database-testing.contract.spec.ts
 c4c2d251b73610910aff95bc0cfb4954fb1f3934e96969b81136da5610f9f6a7  ./test/demo-seed-reentry.contract.spec.ts
@@ -1284,6 +1288,7 @@ d64677b7eb1a2baed441c95351281614e685ea32de1d68dd9a119a2dbdbdaeda  ./test/wave11-
 7217f8ce95f04a8a475583bf408dc15f8d1cc64ff806092c495f8edcef325cc6  ./test/wave12-edge-gateway.contract.spec.ts
 8b300156d2b856295d30de97e9c436b581a3cf86344797dd8c5ad72e6897ab91  ./test/wave12-region-boundaries.contract.spec.ts
 70c5d76180ff42b6237a95c67795abdc83f86b40a1e71ca78254cbdcacab6d23  ./test/wave13-load-gate.contract.spec.ts
+a0b7625495ba1cef53a6c26e6c036b7ad984b1da9dde60712bc83380e955ac26  ./test/wave13-secret-scan.contract.spec.ts
 4787d2554f2d2e9af44fafd8d42f335b8930d4de40674df25b44a00eff6e1b49  ./test/wave7-mobile-notification-parity.contract.spec.ts
 0d6a59d85dd06956dd5a63155ea681910750de26f3bb5a482c85c51dafca750b  ./test/wave7-mobile-settings-parity.contract.spec.ts
 6de3a198b835bc19350099570f3446ea574b0482597adb6645117f2f485d147e  ./test/wave7-technician-commissioning-logs.contract.spec.ts
@@ -1344,4 +1349,4 @@ d526784499ba2f416a3fca603acb5dd534fb7450580e048a80abcba43f9ece63  ./tools/redis-
 0543e915f75a5ecc6acceb422f4bebbac2e6a4ca6a77c3b8a031191884d8996c  ./tsconfig.build.json
 7256486d18986f5c8b6c0d1548e30a2cdf8dfb0c4d1fb27e5dffd081ee67fa98  ./tsconfig.jest.json
 fb2278ad89fcdbeb387aa4a8e0f3c550b9ffd464d1ce83b2c2aee1ff72ddc14c  ./tsconfig.json
-4a29ada6223b1d59518cb965abff61514263eb0308d5e9c85675966cdde81e8a  ./repository-tree.txt
+00fdf5dfba0138decfa54eba52e11d3fc8646dba8a48b35bc0cc5b1a53506de6  ./repository-tree.txt

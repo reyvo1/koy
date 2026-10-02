@@ -104,6 +104,12 @@ jobs:
       - name: Production dependency audit policy
         run: npm run security:audit:production
 
+      - name: Wave 13 secret scan
+        # Looks for committed credentials. `npm audit` covers dependency CVEs; this covers secrets in
+        # OUR source. Excluded paths (test fixtures, docs) are re-scanned by a stricter detector and
+        # their TLS keys are pinned by SHA-256, so an exclusion cannot become a hiding place.
+        run: npm run security:secrets:scan
+
       - name: Non-mutating lint
         run: npm run lint:check
 
