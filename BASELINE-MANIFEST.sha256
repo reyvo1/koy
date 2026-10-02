@@ -733,7 +733,7 @@ ea76c7701cb584e198b5820ae3eab3975aea3dd552812ed0531746040d06d150  ./scripts/vali
 5c2a36059e7d2772e49b523854e6d3748212cb88e709fe74f182d440b73aed21  ./scripts/verify-fastify-v5-compat.mjs
 0384cbfaffdbae64203d8dd78dbee918e597dd14012b643e1a6996719dace316  ./scripts/verify-production-approval.mjs
 40ab7733b677406d8bb725f054c05b97afe2b5a5dae5a7ca28289c16968f7c9e  ./scripts/verify-production-release.mjs
-810062202873197ed0128b2ee3382ed8381d7bdae4ddaa83fabefb9f03b8b5d1  ./scripts/verify-secure-fastify-stack.mjs
+fc48bb9e0f4695aed855361bc2bc53f4c17dcb07f2a743da6bce021fb9b42e0f  ./scripts/verify-secure-fastify-stack.mjs
 fc3ffc1bbac1f2d6fa4d25f0ec692585b6fdb7e9aa4deafccddcbc86c3ec2033  ./scripts/verify-secure-next-stack.mjs
 1e0c54904cebf34ce5537d63bfc8cf6747f6762fd7a4b90d70320ba566277826  ./scripts/verify-tls-terminator.mjs
 c32c4872aa944359d3311192a177f338c086d7685edd62c3a6eb69a167a441ea  ./scripts/verify-uat-baseline.mjs
