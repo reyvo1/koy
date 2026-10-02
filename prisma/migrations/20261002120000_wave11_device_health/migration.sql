@@ -6,9 +6,13 @@
 --
 -- The enum type is created before the ALTER so the column can use it in the same transaction.
 
+-- `to_regtype` resolves against the current search_path. A `pg_type` lookup by name would see the type
+-- in ANY schema, so on a runner that applies migrations into an isolated schema (`test_ci_<run id>`) the
+-- check could find a DeviceHealth left by another schema, skip the creation, and then fail the ALTER
+-- below with "type DeviceHealth does not exist". This is the same failure as 42704.
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'DeviceHealth') THEN
+  IF to_regtype('"DeviceHealth"') IS NULL THEN
     CREATE TYPE "DeviceHealth" AS ENUM ('HEALTHY', 'DEGRADED', 'UNHEALTHY', 'OFFLINE');
   END IF;
 END
