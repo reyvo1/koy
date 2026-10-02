@@ -391,6 +391,14 @@ jobs:
         run: |
           npm run retention:probe
 
+      - name: Wave 11 maintenance risk forecasting
+        timeout-minutes: 10
+        # Also the only gate for the DeviceRisk enum and the four risk columns. The unit suite drives a fake
+        # Prisma, so it cannot show that the enum accepts NOT_ESTABLISHED or that the two forecast windows
+        # really are disjoint rows in a real table.
+        run: |
+          npm run risk:probe
+
       - name: Wave 11 device health scoring
         timeout-minutes: 10
         # The migration adds a Postgres enum and four columns that a fake Prisma knows nothing about, so

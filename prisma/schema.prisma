@@ -182,6 +182,10 @@ model Device {
   healthStatus             DeviceHealth?
   healthEvaluatedAt        DateTime?
   healthScorerVersion     String?
+  riskBand                DeviceRisk?
+  riskHorizonDays         Int?
+  riskEvaluatedAt         DateTime?
+  riskForecastVersion     String?
   credential               DeviceCredential?
   telemetry                Telemetry[]
   telemetryRollups         TelemetryRollup[]
@@ -574,6 +578,16 @@ enum DeviceHealth {
   DEGRADED
   UNHEALTHY
   OFFLINE
+}
+
+/// How much attention a device needs soon. NOT_ESTABLISHED is the honest default: too few observations to
+/// tell "holding steady" from "we have not been watching closely enough".
+enum DeviceRisk {
+  NOT_ESTABLISHED
+  STABLE
+  WATCH
+  DECLINING
+  IMMINENT
 }
 
 enum CommandStatus {

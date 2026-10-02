@@ -145,7 +145,8 @@
     "media:probe": "bash scripts/run-media-probe.sh",
     "retention:probe": "ts-node --transpile-only scripts/probe-telemetry-retention.ts",
     "anomaly:probe": "ts-node --transpile-only scripts/probe-anomaly-detection.ts",
-    "health:probe": "ts-node --transpile-only scripts/probe-device-health.ts"
+    "health:probe": "ts-node --transpile-only scripts/probe-device-health.ts",
+    "risk:probe": "ts-node --transpile-only scripts/probe-device-risk.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
