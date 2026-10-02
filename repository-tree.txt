@@ -603,6 +603,7 @@ prisma/migrations/20261001090000_device_maintenance/migration.sql
 prisma/migrations/20261001120000_billing_invoice_metering/migration.sql
 prisma/migrations/20261001140000_device_location_tenant_history/migration.sql
 prisma/migrations/20261002000000_wave10_telemetry_rollups/migration.sql
+prisma/migrations/20261002120000_wave11_device_health/migration.sql
 prisma/migrations/migration_lock.toml
 prisma/schema.prisma
 prisma/seed.ts
@@ -638,6 +639,7 @@ scripts/probe-capability-template-cleanup.sql
 scripts/probe-capability-template-lifecycle.mts
 scripts/probe-common.sh
 scripts/probe-device-command-log.py
+scripts/probe-device-health.ts
 scripts/probe-device-location-cleanup.sql
 scripts/probe-device-location.py
 scripts/probe-device-maintenance-cleanup.sql
@@ -760,6 +762,8 @@ src/analytics/accessible-analytics.service.ts
 src/analytics/analytics-ingestion.service.spec.ts
 src/analytics/analytics-ingestion.service.ts
 src/analytics/analytics.module.ts
+src/analytics/device-health-scoring.service.spec.ts
+src/analytics/device-health-scoring.service.ts
 src/analytics/telemetry-anomaly-detector.service.spec.ts
 src/analytics/telemetry-anomaly-detector.service.ts
 src/app.controller.spec.ts
@@ -1240,6 +1244,7 @@ test/tenant-workspace-widget-readings.contract.spec.ts
 test/testing-strategy.contract.spec.ts
 test/wave-02-core-runtime-closure-invariants.contract.spec.ts
 test/wave10-telemetry-retention.contract.spec.ts
+test/wave11-device-health-scoring.contract.spec.ts
 test/wave11-telemetry-anomaly-detection.contract.spec.ts
 test/wave7-mobile-notification-parity.contract.spec.ts
 test/wave7-mobile-settings-parity.contract.spec.ts

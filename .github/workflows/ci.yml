@@ -391,6 +391,13 @@ jobs:
         run: |
           npm run retention:probe
 
+      - name: Wave 11 device health scoring
+        timeout-minutes: 10
+        # The migration adds a Postgres enum and four columns that a fake Prisma knows nothing about, so
+        # the schema half of this slice is only proven by the real database.
+        run: |
+          npm run health:probe
+
       - name: Wave 11 anomaly detection
         timeout-minutes: 10
         # Also the only gate for the SQL and the enum writes. The unit suite drives a fake Prisma, so it

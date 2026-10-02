@@ -4,7 +4,7 @@ fd016ab2eb6c5bdd61829cba15bb1ea95b59d1a8252bdbf9a23ee21ba8e8c10b  ./.editorconfi
 d772431114bf446abfb602f416111404206b31a113c8f07014453ed5aa513bc6  ./.eslintrc.cjs
 17b3e3dce96cb969fabf043293e17380873e3b1a43a147506c7731c308085568  ./.eslintrc.js
 50d3c6e4c8c9678cb4963022b108a01df72332c1e5783f90c9deb92550d63efd  ./.gitattributes
-2a4a34766c022e329ac9a0223570a5a2a2393937cdea44ba188aac9b29601a54  ./.github/workflows/ci.yml
+d4e019317c27d5e0d3512b5727d868cd25c1b780b4983fe7dcee0924a7b9a87f  ./.github/workflows/ci.yml
 04131227b4ec1dc184359af59d170edc2146f526be7aabd9fbd8308fda0a9cf4  ./.gitignore
 7d2df647f25529bd87500319c41564e032e2be642e565350fa6136d7a1ec4d10  ./.node-version
 7d2df647f25529bd87500319c41564e032e2be642e565350fa6136d7a1ec4d10  ./.nvmrc
@@ -536,7 +536,7 @@ d296e3a0df131f20476c6d8c4ece1af57e861ed63b49659ab468ab3f038bc155  ./ops/systemd/
 23bb220ecf835b2f25caa9dd46b97c266b713dad591f5169df2872534b3844f0  ./ops/systemd/iot-platform-backup.timer
 c16ce529395244a7a5cdd9b4b86902273e232212695edd8c768c8de28cfbe78f  ./ops/systemd/iot-platform.service
 529b16e4fab06d438a8249ffe5e846197a82cf9ea34974ff01ceef63bfeb747b  ./package-lock.json
-57e6f81181f016463f787a6637d3facb1dd99a65d3e4f6a5174af7982d79b8b8  ./package.json
+56d8355368a6d6b9b51ffebc2efc92248703009485b926ce43fa3a7565cc1155  ./package.json
 a119fdac221907cc9580b940bb96d031ae518f3a3f97dab501bfe3e94cef19d3  ./packages/design-system/package.json
 b63813a336d764f5fd0ecf92cf894829347e0485f5c7bc67cc5000e866c31b41  ./packages/design-system/src/design-system-v2.css
 a2574974c0648838df5a7c81d643ee4be69d72bcec27d3fea940bed763a2692d  ./packages/design-system/src/index.tsx
@@ -603,8 +603,9 @@ e6826db1f14d07a4d1c292ba436d291618783609afe12e822c62c654244bd862  ./prisma/migra
 8153435848a7ca45ffde30e65c679b6b67e5b4cc732e0c4e6328a2d6e8c22571  ./prisma/migrations/20261001120000_billing_invoice_metering/migration.sql
 ac34654007d215064552d355df6a0c0da65515f71d41339a9227224993763c56  ./prisma/migrations/20261001140000_device_location_tenant_history/migration.sql
 407623d6d173d6b596f36a8f6746d05364caca10f0aa3e0a98b48775d8fd09e7  ./prisma/migrations/20261002000000_wave10_telemetry_rollups/migration.sql
+4d1d3abce7bcf1fa1fdbdc4a307c94a1e839c4a4cb255375810ebad3a93e6613  ./prisma/migrations/20261002120000_wave11_device_health/migration.sql
 693566b52c49db47a2b0901d12400aa3d710d13a49f4a2a154b80c0505ed737c  ./prisma/migrations/migration_lock.toml
-82e8c7b604d03e854da52a467201c44a57e07f2b7e021e3371ba5e1363312809  ./prisma/schema.prisma
+b11bc022965e5ac896e53d64af6c678017b45b05f0e663594f2bc8b6dd53ce11  ./prisma/schema.prisma
 a29a9d85dbad9cfb94a096e26f3a640d2ebbfe903c921d18262a1153e3eb287e  ./prisma/seed.ts
 863f5d09a5b62e0618f48a98627a7e906e0a417513db68862f5b8e776117ab47  ./project-config.json
 896508b052ba39570ee74e4c671e2665e548893a9a236ee8028ae1d60796ea2a  ./scripts/attach-rescue-02b-evidence.mjs
@@ -638,6 +639,7 @@ c96a1d06be40cc99061206c777520710088c8895feb9fa4448eb69155b520724  ./scripts/prob
 05256ede68df19949782b46c4a1d9eb92e3f0af355ec1a62ba319b3873be31c8  ./scripts/probe-capability-template-lifecycle.mts
 2779b883d73ba27216ebfc6a72fcb41207b702ff063404c090fd0d1538612614  ./scripts/probe-common.sh
 bb3303c33b5c6a7ca34bda94517450755380176a13054c3f3d9682c2e6590ede  ./scripts/probe-device-command-log.py
+53cfd5e356c2f3c71247e72b4e48137a33850d2248c3a4f02f08776d3895ae59  ./scripts/probe-device-health.ts
 915053511627fea83ad979b8e3c5e8c35e98687d000aebbd26eebc5c6264ba3c  ./scripts/probe-device-location-cleanup.sql
 d4b2d4c18914a33d23433f2f0cc102cddc9fd32b186a3fd383d81527cd0dbf9e  ./scripts/probe-device-location.py
 c336f3be9328988d071af3348ee7ea98ffa20df37067ed312d3c6dfa229b243a  ./scripts/probe-device-maintenance-cleanup.sql
@@ -759,7 +761,9 @@ afd00d333747a71893fad97fca53faaeba37077f35fd05bad3da00f348a3f669  ./src/analytic
 54e054fefd659015004be72c2e74ddb3f5700c1355cd190f72a89b57ddfd60f5  ./src/analytics/accessible-analytics.service.ts
 5a2cb2ab21102b01250e8b072771e5441b91af58b0c345b1eeaf92e88eba3fd2  ./src/analytics/analytics-ingestion.service.spec.ts
 1a1bc05f0ad80bd145a4e17cb8a2c2d3628897f552d969196ba7b35a089154d1  ./src/analytics/analytics-ingestion.service.ts
-7bec28a4077933ee727acb5285419583bc7eef71b0a36e9207141b9f25d1418b  ./src/analytics/analytics.module.ts
+add423f381f4a0424cf1e1dac4ac9d2a0313c5c1215aa9009436b90c58be4727  ./src/analytics/analytics.module.ts
+414a99d1f4810d52050c4d4fd3df9d55c3ba3f5100f48180bc5f92d104daebfd  ./src/analytics/device-health-scoring.service.spec.ts
+7205b1cd7972c1bebdd44a77ce056130e11369c931748b4509602f751f3f4c91  ./src/analytics/device-health-scoring.service.ts
 4af1ffd2b14f8cd228bcdfde9e62077f3e529c7d320e6764857397f23ea4e97e  ./src/analytics/telemetry-anomaly-detector.service.spec.ts
 21fa708aa00681c4ec02b8b0c23f731ea01c38957dbd761de38137ddcda783af  ./src/analytics/telemetry-anomaly-detector.service.ts
 88faf5523fd7f5dae5a6c78be2dd1709eb6c20ee82c64fc399f8a2e8fb767527  ./src/app.controller.spec.ts
@@ -1084,7 +1088,7 @@ d405c1765c5eed10853800a3ad137e936431133bfc230c5b53268be164eb03e0  ./test/admin-w
 a7146c20bcaac9b7334779d528d91b790973fbfcdf9e2f08cd6af18a5dfbc572  ./test/ci-dependency-bootstrap.contract.spec.ts
 f9435954f20b91eca8b0b50f9318d39d121f9b0a8014a216c6df4df0e4f4badd  ./test/client-fetch-mount-safety.contract.spec.ts
 d3178aed893dc29e72dba70fcf5ebb5868c75f7ac8b92e4156516b0047609575  ./test/console-fail-closed-surfaces.contract.spec.ts
-aef234679298d95e0734ae98d36e65fa4a5c223cc38f1bba6354ad5155b251d4  ./test/contract-surface-policy.json
+c6f596cbd9ddfbe80e3229a1880d4a4df98d7da3d58a64bb2eb0f7d172dddac7  ./test/contract-surface-policy.json
 f89733d829433e0fdb0cd0bde0ba37d1392376bbd0b7292e6b36cb30fb50abb9  ./test/credential-column-exposure.contract.spec.ts
 ef693928a55b95aaf66fa09673f6cae0ea63f4214bd56d69eb5a6bc5193dd131  ./test/database-testing.contract.spec.ts
 c4c2d251b73610910aff95bc0cfb4954fb1f3934e96969b81136da5610f9f6a7  ./test/demo-seed-reentry.contract.spec.ts
@@ -1240,6 +1244,7 @@ fe9c813aa001ff118064dbad1c519e00be63215784eacbf4383aacf8dfe79701  ./test/telemet
 03092111361921e91738158f250ac09e1c849902b114f312fc67b573391b7449  ./test/testing-strategy.contract.spec.ts
 67ea90b786dc829a8538f3734ae0ac3bb710f4b208c6d96a28797d15e6c6681e  ./test/wave-02-core-runtime-closure-invariants.contract.spec.ts
 da89ce0c71385194eb880ab4c158270d2da4d907cd7ea2e80664ad4777b64142  ./test/wave10-telemetry-retention.contract.spec.ts
+2a171fe8c9887a078191cd56c2d49d8a3393caf3e1b984ca41e6afb39df10b5d  ./test/wave11-device-health-scoring.contract.spec.ts
 d64677b7eb1a2baed441c95351281614e685ea32de1d68dd9a119a2dbdbdaeda  ./test/wave11-telemetry-anomaly-detection.contract.spec.ts
 4787d2554f2d2e9af44fafd8d42f335b8930d4de40674df25b44a00eff6e1b49  ./test/wave7-mobile-notification-parity.contract.spec.ts
 0d6a59d85dd06956dd5a63155ea681910750de26f3bb5a482c85c51dafca750b  ./test/wave7-mobile-settings-parity.contract.spec.ts
@@ -1301,4 +1306,4 @@ d526784499ba2f416a3fca603acb5dd534fb7450580e048a80abcba43f9ece63  ./tools/redis-
 0543e915f75a5ecc6acceb422f4bebbac2e6a4ca6a77c3b8a031191884d8996c  ./tsconfig.build.json
 7256486d18986f5c8b6c0d1548e30a2cdf8dfb0c4d1fb27e5dffd081ee67fa98  ./tsconfig.jest.json
 fb2278ad89fcdbeb387aa4a8e0f3c550b9ffd464d1ce83b2c2aee1ff72ddc14c  ./tsconfig.json
-b1a5125ff5340e9fed8f9de20a6f853c37e96fc71b51ab5ff5721e39c5ab69ee  ./repository-tree.txt
+960d51465ef690d20d337cf0a0e2e83d4cdf38481e934e321263a42f68bc4fab  ./repository-tree.txt

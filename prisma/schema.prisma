@@ -178,6 +178,10 @@ model Device {
   provisioningTokenHash    String?
   provisioningTokenExpires DateTime?
   lastHeartbeatAt          DateTime?
+  healthScore              Int?
+  healthStatus             DeviceHealth?
+  healthEvaluatedAt        DateTime?
+  healthScorerVersion     String?
   credential               DeviceCredential?
   telemetry                Telemetry[]
   telemetryRollups         TelemetryRollup[]
@@ -561,6 +565,15 @@ enum DeviceStatus {
   ACTIVE
   INACTIVE
   REVOKED
+}
+
+/// How well a device is doing, independent of whether it is switched on. A device can be ACTIVE and
+/// still be reporting values far outside its own history, which a status cannot express.
+enum DeviceHealth {
+  HEALTHY
+  DEGRADED
+  UNHEALTHY
+  OFFLINE
 }
 
 enum CommandStatus {
