@@ -652,7 +652,7 @@ f315baa6c2b84b9b1384ef616d57e8f5bc5be00f5506972ab356d8bb65e301a8  ./scripts/prob
 93dade4cf01dec258a241e7e3eaa6f7b7aaee81061f7b5ec5058f3dc9dad76ba  ./scripts/probe-public-api-sdk.mts
 bd75c45affa12acc29386a7d891d83056d5ec7aeacb3b0936921fc8e0ce348a5  ./scripts/probe-saved-reports-cleanup.sql
 4307c9e4e51258654dbe9868bbc993ce82fcbee464eac668cb51dea8e1d841ac  ./scripts/probe-saved-reports.mts
-d3a24576c9eb94023eb7150c31a1c68627d23c558d63171bb0c0dbacb978378a  ./scripts/probe-telemetry-retention.ts
+3abd8254ae55caa5a5eb3f706f0f7a904fe75e2b4359e0b8b1aebdc977670067  ./scripts/probe-telemetry-retention.ts
 89d4b2e4a49dc4c286f9343ecd397065b163a3149eee36049f84c5dd7f226314  ./scripts/probe-user-web-fixture.sql
 66a94eb7b91d08396531cd216a38840b8febbbf81de20d03c865455b2a01bf20  ./scripts/probe-user-web-share-state.sql
 538a426fcd238d72c4a5e2b92d3914640e130741ddd35e091f6be941f38a83a8  ./scripts/probe-webhook-event-vocabulary.sh

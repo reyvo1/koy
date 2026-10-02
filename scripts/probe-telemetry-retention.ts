@@ -11,9 +11,39 @@
  */
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { TelemetryRetentionService } from '../src/telemetry/telemetry-retention.service';
 
-const prisma = new PrismaClient();
+/**
+ * Resolve the database the same way the UAT seed does: an ambient DATABASE_URL wins, and a generated
+ * `.env` is read only when the variable is genuinely unset.
+ *
+ * The acceptance job exports neither, so without this the probe died on
+ * `Environment variable not found: DATABASE_URL` -- and Prisma blames `schema.prisma:7`, which points at
+ * the wrong file entirely. It was the first failure of this step on the real runner even though it passed
+ * locally 16/16.
+ */
+function resolveDatabaseUrl(envFile: string): string | undefined {
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+  const absolute = resolve(process.cwd(), envFile);
+  if (!existsSync(absolute)) return undefined;
+  for (const line of readFileSync(absolute, 'utf8').split('\n')) {
+    const match = /^\s*DATABASE_URL\s*=\s*(.*)\s*$/.exec(line);
+    if (match) return match[1].replace(/^["']|["']$/g, '');
+  }
+  return undefined;
+}
+
+const databaseUrl = resolveDatabaseUrl('.env');
+if (!databaseUrl) {
+  console.error(
+    'WAVE 10 RETENTION PROBE ERROR: no DATABASE_URL. Export it, or run `npm run rescue:env:init -- --output=.env` first.',
+  );
+  process.exit(2);
+}
+
+const prisma = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
 const results = [];
 
 function check(name, condition, detail = '') {
