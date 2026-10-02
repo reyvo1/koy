@@ -16,6 +16,7 @@ model Tenant {
   devices     Device[]
   deviceGroups DeviceGroup[]
   telemetry   Telemetry[]
+  telemetryRollups TelemetryRollup[]
   commands    DeviceCommand[]
   memberships Membership[]
   automations          Automation[]
@@ -179,6 +180,7 @@ model Device {
   lastHeartbeatAt          DateTime?
   credential               DeviceCredential?
   telemetry                Telemetry[]
+  telemetryRollups         TelemetryRollup[]
   commands                 DeviceCommand[]
   capabilities             Capability[]
   dashboardBindings        DashboardWidgetBinding[] @relation("DashboardBindingDevice")
@@ -360,6 +362,41 @@ model Telemetry {
   @@index([createdAt])
   @@index([tenantId, deviceId, createdAt, id])
   @@map("telemetry")
+}
+
+/// Wave 10 — the summarised form of `telemetry` for windows whose raw rows are about to be removed.
+///
+/// The raw table is the highest-volume table in the system. Once its rows past a retention window are
+/// pruned the history is gone unless something durable carries it, so the aggregate is written first and
+/// the raw rows are deleted second.
+///
+/// The identity is (tenant, device, capability, bucketStart). `capabilityKey` is a top-level payload key
+/// and not a device capability id, because telemetry payloads are free-form JSON (`{ "temp": 25 }`) and a
+/// rollup that assumed the capability catalog would silently skip every payload that does not match it.
+///
+/// The distribution is kept rather than just a mean: a single spike inside a window is invisible in an
+/// average and is exactly what an operator reviewing a chart needs to see.
+model TelemetryRollup {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  deviceId      String
+  device        Device   @relation(fields: [deviceId], references: [id])
+  capabilityKey String
+  bucketStart   DateTime
+  bucketEnd     DateTime
+  sampleCount   Int
+  valueSum      Float
+  valueMin      Float
+  valueMax      Float
+  valueLast     Float
+
+  createdAt DateTime @default(now())
+
+  @@unique([tenantId, deviceId, capabilityKey, bucketStart])
+  @@index([tenantId, deviceId, bucketStart])
+  @@index([tenantId, bucketStart])
+  @@map("telemetry_rollups")
 }
 
 model Dashboard {

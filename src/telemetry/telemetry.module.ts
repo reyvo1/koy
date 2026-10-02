@@ -5,6 +5,7 @@ import { TelemetryController } from './telemetry.controller';
 import { TelemetryStreamController } from './telemetry-stream.controller';
 import { TelemetryAggregationController } from './telemetry-aggregation.controller';
 import { TelemetryAggregationService } from './telemetry-aggregation.service';
+import { TelemetryRetentionService } from './telemetry-retention.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { DeviceModule } from '../device/device.module';
@@ -26,7 +27,7 @@ import { AutomationModule } from '../automation/automation.module';
     TelemetryStreamController,
     TelemetryAggregationController,
   ],
-  providers: [TelemetryService, TelemetryAggregationService],
-  exports: [TelemetryService, TelemetryAggregationService],
+  providers: [TelemetryService, TelemetryAggregationService, TelemetryRetentionService],
+  exports: [TelemetryService, TelemetryAggregationService, TelemetryRetentionService],
 })
 export class TelemetryModule {}

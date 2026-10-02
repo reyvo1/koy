@@ -136,6 +136,7 @@
     "test/wave8-payment-invoice.contract.spec.ts": "current-state",
     "test/wave8-invoice-lifecycle.contract.spec.ts": "current-state",
     "test/wave8-integration-adapter.contract.spec.ts": "current-state",
+    "test/wave10-telemetry-retention.contract.spec.ts": "current-state",
     "test/wave9-device-location.contract.spec.ts": "current-state",
     "test/wave9-onvif-media.contract.spec.ts": "current-state",
     "test/wave9-camera-onboarding.contract.spec.ts": "current-state",

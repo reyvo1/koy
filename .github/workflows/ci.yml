@@ -383,6 +383,14 @@ jobs:
           npm run camera:probe
           npm run location:probe
 
+      - name: Wave 10 telemetry retention and rollups
+        timeout-minutes: 10
+        # The only gate for this one. The unit suite runs against a fake Prisma, so it cannot see that
+        # jsonb_each_text yields text and PostgreSQL has no sum(text) -- that regression stayed green
+        # under mutation until the live probe failed. Run it against the real database.
+        run: |
+          npm run retention:probe
+
       - name: Gate 1 source-bound runtime receipt
         run: |
           npm run rescue:gate1

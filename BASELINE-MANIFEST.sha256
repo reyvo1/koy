@@ -4,7 +4,7 @@ fd016ab2eb6c5bdd61829cba15bb1ea95b59d1a8252bdbf9a23ee21ba8e8c10b  ./.editorconfi
 d772431114bf446abfb602f416111404206b31a113c8f07014453ed5aa513bc6  ./.eslintrc.cjs
 17b3e3dce96cb969fabf043293e17380873e3b1a43a147506c7731c308085568  ./.eslintrc.js
 50d3c6e4c8c9678cb4963022b108a01df72332c1e5783f90c9deb92550d63efd  ./.gitattributes
-da374244a1708ef133d1007a411f05c6c1bf9dbdbd47d10f13a04677a0abd6dd  ./.github/workflows/ci.yml
+4a5ad2795fc9b92f927fe2311bc72876b0aa0f5585c542a28be840f0cfefca43  ./.github/workflows/ci.yml
 04131227b4ec1dc184359af59d170edc2146f526be7aabd9fbd8308fda0a9cf4  ./.gitignore
 7d2df647f25529bd87500319c41564e032e2be642e565350fa6136d7a1ec4d10  ./.node-version
 7d2df647f25529bd87500319c41564e032e2be642e565350fa6136d7a1ec4d10  ./.nvmrc
@@ -536,7 +536,7 @@ d296e3a0df131f20476c6d8c4ece1af57e861ed63b49659ab468ab3f038bc155  ./ops/systemd/
 23bb220ecf835b2f25caa9dd46b97c266b713dad591f5169df2872534b3844f0  ./ops/systemd/iot-platform-backup.timer
 c16ce529395244a7a5cdd9b4b86902273e232212695edd8c768c8de28cfbe78f  ./ops/systemd/iot-platform.service
 529b16e4fab06d438a8249ffe5e846197a82cf9ea34974ff01ceef63bfeb747b  ./package-lock.json
-4c71d2ce30f438dc32346cd96dcf2e998d2b77afc5e43b4355eda6a2bbe4cefd  ./package.json
+286d2c48e6473776eb1326e09038591a93c23d772e463860b987abf7bb24a6a0  ./package.json
 a119fdac221907cc9580b940bb96d031ae518f3a3f97dab501bfe3e94cef19d3  ./packages/design-system/package.json
 b63813a336d764f5fd0ecf92cf894829347e0485f5c7bc67cc5000e866c31b41  ./packages/design-system/src/design-system-v2.css
 a2574974c0648838df5a7c81d643ee4be69d72bcec27d3fea940bed763a2692d  ./packages/design-system/src/index.tsx
@@ -602,8 +602,9 @@ e6826db1f14d07a4d1c292ba436d291618783609afe12e822c62c654244bd862  ./prisma/migra
 393a1f244d832c66b9c8d3d073ee3f0f68b21f68a2d08ccadb273ed30a670943  ./prisma/migrations/20261001090000_device_maintenance/migration.sql
 8153435848a7ca45ffde30e65c679b6b67e5b4cc732e0c4e6328a2d6e8c22571  ./prisma/migrations/20261001120000_billing_invoice_metering/migration.sql
 ac34654007d215064552d355df6a0c0da65515f71d41339a9227224993763c56  ./prisma/migrations/20261001140000_device_location_tenant_history/migration.sql
+407623d6d173d6b596f36a8f6746d05364caca10f0aa3e0a98b48775d8fd09e7  ./prisma/migrations/20261002000000_wave10_telemetry_rollups/migration.sql
 693566b52c49db47a2b0901d12400aa3d710d13a49f4a2a154b80c0505ed737c  ./prisma/migrations/migration_lock.toml
-e5a6026b584e223114171e06aa7c1b363cc7cec5f7029059e3068cba6dad8086  ./prisma/schema.prisma
+82e8c7b604d03e854da52a467201c44a57e07f2b7e021e3371ba5e1363312809  ./prisma/schema.prisma
 a29a9d85dbad9cfb94a096e26f3a640d2ebbfe903c921d18262a1153e3eb287e  ./prisma/seed.ts
 863f5d09a5b62e0618f48a98627a7e906e0a417513db68862f5b8e776117ab47  ./project-config.json
 896508b052ba39570ee74e4c671e2665e548893a9a236ee8028ae1d60796ea2a  ./scripts/attach-rescue-02b-evidence.mjs
@@ -651,6 +652,7 @@ f315baa6c2b84b9b1384ef616d57e8f5bc5be00f5506972ab356d8bb65e301a8  ./scripts/prob
 93dade4cf01dec258a241e7e3eaa6f7b7aaee81061f7b5ec5058f3dc9dad76ba  ./scripts/probe-public-api-sdk.mts
 bd75c45affa12acc29386a7d891d83056d5ec7aeacb3b0936921fc8e0ce348a5  ./scripts/probe-saved-reports-cleanup.sql
 4307c9e4e51258654dbe9868bbc993ce82fcbee464eac668cb51dea8e1d841ac  ./scripts/probe-saved-reports.mts
+d3a24576c9eb94023eb7150c31a1c68627d23c558d63171bb0c0dbacb978378a  ./scripts/probe-telemetry-retention.ts
 89d4b2e4a49dc4c286f9343ecd397065b163a3149eee36049f84c5dd7f226314  ./scripts/probe-user-web-fixture.sql
 66a94eb7b91d08396531cd216a38840b8febbbf81de20d03c865455b2a01bf20  ./scripts/probe-user-web-share-state.sql
 538a426fcd238d72c4a5e2b92d3914640e130741ddd35e091f6be941f38a83a8  ./scripts/probe-webhook-event-vocabulary.sh
@@ -1052,11 +1054,13 @@ a088ecacc8c30245e2970e511a4b88af5a32a5ec4170bd8a7e7f98dbfdeaf5ae  ./src/telemetr
 367edca49feccce36b88befde3f078720920318eff52dab705815770e43895d8  ./src/telemetry/telemetry-aggregation.controller.ts
 16f590db3bc50fdeba99791bd3907ed2ccb9c84102c3915573de52038ceba720  ./src/telemetry/telemetry-aggregation.service.ts
 36f9d186f255fde2fab56b04437c78de0a802e91c77f57b9b385fc9d21b04529  ./src/telemetry/telemetry-aggregation.spec.ts
+455d4e7ff5d2ddb9675e56721b0021f4c89369c914e11d8d39da41e15372010d  ./src/telemetry/telemetry-retention.service.spec.ts
+4a080de630f19620de7c980ce7f036735dbaed90fa1b27bea13b49b067636d68  ./src/telemetry/telemetry-retention.service.ts
 ae67eda0fd97ea63e8965e2aae63d1566dd86b9279f0f3dfeb1c57be0047d3d4  ./src/telemetry/telemetry-stream.controller.spec.ts
 a82ca4eaf9cdfd435a9fa6e8efa4a213e27e5eaa3f56eda8948d0763ee4f6163  ./src/telemetry/telemetry-stream.controller.ts
 173b659490d95b7e9c7bceced64cccf14d2b6e51f32c7acf069ae964a58199a1  ./src/telemetry/telemetry.controller.spec.ts
 0d2504146957742519e6e35374eace11b01ddfdd3e9f2c7b986d3a7587067272  ./src/telemetry/telemetry.controller.ts
-fd104421699ef3339c3c5d8467c52fdae3f4872fdcd9c2529de253b86d6c0760  ./src/telemetry/telemetry.module.ts
+42618f0f04c048077f311f27f733f1eaa1ea9be917d71b6091320a42cc1f1bf1  ./src/telemetry/telemetry.module.ts
 3c56ca31ba6ded76441c4ff9c4bb129890edfc1d242a4e17f60b0c821b9be35e  ./src/telemetry/telemetry.service.spec.ts
 2edda7403421bcf028a1ee0635f275e4d29d4a7506c5c7f2155f702e8e4c9503  ./src/telemetry/telemetry.service.ts
 3404874178cc688b0d8084721fb611ebb002c5cab6533ac076adc946c6eeb085  ./src/users/dto/update-profile.dto.ts
@@ -1077,7 +1081,7 @@ d405c1765c5eed10853800a3ad137e936431133bfc230c5b53268be164eb03e0  ./test/admin-w
 a7146c20bcaac9b7334779d528d91b790973fbfcdf9e2f08cd6af18a5dfbc572  ./test/ci-dependency-bootstrap.contract.spec.ts
 f9435954f20b91eca8b0b50f9318d39d121f9b0a8014a216c6df4df0e4f4badd  ./test/client-fetch-mount-safety.contract.spec.ts
 d3178aed893dc29e72dba70fcf5ebb5868c75f7ac8b92e4156516b0047609575  ./test/console-fail-closed-surfaces.contract.spec.ts
-b6dce0f0689acb179a7a17759a6bdc9b95d7a5294792cf9b227355e77f972d1b  ./test/contract-surface-policy.json
+14dd3fd3154f2ff0bbbf5e754e920485a8ce8c1376e192f4595799690e84e281  ./test/contract-surface-policy.json
 f89733d829433e0fdb0cd0bde0ba37d1392376bbd0b7292e6b36cb30fb50abb9  ./test/credential-column-exposure.contract.spec.ts
 ef693928a55b95aaf66fa09673f6cae0ea63f4214bd56d69eb5a6bc5193dd131  ./test/database-testing.contract.spec.ts
 c4c2d251b73610910aff95bc0cfb4954fb1f3934e96969b81136da5610f9f6a7  ./test/demo-seed-reentry.contract.spec.ts
@@ -1161,7 +1165,7 @@ e54c5b3d5037211e5921a1fe8505d038f9fea96672d46a8a117c0bdae4b3a3c8  ./test/module-
 8b5425d1b999e5d1fc9ba340f24333f53d1dcf0f387705958cbcf3763523c1cf  ./test/module-10-mobile-secure-session-foundation.contract.spec.ts
 13fe2293d2d72901e76a8b977f902f413dce76a73f952d140faa786327f9cbfa  ./test/module-10-mobile-workspace-foundation.contract.spec.ts
 e9ebcf234850023bd757f00e2cdc07aec5edec5060ea1e6c65b5e10e51d54df8  ./test/module-10-security-observability-accessibility-e2e-review.contract.spec.ts
-b3a314ae91bfd3de04cb590f1b77486f87ecb96652a9b1aa496a8753c8d3248d  ./test/module-10-telemetry-widget-query-integration.contract.spec.ts
+610f6dbb9509b4e186e81f3ff66018f8d2ebc2e61ca2fa835bb55e45aca07d02  ./test/module-10-telemetry-widget-query-integration.contract.spec.ts
 75d321e972faf96422707310ee664e18492dfea63e14448c1febbd24ad2e8f73  ./test/module-10-user-web-dynamic-dashboard.contract.spec.ts
 41363008a96f6b58223c4e45d3a9325598f530b3656199447db2b5158f37944b  ./test/module-10-user-web-session-refresh.spec.ts
 fb589f7b6d9d3a7fe922badb737347ffd71481d4d5ef5e23e4fd5637baae80f2  ./test/module-10-web-workspace-design-system-foundation.contract.spec.ts
@@ -1232,13 +1236,14 @@ fe9c813aa001ff118064dbad1c519e00be63215784eacbf4383aacf8dfe79701  ./test/telemet
 2881deb7b7c2f5a24622655e5e85173bef274cb1da4096d396c2cf0f52b94402  ./test/tenant-workspace-widget-readings.contract.spec.ts
 03092111361921e91738158f250ac09e1c849902b114f312fc67b573391b7449  ./test/testing-strategy.contract.spec.ts
 67ea90b786dc829a8538f3734ae0ac3bb710f4b208c6d96a28797d15e6c6681e  ./test/wave-02-core-runtime-closure-invariants.contract.spec.ts
+0732ccc5cb9724479044677b4184c8a294febdcf5301437a3a5a5322add14923  ./test/wave10-telemetry-retention.contract.spec.ts
 4787d2554f2d2e9af44fafd8d42f335b8930d4de40674df25b44a00eff6e1b49  ./test/wave7-mobile-notification-parity.contract.spec.ts
 0d6a59d85dd06956dd5a63155ea681910750de26f3bb5a482c85c51dafca750b  ./test/wave7-mobile-settings-parity.contract.spec.ts
 6de3a198b835bc19350099570f3446ea574b0482597adb6645117f2f485d147e  ./test/wave7-technician-commissioning-logs.contract.spec.ts
 6182f394513707af1e1520e63a5e07df367a22220ec992e2e918a5f8372ede5f  ./test/wave7-technician-maintenance.contract.spec.ts
 0bed8690b67b66ba8f43178fb8c8be9ddde73c50c8d16dd0b71ad51002905786  ./test/wave8-integration-adapter.contract.spec.ts
 a52a3d711d5a85346771b6164cfdda2c97b1c79de645d6425e2e8d16af42b37b  ./test/wave8-invoice-lifecycle.contract.spec.ts
-a9a01e6a42812c2d6cd247ba32a0feaefe6f24553d959b79641356bb61bfe96f  ./test/wave8-payment-invoice.contract.spec.ts
+721b445f934a2e52d267a02f5ee26a5084bc2b7b88a091800f942dd50aaea6b1  ./test/wave8-payment-invoice.contract.spec.ts
 1bc48c6c921050826cdfda1d7d63aad767ba0792b1813f93971ac2feb5791854  ./test/wave9-camera-onboarding.contract.spec.ts
 37a667e8c91e5d19fd49b239cb2dfc28b983e71357420d56980e1669834d1396  ./test/wave9-device-location.contract.spec.ts
 0fb8e57d6ceb0eee554dfef21c3f136c69eeabbab9b2c924e836b5b87de9a488  ./test/wave9-onvif-media.contract.spec.ts
@@ -1292,4 +1297,4 @@ d526784499ba2f416a3fca603acb5dd534fb7450580e048a80abcba43f9ece63  ./tools/redis-
 0543e915f75a5ecc6acceb422f4bebbac2e6a4ca6a77c3b8a031191884d8996c  ./tsconfig.build.json
 7256486d18986f5c8b6c0d1548e30a2cdf8dfb0c4d1fb27e5dffd081ee67fa98  ./tsconfig.jest.json
 fb2278ad89fcdbeb387aa4a8e0f3c550b9ffd464d1ce83b2c2aee1ff72ddc14c  ./tsconfig.json
-44bd31984d6dfc0477882a9f5a7518810187ef1ecccd9953f74fcfa0a99553ad  ./repository-tree.txt
+07f96702a41e18940cbf0cb09f9b568018ed5a5ec82c1b738d76ed0503505c9f  ./repository-tree.txt

@@ -142,7 +142,8 @@
     "billing:probe": "bash scripts/run-billing-probe.sh",
     "location:probe": "bash scripts/run-device-location-probe.sh",
     "camera:probe": "bash scripts/run-camera-probe.sh",
-    "media:probe": "bash scripts/run-media-probe.sh"
+    "media:probe": "bash scripts/run-media-probe.sh",
+    "retention:probe": "ts-node --transpile-only scripts/probe-telemetry-retention.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

@@ -65,9 +65,15 @@ describe('Module 10 Slice 10.5 telemetry widget query integration contract', () 
   });
 
   it('wires existing telemetry services through module exports only', () => {
-    expect(telemetryModule).toContain(
-      'exports: [TelemetryService, TelemetryAggregationService]',
-    );
+    // Asserted per service rather than as one literal array. The literal broke the moment a third
+    // telemetry provider was added, and the failure said nothing about whether the two services this
+    // test is about were still exported -- which is the thing it is actually checking.
+    const exportsLine = telemetryModule
+      .split('\n')
+      .find((line: string) => line.includes('exports:') && line.includes('TelemetryService'));
+    expect(exportsLine).toBeDefined();
+    expect(exportsLine).toContain('TelemetryService');
+    expect(exportsLine).toContain('TelemetryAggregationService');
     expect(dashboardModule).toContain(
       'imports: [PrismaModule, TelemetryModule, DeviceModule]',
     );

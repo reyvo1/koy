@@ -167,8 +167,25 @@ describe('invoices have somewhere to live', () => {
   });
 
   it('and both are declared in a migration, not only in the schema', () => {
-    const { execSync } = require('node:child_process') as typeof import('node:child_process');
-    const out = execSync("ls prisma/migrations | tail -3", { cwd: ROOT, encoding: 'utf8' });
-    expect(out).toMatch(/\d+_billing/);
+    const { existsSync, readdirSync, readFileSync } = require('node:fs') as typeof import('node:fs');
+    const { join } = require('node:path') as typeof import('node:path');
+
+    // This used to be `ls prisma/migrations | tail -3` matched against /\d+_billing/, which asserted the
+    // billing migration happened to be among the three most recent directories. Any later migration moved
+    // it out of the window and failed a test about billing, while a deleted or empty billing migration in
+    // position three would still have passed. Asserting the thing the test name says instead: that a
+    // migration file exists which actually creates the billing tables.
+    const migrationDir = join(ROOT, 'prisma/migrations');
+    const files = readdirSync(migrationDir)
+      .filter((entry: string) => entry !== 'migration_lock.toml')
+      .map((entry: string) => join(migrationDir, entry, 'migration.sql'))
+      .filter((file: string) => existsSync(file));
+
+    const creating = files.filter((file: string) => {
+      const sql = readFileSync(file, 'utf8');
+      return /CREATE TABLE[^;]*"invoices"/i.test(sql) && /CREATE TABLE[^;]*"metering_records"/i.test(sql);
+    });
+
+    expect(creating.length).toBeGreaterThan(0);
   });
 });

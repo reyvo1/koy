@@ -602,6 +602,7 @@ prisma/migrations/20260930235900_saved_reports/migration.sql
 prisma/migrations/20261001090000_device_maintenance/migration.sql
 prisma/migrations/20261001120000_billing_invoice_metering/migration.sql
 prisma/migrations/20261001140000_device_location_tenant_history/migration.sql
+prisma/migrations/20261002000000_wave10_telemetry_rollups/migration.sql
 prisma/migrations/migration_lock.toml
 prisma/schema.prisma
 prisma/seed.ts
@@ -651,6 +652,7 @@ scripts/probe-notification-writers.py
 scripts/probe-public-api-sdk.mts
 scripts/probe-saved-reports-cleanup.sql
 scripts/probe-saved-reports.mts
+scripts/probe-telemetry-retention.ts
 scripts/probe-user-web-fixture.sql
 scripts/probe-user-web-share-state.sql
 scripts/probe-webhook-event-vocabulary.sh
@@ -1052,6 +1054,8 @@ src/telemetry/mqtt.webhook.controller.ts
 src/telemetry/telemetry-aggregation.controller.ts
 src/telemetry/telemetry-aggregation.service.ts
 src/telemetry/telemetry-aggregation.spec.ts
+src/telemetry/telemetry-retention.service.spec.ts
+src/telemetry/telemetry-retention.service.ts
 src/telemetry/telemetry-stream.controller.spec.ts
 src/telemetry/telemetry-stream.controller.ts
 src/telemetry/telemetry.controller.spec.ts
@@ -1232,6 +1236,7 @@ test/tenant-isolation-at-query-layer.contract.spec.ts
 test/tenant-workspace-widget-readings.contract.spec.ts
 test/testing-strategy.contract.spec.ts
 test/wave-02-core-runtime-closure-invariants.contract.spec.ts
+test/wave10-telemetry-retention.contract.spec.ts
 test/wave7-mobile-notification-parity.contract.spec.ts
 test/wave7-mobile-settings-parity.contract.spec.ts
 test/wave7-technician-commissioning-logs.contract.spec.ts
