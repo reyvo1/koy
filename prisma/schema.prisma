@@ -18,6 +18,7 @@ model Tenant {
   telemetry   Telemetry[]
   telemetryRollups TelemetryRollup[]
   regions                  Region[]
+  edgeGateways            EdgeGateway[]
   commands    DeviceCommand[]
   memberships Membership[]
   automations          Automation[]
@@ -211,6 +212,7 @@ model Device {
   @@index([ownerId])
   @@map("devices")
   deviceLocations          DeviceLocation[]
+  edgeGateways             EdgeGatewayDevice[]
   region                   Region?                 @relation(fields: [regionId], references: [id])
   regionId                 String?
 }
@@ -366,12 +368,19 @@ model Telemetry {
   createdAt            DateTime              @default(now())
   automationExecutions AutomationExecution[] @relation("AutomationExecutionTriggerTelemetry")
 
+  /// Which gateway delivered this reading, when a gateway did. Null means the device reported for itself,
+  /// which is true for every row written before ADR-010 -- so this is deliberately nullable with no
+  /// default. Populating it retroactively would be inventing a delivery path nobody observed.
+  deliveredByGatewayId String?
+  deliveredByGateway   EdgeGateway?  @relation(fields: [deliveredByGatewayId], references: [id])
+
   @@unique([id, tenantId])
   @@unique([deviceId, eventId])
   @@index([tenantId])
   @@index([deviceId])
   @@index([createdAt])
   @@index([tenantId, deviceId, createdAt, id])
+  @@index([deliveredByGatewayId])
   @@map("telemetry")
 }
 
@@ -576,11 +585,75 @@ enum DeviceStatus {
 
 /// How well a device is doing, independent of whether it is switched on. A device can be ACTIVE and
 /// still be reporting values far outside its own history, which a status cannot express.
+/// UNKNOWN is the default and the honest starting state: a gateway that has never reported has no
+/// evidence of being up, and defaulting it to ONLINE would be a claim the platform cannot support.
+enum EdgeGatewayStatus {
+  UNKNOWN
+  ONLINE
+  OFFLINE
+  DISABLED
+}
+
 enum DeviceHealth {
   HEALTHY
   DEGRADED
   UNHEALTHY
   OFFLINE
+}
+
+/// A gateway that delivers telemetry on behalf of a bounded set of a tenant's devices.
+///
+/// A gateway is an identity, not a label: it holds its own credential, so a gateway can be authenticated
+/// and revoked without touching any device's own credential. `lastSeenAt` is null until a gateway has
+/// actually reported, because a gateway that has never been seen must not read as online (ADR-010).
+model EdgeGateway {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  gatewayCode  String
+  displayName  String
+  gatewayStatus EdgeGatewayStatus @default(UNKNOWN)
+  regionId     String?
+  region       Region?  @relation(fields: [regionId], references: [id])
+  lastSeenAt   DateTime?
+  credential   EdgeGatewayCredential?
+  devices      EdgeGatewayDevice[]
+  deliveredTelemetry Telemetry[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([tenantId, gatewayCode])
+  @@index([tenantId, gatewayStatus])
+  @@map("edge_gateways")
+}
+
+/// A gateway's own credential. Separate from DeviceCredential because that is unique per device, and a
+/// gateway is not a device -- one gateway serves many.
+model EdgeGatewayCredential {
+  id           String     @id @default(uuid())
+  gatewayId    String     @unique
+  gateway      EdgeGateway @relation(fields: [gatewayId], references: [id])
+  passwordHash String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@map("edge_gateway_credentials")
+}
+
+/// The explicit set of devices a gateway may speak for. A list, not a region: "everything in this region"
+/// would silently widen whenever a device is commissioned, and an allowlist that grows on its own is not an
+/// allowlist.
+model EdgeGatewayDevice {
+  id         String      @id @default(uuid())
+  gatewayId  String
+  gateway    EdgeGateway @relation(fields: [gatewayId], references: [id])
+  deviceId   String
+  device     Device      @relation(fields: [deviceId], references: [id])
+  createdAt  DateTime    @default(now())
+
+  @@unique([gatewayId, deviceId])
+  @@index([deviceId])
+  @@map("edge_gateway_devices")
 }
 
 /// A deployment region a tenant's devices actually live in. `regionCode` is the platform's stable handle
@@ -594,6 +667,7 @@ model Region {
   isActive     Boolean  @default(true)
   tenants      Tenant[]
   devices      Device[]
+  edgeGateways     EdgeGateway[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

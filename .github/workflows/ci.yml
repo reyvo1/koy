@@ -391,6 +391,14 @@ jobs:
         run: |
           npm run retention:probe
 
+      - name: Wave 12 edge gateway
+        timeout-minutes: 10
+        # The only gate for the allowlist filter. A mocked suite passes even with `where` dropped from the
+        # gateway's device query, because a mock returns whatever it is told; only a real database shows that
+        # a gateway registered for one device genuinely cannot deliver for another.
+        run: |
+          npm run edge:probe
+
       - name: Wave 12 region boundaries
         timeout-minutes: 10
         # Also the only gate for the regions table, its seeded row, and the foreign key on devices.regionId.

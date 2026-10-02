@@ -502,6 +502,7 @@ docs/phoenix/adr/ADR-006-user-room-centric-accessible-space-read-model.md
 docs/phoenix/adr/ADR-007-device-technical-evidence-and-user-analytics-alert-read-models.md
 docs/phoenix/adr/ADR-008-platform-observability-read-models.md
 docs/phoenix/adr/ADR-009-region-boundaries.md
+docs/phoenix/adr/ADR-010-edge-gateway-identity-and-attribution.md
 docs/phoenix/phoenix-doctor.ps1
 docs/product-vision.md
 docs/production-configuration.md
@@ -607,6 +608,7 @@ prisma/migrations/20261002000000_wave10_telemetry_rollups/migration.sql
 prisma/migrations/20261002120000_wave11_device_health/migration.sql
 prisma/migrations/20261002150000_wave11_device_risk/migration.sql
 prisma/migrations/20261002200000_wave12_region_boundaries/migration.sql
+prisma/migrations/20261002210000_wave12_edge_gateways/migration.sql
 prisma/migrations/migration_lock.toml
 prisma/schema.prisma
 prisma/seed.ts
@@ -649,6 +651,7 @@ scripts/probe-device-maintenance-cleanup.sql
 scripts/probe-device-maintenance.py
 scripts/probe-device-name-audit.sql
 scripts/probe-device-risk.ts
+scripts/probe-edge-gateway.ts
 scripts/probe-energy-intelligence.ts
 scripts/probe-media-runtime.py
 scripts/probe-mqtt-management.mts
@@ -933,6 +936,9 @@ src/device/dto/create-command.dto.ts
 src/device/dto/device.dto.ts
 src/device/guards/device-auth.guard.spec.ts
 src/device/guards/device-auth.guard.ts
+src/edge/edge-gateway.service.spec.ts
+src/edge/edge-gateway.service.ts
+src/edge/edge.module.ts
 src/health/health.controller.spec.ts
 src/health/health.controller.ts
 src/health/health.module.spec.ts
@@ -1261,6 +1267,7 @@ test/wave11-device-health-scoring.contract.spec.ts
 test/wave11-device-risk-forecasting.contract.spec.ts
 test/wave11-energy-intelligence.contract.spec.ts
 test/wave11-telemetry-anomaly-detection.contract.spec.ts
+test/wave12-edge-gateway.contract.spec.ts
 test/wave12-region-boundaries.contract.spec.ts
 test/wave7-mobile-notification-parity.contract.spec.ts
 test/wave7-mobile-settings-parity.contract.spec.ts
