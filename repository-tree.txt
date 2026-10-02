@@ -1147,6 +1147,7 @@ test/module-10-admin-web-operational-dashboard-ui-foundation.contract.spec.ts
 test/module-10-admin-web-operational-dashboard-ui-proposal.contract.spec.ts
 test/module-10-admin-web-operational-dashboard.contract.spec.ts
 test/module-10-admin-web-operational-summary-route.spec.ts
+test/module-10-admin-web-operational-summary-state.spec.ts
 test/module-10-admin-web-session-refresh.spec.ts
 test/module-10-android-native-proof-preparation.contract.spec.ts
 test/module-10-barcode-cctv-ui-compatibility.contract.spec.ts
