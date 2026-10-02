@@ -19,6 +19,7 @@ model Tenant {
   telemetryRollups TelemetryRollup[]
   regions                  Region[]
   edgeGateways            EdgeGateway[]
+  twinSnapshots            DeviceTwinSnapshot[]
   commands    DeviceCommand[]
   memberships Membership[]
   automations          Automation[]
@@ -213,6 +214,7 @@ model Device {
   @@map("devices")
   deviceLocations          DeviceLocation[]
   edgeGateways             EdgeGatewayDevice[]
+  twinSnapshots            DeviceTwinSnapshot[]
   region                   Region?                 @relation(fields: [regionId], references: [id])
   regionId                 String?
 }
@@ -585,6 +587,16 @@ enum DeviceStatus {
 
 /// How well a device is doing, independent of whether it is switched on. A device can be ACTIVE and
 /// still be reporting values far outside its own history, which a status cannot express.
+/// What the reconciliation concluded. UNKNOWN and STALE are first-class outcomes, not failures:
+/// UNKNOWN means the device has never reported, STALE means its last observation is past the horizon.
+/// Neither may be collapsed into "looks fine".
+enum DeviceTwinVerdict {
+  ALIGNED
+  DIVERGENT
+  STALE
+  UNKNOWN
+}
+
 /// UNKNOWN is the default and the honest starting state: a gateway that has never reported has no
 /// evidence of being up, and defaulting it to ONLINE would be a claim the platform cannot support.
 enum EdgeGatewayStatus {
@@ -654,6 +666,33 @@ model EdgeGatewayDevice {
   @@unique([gatewayId, deviceId])
   @@index([deviceId])
   @@map("edge_gateway_devices")
+}
+
+/// A dated reconciliation of what the platform believes about a device against what the device last reported.
+///
+/// `observedAt` is when the DEVICE reported, not when this row was written -- without it a fresh reading and
+/// a week-old one are indistinguishable. `observedStatus` and `observedPayload` are nullable because a device
+/// that has never reported leaves them null and the verdict is UNKNOWN; there is no default reading to fall
+/// back on. `twinVersion` is monotonic per device and unique, so a retried write updates rather than forks.
+model DeviceTwinSnapshot {
+  id               String            @id @default(uuid())
+  tenantId         String
+  tenant           Tenant            @relation(fields: [tenantId], references: [id])
+  deviceId         String
+  device           Device            @relation(fields: [deviceId], references: [id])
+  twinVersion      Int
+  desiredStatus    String?
+  observedStatus   String?
+  observedPayload  Json?
+  observedAt       DateTime?
+  verdict          DeviceTwinVerdict
+  divergenceReason String?
+  createdAt        DateTime          @default(now())
+
+  @@unique([deviceId, twinVersion])
+  @@index([tenantId, deviceId, createdAt])
+  @@index([tenantId, verdict])
+  @@map("device_twin_snapshots")
 }
 
 /// A deployment region a tenant's devices actually live in. `regionCode` is the platform's stable handle

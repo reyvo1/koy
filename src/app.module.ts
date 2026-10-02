@@ -25,6 +25,7 @@ import { NotificationModule } from './notification/notification.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { RegionModule } from './region/region.module';
 import { EdgeModule } from './edge/edge.module';
+import { TwinModule } from './twin/twin.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { OrgModule } from './org/org.module';
 import { OtaModule } from './ota/ota.module';
@@ -72,6 +73,7 @@ import { SceneModule } from './scene/scene.module';
     AnalyticsModule,
     RegionModule,
     EdgeModule,
+    TwinModule,
     AdminOperationsModule,
     MqttModule,
     TelemetryModule,

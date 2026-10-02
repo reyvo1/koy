@@ -391,6 +391,14 @@ jobs:
         run: |
           npm run retention:probe
 
+      - name: Wave 12 device twin
+        timeout-minutes: 10
+        # The only gate for STALE and DIVERGENT as real verdicts. A mocked suite can assert a branch was
+        # taken; only a real aged observation and a real disagreeing payload prove the twin refuses to call
+        # them agreement.
+        run: |
+          npm run twin:probe
+
       - name: Wave 12 edge gateway
         timeout-minutes: 10
         # The only gate for the allowlist filter. A mocked suite passes even with `where` dropped from the
