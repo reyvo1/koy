@@ -14,4 +14,15 @@ done
 docker ps --format '{{.Names}} {{.Status}}' | grep '^iot-rescue-go2rtc' || {
   echo "go2rtc did not become healthy" >&2; exit 2; }
 python3 "$DIR/probe-media-runtime.py"
+mkdir -p reports/simulated-hardware-uat
+cat > reports/simulated-hardware-uat/media.json <<'JSON'
+{
+  "schemaVersion": 1,
+  "gate": "SIMULATED_HARDWARE_UAT",
+  "component": "rtsp-webrtc-media",
+  "status": "PASS",
+  "evidenceClass": "SIMULATED_HARDWARE",
+  "boundary": "Synthetic H264 RTSP producer through the real go2rtc/WebRTC runtime; not relabelled as physical camera firmware evidence."
+}
+JSON
 printf '\nWAVE 9 MEDIA RUNTIME PROBE: PASS\n'

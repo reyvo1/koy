@@ -24,6 +24,9 @@ ignored by Git/source packaging by default because it can contain environment
 metadata. Never place passwords, tokens, webhook secrets, private keys, or
 credential values in an evidence file.
 
+
+Release artifact integrity is separate from production approval: `release:verify` only proves the package/manifest, while `release:approve` requires the live RESCUE evidence plus either the source-bound simulated-hardware UAT summary or genuine legacy physical OTA evidence.
+
 ## Gate order
 
 1. Run the normal preflight and full automated suite:
@@ -44,8 +47,10 @@ credential values in an evidence file.
      --automated-report=reports/rescue-runtime-acceptance-....json
    ```
 
-3. Execute the runtime checklist, EMQX negative/ACL/webhook checks, and the
-   physical ESP32 checks. Every `PASS` row must reference a real evidence
+3. Execute the runtime checklist and EMQX negative/ACL/webhook checks. GitHub also
+   runs the combined `SIMULATED_HARDWARE_UAT` path. The `physicalEsp32` rows may remain
+   unfilled when validation is invoked with the source-bound simulated-hardware summary;
+   fill them only for an optional real field/HIL run. Every asserted `PASS` row must reference a real evidence
    artifact with its SHA-256; free-text evidence is rejected. The recommended
    way to attach a log/transcript/screenshot/serial capture is:
 
@@ -70,50 +75,30 @@ credential values in an evidence file.
 The validator fails closed if the automated report belongs to another source
 fingerprint, any required automated step is absent/not green, a required live
 check is missing/not PASS, an evidence artifact is absent or its SHA-256 does
-not match, timestamps are invalid/out of gate order, the physical board/ESP-IDF
-version is unidentified, or secret-bearing keys appear in the evidence object.
+not match, timestamps are invalid/out of gate order, the selected hardware evidence path is incomplete/source-mismatched, or secret-bearing keys appear in the evidence object.
 
-## RESCUE-02B vs production OTA
+## RESCUE-02B vs simulated-hardware / physical field evidence
 
-Physical pairing/telemetry/command/ACK/reconnect/heartbeat remains part of the
-RESCUE-02B hardware boundary. Wave 3 adds ESP-IDF/QEMU/live-service OTA
-simulation using the exact built firmware bytes, but this is classified as
-SIMULATED-HARDWARE. Physical OTA/HIL remains a separate
-**production-certification** gate and may stay `DEFERRED` in a RESCUE-02B
-evidence record. `DEFERRED` must include an explicit reason; it is not treated
-as physical OTA PASS.
-
-If OTA is later changed to `PASS`, the evidence validator additionally requires:
-
-- a real non-future `executedAt` timestamp;
-- the tested physical `deviceId`;
-- `artifactPath` pointing to the exact firmware bytes used for the test;
-- `artifactSha256` matching those local bytes;
-- `deviceObservedSha256` matching the artifact digest;
-- a concrete evidence/reference note.
-
-After a production release directory has been built and integrity-verified,
-production approval is a **separate gate**:
+The normal software-certification path uses the exact ESP-IDF artifact in QEMU/live-service
+simulation and seals `reports/simulated-hardware-uat/summary.json` only after device
+reconnect/cold boot/QoS-1 dedupe/command ACK/OTA rollback, real EMQX negative flows,
+synthetic camera onboarding and RTSP-to-WebRTC all pass. Validate RESCUE-02B with:
 
 ```bash
-npm run release:approve -- \
-  --release=artifacts/iot-platform-release \
-  --evidence=reports/rescue-02b-evidence-....json
+npm run rescue:evidence:validate -- \
+  --file=reports/rescue-02b-evidence-....json \
+  --simulated-hardware=reports/simulated-hardware-uat/summary.json
 ```
 
-`release:approve` first re-validates RESCUE-02B evidence against the current
-sealed source fingerprint, requires OTA status `PASS`, verifies the release
-manifest covers the exact packaged file set, and then requires the release
-source fingerprint to match the same sealed baseline. On success it writes
-`production-approval.json`, binding the exact release manifest, evidence digest,
-source fingerprint, and OTA digests. The deployment installer requires that
-receipt through `release:verify --require-approved` before it may install
-dependencies, run migrations, or activate a release. A green `release:verify`
-alone is artifact integrity, **not production approval**.
+That receipt is explicitly `SIMULATED_HARDWARE_LIVE_SERVICE`, source-fingerprinted and
+firmware-SHA-bound. It can close automated software/UAT without physical lab equipment.
+It is not a PHYSICAL/HIL claim.
 
-Use `rescue-02b-evidence.example.json` only as a schema/checklist reference.
-Do not edit the example into a fake passing artifact.
-
+The legacy physical path remains optional field validation. If used, omit
+`--simulated-hardware`, complete the `physicalEsp32` checklist and set OTA to `PASS` only
+with a real device identity, exact artifact bytes, matching artifact/device-observed
+SHA-256 values, timestamp and concrete evidence. Bare text or `DEFERRED` can never be
+misrepresented as physical PASS.
 ## Gate 1 PASS receipt before Gate 2
 
 Before starting the live protocol/service acceptance work referred to as **Gate 2**, produce a source-bound Gate 1 PASS receipt:

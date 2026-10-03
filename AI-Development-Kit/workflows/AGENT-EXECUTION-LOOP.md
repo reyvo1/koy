@@ -1,52 +1,35 @@
 # Agent Execution Loop
 
-AUDIT → BOUND SCOPE → BUILD CANDIDATE → CHEAP CHECKS → OWNER APPROVAL →
-OFFICIAL VALIDATION+COMMIT → VERIFY → CLEANUP → HANDOFF
+`RESUME CHECKPOINT → FIRST FAILING GATE → ROOT-CAUSE CLASS → COMPLETE BATCH → CHEAP/TARGETED CHECKS → FULL LOCAL PRE-PUSH → REVIEW DIFF → ONE COMMIT/PUSH → GITHUB HEAVY UAT → HANDOFF`
 
-## Audit
+## Resume Checkpoint
 
-Verifikasi exact active Git commit, branch, clean status, tracked-file count,
-lifecycle, module/slice, manifest, lockfile, profile, dan relevant source. Pada
-input identik, baca hanya file yang berubah dan evidence baru.
+Read `docs/SESSION-HANDOFF-PROTOCOL.md` and the current blocks of the handoff/state files. Verify real `HEAD`, branch/upstream, `git status --short`, and the newest CI evidence. A dirty tree may be an intentional candidate; preserve it when the handoff says so. Do not restart a repository-wide audit on identical input.
 
-## Bound Scope
+## First Failing Gate
 
-Tetapkan exact allowed paths, forbidden paths, expected tracked files, commit
-subject, validation profile, dan dampak architecture/contracts/docs. Jangan
-melompat module atau memperluas scope tanpa approval.
+Use the newest local/CI evidence to identify the first real failure. Later failures that are only cascades are not separate bugs. If the first failure moves after a fix, continue to the next gate within the same coherent batch.
 
-## Build Candidate
+## Root-Cause Class
 
-Susun exact-file payload di luar main. Sinkronkan source, tests, Kit, docs,
-profiles, contracts, dan lifecycle metadata yang memang berada dalam scope.
-Hitung SHA-256 setiap payload file dan artifact.
+Investigate the complete source/script/config/document contract responsible for the failure. Fix the class permanently. Do not suppress scanners, weaken assertions, invent PASS evidence, or patch only the last error line.
 
-## Cheap Checks
+## Complete Batch
 
-Sebelum gate mahal, periksa syntax, JSON/schema, hashes, allowlist, forbidden
-paths, tracked-file projection, formatting, lint/static consequences, dan
-focused state-sensitive contracts sejauh environment mendukung.
+Synchronize implementation, tests, CI, contracts, PRD/Development Kit and handoff documentation that belong to the same root-cause class. Missing physical ESP32/camera hardware is non-blocking: use source-bound `SIMULATED_HARDWARE_LIVE_SERVICE` for software UAT and keep physical/site/HIL separately labelled field evidence.
 
-Jika environment agent tidak dapat menjalankan gate authoritative, jangan membuat
-runner pengganti. Serahkan gate tersebut ke official Windows repository command.
+## Validation
 
-Pada first proven failure, STOP dan gunakan exact failure evidence sebagai batas perbaikan.
+Run cheap/targeted checks first, then the official local pre-push gate. GitHub remains authoritative for heavy Docker/PostgreSQL/API/EMQX, ESP-IDF/QEMU, live UAT, load/security and release gates.
 
-## Official Validation and Commit
+## Review, Commit and Push
 
-Hanya setelah owner mengatakan `commit`, jalankan satu official validation+local
-commit untuk exact candidate. `module:package` melakukan satu Doctor authoritative;
-jangan mendahuluinya dengan Doctor standalone. Gunakan satu dependency bootstrap,
-satu Full Jest, dan matrix hanya bila profile mewajibkan.
+After the complete local gate is green, review the complete diff once. Make one commit and one push for the coherent batch. Do not create micro-push loops merely to discover the next assertion that could have been caught locally.
 
-## Verify and Cleanup
+## GitHub Heavy UAT
 
-Verifikasi exact HEAD, commit parent/subject, changed paths, hashes, clean status,
-workspace removal, remaining owned workspace count, dan disk state. Simpan report,
-log, snapshot, dan local-unpushed handoff. STOP tanpa push.
+Read the first failing GitHub step. If red, stay on the same batch/root-cause class and repair it. If green, advance to the next current Wave 13 certification objective.
 
-## Push and Lifecycle
+## Handoff
 
-Push hanya setelah approval `push` dan hanya exact validated SHA. Verifikasi
-exact-SHA CI sebelum remote-green handoff. Completion, activation, dan deployment
-memerlukan approval terpisah.
+Before a session ends or moves to a new chat, prepend `chat-session.md` and update the current continuation blocks required by `docs/SESSION-HANDOFF-PROTOCOL.md`. Record QA, first remaining blocker, latest known baseline/evidence, and exact next action. Reseal `repository-tree.txt` and `BASELINE-MANIFEST.sha256`.

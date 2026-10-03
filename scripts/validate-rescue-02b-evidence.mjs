@@ -6,6 +6,7 @@ import path from 'node:path';
 
 const argv = process.argv.slice(2);
 const fileArg = argv.find((value) => value.startsWith('--file='));
+const simulatedHardwareArg = argv.find((value) => value.startsWith('--simulated-hardware='));
 
 const REQUIRED_RUNTIME_FLOW = [
   'login',
@@ -181,6 +182,26 @@ function validateChecks(sectionName, section, requiredIds, automatedGeneratedAt)
   }
 }
 
+function validateSimulatedHardwareSummary(file) {
+  const summary = loadJson(file, 'Simulated hardware UAT summary');
+  if (!summary) return null;
+  if (summary.gate !== 'SIMULATED_HARDWARE_UAT') fail(`simulated hardware gate must be SIMULATED_HARDWARE_UAT; got ${summary.gate}.`);
+  if (summary.status !== 'PASS') fail(`simulated hardware UAT must be PASS; got ${summary.status ?? 'missing'}.`);
+  if (summary.evidenceClass !== 'SIMULATED_HARDWARE_LIVE_SERVICE') fail(`simulated hardware evidenceClass must be SIMULATED_HARDWARE_LIVE_SERVICE; got ${summary.evidenceClass ?? 'missing'}.`);
+  if (!validTimestamp(summary.observedAt)) fail('simulated hardware UAT observedAt must be a real, non-future ISO timestamp.');
+  if (!/^[a-f0-9]{64}$/i.test(summary.firmwareArtifactSha256 ?? '')) fail('simulated hardware UAT firmwareArtifactSha256 must be a SHA-256 digest.');
+  const sourceInputs = {
+    packageLockSha256: path.resolve(path.dirname(import.meta.filename), '..', 'package-lock.json'),
+    baselineManifestSha256: path.resolve(path.dirname(import.meta.filename), '..', 'BASELINE-MANIFEST.sha256'),
+    repositoryTreeSha256: path.resolve(path.dirname(import.meta.filename), '..', 'repository-tree.txt'),
+  };
+  for (const [field, source] of Object.entries(sourceInputs)) {
+    const expected = sha256File(source);
+    if (!expected || summary.sourceFingerprint?.[field] !== expected) fail(`simulated hardware UAT source fingerprint mismatch: ${field}.`);
+  }
+  return summary;
+}
+
 function scanSecretKeys(value, trail = '$') {
   if (Array.isArray(value)) {
     value.forEach((item, index) => scanSecretKeys(item, `${trail}[${index}]`));
@@ -274,13 +295,21 @@ if (!meaningfulVersion(evidence.liveBroker?.emqxVersion)) {
 }
 validateChecks('liveBroker', evidence.liveBroker, REQUIRED_BROKER, automated?.generatedAt);
 
-if (!meaningfulEvidence(evidence.physicalEsp32?.boardModel)) {
-  fail('physicalEsp32.boardModel must identify the physical board model tested.');
+const simulatedHardwarePath = simulatedHardwareArg
+  ? path.resolve(simulatedHardwareArg.slice('--simulated-hardware='.length))
+  : null;
+const simulatedHardware = simulatedHardwarePath ? validateSimulatedHardwareSummary(simulatedHardwarePath) : null;
+if (!simulatedHardware) {
+  // Legacy/manual field-evidence path remains supported. It is intentionally distinct from the
+  // automated simulated-hardware path and must never be inferred from a simulator receipt.
+  if (!meaningfulEvidence(evidence.physicalEsp32?.boardModel)) {
+    fail('physicalEsp32.boardModel must identify the physical board model tested.');
+  }
+  if (!meaningfulEvidence(evidence.physicalEsp32?.espIdfVersion)) {
+    fail('physicalEsp32.espIdfVersion must record the ESP-IDF version used for the physical test.');
+  }
+  validateChecks('physicalEsp32', evidence.physicalEsp32, REQUIRED_HARDWARE, automated?.generatedAt);
 }
-if (!meaningfulEvidence(evidence.physicalEsp32?.espIdfVersion)) {
-  fail('physicalEsp32.espIdfVersion must record the ESP-IDF version used for the physical test.');
-}
-validateChecks('physicalEsp32', evidence.physicalEsp32, REQUIRED_HARDWARE, automated?.generatedAt);
 
 const ota = evidence.productionOnly?.otaDigestVerification;
 if (!ota || !['DEFERRED', 'PASS'].includes(ota.status)) {
@@ -339,6 +368,7 @@ if (failures.length > 0) {
 console.log('PASS  Automated full-suite report is green and bound to the current source fingerprint.');
 console.log('PASS  Live runtime vertical-flow evidence is complete.');
 console.log('PASS  EMQX auth/ACL/webhook negative-flow evidence is complete.');
-console.log('PASS  Physical ESP32 core-flow evidence is complete.');
+console.log(simulatedHardware ? 'PASS  Simulated-hardware/live-service device evidence is complete.' : 'PASS  Physical ESP32 core-flow evidence is complete.');
 console.log(`INFO  OTA production-only status: ${ota.status}.`);
+console.log(`INFO  Hardware evidence mode: ${simulatedHardware ? 'SIMULATED_HARDWARE_LIVE_SERVICE (software UAT)' : 'PHYSICAL / EXTERNAL (legacy field validation)'}.`);
 console.log('Result: RESCUE-02B EVIDENCE PASS');

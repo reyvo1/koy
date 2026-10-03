@@ -2,11 +2,15 @@
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
 
-## ACTIVE HANDOFF — FINAL ENTERPRISE CERTIFICATION SOFTWARE
+## ACTIVE HANDOFF — SIMULATED-HARDWARE UAT + SESSION CONTINUITY
 
-Master roadmap: `docs/ENTERPRISE-WAVE-ROADMAP.md` Wave 1–13. Waves 1–12 have **software scope CLOSED / GREEN**; Wave 13 is **IN PROGRESS, software deliverables only**. Production remains **NOT APPROVED** until the explicitly external/physical evidence and final approval are complete. Rescue MQTT remains 18884; do not reopen the historical foreign Windows Mosquitto port-1883 issue without new evidence.
+Master roadmap: `docs/ENTERPRISE-WAVE-ROADMAP.md`. Waves 1–12 are software-scope CLOSED/GREEN; Wave 13 is IN PROGRESS. Missing physical ESP32/camera hardware is not a software blocker. Mandatory automated certification uses source-bound `SIMULATED_HARDWARE_LIVE_SERVICE` with the exact firmware artifact plus live PostgreSQL/API/EMQX and synthetic camera/media. Physical/site/HIL remains separately labelled field validation.
 
-Current engineering priority is regression integrity: keep Wave 4–8 live probes, Wave 9–12 probes, performance/security/release gates and source-state synchronization continuously enforced in CI. Missing hardware/provider credentials are PENDING EXTERNAL evidence, never PASS.
+Current candidate status (2026-10-04): the simulated-hardware UAT hardening batch is applied on top of latest known committed baseline `f4ed5cd`. The local pre-push sequence passed secret scan, Wave status, User Web navigation, CI-env, simulated UAT, production approval, baseline/rescue validation (484/484), targeted Jest (154/154), and Wave 3 ESP32 simulation/build/API/toolchain/QEMU tests until the final source self-test hit a **stale contract assertion** expecting `SIMULATED_LIVE_SERVICE` and a physical-production blocker. The implementation already uses `SIMULATED_HARDWARE_LIVE_SERVICE`; the current fix updates that test contract and the durable session-resume workflow.
+
+## Resume rule
+
+Follow `docs/SESSION-HANDOFF-PROTOCOL.md`: verify real `git rev-parse HEAD` + `git status --short`, preserve a recorded dirty candidate, and continue from the FIRST FAILING GATE rather than auditing from zero. After this correction run `npm run wave3:esp32:self-test`, then the full `npm run wave3:prepush:check`. Only after full green: review complete diff once, commit once, push once, then read GitHub heavy UAT.
 
 --- HISTORICAL WAVE 3 HANDOFF BELOW ---
 

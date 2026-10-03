@@ -32,9 +32,25 @@ tidak ada. Rescue runtime authoritative membaca `PORT` dari `.env` dan saat ini 
 *forbidden* di `scripts/validate-rescue-baseline.mjs` — gate dan dokumen saling bertentangan,
 dan gate tetap hijau karena forbidden-check hanya memindai `.ts/.tsx/.js/.mjs`, bukan `.md`.
 
-Catatan: MQTT broker & device fisik belum jalan di staging, jadi data
-perangkat mungkin kosong — halaman harus tetap tampil rapi dengan pesan
-"belum ada data", BUKAN error.
+Catatan: ketiadaan device fisik **bukan blocker UAT software**. GitHub rescue runtime wajib
+menjalankan `SIMULATED-HARDWARE / LIVE-SERVICE` terhadap EMQX/PostgreSQL/API yang sama, termasuk
+ESP32 exact firmware artifact, reconnect, cold reboot, QoS1 dedupe, command/ACK, OTA failure/rollback,
+camera onboarding sintetis dan RTSP→WebRTC. Site/HIL fisik adalah evidence tambahan yang terpisah.
+
+### UAT otomatis — simulated hardware
+
+Sebelum UAT klik manual dianggap valid, GitHub harus menghasilkan `reports/simulated-hardware-uat/summary.json`
+dengan `status=PASS`. Receipt itu fail-closed dan hanya dibuat bila seluruh bukti berikut PASS pada rescue run yang sama:
+
+- [ ] firmware ESP32 dibangun oleh ESP-IDF dan artifact SHA-256 yang sama dipakai live simulation
+- [ ] device provisioning + heartbeat + Wi-Fi/MQTT reconnect
+- [ ] cold reboot/rejoin dari state simulator baru memakai identity hasil pairing yang sama
+- [ ] telemetry QoS1 duplicate `eventId` hanya menjadi satu row PostgreSQL
+- [ ] command/ACK dan duplicate-command replay tidak mengeksekusi actuator dua kali
+- [ ] OTA trusted HTTPS + SHA-256 benar; digest salah/interrupted stream ditolak; rollback/confirm diuji
+- [ ] EMQX wrong-secret/revoked-device/cross-device ACL negative flow PASS
+- [ ] camera pairing memakai synthetic device tetapi route/auth production yang nyata
+- [ ] synthetic H264 RTSP producer berhasil dinegosiasikan menjadi WebRTC SDP pada go2rtc nyata
 
 Cara pakai: centang [x] kalau OK, tulis CATATAN kalau ada masalah.
 

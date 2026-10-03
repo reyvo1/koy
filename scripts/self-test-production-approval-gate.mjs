@@ -2,35 +2,63 @@
 /**
  * Fail-closed coverage for the production approval GENERATOR.
  *
- * The existing self-test covers receipt VERIFICATION at install time. It does not cover
- * scripts/verify-production-approval.mjs, which is the script that decides whether a release is approved for
- * production at all. That script was referenced only as source text by validate-rescue-baseline.mjs, so its
- * blocking branches were never executed by any test: six fail-closed paths that gate production, none of them
- * proven to fail.
- *
- * What this covers: the branches reachable without physical hardware -- the generator refusing to approve when
- * it is not given evidence, when the evidence does not exist, and when the evidence does not validate against
- * the current sealed source baseline.
- *
- * What this deliberately does NOT cover, and why:
- *
- *  - OTA digest verification PASS. The OTA gate requires a device-observed SHA-256 of real firmware bytes.
- *    A fixture could set status to PASS on paper, but that is exactly the "simulated evidence relabelled as
- *    physical proof" that this project refuses, so it is left for the hardware run rather than faked here.
- *  - Source fingerprint agreement on a fully valid approval. That needs a current automated acceptance report,
- *    which needs the whole rescue runtime up.
- *
- * Those limits are stated rather than papered over. A test that fabricates a device observation to turn a
- * self-test green is worse than an acknowledged gap.
+ * Software production-readiness must not stop merely because a physical board is unavailable. The approved
+ * automated path is therefore a source-bound + firmware-SHA-bound SIMULATED_HARDWARE_LIVE_SERVICE receipt
+ * generated only after the live rescue stack and combined simulated-hardware UAT are green. The historical
+ * physical OTA/device-digest path remains supported as an optional field-validation path.
  */
+import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
 const root = path.resolve(import.meta.dirname, '..');
 const temp = mkdtempSync(path.join(os.tmpdir(), 'iot-production-approval-gate-'));
+const evidenceDir = path.join(temp, 'evidence');
+const releaseRoot = path.join(temp, 'release');
+const now = Date.now();
+const autoTime = new Date(now - 3000).toISOString();
+const liveTime = new Date(now - 2000).toISOString();
+const simTime = new Date(now - 1000).toISOString();
+const requiredAutomatedSteps = [
+  'Rescue source validator',
+  'Baseline manifest verifier',
+  'Lifecycle validator',
+  'Runtime prerequisite and connectivity probe',
+  'Backend production build',
+  'Web/mobile validation',
+  'Unit/contract tests',
+  'Database integration',
+  'MQTT integration',
+];
+const runtimeIds = [
+  'login', 'tenant-context-isolation', 'register-device', 'pair-device', 'repair-rotation-safety',
+  'register-capability', 'heartbeat-active', 'telemetry-idempotency', 'realtime-dashboard',
+  'command-publish-path', 'ack-correlation-and-replay', 'command-history', 'command-device-replay-safety',
+  'scene-device-command-path', 'automation-runtime-path', 'schedule-runtime-path', 'notification-report-persisted-data',
+];
+const brokerIds = [
+  'device-valid-secret-allowed', 'device-wrong-secret-denied', 'revoked-device-denied',
+  'publisher-command-publish-allowed', 'publisher-non-command-operations-denied',
+  'device-telemetry-publish-allowed', 'device-ack-publish-allowed', 'device-command-subscribe-allowed',
+  'cross-device-tenant-topic-denied', 'telemetry-webhook-idempotent', 'ack-bound-to-matching-device-command',
+  'wrong-webhook-secret-denied',
+];
+const releaseFiles = [
+  'dist/main.js', 'package.json', 'package-lock.json', 'prisma/schema.prisma', 'prisma/migrations/migration_lock.toml',
+  'ops/systemd/iot-platform.service', 'ops/systemd/iot-platform-backup.service', 'ops/systemd/iot-platform-backup.timer',
+  'ops/nginx/iot-platform.conf.template', 'ops/env/iot-platform.env.example', 'ops/env/iot-platform-backup.env.example',
+  'ops/scripts/install-release.sh', 'ops/scripts/rollback-release.sh', 'ops/scripts/postgres-backup.sh',
+  'ops/scripts/postgres-restore.sh', 'scripts/verify-production-release.mjs', 'docs/deployment-recovery.md',
+];
 
+function sha256(value) { return createHash('sha256').update(value).digest('hex'); }
+function sha256File(file) { return sha256(readFileSync(file)); }
+function writeJson(file, value) {
+  mkdirSync(path.dirname(file), { recursive: true });
+  writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`);
+}
 function runApproval(args) {
   const result = spawnSync(process.execPath, ['scripts/verify-production-approval.mjs', ...args], {
     cwd: root,
@@ -39,55 +67,143 @@ function runApproval(args) {
   });
   return { status: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` };
 }
-
+function expect(condition, message, detail = '') {
+  if (!condition) throw new Error(`${message}${detail ? `\n${detail}` : ''}`);
+}
 function expectRejected(label, args, expectedText) {
-  const { status, output } = runApproval(args);
-  if (status === 0) {
-    throw new Error(`${label}: the gate returned success. It must refuse without complete evidence.`);
-  }
-  if (!output.includes(expectedText)) {
-    throw new Error(`${label}: refused, but not for the expected reason.\nExpected: ${expectedText}\nGot: ${output}`);
-  }
+  const result = runApproval(args);
+  expect(result.status !== 0, `${label}: the gate returned success. It must fail closed.`, result.output);
+  expect(result.output.includes(expectedText), `${label}: rejected for the wrong reason. Expected: ${expectedText}`, result.output);
   console.log(`PASS  ${label}`);
 }
 
 try {
-  // No evidence argument at all. An approval flow that defaults to approving when given nothing is exactly the
-  // failure this project cares about.
   expectRejected('missing evidence is refused', [], 'Production approval requires --evidence=');
+  expectRejected('a nonexistent evidence file is refused', [`--evidence=${path.join(temp, 'absent.json')}`], 'RESCUE-02B evidence');
 
-  // Evidence path that does not exist. Proves the missing-file path fails rather than falling through.
-  expectRejected(
-    'a nonexistent evidence file is refused',
-    [`--evidence=${path.join(temp, 'absent.json')}`],
-    'RESCUE-02B evidence',
-  );
-
-  // Evidence that exists but does not satisfy the schema / current baseline. Proves validation runs before
-  // anything is approved, and that a malformed file cannot be waved through.
   const malformed = path.join(temp, 'malformed.json');
   writeFileSync(malformed, '{ this is not the evidence schema }\n');
+  expectRejected('evidence that fails validation is refused', [`--evidence=${malformed}`], 'RESCUE-02B evidence');
+
+  const sourceFingerprint = {
+    packageLockSha256: sha256File(path.join(root, 'package-lock.json')),
+    baselineManifestSha256: sha256File(path.join(root, 'BASELINE-MANIFEST.sha256')),
+    repositoryTreeSha256: sha256File(path.join(root, 'repository-tree.txt')),
+  };
+
+  mkdirSync(evidenceDir, { recursive: true });
+  const proofPath = path.join(evidenceDir, 'runtime-proof.txt');
+  writeFileSync(proofPath, 'immutable simulated hardware UAT fixture proof\n');
+  const proof = {
+    artifactPath: 'runtime-proof.txt',
+    artifactSha256: sha256File(proofPath),
+    note: 'Immutable fixture proving the required runtime/broker acceptance row.',
+  };
+  const automatedPath = path.join(evidenceDir, 'automated.json');
+  writeJson(automatedPath, {
+    schemaVersion: 1,
+    mode: 'full',
+    status: 'AUTOMATED_TEST_SUITE_PASS',
+    generatedAt: autoTime,
+    sourceFingerprint,
+    steps: requiredAutomatedSteps.map((name) => ({ name, pass: true, exitCode: 0, startedAt: autoTime, endedAt: autoTime })),
+  });
+  const evidencePath = path.join(evidenceDir, 'evidence.json');
+  writeJson(evidencePath, {
+    schemaVersion: 2,
+    gate: 'RESCUE-02B',
+    generatedAt: liveTime,
+    automatedReport: 'automated.json',
+    runtimeFlow: {
+      executedAt: liveTime,
+      environment: 'self-test live rescue fixture',
+      checks: runtimeIds.map((id) => ({ id, status: 'PASS', evidence: proof })),
+    },
+    liveBroker: {
+      executedAt: liveTime,
+      emqxVersion: '5.9.2',
+      checks: brokerIds.map((id) => ({ id, status: 'PASS', evidence: proof })),
+    },
+    productionOnly: {
+      otaDigestVerification: {
+        status: 'DEFERRED',
+        executedAt: null,
+        deviceId: '',
+        artifactPath: '',
+        artifactSha256: '',
+        deviceObservedSha256: '',
+        evidence: 'Physical field OTA observation is optional because automated simulated-hardware UAT is source-bound.',
+      },
+    },
+  });
+
+  const simulatedPath = path.join(evidenceDir, 'simulated-hardware-summary.json');
+  writeJson(simulatedPath, {
+    schemaVersion: 1,
+    gate: 'SIMULATED_HARDWARE_UAT',
+    status: 'PASS',
+    evidenceClass: 'SIMULATED_HARDWARE_LIVE_SERVICE',
+    observedAt: simTime,
+    sourceFingerprint,
+    firmwareArtifactSha256: 'a'.repeat(64),
+  });
+
+  mkdirSync(releaseRoot, { recursive: true });
+  for (const relative of releaseFiles) {
+    const target = path.join(releaseRoot, relative);
+    mkdirSync(path.dirname(target), { recursive: true });
+    if (relative === 'package-lock.json') {
+      writeFileSync(target, readFileSync(path.join(root, 'package-lock.json')));
+    } else if (relative === 'package.json') {
+      writeJson(target, { name: 'iot-platform', version: '0.0.1', engines: { node: '>=22 <23' }, scripts: { start: 'node dist/main.js', 'migrate:deploy': 'prisma migrate deploy' } });
+    } else {
+      writeFileSync(target, `fixture:${relative}\n`);
+    }
+  }
+  const manifestFiles = releaseFiles.map((relative) => {
+    const absolute = path.join(releaseRoot, relative);
+    return { path: relative, bytes: readFileSync(absolute).length, sha256: sha256File(absolute) };
+  }).sort((a, b) => a.path.localeCompare(b.path));
+  writeJson(path.join(releaseRoot, 'release-manifest.json'), {
+    schemaVersion: 1,
+    application: 'iot-platform',
+    version: '0.0.1',
+    revision: 'simulated-hardware-self-test',
+    node: '>=22 <23',
+    packageManager: null,
+    entrypoint: 'dist/main.js',
+    createdAt: simTime,
+    sourceFingerprint,
+    files: manifestFiles,
+  });
+
   expectRejected(
-    'evidence that fails validation is refused',
-    [`--evidence=${malformed}`],
+    'DEFERRED physical OTA without simulated-hardware receipt is refused',
+    [`--evidence=${evidencePath}`, `--release=${releaseRoot}`],
     'RESCUE-02B evidence',
   );
 
-  // A well-formed JSON document that is still not valid evidence. Without this case the previous one would
-  // pass merely because the file is unparseable, and the schema-level gate would go unexercised.
-  const notEvidence = path.join(temp, 'not-evidence.json');
-  writeFileSync(notEvidence, `${JSON.stringify({ note: 'structurally valid JSON, not an evidence document' }, null, 2)}\n`);
+  const approved = runApproval([
+    `--evidence=${evidencePath}`,
+    `--simulated-hardware=${simulatedPath}`,
+    `--release=${releaseRoot}`,
+  ]);
+  expect(approved.status === 0 && approved.output.includes('PRODUCTION APPROVAL EVIDENCE PASS'), 'source-bound simulated-hardware approval path did not pass', approved.output);
+  const receipt = JSON.parse(readFileSync(path.join(releaseRoot, 'production-approval.json'), 'utf8'));
+  expect(receipt.hardwareEvidence?.classification === 'SIMULATED_HARDWARE_LIVE_SERVICE', 'approval receipt did not record simulated-hardware classification');
+  expect(receipt.hardwareEvidence?.firmwareArtifactSha256 === 'a'.repeat(64), 'approval receipt did not bind the firmware SHA-256');
+  console.log('PASS  source-bound simulated-hardware UAT can close the software production-readiness hardware gate');
+
+  const tampered = JSON.parse(readFileSync(simulatedPath, 'utf8'));
+  tampered.sourceFingerprint.repositoryTreeSha256 = '0'.repeat(64);
+  writeJson(simulatedPath, tampered);
   expectRejected(
-    'valid JSON that is not evidence is refused',
-    [`--evidence=${notEvidence}`],
+    'simulated-hardware receipt from another source baseline is refused',
+    [`--evidence=${evidencePath}`, `--simulated-hardware=${simulatedPath}`, `--release=${releaseRoot}`],
     'RESCUE-02B evidence',
   );
 
   console.log('PRODUCTION APPROVAL GENERATOR GATE SELF-TEST PASS');
-  console.log(
-    'NOTE: OTA digest PASS and full fingerprint agreement are not covered here -- both need a real',
-  );
-  console.log('      automated acceptance report and, for OTA, device-observed firmware bytes.');
 } finally {
   rmSync(temp, { recursive: true, force: true });
 }

@@ -27,15 +27,16 @@ evidence tier actually executed.
    the expected outcome.
 4. A wave may close only when every exit criterion has the minimum evidence tier
    declared by that wave.
-5. Simulation must be labeled `SIMULATED-HARDWARE`; it may close an automated wave when that wave explicitly allows simulation, but it can never be promoted to PHYSICAL/HIL evidence. Functions reserved for final physical certification remain `PENDING PHYSICAL/EXTERNAL EVIDENCE`.
+5. Simulation must be labeled `SIMULATED-HARDWARE`; it may close automated software/UAT gates when it exercises the production protocol/runtime path. It can never be promoted to PHYSICAL/HIL evidence. Missing physical equipment is tracked separately and does not block software-wave progression.
 6. Mocks may prove local branching but cannot be cited as LIVE-SERVICE or
    PHYSICAL evidence.
 7. GitHub heavy acceptance is authoritative for automated runtime evidence;
    local pre-push remains targeted/lightweight.
 8. `SOFTWARE SCOPE CLOSED / GREEN` is a bounded implementation/regression statement, not a synonym for
-   PHYSICAL / EXTERNAL evidence or PRODUCTION CERTIFICATION. If an exit criterion depends on provider-owned
-   credentials, physical hardware, or a real external environment that is unavailable, that evidence remains
-   explicitly PENDING and production approval remains withheld.
+   PHYSICAL / EXTERNAL evidence. Unavailable hardware must be replaced by the strongest possible
+   `SIMULATED-HARDWARE + LIVE-SERVICE` path for automated UAT; site/HIL evidence remains separately labelled
+   and non-blocking for software progress. Provider-owned external evidence may still remain PENDING when no
+   sandbox/credential substitute exists.
 
 ## Wave 2 minimum evidence matrix
 
@@ -76,12 +77,14 @@ Notification Webhook and Email Relay evidence MUST exercise the shared productio
 | Linked SDK boots on an ESP32 execution model | SIMULATED-HARDWARE | Espressif QEMU via repository-native boot runner (`idf.py merge-bin` + direct QEMU) |
 | Provisioning/MQTT telemetry/command/ACK operate through the platform stack | SIMULATED-HARDWARE + LIVE-SERVICE | digital twin against real rescue API/PostgreSQL/EMQX |
 | Network reconnect preserves device identity and resumes telemetry | SIMULATED-HARDWARE + LIVE-SERVICE | forced MQTT disconnect/reconnect and persisted post-reconnect event |
+| Cold power-cycle rejoin preserves provisioned identity | SIMULATED-HARDWARE + LIVE-SERVICE | simulator process state is recreated, then the same provisioned credential re-heartbeats and publishes telemetry |
+| Duplicate QoS-1 telemetry persists once | SIMULATED-HARDWARE + LIVE-SERVICE | same `eventId` is replayed after reconnect and the live PostgreSQL path retains one row |
 | Duplicate QoS-1 command does not re-execute actuator behavior | SIMULATED-HARDWARE + LIVE-SERVICE | bounded command cache + ACK replay against real broker |
 | OTA consumes the exact built firmware artifact | SIMULATED-HARDWARE | build artifact downloaded into rescue job and hashed before simulation |
 | OTA rejects wrong SHA-256 and interrupted stream | SIMULATED-HARDWARE | trusted HTTPS artifact server with injected digest/stream failures |
 | OTA rollback/confirmation state is deterministic | SIMULATED-HARDWARE | pending-verify slot model + live reconnect confirmation |
 | Wokwi cloud simulation | SIMULATED-HARDWARE / EXTERNAL | optional when `WOKWI_CLI_TOKEN` is configured; absence is NOT_RUN, never PASS |
-| Physical board flash/Wi-Fi RF/flash endurance/real power-loss behavior | PHYSICAL / EXTERNAL | deferred to HIL/final Wave 13 certification |
+| Physical board flash/Wi-Fi RF/flash endurance/site-specific power-loss behavior | PHYSICAL / EXTERNAL | optional field-validation layer; never inferred from simulation and never used to halt software-wave progress |
 
 Wave 3 may close on the mandatory automated evidence above. This does not waive
-physical HIL before production promotion.
+the combined simulated-hardware UAT receipt before automated software promotion. Any later physical/HIL run is additional field evidence, not a prerequisite for continuing software delivery.

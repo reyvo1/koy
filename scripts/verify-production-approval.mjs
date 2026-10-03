@@ -9,6 +9,8 @@ const root = path.resolve(import.meta.dirname, '..');
 const argv = process.argv.slice(2);
 const evidenceArg = argv.find((value) => value.startsWith('--evidence='));
 const releaseArg = argv.find((value) => value.startsWith('--release='));
+const simulatedHardwareArg = argv.find((value) => value.startsWith('--simulated-hardware='));
+const simulatedHardwarePath = simulatedHardwareArg ? path.resolve(simulatedHardwareArg.slice('--simulated-hardware='.length)) : null;
 const evidencePath = evidenceArg ? path.resolve(evidenceArg.slice('--evidence='.length)) : null;
 const releaseRoot = path.resolve(
   releaseArg ? releaseArg.slice('--release='.length) : process.env.RELEASE_OUTPUT_DIR ?? 'artifacts/iot-platform-release',
@@ -40,7 +42,11 @@ if (!evidencePath) {
 
 const evidenceValidation = spawnSync(
   process.execPath,
-  ['scripts/validate-rescue-02b-evidence.mjs', `--file=${evidencePath}`],
+  [
+    'scripts/validate-rescue-02b-evidence.mjs',
+    `--file=${evidencePath}`,
+    ...(simulatedHardwarePath ? [`--simulated-hardware=${simulatedHardwarePath}`] : []),
+  ],
   { cwd: root, encoding: 'utf8', windowsHide: true },
 );
 if (evidenceValidation.status !== 0) {
@@ -52,8 +58,9 @@ if (evidenceValidation.status !== 0) {
 
 const evidence = loadJson(evidencePath, 'RESCUE-02B evidence');
 const ota = evidence.productionOnly?.otaDigestVerification;
-if (ota?.status !== 'PASS') {
-  block(`Production OTA gate must be PASS; got ${ota?.status ?? 'missing'}. RESCUE-02B may defer OTA, production approval may not.`);
+const simulatedHardware = simulatedHardwarePath ? loadJson(simulatedHardwarePath, 'Simulated hardware UAT summary') : null;
+if (!simulatedHardware && ota?.status !== 'PASS') {
+  block(`Production hardware gate needs either --simulated-hardware=<PASS summary> or legacy physical OTA PASS; got OTA ${ota?.status ?? 'missing'}.`);
 }
 
 const releaseManifestPath = path.resolve(releaseRoot, 'release-manifest.json');
@@ -82,6 +89,9 @@ for (const [field, expected] of Object.entries(currentFingerprint)) {
   if (observed !== expected) {
     block(`Release ${field} does not match the current sealed source baseline.`);
   }
+  if (simulatedHardware && simulatedHardware.sourceFingerprint?.[field] !== expected) {
+    block(`Simulated hardware UAT ${field} does not match the current sealed source baseline.`);
+  }
 }
 
 
@@ -95,12 +105,24 @@ const approvalReceipt = {
   sourceFingerprint: { ...releaseManifest.sourceFingerprint },
   evidenceSha256: sha256File(evidencePath),
   evidenceGeneratedAt: evidence.generatedAt,
-  otaDigestVerification: {
-    executedAt: ota.executedAt,
-    deviceId: ota.deviceId,
-    artifactSha256: ota.artifactSha256,
-    deviceObservedSha256: ota.deviceObservedSha256,
-  },
+  ...(simulatedHardware
+    ? {
+        hardwareEvidence: {
+          classification: 'SIMULATED_HARDWARE_LIVE_SERVICE',
+          observedAt: simulatedHardware.observedAt,
+          summarySha256: sha256File(simulatedHardwarePath),
+          firmwareArtifactSha256: simulatedHardware.firmwareArtifactSha256,
+          sourceFingerprint: { ...simulatedHardware.sourceFingerprint },
+        },
+      }
+    : {
+        otaDigestVerification: {
+          executedAt: ota.executedAt,
+          deviceId: ota.deviceId,
+          artifactSha256: ota.artifactSha256,
+          deviceObservedSha256: ota.deviceObservedSha256,
+        },
+      }),
 };
 writeFileSync(approvalPath, `${JSON.stringify(approvalReceipt, null, 2)}\n`, { mode: 0o640 });
 
@@ -123,7 +145,7 @@ if (approvedValidation.status !== 0) {
 }
 
 console.log('PASS  RESCUE-02B evidence is valid and source-bound.');
-console.log('PASS  Production OTA artifact-byte/device digest evidence is validated.');
+console.log(simulatedHardware ? 'PASS  Simulated-hardware UAT receipt is source-bound and firmware-SHA-bound.' : 'PASS  Legacy physical OTA artifact-byte/device digest evidence is validated.');
 console.log('PASS  Release artifact manifest covers the exact packaged file set.');
 console.log('PASS  Release source fingerprint matches the current sealed baseline.');
 console.log(`PASS  Production approval receipt written and re-verified: ${approvalPath}`);

@@ -43,6 +43,22 @@ try {
   expect(result.status === 0, `valid fixture should pass: ${result.stderr || result.stdout}`);
   console.log('PASS  valid synchronized status fixture');
 
+  // Regression for GitHub run f4ed5cd: chat-session notes may be prepended above the marker. The
+  // verifier must follow the current-authority boundary, not a fixed line count.
+  const sessionFile = path.join(fixtureRoot, 'chat-session.md');
+  const sessionBody = readFileSync(sessionFile, 'utf8');
+  writeFileSync(sessionFile, `${'# Current session note\n\n' + 'detail line\n'.repeat(20)}${sessionBody}`);
+  result = run();
+  expect(result.status === 0, `prepended current notes should not break sync: ${result.stderr || result.stdout}`);
+  console.log('PASS  prepended session notes do not create a false status drift');
+  writeFileSync(sessionFile, sessionBody);
+
+  writeFileSync(sessionFile, `# New current session without a marker\n\nWave 13 is IN PROGRESS.\n\n--- HISTORICAL CHAT SESSION CHRONOLOGY BELOW ---\n\n${sessionBody}`);
+  result = run();
+  expect(result.status !== 0 && /chat-session\.md/.test(result.stderr), 'historical-only marker must fail closed');
+  console.log('PASS  marker below historical chronology is rejected');
+  writeFileSync(sessionFile, sessionBody);
+
   const driftFile = path.join(fixtureRoot, 'PROJECT-HANDOFF.md');
   writeFileSync(driftFile, readFileSync(driftFile, 'utf8').replace('active=13', 'active=3'));
   result = run();

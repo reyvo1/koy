@@ -6,8 +6,9 @@
 
 - Waves 1–12: **software scope CLOSED / GREEN** according to the authoritative enterprise roadmap and repository evidence.
 - Wave 13 Final Enterprise Certification: **IN PROGRESS, software deliverables only**.
-- Production: **NOT APPROVED**. A green software pipeline is necessary but cannot stand in for physical ESP32/HIL, physical camera/vendor behavior, real provider-owned payment settlement/webhook evidence, or final production approval.
+- Production: **NOT APPROVED** pending the remaining automated/final approval gates and any provider-owned evidence that cannot be simulated. Missing physical ESP32/camera hardware does **not** block software work: GitHub must close the strongest `SIMULATED-HARDWARE / LIVE-SERVICE` UAT, while any later site/HIL run remains separately labelled field evidence.
 - Current software regression boundary: keep all prior wave probes continuously exercised in CI; do not reopen a closed wave unless new evidence fails.
+- Session continuity: follow `docs/SESSION-HANDOFF-PROTOCOL.md`; resume from verified HEAD/status and the first failing gate, not from a full re-audit.
 - The ZIP snapshot has no `.git`, so local audit of commit/branch/remote history is not a substitute for the operator repository or GitHub evidence.
 
 > **Reading rule.** Everything below this separator is historical chronology. Any older activation/blocking statement from pre-Wave-13 chronology is superseded by this block and by `docs/ENTERPRISE-WAVE-ROADMAP.md`.

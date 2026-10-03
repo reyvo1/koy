@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 . "$DIR/probe-common.sh"
@@ -12,12 +13,18 @@ CREDS="${PROBE_LOGIN_FILE:-reports/probe-session.json}"
 mkdir -p "$(dirname "$CREDS")"
 probe_login "$API" "$CREDS"
 
-# Pre-sweep so the probe measures the product, not residue from a previous run.
+cleanup_probe() {
+  docker exec -i iot-rescue-postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -q -v ON_ERROR_STOP=1' \
+    < "$DIR/probe-device-location-cleanup.sql" >/dev/null 2>&1 || true
+}
+trap cleanup_probe EXIT
+
+# Pre-sweep so the probe measures the product, not residue from a previous run. A failed Python
+# assertion must remain the script exit code; cleanup is isolated in the EXIT trap instead of
+# running afterwards and accidentally turning a red probe green.
 docker exec -i iot-rescue-postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -q -v ON_ERROR_STOP=1' \
   < "$DIR/probe-device-location-cleanup.sql" >/dev/null
 
 PROBE_LOGIN_FILE="$CREDS" PROBE_API_BASE="$API" python3 "$DIR/probe-device-location.py"
-docker exec -i iot-rescue-postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -q -v ON_ERROR_STOP=1' \
-  < "$DIR/probe-device-location-cleanup.sql" >/dev/null
 
 printf '\nWAVE 9 DEVICE LOCATION PROBE: PASS\n'

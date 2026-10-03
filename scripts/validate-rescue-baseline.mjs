@@ -941,12 +941,13 @@ check(
     evidenceValidator.includes('RESCUE-02B EVIDENCE PASS'),
 );
 check(
-  'runtime evidence keeps physical ESP32/HIL separate from automated Wave 3 simulation',
+  'runtime evidence keeps simulated-hardware software UAT distinct from optional physical field evidence',
   evidenceValidator.includes('REQUIRED_RUNTIME_FLOW') &&
     evidenceValidator.includes('REQUIRED_BROKER') &&
     evidenceValidator.includes('REQUIRED_HARDWARE') &&
+    evidenceValidator.includes('SIMULATED_HARDWARE_LIVE_SERVICE') &&
     evidenceValidator.includes("['DEFERRED', 'PASS']") &&
-    acceptanceGuide.includes('Physical OTA/HIL remains') &&
+    acceptanceGuide.includes('simulated-hardware / physical field evidence') &&
     read('docs/RESCUE-02-RUNTIME-RUNBOOK.md').includes('Auditable final RESCUE-02B evidence gate'),
 );
 check(
@@ -1822,10 +1823,12 @@ check(
     releaseVerifierR2.includes('Unsafe manifest path'),
 );
 check(
-  'production approval is a separate source-bound gate rather than release integrity alias',
+  'production approval is a separate source-bound gate with simulated-hardware and legacy physical evidence modes',
   existsSync(join(root, 'scripts/verify-production-approval.mjs')) &&
     read('package.json').includes('release:approve') &&
     productionApprovalR2.includes('validate-rescue-02b-evidence.mjs') &&
+    productionApprovalR2.includes('--simulated-hardware=') &&
+    productionApprovalR2.includes('SIMULATED_HARDWARE_LIVE_SERVICE') &&
     productionApprovalR2.includes("ota?.status !== 'PASS'") &&
     productionApprovalR2.includes('Release source fingerprint matches the current sealed baseline'),
 );
@@ -1841,7 +1844,7 @@ check(
   'runtime and deployment docs distinguish artifact integrity from production approval',
   read('docs/RESCUE-02-RUNTIME-RUNBOOK.md').includes('release:verify` proves package integrity only') &&
     read('docs/deployment-recovery.md').includes('not** a production-approval claim') &&
-    read('ops/acceptance/README.md').includes('artifact integrity, **not production approval**'),
+    read('ops/acceptance/README.md').includes('Release artifact integrity is separate from production approval'),
 );
 
 
@@ -1850,10 +1853,12 @@ const releaseApprovalReceiptR6 = read('scripts/verify-production-approval.mjs');
 const releaseVerifierReceiptR6 = read('scripts/verify-production-release.mjs');
 const installReleaseReceiptR6 = read('ops/scripts/install-release.sh');
 check(
-  'production approval writes a manifest-bound receipt containing evidence and OTA digests',
+  'production approval writes a manifest-bound receipt containing source-bound simulated hardware or legacy physical evidence',
   releaseApprovalReceiptR6.includes("'production-approval.json'") &&
     releaseApprovalReceiptR6.includes('releaseManifestSha256') &&
     releaseApprovalReceiptR6.includes('evidenceSha256') &&
+    releaseApprovalReceiptR6.includes('hardwareEvidence') &&
+    releaseApprovalReceiptR6.includes('SIMULATED_HARDWARE_LIVE_SERVICE') &&
     releaseApprovalReceiptR6.includes('otaDigestVerification') &&
     releaseApprovalReceiptR6.includes("'--require-approved'"),
 );
@@ -1862,6 +1867,8 @@ check(
   releaseVerifierReceiptR6.includes("const requireApproved = process.argv.slice(2).includes('--require-approved')") &&
     releaseVerifierReceiptR6.includes('Production approval receipt is required for installation') &&
     releaseVerifierReceiptR6.includes('Production approval receipt is not bound to this release manifest') &&
+    releaseVerifierReceiptR6.includes('Production approval simulated-hardware source fingerprint mismatch') &&
+    releaseVerifierReceiptR6.includes('valid simulated-hardware evidence or legacy physical OTA digest proof') &&
     releaseVerifierReceiptR6.includes("const reservedSidecars = new Set(['production-approval.json'])") &&
     releaseVerifierReceiptR6.includes('Untracked release file is not covered by manifest'),
 );
@@ -2451,6 +2458,24 @@ check(
     githubCiR30.includes('docker-compose.log') &&
     githubCiR30.includes('down --volumes --remove-orphans') &&
     githubCiSelfTestR30.includes('RESCUE GITHUB CI SELF-TEST PASS'),
+);
+
+check(
+  'camera and device-location probe wrappers fail closed while still cleaning residue',
+  read('scripts/run-camera-probe.sh').includes('set -euo pipefail') &&
+    read('scripts/run-camera-probe.sh').includes('trap cleanup_probe EXIT') &&
+    read('scripts/run-device-location-probe.sh').includes('set -euo pipefail') &&
+    read('scripts/run-device-location-probe.sh').includes('trap cleanup_probe EXIT'),
+);
+check(
+  'simulated hardware UAT is a source-controlled fail-closed live evidence gate',
+  read('package.json').includes('uat:simulated-hardware:verify') &&
+    read('package.json').includes('uat:simulated-hardware:self-test') &&
+    read('scripts/verify-simulated-hardware-uat.mjs').includes('SIMULATED_HARDWARE_UAT') &&
+    read('scripts/verify-simulated-hardware-uat.mjs').includes('qos1DuplicateTelemetryDedupe') &&
+    read('scripts/verify-simulated-hardware-uat.mjs').includes('camera onboarding') &&
+    read('scripts/verify-simulated-hardware-uat.mjs').includes('RTSP-to-WebRTC') &&
+    githubCiR30.includes('Seal simulated hardware UAT evidence'),
 );
 
 // ---------------------------------------------------------------------------

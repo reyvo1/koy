@@ -15,11 +15,16 @@ const cert = readFileSync(path.join(root, 'test/fixtures/wave2-localhost-tls.cer
 const key = readFileSync(path.join(root, 'test/fixtures/wave2-localhost-tls.key.pem'));
 const artifact = Buffer.from('wave3-realistic-firmware-fixture-for-self-test');
 const digest = createHash('sha256').update(artifact).digest('hex');
+const liveRunner = readFileSync(path.join(root, 'scripts/run-wave3-esp32-simulation.mjs'), 'utf8');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
   console.log(`PASS  ${message}`);
 }
+
+assert(liveRunner.includes("wave3-device-cold-boot"), 'live simulator includes a cold-reboot/rejoin scenario');
+assert(liveRunner.includes('qos1DuplicateTelemetryDedupe'), 'live simulator proves QoS1 duplicate telemetry dedupe');
+assert(liveRunner.includes("classification: 'SIMULATED_HARDWARE_LIVE_SERVICE'"), 'live simulator labels hardware evidence honestly');
 
 const cache = new CommandDedupeCache(2);
 assert(cache.observe('c1').duplicate === false, 'first command executes exactly once');

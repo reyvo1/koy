@@ -2,7 +2,7 @@
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
 
-Authoritative execution is `docs/ENTERPRISE-WAVE-ROADMAP.md`. The 30 modules are foundation-complete; enterprise production approval is not declared. Waves 1–12 have **software scope CLOSED / GREEN** under their actual evidence tiers. Wave 13 Final Enterprise Certification is **IN PROGRESS, software deliverables only**. Physical ESP32/HIL, physical camera/vendor behavior, provider-owned external evidence, and final production approval remain separate boundaries and must never be inferred from simulation. Historical module-current statements below are chronology only.
+Authoritative execution is `docs/ENTERPRISE-WAVE-ROADMAP.md`. The 30 modules are foundation-complete; enterprise certification is still being closed. Waves 1–12 have **software scope CLOSED / GREEN** under their actual evidence tiers. Wave 13 Final Enterprise Certification is **IN PROGRESS**. Missing ESP32/camera lab hardware is non-blocking: production-shaped `SIMULATED_HARDWARE_LIVE_SERVICE` evidence must cover software-controlled behavior and remain explicitly distinct from later PHYSICAL/HIL field validation. Provider-owned external behavior stays separately gated. Historical module-current statements below are chronology only.
 
 ---
 

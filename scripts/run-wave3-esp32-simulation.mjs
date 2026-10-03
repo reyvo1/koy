@@ -211,7 +211,7 @@ async function main() {
     headers: { 'x-device-id': deviceId, 'x-device-secret': deviceSecret }, expected: [200],
   });
 
-  const device = new SimulatedEsp32({ tenantId: tenant.id, deviceId, secret: deviceSecret });
+  let device = new SimulatedEsp32({ tenantId: tenant.id, deviceId, secret: deviceSecret });
   await device.connect();
   const firstEvent = await device.publishTelemetry(true);
   await waitFor(() => prisma.telemetry.findUnique({ where: { deviceId_eventId: { deviceId, eventId: firstEvent } } }), 'initial simulated telemetry persistence');
@@ -224,6 +224,28 @@ async function main() {
   });
   const reconnectEvent = await device.publishTelemetry(false);
   await waitFor(() => prisma.telemetry.findUnique({ where: { deviceId_eventId: { deviceId, eventId: reconnectEvent } } }), 'post-reconnect telemetry persistence');
+
+  // QoS 1 is at-least-once. A physical device reconnect can replay the same telemetry packet, so
+  // UAT must prove that the server-side eventId contract turns the replay into one persisted row.
+  const duplicateEvent = `wave3-duplicate-${randomUUID()}`;
+  await device.publishTelemetry(true, duplicateEvent);
+  await waitFor(() => prisma.telemetry.findUnique({ where: { deviceId_eventId: { deviceId, eventId: duplicateEvent } } }), 'first QoS1 telemetry persistence');
+  await device.publishTelemetry(false, duplicateEvent);
+  await sleep(500);
+  const duplicateCount = await prisma.telemetry.count({ where: { deviceId, eventId: duplicateEvent } });
+  assert(duplicateCount === 1, `duplicate telemetry replay persisted ${duplicateCount} rows instead of one`);
+
+  // A Wi-Fi reconnect keeps process memory; a power cycle does not. Recreate the simulator object
+  // with only the provisioned identity/secret and prove the device can rejoin, heartbeat and report
+  // telemetry after a cold boot just as a real ESP32 would after power loss.
+  await device.disconnect();
+  device = new SimulatedEsp32({ tenantId: tenant.id, deviceId, secret: deviceSecret });
+  await device.connect('wave3-device-cold-boot');
+  await apiRequest(apiBase, 'PATCH', `/devices/${encodeURIComponent(deviceId)}/heartbeat`, {
+    headers: { 'x-device-id': deviceId, 'x-device-secret': deviceSecret }, expected: [200],
+  });
+  const coldBootEvent = await device.publishTelemetry(true);
+  await waitFor(() => prisma.telemetry.findUnique({ where: { deviceId_eventId: { deviceId, eventId: coldBootEvent } } }), 'cold-boot telemetry persistence');
 
   const command = (await apiRequest(apiBase, 'POST', `/devices/${encodeURIComponent(deviceId)}/commands`, {
     token: adminLogin.accessToken, tenantId: tenant.id,
@@ -297,17 +319,17 @@ async function main() {
   const report = {
     schemaVersion: 1,
     gate: 'ENTERPRISE_WAVE_3',
-    classification: 'SIMULATED_LIVE_SERVICE',
+    classification: 'SIMULATED_HARDWARE_LIVE_SERVICE',
     runId,
     observedAt: new Date().toISOString(),
-    device: { deviceId, tenantId: tenant.id, provisioning: 'PASS', heartbeat: 'PASS', mqttReconnect: 'PASS' },
-    mqtt: { initialTelemetry: 'PASS', postReconnectTelemetry: 'PASS', commandAck: 'PASS', duplicateCommandExecutionCount: device.executions, duplicateAckReplays: device.replays },
+    device: { deviceId, tenantId: tenant.id, provisioning: 'PASS', heartbeat: 'PASS', wifiMqttReconnect: 'PASS', coldBootRejoin: 'PASS' },
+    mqtt: { initialTelemetry: 'PASS', postReconnectTelemetry: 'PASS', coldBootTelemetry: 'PASS', qos1DuplicateTelemetryDedupe: 'PASS', commandAck: 'PASS', duplicateCommandExecutionCount: device.executions, duplicateAckReplays: device.replays },
     ota: { artifactPath: path.relative(projectRoot, firmwarePath).replace(/\\/g, '/'), artifactBytes: firmware.length, artifactSha256: firmwareSha256, trustedHttps: 'PASS', wrongDigestRejected: 'PASS', interruptedStreamRejected: 'PASS', rollbackModel: 'PASS', liveReconnectConfirmationModel: 'PASS' },
-    boundary: 'SIMULATED only; physical HIL remains a separate final production evidence class.',
+    boundary: 'SIMULATED-HARDWARE / LIVE-SERVICE evidence closes automated software UAT; any later physical/site test is a separately labelled field-validation class and does not block software wave progression.',
   };
   const reportPath = path.join(reportDir, `wave3-esp32-simulation-${runId}.json`);
   writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);
-  console.log(`PASS  Wave 3 simulated ESP32 provisioning/MQTT/reconnect/command/OTA flow`);
+  console.log(`PASS  Wave 3 simulated ESP32 provisioning/reconnect/cold-boot/QoS1-dedupe/command/OTA flow`);
   console.log(`REPORT  ${reportPath}`);
 }
 

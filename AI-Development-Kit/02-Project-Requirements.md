@@ -2,7 +2,7 @@
 
 The product requirement now distinguishes **foundation completeness** from **enterprise completion**. Modules 1–30 establish the universal IoT architecture and safe contracts; post-foundation delivery is governed by `docs/ENTERPRISE-WAVE-ROADMAP.md` Wave 1–13. Enterprise completion requires real runtime/provider/hardware/recovery evidence and cannot be declared from UI placeholders or foundation contracts alone.
 
-The mandatory delivery discipline is one large wave at a time, targeted/lightweight local QA, synchronized documentation and manifest sealing, then one GitHub push whose heavy CI is authoritative. A software-scope closure is not production certification. Production remains unapproved until required physical ESP32/MQTT/Wi-Fi reconnect/OTA evidence, provider-owned external evidence, and final certification are complete.
+The mandatory delivery discipline is one large wave at a time, targeted/lightweight local QA, synchronized documentation and manifest sealing, then one GitHub push whose heavy CI is authoritative. Missing physical lab equipment is not allowed to block software completion: ESP32/MQTT/Wi-Fi reconnect/OTA and camera/media behavior must be exercised through production-shaped `SIMULATED_HARDWARE_LIVE_SERVICE` UAT bound to the sealed source and exact firmware artifact. Physical/site HIL remains an optional separately labelled field-validation layer; genuinely provider-owned external behavior and the final automated approval receipt remain fail-closed gates.
 
 ---
 

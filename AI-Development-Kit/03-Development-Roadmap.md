@@ -2,7 +2,7 @@
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
 
-The numbered Module 1–30 list below is the completed **foundation roadmap**. It is no longer the active execution queue. The active post-foundation queue is `docs/ENTERPRISE-WAVE-ROADMAP.md` with Wave 1–13. Acceptance evidence strength is governed by `docs/ENTERPRISE-ACCEPTANCE-EVIDENCE.md`; STATIC/CONTRACT checks cannot substitute for INTEGRATION, LIVE-SERVICE, PHYSICAL/EXTERNAL, or final certification evidence. Waves 1–12 have **software scope CLOSED / GREEN**; Wave 13 Final Enterprise Certification is **IN PROGRESS, software deliverables only**. Production remains NOT APPROVED until required external/physical evidence and explicit final approval exist. One wave remains one large gate before one GitHub push; no return to micro-RR progression.
+The numbered Module 1–30 list below is the completed **foundation roadmap**. It is no longer the active execution queue. The active post-foundation queue is `docs/ENTERPRISE-WAVE-ROADMAP.md` with Wave 1–13. Acceptance evidence strength is governed by `docs/ENTERPRISE-ACCEPTANCE-EVIDENCE.md`; STATIC/CONTRACT checks cannot substitute for INTEGRATION or LIVE-SERVICE evidence. Waves 1–12 have **software scope CLOSED / GREEN**; Wave 13 Final Enterprise Certification is **IN PROGRESS**. Automated production-readiness must use source-bound `SIMULATED_HARDWARE_LIVE_SERVICE` evidence for unavailable ESP32/camera hardware; later PHYSICAL/HIL observation is separate and non-blocking, while genuinely provider-owned evidence remains external. One wave remains one large gate before one GitHub push; no return to micro-RR progression.
 
 ---
 

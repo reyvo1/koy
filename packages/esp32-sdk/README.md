@@ -44,7 +44,7 @@ void app_main(void) {
 
 ## Validation boundary
 
-Wave 3 adds a real ESP-IDF 5.5.5 component build, Espressif QEMU boot test, and a live-service ESP32 digital twin using the exact built firmware artifact for OTA SHA-256/failure/rollback simulation. Optional Wokwi CI can add another simulated-hardware layer when its token is configured. These are SIMULATED-HARDWARE/LIVE-SERVICE evidence only; physical HIL remains required before final production certification.
+Wave 3 adds a real ESP-IDF 5.5.5 component build, Espressif QEMU boot test, and a live-service ESP32 digital twin using the exact built firmware artifact for OTA SHA-256/failure/rollback simulation. Optional Wokwi CI can add another simulated-hardware layer when its token is configured. These are explicitly `SIMULATED_HARDWARE_LIVE_SERVICE` evidence and can close the automated software/UAT hardware gate when source- and firmware-SHA-bound. Physical HIL remains a separately labelled optional field-validation layer, never inferred from simulation and never required merely to continue software certification.
 
 
 ## ESP-IDF component integration

@@ -1,10 +1,12 @@
-# Active enterprise override — 2026-10-03
+# Active enterprise override — 2026-10-04
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
 
-Waves 1–12 have **software scope CLOSED / GREEN** under the evidence boundaries in `docs/ENTERPRISE-WAVE-ROADMAP.md`. Wave 13 is **IN PROGRESS, software deliverables only**. Production is **NOT APPROVED**: physical ESP32/HIL, physical camera/vendor evidence, and provider-owned external evidence must never be inferred from simulation or repository-only tests.
+Waves 1–12 have **software scope CLOSED / GREEN** under the evidence boundaries in `docs/ENTERPRISE-WAVE-ROADMAP.md`. Wave 13 is **IN PROGRESS**. Missing physical ESP32/camera hardware must **not** stop software completion: GitHub must exercise the strongest production-shaped `SIMULATED_HARDWARE_LIVE_SERVICE` path and bind it to the sealed source plus exact firmware artifact. Simulation is never relabeled PHYSICAL/HIL; later site/HIL observations are a separate, non-blocking field-validation class. Provider-owned behavior that cannot be simulated remains explicitly external.
 
-Do not reopen closed Wave 1–12 software root causes without new failing evidence. Continue Wave 13 certification software and regression hardening; any external/physical item without credentials or hardware stays explicitly PENDING rather than being fabricated as PASS.
+Do not reopen closed Wave 1–12 software root causes without new failing evidence. Continue Wave 13 certification, regression hardening and automated simulated-hardware UAT until every software-controlled behavior is green. Production approval remains fail-closed on the automated/source-bound approval receipt and any genuinely provider-owned gate, not on possession of optional physical lab equipment.
+
+Session continuity is mandatory: read `docs/SESSION-HANDOFF-PROTOCOL.md` and the current top blocks before modifying code; verify real `git rev-parse HEAD` / `git status --short`, preserve a recorded dirty candidate, and resume from the first failing gate instead of auditing from zero. Before changing sessions, update the handoff/checkpoint files and run `npm run session:handoff:self-test`.
 
 ---
 

@@ -2,7 +2,7 @@
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
 
-The authoritative active roadmap is `docs/ENTERPRISE-WAVE-ROADMAP.md` (Wave 1–13). The detailed module/slice chronology below is historical engineering evidence. Waves 1–12 have **software scope CLOSED / GREEN** under the recorded evidence tiers; Wave 13 is **IN PROGRESS, software deliverables only**. Production remains **NOT APPROVED** while external/physical certification evidence is pending. Old `TODO`, `Deferred`, `inactive`, or module-current statements below must not be treated as current without checking the enterprise roadmap.
+The authoritative active roadmap is `docs/ENTERPRISE-WAVE-ROADMAP.md` (Wave 1–13). The detailed module/slice chronology below is historical engineering evidence. Waves 1–12 have **software scope CLOSED / GREEN** under the recorded evidence tiers; Wave 13 is **IN PROGRESS**. Automated production-readiness must not wait for physical lab equipment: source-bound `SIMULATED_HARDWARE_LIVE_SERVICE` UAT is the software gate, with later PHYSICAL/HIL kept as separately labelled field evidence. Genuinely provider-owned external behavior remains separate. Old `TODO`, `Deferred`, `inactive`, or module-current statements below must not be treated as current without checking the enterprise roadmap.
 
 ---
 

@@ -32,11 +32,11 @@ assert(ci.includes('espressif/install-esp-idf-action@v1') && ci.includes('v5.5.5
 assert(ci.includes('wave3:esp32:simulate'), 'live rescue job runs the Wave 3 device digital-twin simulation');
 assert(ci.includes('actions/download-artifact@v4') && ci.includes('wave3-esp32-firmware'), 'live simulation consumes the exact firmware artifact built by the ESP-IDF job');
 assert(ci.includes('wokwi/wokwi-ci-action@v1'), 'optional Wokwi hardware simulation is wired when a repository token is configured');
-assert(simulator.includes("classification: 'SIMULATED_LIVE_SERVICE'"), 'simulation evidence is explicitly classified and cannot impersonate physical HIL proof');
+assert(simulator.includes("classification: 'SIMULATED_HARDWARE_LIVE_SERVICE'") && simulator.includes('does not block software wave progression'), 'simulation evidence is explicitly classified as source-bound simulated-hardware/live-service and cannot impersonate physical HIL proof');
 assert(simulator.includes('wrong OTA digest was not rejected') && simulator.includes('interrupted OTA stream was not rejected'), 'live simulator fails closed on corrupt and interrupted OTA artifacts');
 assert(simulator.includes('missing 0xE9 image magic'), 'live simulator rejects arbitrary bytes masquerading as an ESP firmware artifact');
 assert(header.includes('Production/HIL firmware') && header.includes('NVS encryption'), 'public SDK contract does not overclaim simulator NVS at-rest security');
 assert(!runbook.includes('current SDK deliberately fails closed\nuntil artifact-byte SHA-256 verification is implemented'), 'runtime runbook no longer claims Wave 3 OTA digest verification is unimplemented');
-assert(runbook.includes('Physical OTA/HIL remains a production-certification gate'), 'runtime runbook preserves physical OTA/HIL as a separate certification gate');
-assert(evidencePolicy.includes('| SIMULATED-HARDWARE |') && evidencePolicy.includes('Physical board flash/Wi-Fi RF/flash endurance/real power-loss behavior'), 'acceptance policy distinguishes simulated hardware from physical HIL');
+assert(runbook.includes('it is never relabelled PHYSICAL/HIL') && runbook.includes('Missing physical lab equipment is non-blocking'), 'runtime runbook keeps physical/HIL distinct while making missing lab hardware non-blocking for software certification');
+assert(evidencePolicy.includes('| SIMULATED-HARDWARE |') && evidencePolicy.includes('Physical board flash/Wi-Fi RF/flash endurance/site-specific power-loss behavior') && evidencePolicy.includes('not a prerequisite for continuing software delivery'), 'acceptance policy distinguishes simulated hardware from optional physical/HIL field validation without blocking software delivery');
 console.log('WAVE 3 ESP32 SOURCE SELF-TEST PASS');

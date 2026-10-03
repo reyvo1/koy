@@ -116,7 +116,9 @@
     "uat:login": "node scripts/verify-uat-baseline.mjs",
     "uat:seed": "node scripts/seed-uat-baseline.mjs",
     "uat:verify": "npm run uat:seed && npm run uat:docs && npm run uat:login",
-    "wave1:prepush:check": "npm run security:stack:verify && npm run security:web-stack:verify && npm run security:audit:production && npm run lint:check && npm run enterprise:wave-status:self-test && npm run enterprise:wave-status:verify && npm run gitignore:source-scope:self-test && npm run fastify:v5:compat:verify && npm run web:framework:contract:verify && npm run baseline:hygiene:self-test && npm run baseline:hygiene:clean && npm run baseline:manifest:self-test && npm run baseline:manifest:generate && npm run baseline:manifest:verify && npm run rescue:validate && npm run rescue:broker:smoke:self-test && npm run rescue:github-ci:self-test",
+    "uat:simulated-hardware:self-test": "node scripts/self-test-simulated-hardware-uat.mjs",
+    "uat:simulated-hardware:verify": "node scripts/verify-simulated-hardware-uat.mjs",
+    "wave1:prepush:check": "npm run security:stack:verify && npm run security:web-stack:verify && npm run security:audit:production && npm run lint:check && npm run session:handoff:self-test && npm run enterprise:wave-status:self-test && npm run enterprise:wave-status:verify && npm run user-web:navigation:self-test && npm run rescue:ci-env:self-test && npm run uat:simulated-hardware:self-test && npm run release:approval:self-test && npm run release:approval:gate:self-test && npm run gitignore:source-scope:self-test && npm run fastify:v5:compat:verify && npm run web:framework:contract:verify && npm run baseline:hygiene:self-test && npm run baseline:hygiene:clean && npm run baseline:manifest:self-test && npm run baseline:manifest:generate && npm run baseline:manifest:verify && npm run rescue:validate && npm run rescue:broker:smoke:self-test && npm run rescue:github-ci:self-test",
     "wave1:prepush:self-test": "node scripts/self-test-wave1-prepush.mjs",
     "wave2:core-runtime:self-test": "node scripts/self-test-wave2-core-runtime.mjs",
     "wave2:prepush:check": "npm run wave1:prepush:check && npm run wave2:core-runtime:self-test && npm run wave2:prisma:self-test && npm run wave2:prisma:check && npm run wave2:test:targeted",
@@ -158,7 +160,8 @@
     "crossregion:probe": "ts-node --transpile-only scripts/probe-cross-region-operations.ts",
     "load:gate": "ts-node --transpile-only scripts/run-load-gate.ts",
     "security:secrets:scan": "node scripts/run-secret-scan.mjs",
-    "release:approval:gate:self-test": "node scripts/self-test-production-approval-gate.mjs"
+    "release:approval:gate:self-test": "node scripts/self-test-production-approval-gate.mjs",
+    "session:handoff:self-test": "node scripts/self-test-session-handoff.mjs"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

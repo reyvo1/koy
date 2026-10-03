@@ -2,7 +2,7 @@
 
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync, unlinkSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -95,7 +95,6 @@ try {
   const unapproved = run(true);
   expect(unapproved.status !== 0 && unapproved.output.includes('Production approval receipt is required'), 'Unapproved release was not rejected', unapproved.output);
 
-  const digest = 'd'.repeat(64);
   const receipt = {
     schemaVersion: 1,
     gate: 'PRODUCTION_RELEASE',
@@ -105,16 +104,27 @@ try {
     sourceFingerprint,
     evidenceSha256: 'c'.repeat(64),
     evidenceGeneratedAt: new Date().toISOString(),
-    otaDigestVerification: {
-      executedAt: new Date().toISOString(),
-      deviceId: 'fixture-esp32-device',
-      artifactSha256: digest,
-      deviceObservedSha256: digest,
+    hardwareEvidence: {
+      classification: 'SIMULATED_HARDWARE_LIVE_SERVICE',
+      observedAt: new Date().toISOString(),
+      summarySha256: 'd'.repeat(64),
+      firmwareArtifactSha256: 'e'.repeat(64),
+      sourceFingerprint: { ...sourceFingerprint },
     },
   };
   write('production-approval.json', `${JSON.stringify(receipt, null, 2)}\n`);
   const approved = run(true);
-  expect(approved.status === 0, 'Valid approval receipt was rejected', approved.output);
+  expect(approved.status === 0, 'Valid simulated-hardware approval receipt was rejected', approved.output);
+
+  receipt.hardwareEvidence.sourceFingerprint.repositoryTreeSha256 = '0'.repeat(64);
+  write('production-approval.json', `${JSON.stringify(receipt, null, 2)}\n`);
+  const wrongHardwareSource = run(true);
+  expect(
+    wrongHardwareSource.status !== 0 && wrongHardwareSource.output.includes('simulated-hardware source fingerprint mismatch'),
+    'Simulated-hardware evidence from a different source baseline was not rejected',
+    wrongHardwareSource.output,
+  );
+  receipt.hardwareEvidence.sourceFingerprint = { ...sourceFingerprint };
 
   receipt.releaseManifestSha256 = '0'.repeat(64);
   write('production-approval.json', `${JSON.stringify(receipt, null, 2)}\n`);
@@ -126,11 +136,30 @@ try {
   write('unexpected.bin', 'untracked\n');
   const untracked = run(true);
   expect(untracked.status !== 0 && untracked.output.includes('Untracked release file'), 'Untracked release file was not rejected after approval', untracked.output);
+  unlinkSync(path.join(releaseRoot, 'unexpected.bin'));
+
+  const digest = 'f'.repeat(64);
+  const legacyReceipt = {
+    ...receipt,
+    hardwareEvidence: undefined,
+    otaDigestVerification: {
+      executedAt: new Date().toISOString(),
+      deviceId: 'fixture-physical-device',
+      artifactSha256: digest,
+      deviceObservedSha256: digest,
+    },
+  };
+  delete legacyReceipt.hardwareEvidence;
+  write('production-approval.json', `${JSON.stringify(legacyReceipt, null, 2)}\n`);
+  const legacyApproved = run(true);
+  expect(legacyApproved.status === 0, 'Legacy physical OTA approval receipt compatibility was broken', legacyApproved.output);
 
   console.log('PASS  Missing production approval receipt is rejected.');
-  console.log('PASS  Valid manifest-bound approval receipt is accepted.');
+  console.log('PASS  Valid simulated-hardware manifest-bound approval receipt is accepted.');
+  console.log('PASS  Simulated-hardware receipt from another source baseline is rejected.');
   console.log('PASS  Tampered approval receipt is rejected.');
   console.log('PASS  Untracked release files remain rejected after approval.');
+  console.log('PASS  Legacy physical OTA approval receipt remains supported.');
 } finally {
   rmSync(tempRoot, { recursive: true, force: true });
 }

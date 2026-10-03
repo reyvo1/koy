@@ -57,9 +57,14 @@ check(
 check('broker smoke package command is exposed', pkg.scripts?.['rescue:broker:smoke'] === 'node scripts/run-rescue-live-broker-smoke.mjs');
 check('CI self-test package command is exposed', pkg.scripts?.['rescue:github-ci:self-test'] === 'node scripts/self-test-rescue-github-ci.mjs');
 check('Wave 2 core runtime self-test package command is exposed', pkg.scripts?.['wave2:core-runtime:self-test'] === 'node scripts/self-test-wave2-core-runtime.mjs');
+check('session handoff self-test command is exposed', pkg.scripts?.['session:handoff:self-test'] === 'node scripts/self-test-session-handoff.mjs');
+check('core CI executes the session handoff continuity self-test', workflow.includes('npm run session:handoff:self-test'));
 check('enterprise wave status verifier command is exposed', pkg.scripts?.['enterprise:wave-status:verify'] === 'node scripts/verify-enterprise-wave-status.mjs');
 check('enterprise wave status self-test command is exposed', pkg.scripts?.['enterprise:wave-status:self-test'] === 'node scripts/self-test-enterprise-wave-status.mjs');
 check('User Web navigation self-test command is exposed', pkg.scripts?.['user-web:navigation:self-test'] === 'node scripts/self-test-user-web-navigation.mjs');
+check('simulated hardware UAT verifier command is exposed', pkg.scripts?.['uat:simulated-hardware:verify'] === 'node scripts/verify-simulated-hardware-uat.mjs');
+check('simulated hardware UAT self-test command is exposed', pkg.scripts?.['uat:simulated-hardware:self-test'] === 'node scripts/self-test-simulated-hardware-uat.mjs');
+check('core CI self-tests the simulated hardware UAT verifier', workflow.includes('npm run uat:simulated-hardware:self-test'));
 check('core CI executes the User Web navigation completeness self-test', workflow.includes('npm run user-web:navigation:self-test'));
 check('rescue CI exports generated runtime configuration before live probes', workflow.includes('Export generated rescue runtime to subsequent probes') && workflow.includes('node scripts/export-rescue-ci-env.mjs --env=.env'));
 check(
@@ -115,6 +120,7 @@ check('Wave 3 QEMU runner self-test executes before expensive ESP-IDF install', 
 check('Wave 3 QEMU setup exports only the newly installed QEMU binary directory', workflow.includes('QEMU_PATH="$(find "$IDF_TOOLS_PATH/tools/$QEMU_TOOL"') && workflow.includes('echo "$QEMU_DIR" >> "$GITHUB_PATH"'));
 check('Wave 3 firmware artifact is downloaded before live device simulation', workflow.indexOf('Download exact Wave 3 firmware artifact') < workflow.indexOf('Wave 3 simulated ESP32 provisioning reconnect command and OTA'));
 check('Wave 3 live simulation runs after real EMQX smoke', workflow.indexOf('Real EMQX auth ACL webhook and ACK smoke') < workflow.indexOf('Wave 3 simulated ESP32 provisioning reconnect command and OTA'));
+check('combined simulated hardware UAT is sealed after media and camera probes', workflow.includes('Seal simulated hardware UAT evidence') && workflow.indexOf('npm run media:probe') < workflow.indexOf('npm run uat:simulated-hardware:verify') && workflow.indexOf('npm run camera:probe') < workflow.indexOf('npm run uat:simulated-hardware:verify'));
 check(
   'rescue CI re-runs Wave 2 runtime invariant guard before live runtime',
   workflow.lastIndexOf('npm run wave2:core-runtime:self-test') >

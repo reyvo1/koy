@@ -164,7 +164,7 @@ const evidence = {
       artifactSha256: '',
       deviceObservedSha256: '',
       evidence:
-        'OTA is outside the RESCUE-02B pass claim until artifact-byte SHA-256 verification and physical hardware proof exist.',
+        'Physical OTA field evidence is optional when a source-bound SIMULATED_HARDWARE_LIVE_SERVICE summary is supplied; DEFERRED is not a physical PASS.',
     },
   },
   operatorNotes: '',

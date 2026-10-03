@@ -203,8 +203,23 @@ if (approvalExists) {
   if (!validTimestamp(approval.evidenceGeneratedAt)) {
     throw new Error('Production approval receipt evidenceGeneratedAt is missing, invalid, or future-dated');
   }
+  const hardware = approval.hardwareEvidence;
   const ota = approval.otaDigestVerification;
-  if (
+  if (hardware) {
+    if (
+      hardware.classification !== 'SIMULATED_HARDWARE_LIVE_SERVICE' ||
+      !validTimestamp(hardware.observedAt) ||
+      !sha256Pattern.test(hardware.summarySha256 ?? '') ||
+      !sha256Pattern.test(hardware.firmwareArtifactSha256 ?? '')
+    ) {
+      throw new Error('Production approval simulated-hardware receipt is invalid');
+    }
+    for (const field of ['packageLockSha256', 'baselineManifestSha256', 'repositoryTreeSha256']) {
+      if (hardware.sourceFingerprint?.[field] !== manifest.sourceFingerprint?.[field]) {
+        throw new Error(`Production approval simulated-hardware source fingerprint mismatch: ${field}`);
+      }
+    }
+  } else if (
     !ota ||
     typeof ota.deviceId !== 'string' ||
     ota.deviceId.trim().length === 0 ||
@@ -213,7 +228,7 @@ if (approvalExists) {
     !sha256Pattern.test(ota.deviceObservedSha256 ?? '') ||
     ota.artifactSha256.toLowerCase() !== ota.deviceObservedSha256.toLowerCase()
   ) {
-    throw new Error('Production approval receipt OTA digest proof is invalid');
+    throw new Error('Production approval receipt needs valid simulated-hardware evidence or legacy physical OTA digest proof');
   }
 }
 

@@ -1,16 +1,18 @@
-LANJUTKAN PROJECT IOT DARI HANDOFF TERBARU.
+LANJUTKAN PROJECT IOT DARI HANDOFF TERBARU. JANGAN AUDIT DARI NOL.
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
 
-MASTER WORKFLOW WAVE 1-13:
-- 30/30 modul = foundation-complete, bukan enterprise-complete.
-- Waves 1–12 = **SOFTWARE SCOPE CLOSED / GREEN** sesuai `docs/ENTERPRISE-WAVE-ROADMAP.md`; jangan buka ulang tanpa bukti gagal baru.
-- Wave 13 Final Enterprise Certification = **IN PROGRESS, software deliverables only**.
-- Production = **NOT APPROVED**. Physical ESP32/HIL, physical camera/vendor evidence, dan provider-owned external evidence (termasuk positive payment settlement/webhook bila credential tidak tersedia) tetap PENDING, tidak boleh dipalsukan PASS.
-- CI wajib meregresikan live probes Wave 4–8 bersama Wave 9–12, load/security/release gates.
-- One complete large wave before one push. Local targeted/lightweight; GitHub heavy acceptance. Fix root-cause class, jangan mengejar hijau dengan melemahkan assertion.
-- Rescue MQTT endpoint canonical tetap 18884. Jangan buka ulang foreign Windows Mosquitto port 1883 tanpa bukti baru.
-- Baca `docs/ENTERPRISE-WAVE-ROADMAP.md`, `docs/ENTERPRISE-ACCEPTANCE-EVIDENCE.md`, `CURRENT-STATE.md`, `PROJECT-HANDOFF.md`, dan `chat-session.md` sebelum lanjut.
+CURRENT CONTINUATION — 2026-10-04:
+- Wave 13 = IN PROGRESS. Waves 1–12 = SOFTWARE SCOPE CLOSED/GREEN.
+- Latest known committed baseline before the current candidate: `f4ed5cd`; sesi baru WAJIB cek `git rev-parse HEAD` dan `git status --short` daripada menganggap SHA ini masih current.
+- Simulated-hardware UAT hardening sudah di-apply. Local pre-push mencapai `wave3:esp32:self-test` dan seluruh gate sebelumnya hijau; first failure terakhir adalah assertion lama di `scripts/self-test-wave3-esp32-source.mjs` yang masih mengharapkan klasifikasi/policy physical lama. Fix continuity batch memperbarui assertion ke `SIMULATED_HARDWARE_LIVE_SERVICE` + physical field validation non-blocking.
+- FIRST FAILING GATE adalah sumber arah kerja. Setelah fix, rerun targeted `npm run wave3:esp32:self-test`, lalu `npm run wave3:prepush:check`; jangan ulang audit repository penuh.
+- Hardware fisik bukan blocker software. GitHub wajib menutup source-bound `SIMULATED_HARDWARE_LIVE_SERVICE` menggunakan exact firmware + live PostgreSQL/API/EMQX + synthetic camera/media. Physical/site/HIL hanya field evidence terpisah.
+- Pola kerja wajib: satu coherent root-cause batch → local gate hijau → review diff → satu commit/push → GitHub heavy UAT. Red GitHub diperbaiki di root-cause class yang sama, bukan micro-push.
+- Sebelum pindah chat lagi, update `chat-session.md`, file ini, `PROJECT-HANDOFF.md`, `docs/SESSION-CHECKPOINT.md`, docs terkait, reseal baseline, dan jalankan `npm run session:handoff:self-test`.
+- Rescue MQTT canonical tetap `mqtt://127.0.0.1:18884`; jangan buka ulang broker 1883 tanpa bukti baru.
+
+BACA URUTAN: `docs/SESSION-HANDOFF-PROTOCOL.md` → file ini → `PROJECT-HANDOFF.md` → `CURRENT-STATE.md` → `docs/SESSION-CHECKPOINT.md` → `chat-session.md` → enterprise roadmap/evidence policy.
 
 --- HISTORICAL CONTINUATION BELOW ---
 

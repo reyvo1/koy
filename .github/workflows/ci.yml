@@ -78,9 +78,11 @@ jobs:
           npm run fastify:v5:compat:self-test
           npm run web:framework:contract:self-test
           npm run wave1:prepush:self-test
+          npm run session:handoff:self-test
           npm run enterprise:wave-status:self-test
           npm run user-web:navigation:self-test
           npm run rescue:ci-env:self-test
+          npm run uat:simulated-hardware:self-test
           npm run wave2:prisma:self-test
           npm run gitignore:source-scope:self-test
           npm run uat:seed:env:self-test
@@ -437,6 +439,13 @@ jobs:
         run: |
           npm run camera:probe
           npm run location:probe
+
+      - name: Seal simulated hardware UAT evidence
+        timeout-minutes: 2
+        # This is the automated replacement for waiting on a physical lab during software delivery.
+        # It binds the exact ESP-IDF artifact, real EMQX negative-flow evidence, synthetic camera
+        # onboarding and RTSP->WebRTC transport into one fail-closed SIMULATED-HARDWARE receipt.
+        run: npm run uat:simulated-hardware:verify
 
       - name: Wave 10 telemetry retention and rollups
         timeout-minutes: 10

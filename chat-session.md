@@ -1,3 +1,63 @@
+# Chat Session — stale ESP32 source contract + durable session handoff — 2026-10-04
+
+<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
+
+Wave 13 remains IN PROGRESS. `SIMULATED_HARDWARE_LIVE_SERVICE` is the mandatory automated hardware-equivalent UAT class; unavailable physical ESP32/camera equipment is not a blocker for software progression and remains separately labelled field evidence.
+
+## Root cause
+
+The operator applied the simulated-hardware UAT hardening and ran the full local pre-push chain. Secret scan, status/navigation/CI-env/UAT/approval self-tests, baseline/rescue validation **484/484**, targeted Jest **154/154**, and the ESP32 simulation/build/API/toolchain/QEMU guards all passed. The chain stopped only in `scripts/self-test-wave3-esp32-source.mjs`: that test still expected the old literal `SIMULATED_LIVE_SERVICE` and an old runbook sentence making physical OTA/HIL a production-certification blocker, while production source/docs had already moved to `SIMULATED_HARDWARE_LIVE_SERVICE` with physical field validation non-blocking.
+
+## Repair
+
+- Updated the Wave 3 source self-test to require the real `SIMULATED_HARDWARE_LIVE_SERVICE` classification plus the non-blocking software-progression boundary, while still asserting that simulation can never impersonate PHYSICAL/HIL.
+- Updated the runbook assertion to require both truthful PHYSICAL/HIL separation and explicit non-blocking physical-lab policy. No simulator/runtime behavior or evidence strength is weakened.
+- Added `docs/SESSION-HANDOFF-PROTOCOL.md` and `scripts/self-test-session-handoff.mjs`; wired the continuity test into local pre-push and GitHub cheap verifier tests.
+- Updated the new-session prompt and agent execution loop to resume from real HEAD/status + the first failing gate, preserve a known dirty candidate, use one coherent batch/commit/push, and refresh handoff files before changing sessions.
+- Refreshed `PASTE-KE-CHAT-BERIKUTNYA.txt`, `PROJECT-HANDOFF.md`, and `docs/SESSION-CHECKPOINT.md` so a new chat has current direction without reading historical chronology as active state.
+
+## Next action
+
+Run `npm run wave3:esp32:self-test`; if green, run the full `npm run wave3:prepush:check`. After full local green, review the complete candidate diff once, commit once, push once, and let GitHub heavy UAT expose the next real failure (if any). Do not restart a repository-wide audit and do not wait for physical hardware.
+
+--- HISTORICAL CHAT SESSION CHRONOLOGY BELOW ---
+
+# Chat Session — GitHub status verifier + simulated hardware UAT hardening — 2026-10-03
+
+<!-- historical session block; current authority marker removed -->
+
+Wave 13 is **IN PROGRESS, software deliverables only**. Physical hardware is not a blocker for software progress: GitHub must maximize `SIMULATED-HARDWARE / LIVE-SERVICE` evidence, while any later field/HIL check stays a separately labeled evidence class and must never be fabricated as physical PASS.
+
+## Root-cause repair and UAT policy
+
+- Fixed the enterprise wave-status verifier so current authority is resolved by the pre-historical block instead of the first 12 lines; this removes the false CI failure seen on commit `f4ed5cd`.
+- Strengthened Wave 3 live simulation with cold reboot/rejoin and QoS1 duplicate-telemetry dedupe in addition to provisioning, heartbeat, Wi-Fi/MQTT reconnect, command/ACK replay and OTA verification/rollback.
+- Added a combined simulated-hardware UAT evidence gate. It only passes when the same rescue run has live broker negative-flow evidence, the exact built ESP32 firmware live simulation, camera onboarding simulation and RTSP-to-WebRTC media simulation.
+- Automated software/UAT completion does not wait for a physical board or camera. Physical/site testing remains a separately labeled optional field-validation layer, not a reason to stop development or keep a software wave open.
+
+## Additional root-cause fixes
+
+- Fixed false-green shell wrappers: `run-camera-probe.sh` and `run-device-location-probe.sh` now use `set -euo pipefail` plus cleanup traps, so a failed Python probe can no longer be overwritten by a successful cleanup/`printf PASS`. `run-media-probe.sh` also emits a simulated-hardware evidence marker only after its real runtime probe succeeds.
+- The combined UAT verifier now seals one source-bound receipt only after exact-firmware ESP32 live simulation, real EMQX negative flows, synthetic camera onboarding and RTSP-to-WebRTC all pass in the same rescue job. The ESP32 simulation additionally recreates the device object for a cold boot/rejoin and replays a duplicate QoS-1 telemetry event to prove live database dedupe.
+- Removed the physical-lab blocker from software production approval without weakening evidence. `release:approve` accepts `--simulated-hardware=<summary.json>` only when that receipt is `SIMULATED_HARDWARE_LIVE_SERVICE`, matches the current sealed source fingerprint, and carries a valid firmware artifact SHA-256. The historical physical OTA/device-observed digest path remains supported as optional field evidence.
+- Production approval self-tests now execute the generator end-to-end: DEFERRED physical OTA without a simulation receipt is rejected, a valid source-bound simulated receipt produces a manifest-bound approval, and a receipt from another source baseline is rejected.
+- Corrected the RESCUE evidence validator output so the simulated path reports `Simulated-hardware/live-service device evidence is complete` rather than falsely claiming a physical ESP32 PASS.
+
+## QA status
+
+- `enterprise:wave-status:self-test`: PASS, including long prepended session notes and marker-below-history negative regression.
+- `enterprise:wave-status:verify`: PASS, 10/10 current authority documents.
+- `uat:simulated-hardware:self-test`: PASS, including failed-camera fail-closed mutation.
+- Wave 3 ESP32 simulation self-test: PASS, including cold boot/rejoin, QoS-1 telemetry dedupe, command replay and OTA rollback/confirmation.
+- Production approval receipt self-test: PASS for simulated-hardware receipt, source mismatch rejection, tamper rejection, untracked payload rejection and legacy physical compatibility.
+- Production approval generator gate self-test: PASS for no-evidence/malformed/deferred-without-simulation rejection, simulated-hardware approval success and cross-baseline rejection.
+- Rescue GitHub CI contract self-test: PASS; Wave 1 pre-push self-test: PASS. The local pre-push chain now also requires User Web navigation, rescue CI-env, simulated-hardware UAT and both production-approval self-tests so cheap verifier coverage cannot exist only in GitHub.
+- `rescue:validate`: PASS **484/484**; final baseline reseal is **1370/1370 source paths** and **1371/1371 manifest hashes**.
+- Changed Node scripts pass `node --check`; changed shell wrappers pass `bash -n`.
+- The live combined UAT remains authoritative in GitHub because it requires the rescue Docker/EMQX/PostgreSQL runtime and the exact firmware artifact produced by the ESP-IDF job. Physical hardware is not required for that software gate.
+
+--- PRIOR CHAT SESSION CHRONOLOGY BELOW ---
+
 # Chat Session — GitHub secret-scan root fix — 2026-10-03
 
 GitHub run `37132570951` progressed through dependency bootstrap, enterprise wave-status verification, Wave 2 contract verification and the security dependency-policy steps, then failed at `security:secrets:scan` before the rescue live-service job could execute. The four findings all came from literal PostgreSQL connection-string fixtures in `scripts/self-test-rescue-ci-env.mjs`; they were test data, not leaked credentials, but the scanner correctly rejected credential-shaped source text.
@@ -25,8 +85,6 @@ Apply this tiny root-fix to the clean operator repository, run the local secret 
 --- HISTORICAL CHAT SESSION CHRONOLOGY BELOW ---
 
 # Chat Session — Wave 13 status/CI consistency repair — 2026-10-03
-
-<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
 
 Wave 13 is **IN PROGRESS, software deliverables only**. Waves 1–12 are treated as **software scope CLOSED / GREEN** under their recorded evidence tiers, not as production certification. Production remains **NOT APPROVED** while physical/provider-owned evidence is pending.
 

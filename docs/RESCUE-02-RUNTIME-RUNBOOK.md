@@ -245,34 +245,43 @@ ignored by source packaging.
 
 Wave 3 implements artifact-byte SHA-256 verification in the ESP32 SDK and
 executes release-bound OTA success/failure/rollback scenarios in automated
-ESP-IDF/QEMU/live-service simulation. That evidence is classified as
-`SIMULATED-HARDWARE`; it proves the firmware/toolchain and platform contracts but
-is **not** physical OTA proof.
+ESP-IDF/QEMU/live-service simulation using the exact built firmware. The combined
+`SIMULATED_HARDWARE_UAT` gate additionally requires cold-boot rejoin, Wi-Fi/MQTT
+reconnect, QoS-1 duplicate dedupe, command/ACK replay safety, real EMQX negative
+ACL/auth evidence, synthetic camera onboarding and RTSP-to-WebRTC runtime evidence.
 
-Physical OTA/HIL remains a production-certification gate. A physical `PASS`
-must record the exact firmware artifact path, SHA-256 of those bytes, the digest
-observed/reported by the tested device, physical device identity, execution
-timestamp, and a concrete evidence reference. The validator requires the local
-artifact bytes and both digests to match; a bare textual OTA PASS is rejected.
-`DEFERRED`/`PENDING PHYSICAL` is never interpreted as OTA PASS.
+This automated path is deliberately classified `SIMULATED_HARDWARE_LIVE_SERVICE`;
+it is never relabelled PHYSICAL/HIL. Missing physical lab equipment is non-blocking
+for software production-readiness. A later physical/site run can still be attached
+as optional field evidence through the legacy physical checklist and OTA digest path.
 
 After `npm run release:build` and `npm run release:verify`, run the separate
-production approval gate from the same sealed source baseline:
+production approval gate from the same sealed source baseline. The normal automated
+path uses the combined UAT summary emitted by GitHub:
 
 ```bash
 npm run release:approve -- \
   --release=artifacts/iot-platform-release \
-  --evidence=reports/rescue-02b-evidence-<timestamp>.json
+  --evidence=reports/rescue-02b-evidence-<timestamp>.json \
+  --simulated-hardware=reports/simulated-hardware-uat/summary.json
 ```
 
-`release:verify` proves package integrity only. `release:approve` additionally
-requires current-source RESCUE-02B evidence PASS, production OTA PASS, an exact
-manifest-covered release file set, and a release source fingerprint matching
-the sealed source tree. A successful approval writes `production-approval.json`
-inside the release directory, binding the release-manifest SHA-256, evidence
-SHA-256, source fingerprint, and OTA digests. The VPS installer invokes the
-packaged verifier with `--require-approved` and refuses an absent, stale, or
-tampered receipt **before** dependency install, migration, or symlink activation.
+`release:approve` re-validates the full automated report, live runtime/broker evidence,
+source fingerprint, exact release manifest and simulated-hardware summary. The summary
+must be `PASS`, classification `SIMULATED_HARDWARE_LIVE_SERVICE`, match the current
+`package-lock.json`/baseline manifest/repository tree SHA-256 values, and carry the exact
+firmware artifact SHA-256. The generated `production-approval.json` binds all of those
+values and is re-verified before installation.
+
+The historical physical path remains backward-compatible: omit `--simulated-hardware`
+only when the physical ESP32 checklist and production OTA artifact/device-observed
+digests are genuinely PASS. `DEFERRED` physical OTA is not accepted on that legacy
+path. This preserves honest evidence labels without allowing unavailable equipment to
+block the automated software path.
+
+`release:verify` proves package integrity only. The VPS installer invokes the packaged
+verifier with `--require-approved` and refuses an absent, stale, source-mismatched or
+tampered approval receipt **before** dependency install, migration or symlink activation.
 Do not deploy based only on a green release integrity check.
 
 ## Scheduler Runtime Activation

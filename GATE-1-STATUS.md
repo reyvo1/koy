@@ -2,7 +2,7 @@
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
 
-This file is historical Rescue Gate 1 evidence and must not be confused with the enterprise Wave 1–13 master roadmap. The active roadmap is `docs/ENTERPRISE-WAVE-ROADMAP.md`: Waves 1–12 have **software scope CLOSED / GREEN**, Wave 13 is **IN PROGRESS, software deliverables only**, and production remains **NOT APPROVED** pending external/physical certification evidence. Status statements below are historical evidence only.
+This file is historical Rescue Gate 1 evidence and must not be confused with the enterprise Wave 1–13 master roadmap. The active roadmap is `docs/ENTERPRISE-WAVE-ROADMAP.md`: Waves 1–12 have **software scope CLOSED / GREEN** and Wave 13 is **IN PROGRESS**. Automated production-readiness is closed by source-bound `SIMULATED_HARDWARE_LIVE_SERVICE` plus live-service evidence; lack of physical lab hardware is non-blocking and any later HIL/site run remains separately labelled field evidence. Genuinely provider-owned gates remain external. Status statements below are historical evidence only.
 
 ---
 

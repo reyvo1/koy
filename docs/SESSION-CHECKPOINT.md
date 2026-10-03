@@ -1,17 +1,23 @@
 # IOT SESSION CHECKPOINT — CURRENT AUTHORITY
 
-## Status terkini — 2026-10-03
+## Status terkini — 2026-10-04
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
 
-- Waves 1–12: **software scope CLOSED / GREEN** menurut `docs/ENTERPRISE-WAVE-ROADMAP.md`.
-- Wave 13 Final Enterprise Certification: **IN PROGRESS, software deliverables only**.
-- Production: **NOT APPROVED**; hardware/provider/external evidence yang belum tersedia tetap PENDING.
-- Current regression obligation: Wave 4 staging/UAT/TLS, Wave 5 webhook+SDK, Wave 6 management plane, Wave 7 mobile+maintenance, Wave 8 billing, Wave 9–12 live probes, plus Wave 13 load/security/release checks must remain CI-visible.
-- Snapshot ZIP ini tidak membawa `.git`; HEAD/branch/ahead/remote numbers in older checkpoint blocks are historical and must not be treated as current repository state.
-- 30/30 Module = foundation-complete; jangan pakai denominator itu untuk menyatakan enterprise certification selesai.
+- Waves 1–12: **software scope CLOSED / GREEN**. Wave 13: **IN PROGRESS**.
+- Missing physical hardware is **NON-BLOCKING for software delivery**. Required automated evidence is source-bound `SIMULATED_HARDWARE_LIVE_SERVICE`; physical/site/HIL stays separately labelled field validation.
+- Latest known committed baseline before the active candidate is `f4ed5cd`; every resumed session must verify real HEAD/status rather than trust this historical SHA.
+- Active candidate: simulated-hardware UAT/release hardening plus session-continuity guard. Local pre-push passed all earlier checks and stopped only at the last Wave 3 source self-test because that self-test still asserted the superseded simulation label/physical-blocker policy.
+- Root cause: stale self-test contract, not failed ESP-IDF/QEMU/device simulation. The current repair updates the assertion to `SIMULATED_HARDWARE_LIVE_SERVICE` and verifies physical/HIL remains distinct but non-blocking.
+- Workflow continuity is now governed by `docs/SESSION-HANDOFF-PROTOCOL.md` and `npm run session:handoff:self-test`.
+- Production is not declared merely from simulation; final automated approval and genuinely provider-owned external evidence remain fail-closed.
 
-> Semua isi setelah separator berikut adalah **historical chronology**. Pre-Wave-13 activation/blocking status, working-tree counts, dan HEAD lama di bawah tidak lagi current.
+### Next action
+
+1. Run `npm run wave3:esp32:self-test`.
+2. If green, run full `npm run wave3:prepush:check`.
+3. Review complete diff once; one commit/push only.
+4. Read the first failing GitHub heavy-UAT step; fix its root-cause class without reopening already-green work.
 
 --- HISTORICAL CHECKPOINT CHRONOLOGY BELOW ---
 

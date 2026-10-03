@@ -13,7 +13,7 @@ This document is the authoritative post-foundation execution roadmap for the IoT
 5. If GitHub is red, collect the first failure plus all related failures in the same class and repair them inside the same active wave.
 6. Do not weaken assertions, convert timeout/ambiguity to PASS, or change production contracts merely to make CI green.
 7. Documentation, baseline manifest, repository tree, tests, and `chat-session.md` are part of every wave closure.
-8. Production approval is withheld until the relevant physical hardware, security, recovery, and release evidence is complete.
+8. Missing physical hardware must not block software delivery. Automated production-readiness is driven to completion with SIMULATED-HARDWARE/LIVE-SERVICE evidence; any later site/HIL validation is tracked separately and must never be relabeled as simulated PASS.
 9. Every PASS must declare the strongest evidence tier actually executed (STATIC/CONTRACT, UNIT, INTEGRATION, LIVE-SERVICE, PHYSICAL/EXTERNAL, or PRODUCTION CERTIFICATION) according to `docs/ENTERPRISE-ACCEPTANCE-EVIDENCE.md`; a green source check cannot impersonate runtime evidence.
 
 ## Wave map
@@ -22,7 +22,7 @@ This document is the authoritative post-foundation execution roadmap for the IoT
 |---|---|---|
 | 1 | Rescue / CI / EMQX hardening | Core GitHub tests and live rescue EMQX acceptance green; MQTT auth/ACL/command path and dashboard acceptance deterministic. **Closed green on V13.** |
 | 2 | Core Runtime Closure | Automation delayed retry runtime is durable and truly republishes; scheduler activation cannot outpace its worker; Notification has leased multi-instance-safe delivery, auth email enqueue, bounded retry policy, and provider-neutral relay boundary. **Closed green on V9.** |
-| 3 | ESP32 + OTA Automated Simulation | Real ESP-IDF compile, QEMU boot, live-service ESP32 digital twin, reconnect/MQTT/telemetry/command/ACK, and release-bound OTA SHA-256/failure/rollback simulation. Physical HIL remains final-certification evidence. |
+| 3 | ESP32 + OTA Automated Simulation | Real ESP-IDF compile, QEMU boot, live-service ESP32 digital twin, reconnect/cold-boot/MQTT/QoS1-dedupe/telemetry/command/ACK, and release-bound OTA SHA-256/failure/rollback simulation. Physical HIL is a separately labelled field-validation layer and does not block software closure. |
 | 4 | Staging / VPS / UAT | Production-shaped staging, TLS/secrets/backups/restore/rollback, operator runbooks, and owner UAT baseline. |
 | 5 | Enterprise Domain / API Closure | Sharing, Organization/Branch, advanced RBAC, public API/webhook runtime, SDK and contract gaps closed end-to-end. |
 | 6 | Enterprise Management Plane | Capability template/version lifecycle, live MQTT management evidence, NOC, reports/audit/operational depth. |
@@ -32,7 +32,7 @@ This document is the authoritative post-foundation execution roadmap for the IoT
 | 10 | HA / Scale / Observability / Security | Multi-node/load evidence, retention/rollups, tracing/telemetry export, security testing, secret rotation/WAF and resilience drills. |
 | 11 | AI + Executive | Real anomaly/health/failure-prediction/predictive-maintenance/energy intelligence and executive KPI product surfaces using authoritative data. |
 | 12 | Enterprise Horizon | Multi-region boundaries, edge gateway, digital twin foundation and AI-assisted operations under explicit ADRs. |
-| 13 | Final Enterprise Certification | Full E2E/UAT/hardware/security/DR/performance evidence, release artifact sealing, production smoke and explicit enterprise production approval. |
+| 13 | Final Enterprise Certification | Full E2E/UAT/simulated-hardware/security/DR/performance evidence, release artifact sealing, production smoke and explicit enterprise production approval. Site-specific physical/HIL validation is tracked separately and is not a blocker for software certification. |
 
 Smart Hotel / TAMASYA is intentionally outside Wave 1–13 and starts only after the enterprise IoT core is stable in production.
 
@@ -41,7 +41,7 @@ Smart Hotel / TAMASYA is intentionally outside Wave 1–13 and starts only after
 - Wave 1: **CLOSED / GREEN**.
 - Wave 2: **CLOSED / GREEN** after V9 heavy GitHub acceptance.
 - Wave 3: **CLOSED / GREEN** for automated software/simulation evidence — ESP-IDF compile, QEMU boot and OTA
-  simulation are regression-gated. Physical ESP32/HIL remains unproven and is deferred to Wave 13.
+  simulation are regression-gated. Physical ESP32/HIL remains a separately labelled field-validation class and does not reopen or block the automated software wave.
 - Waves 4–11: **SOFTWARE SCOPE CLOSED / GREEN**. Repository, contract, integration and live-service evidence
   for the implemented slices is closed, but this phrase must not be read as external-provider or physical
   certification. In particular, the positive real Midtrans settlement/webhook path remains external evidence
@@ -50,7 +50,7 @@ Smart Hotel / TAMASYA is intentionally outside Wave 1–13 and starts only after
   (ADR-010), device twin reconciliation (ADR-011), and cross-region operations reporting (ADR-012). These
   report and record; they do not fail over, route, or bridge, and each ADR says so explicitly.
 - Wave 13: **IN PROGRESS, software deliverables only** — the software-side certification items are being built
-  and measured; final certification still waits for the explicitly external/physical evidence below.
+  and measured. Automated software certification must continue to completion without waiting for unavailable physical devices; external/provider and site/HIL observations remain separately labelled evidence rather than blockers to software progress.
   - Performance evidence: landed. `npm run load:gate` measures the live API with autocannon and holds it to
     `config/performance-budget.json`. The gate can fail: an impossible budget exits 1 by scenario name, and an
     unreachable target exits 1 rather than skipping.
@@ -62,10 +62,10 @@ Smart Hotel / TAMASYA is intentionally outside Wave 1–13 and starts only after
     startup smoke, the PostgreSQL recovery drill, and the MQTT publisher TLS integration test. The TLS test
     stands up a real `node:tls` server with a certificate fixture and connects over `mqtts://` with
     `MQTT_CA_FILE`; it is not a mock.
-  - Physical ESP32/HIL, a physical camera, and real CCTV frames: **UNPROVEN**, deferred. A green pipeline
+  - Physical ESP32/HIL, a physical camera, and real CCTV frames: **SEPARATE FIELD VALIDATION**, not a software-wave blocker. A green pipeline
     cannot produce them, and Wokwi is a browser simulator — CI records that boundary explicitly and never
     claims a Wokwi PASS.
 
 ## Production boundary
 
-A green software pipeline is necessary but not sufficient for production approval. Wave 3 must maximize automated ESP-IDF/QEMU/live-service simulation. Physical ESP32/HIL evidence remains mandatory before final Wave 13 production certification; simulation must never be relabeled as physical proof.
+Wave 13 software certification must maximize automated ESP-IDF/QEMU/live-service and synthetic-camera UAT until every software-controlled behavior is proven. Missing physical hardware does **not** block wave progression or automated software production-readiness. Physical/site/HIL observations remain a separate field-validation class and simulation must never be relabeled as physical proof.

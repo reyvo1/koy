@@ -416,6 +416,7 @@ docs/ROADMAP-COMPLETE.md
 docs/ROADMAP-SMART-HOTEL.md
 docs/SECRET-SCAN-POLICY.md
 docs/SESSION-CHECKPOINT.md
+docs/SESSION-HANDOFF-PROTOCOL.md
 docs/STAGING-RUNBOOK.md
 docs/UAT-CHECKLIST.md
 docs/UI-BLUEPRINT-ENTERPRISE.md
@@ -731,6 +732,8 @@ scripts/self-test-rescue-mqtt-operations.mjs
 scripts/self-test-rescue-runtime-probes.mjs
 scripts/self-test-secure-fastify-stack.mjs
 scripts/self-test-secure-next-stack.mjs
+scripts/self-test-session-handoff.mjs
+scripts/self-test-simulated-hardware-uat.mjs
 scripts/self-test-uat-seed-env.mjs
 scripts/self-test-unit-runtime-regressions.mjs
 scripts/self-test-unit-test-type-boundary.mjs
@@ -754,6 +757,7 @@ scripts/verify-production-approval.mjs
 scripts/verify-production-release.mjs
 scripts/verify-secure-fastify-stack.mjs
 scripts/verify-secure-next-stack.mjs
+scripts/verify-simulated-hardware-uat.mjs
 scripts/verify-tls-terminator.mjs
 scripts/verify-uat-baseline.mjs
 scripts/verify-web-framework-contract-sync.mjs

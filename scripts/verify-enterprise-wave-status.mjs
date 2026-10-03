@@ -94,18 +94,42 @@ const staleTopPatterns = [
   /Wave 4[^\n]{0,100}belum dimulai/i,
 ];
 
-for (const rel of synchronizedFiles) {
-  const text = read(rel);
-  const markerCount = text.split(expectedMarker).length - 1;
-  if (markerCount !== 1) {
+function currentAuthorityBlock(text, rel) {
+  // Current-state documents are allowed to grow above their synchronization marker (for example
+  // chat-session.md gets a new session summary prepended). Resolve the current block semantically:
+  // one marker must exist before the first chronology/horizontal-rule boundary after that marker.
+  // This avoids the old fixed `top 12 lines` failure while still refusing to borrow a marker from
+  // historical evidence farther down the file.
+  const totalMarkerCount = text.split(expectedMarker).length - 1;
+  if (totalMarkerCount !== 1) {
     fail(`${rel} must contain exactly one current marker: ${expectedMarker}`);
   }
-  const top = text.split(/\r?\n/).slice(0, 12).join('\n');
-  if (!new RegExp(`Wave ${activeWave}[^\\n]{0,120}(IN PROGRESS|ACTIVE)`, 'i').test(top)) {
-    fail(`${rel} top block does not identify Wave ${activeWave} as current (${activeStatus})`);
+  const markerIndex = text.indexOf(expectedMarker);
+  const prefix = text.slice(0, markerIndex);
+  if (/^---\s*HISTORICAL[^\n]*---\s*$/im.test(prefix)) {
+    fail(`${rel} synchronization marker is historical, not current`);
+  }
+  const afterMarker = markerIndex + expectedMarker.length;
+  const tail = text.slice(afterMarker);
+  const historicalRelative = tail.search(/^---\s*HISTORICAL[^\n]*---\s*$/im);
+  const ruleRelative = tail.search(/^---\s*$/m);
+  const candidates = [historicalRelative, ruleRelative].filter((index) => index >= 0);
+  const end = candidates.length > 0 ? afterMarker + Math.min(...candidates) : text.length;
+  const current = text.slice(0, end);
+  if (!current.includes(expectedMarker)) {
+    fail(`${rel} current authority block is missing the synchronization marker: ${expectedMarker}`);
+  }
+  return current;
+}
+
+for (const rel of synchronizedFiles) {
+  const text = read(rel);
+  const current = currentAuthorityBlock(text, rel);
+  if (!new RegExp(`Wave ${activeWave}[^\n]{0,180}(IN PROGRESS|ACTIVE)`, 'i').test(current)) {
+    fail(`${rel} current authority block does not identify Wave ${activeWave} as current (${activeStatus})`);
   }
   for (const pattern of staleTopPatterns) {
-    if (pattern.test(top)) fail(`${rel} top block contains superseded active-wave language: ${pattern}`);
+    if (pattern.test(current)) fail(`${rel} current authority block contains superseded active-wave language: ${pattern}`);
   }
 }
 
