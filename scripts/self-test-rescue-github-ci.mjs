@@ -57,6 +57,47 @@ check(
 check('broker smoke package command is exposed', pkg.scripts?.['rescue:broker:smoke'] === 'node scripts/run-rescue-live-broker-smoke.mjs');
 check('CI self-test package command is exposed', pkg.scripts?.['rescue:github-ci:self-test'] === 'node scripts/self-test-rescue-github-ci.mjs');
 check('Wave 2 core runtime self-test package command is exposed', pkg.scripts?.['wave2:core-runtime:self-test'] === 'node scripts/self-test-wave2-core-runtime.mjs');
+check('enterprise wave status verifier command is exposed', pkg.scripts?.['enterprise:wave-status:verify'] === 'node scripts/verify-enterprise-wave-status.mjs');
+check('enterprise wave status self-test command is exposed', pkg.scripts?.['enterprise:wave-status:self-test'] === 'node scripts/self-test-enterprise-wave-status.mjs');
+check(
+  'core CI self-tests and executes enterprise wave status synchronization',
+  workflow.includes('npm run enterprise:wave-status:self-test') &&
+    workflow.includes('Verify enterprise wave status synchronization') &&
+    workflow.indexOf('npm run enterprise:wave-status:verify') < workflow.indexOf('Build backend'),
+);
+const uatSeedIndex = workflow.indexOf('Seed the UAT baseline');
+const wave9Index = workflow.indexOf('Wave 9 media runtime RTSP to WebRTC');
+check(
+  'Wave 4 staging UAT and TLS regression is mandatory after UAT seed',
+  uatSeedIndex >= 0 &&
+    workflow.indexOf('Wave 4 staging UAT and TLS regression') > uatSeedIndex &&
+    ['npm run uat:docs', 'npm run uat:login', 'npm run tls:verify'].every((token) => workflow.includes(token)),
+);
+check(
+  'Wave 5 webhook and SDK live regressions are mandatory before Wave 9',
+  workflow.indexOf('Wave 5 public API webhook and SDK live regression') > uatSeedIndex &&
+    workflow.indexOf('Wave 5 public API webhook and SDK live regression') < wave9Index &&
+    ['npm run webhook:probe', 'npm run sdk:probe'].every((token) => workflow.includes(token)),
+);
+check(
+  'Wave 6 management plane live regressions are mandatory before Wave 9',
+  workflow.indexOf('Wave 6 management plane live regression') > uatSeedIndex &&
+    workflow.indexOf('Wave 6 management plane live regression') < wave9Index &&
+    ['npm run capability-template:probe', 'npm run saved-reports:probe', 'npm run mqtt-management:probe', 'npm run noc:probe'].every((token) => workflow.includes(token)),
+);
+check(
+  'Wave 7 mobile and technician live regressions are mandatory before Wave 9',
+  workflow.indexOf('Wave 7 mobile and technician live regression') > uatSeedIndex &&
+    workflow.indexOf('Wave 7 mobile and technician live regression') < wave9Index &&
+    ['npm run mobile:notification:probe', 'npm run maintenance:probe'].every((token) => workflow.includes(token)),
+);
+check(
+  'Wave 8 billing lifecycle regression is mandatory without fabricating provider evidence',
+  workflow.indexOf('Wave 8 billing lifecycle live regression') > uatSeedIndex &&
+    workflow.indexOf('Wave 8 billing lifecycle live regression') < wave9Index &&
+    workflow.includes('npm run billing:probe') &&
+    workflow.includes('positive provider-owned settlement/webhook still requires real provider credentials'),
+);
 check('Wave 3 ESP32 self-test package command is exposed', pkg.scripts?.['wave3:esp32:self-test'] === 'node scripts/self-test-wave3-esp32-simulation.mjs && node scripts/self-test-wave3-esp-idf-build-graph.mjs && node scripts/self-test-wave3-esp-idf-api-surface.mjs && node scripts/self-test-wave3-esp-idf-toolchain-lifecycle.mjs && node scripts/self-test-wave3-qemu-boot-runner.mjs && node scripts/self-test-wave3-esp32-source.mjs');
 check('Wave 3 firmware simulation job is mandatory before rescue live services', workflow.includes('esp32-firmware-simulation:') && workflow.includes('Wave 3 ESP-IDF ${{ matrix.target }} build and QEMU boot') && workflow.includes('needs: [test, esp32-firmware-simulation]'));
 check('Wave 3 firmware job runs in parallel with core CI', !workflow.slice(workflow.indexOf('  esp32-firmware-simulation:'), workflow.indexOf('  rescue-live-emqx:')).includes('needs: test'));

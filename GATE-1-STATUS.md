@@ -1,6 +1,8 @@
-# Gate naming clarification — 2026-09-15
+# Gate naming clarification — 2026-10-03
 
-This file is historical Rescue Gate 1 evidence and must not be confused with the enterprise Wave 1–13 master roadmap. The active roadmap is `docs/ENTERPRISE-WAVE-ROADMAP.md`. Wave 1 software/CI and Wave 2 Core Runtime Closure are CLOSED GREEN; Wave 3 ESP32 + OTA Automated Simulation is ACTIVE. Production approval still requires later physical/HIL and final certification waves.
+<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
+
+This file is historical Rescue Gate 1 evidence and must not be confused with the enterprise Wave 1–13 master roadmap. The active roadmap is `docs/ENTERPRISE-WAVE-ROADMAP.md`: Waves 1–12 have **software scope CLOSED / GREEN**, Wave 13 is **IN PROGRESS, software deliverables only**, and production remains **NOT APPROVED** pending external/physical certification evidence. Status statements below are historical evidence only.
 
 ---
 
@@ -10,7 +12,7 @@ This file is historical Rescue Gate 1 evidence and must not be confused with the
 > separate `rescue:gate1:validate` result. They are not the same gate. The runner produced a LIVE
 > PASS; the validator has not been re-run since the RR29 source change, which is what
 > "REVALIDATION REQUIRED" refers to. Neither line overrides the enterprise status in
-> `docs/ENTERPRISE-WAVE-ROADMAP.md` (Wave 1 and 2 closed green, Wave 3 active, Wave 4 blocked).
+> `docs/ENTERPRISE-WAVE-ROADMAP.md` (Waves 1–12 software scope closed/green; Wave 13 in progress; production not approved).
 
 Status: **RUNNER PASS, VALIDATOR REVALIDATION REQUIRED ON OPERATOR PC**
 

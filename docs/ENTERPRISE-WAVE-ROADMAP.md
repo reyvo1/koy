@@ -1,6 +1,6 @@
 # Enterprise Wave Roadmap — Wave 1–13
 
-Status date: 2026-09-15
+Status date: 2026-10-03
 
 This document is the authoritative post-foundation execution roadmap for the IoT Platform. The historical Module 1–30 roadmap remains valid as architecture/foundation evidence, but **30/30 foundation-complete does not mean enterprise-complete**.
 
@@ -40,14 +40,17 @@ Smart Hotel / TAMASYA is intentionally outside Wave 1–13 and starts only after
 
 - Wave 1: **CLOSED / GREEN**.
 - Wave 2: **CLOSED / GREEN** after V9 heavy GitHub acceptance.
-- Wave 3: **CLOSED / GREEN** — ESP-IDF compile, QEMU boot and OTA simulation all run on every push. Physical
-  ESP32/HIL remains unproven and is deferred to Wave 13; see the production boundary below.
-- Waves 4–11: **CLOSED / GREEN**, each slice landed with a live PostgreSQL probe and a green GitHub run.
+- Wave 3: **CLOSED / GREEN** for automated software/simulation evidence — ESP-IDF compile, QEMU boot and OTA
+  simulation are regression-gated. Physical ESP32/HIL remains unproven and is deferred to Wave 13.
+- Waves 4–11: **SOFTWARE SCOPE CLOSED / GREEN**. Repository, contract, integration and live-service evidence
+  for the implemented slices is closed, but this phrase must not be read as external-provider or physical
+  certification. In particular, the positive real Midtrans settlement/webhook path remains external evidence
+  because no provider server key is present; physical camera/vendor behavior also remains external evidence.
 - Wave 12: **CLOSED / GREEN** — multi-region boundaries (ADR-009), edge gateway identity and attribution
   (ADR-010), device twin reconciliation (ADR-011), and cross-region operations reporting (ADR-012). These
   report and record; they do not fail over, route, or bridge, and each ADR says so explicitly.
 - Wave 13: **IN PROGRESS, software deliverables only** — the software-side certification items are being built
-  and measured; the hardware side is not started because no physical device is available.
+  and measured; final certification still waits for the explicitly external/physical evidence below.
   - Performance evidence: landed. `npm run load:gate` measures the live API with autocannon and holds it to
     `config/performance-budget.json`. The gate can fail: an impossible budget exits 1 by scenario name, and an
     unreachable target exits 1 rather than skipping.

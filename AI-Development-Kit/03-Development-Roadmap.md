@@ -1,6 +1,8 @@
 # Post-foundation enterprise execution — authoritative addendum
 
-The numbered Module 1–30 list below is the completed **foundation roadmap**. It is no longer the active execution queue. The active post-foundation queue is `docs/ENTERPRISE-WAVE-ROADMAP.md` with Wave 1–13. Acceptance evidence strength is governed by `docs/ENTERPRISE-ACCEPTANCE-EVIDENCE.md`; STATIC/CONTRACT checks cannot substitute for INTEGRATION, LIVE-SERVICE, PHYSICAL/EXTERNAL, or final certification evidence. Wave 1 and Wave 2 are closed green; Wave 3 ESP32 + OTA Automated Simulation is active. One wave must be completed as a large gate before one GitHub push; no return to micro-RR progression.
+<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
+
+The numbered Module 1–30 list below is the completed **foundation roadmap**. It is no longer the active execution queue. The active post-foundation queue is `docs/ENTERPRISE-WAVE-ROADMAP.md` with Wave 1–13. Acceptance evidence strength is governed by `docs/ENTERPRISE-ACCEPTANCE-EVIDENCE.md`; STATIC/CONTRACT checks cannot substitute for INTEGRATION, LIVE-SERVICE, PHYSICAL/EXTERNAL, or final certification evidence. Waves 1–12 have **software scope CLOSED / GREEN**; Wave 13 Final Enterprise Certification is **IN PROGRESS, software deliverables only**. Production remains NOT APPROVED until required external/physical evidence and explicit final approval exist. One wave remains one large gate before one GitHub push; no return to micro-RR progression.
 
 ---
 

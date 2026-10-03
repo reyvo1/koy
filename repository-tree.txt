@@ -705,6 +705,7 @@ scripts/self-test-baseline-hygiene.mjs
 scripts/self-test-baseline-manifest.mjs
 scripts/self-test-dashboard-widget-integration-access.mjs
 scripts/self-test-emqx-webhooks.mjs
+scripts/self-test-enterprise-wave-status.mjs
 scripts/self-test-fastify-v5-compat.mjs
 scripts/self-test-gitignore-source-scope.mjs
 scripts/self-test-production-approval-gate.mjs
@@ -735,6 +736,7 @@ scripts/self-test-web-framework-contract-sync.mjs
 scripts/validate-rescue-02b-evidence.mjs
 scripts/validate-rescue-baseline.mjs
 scripts/validate-rescue-gate1-receipt.mjs
+scripts/verify-enterprise-wave-status.mjs
 scripts/verify-fastify-v5-compat.mjs
 scripts/verify-production-approval.mjs
 scripts/verify-production-release.mjs

@@ -1,3 +1,20 @@
+# IOT SESSION CHECKPOINT — CURRENT AUTHORITY
+
+## Status terkini — 2026-10-03
+
+<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
+
+- Waves 1–12: **software scope CLOSED / GREEN** menurut `docs/ENTERPRISE-WAVE-ROADMAP.md`.
+- Wave 13 Final Enterprise Certification: **IN PROGRESS, software deliverables only**.
+- Production: **NOT APPROVED**; hardware/provider/external evidence yang belum tersedia tetap PENDING.
+- Current regression obligation: Wave 4 staging/UAT/TLS, Wave 5 webhook+SDK, Wave 6 management plane, Wave 7 mobile+maintenance, Wave 8 billing, Wave 9–12 live probes, plus Wave 13 load/security/release checks must remain CI-visible.
+- Snapshot ZIP ini tidak membawa `.git`; HEAD/branch/ahead/remote numbers in older checkpoint blocks are historical and must not be treated as current repository state.
+- 30/30 Module = foundation-complete; jangan pakai denominator itu untuk menyatakan enterprise certification selesai.
+
+> Semua isi setelah separator berikut adalah **historical chronology**. Pre-Wave-13 activation/blocking status, working-tree counts, dan HEAD lama di bawah tidak lagi current.
+
+--- HISTORICAL CHECKPOINT CHRONOLOGY BELOW ---
+
 # IOT SESSION CHECKPOINT — TRIGGER: ketik "lanjut iot"
 
 ## BACA INI DULU — status terkini, diverifikasi ulang 2026-09-30 01:35 WITA

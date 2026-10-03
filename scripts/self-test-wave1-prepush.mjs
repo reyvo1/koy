@@ -13,6 +13,8 @@ const required = [
   'security:web-stack:verify',
   'security:audit:production',
   'lint:check',
+  'enterprise:wave-status:self-test',
+  'enterprise:wave-status:verify',
   'gitignore:source-scope:self-test',
   'fastify:v5:compat:verify',
   'web:framework:contract:verify',

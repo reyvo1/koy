@@ -1,6 +1,8 @@
-# Active enterprise state — 2026-09-15
+# Active enterprise state — 2026-10-03
 
-Authoritative execution is `docs/ENTERPRISE-WAVE-ROADMAP.md`. The 30 modules are foundation-complete; enterprise completion is not yet declared. Wave 1 Rescue/CI/EMQX hardening and Wave 2 Core Runtime Closure are **CLOSED GREEN**. Wave 3 ESP32 + OTA Automated Simulation is **ACTIVE** and must prove real ESP-IDF compile/QEMU boot plus a live-service device twin against the rescue stack, including release-bound OTA SHA-256/failure/rollback simulation. Physical ESP32/HIL remains final-certification evidence and must never be inferred from simulation. Historical module-current statements below are retained only as chronology.
+<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
+
+Authoritative execution is `docs/ENTERPRISE-WAVE-ROADMAP.md`. The 30 modules are foundation-complete; enterprise production approval is not declared. Waves 1–12 have **software scope CLOSED / GREEN** under their actual evidence tiers. Wave 13 Final Enterprise Certification is **IN PROGRESS, software deliverables only**. Physical ESP32/HIL, physical camera/vendor behavior, provider-owned external evidence, and final production approval remain separate boundaries and must never be inferred from simulation. Historical module-current statements below are chronology only.
 
 ---
 

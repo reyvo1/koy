@@ -1,3 +1,39 @@
+# Chat Session — Wave 13 status/CI consistency repair — 2026-10-03
+
+<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
+
+Wave 13 is **IN PROGRESS, software deliverables only**. Waves 1–12 are treated as **software scope CLOSED / GREEN** under their recorded evidence tiers, not as production certification. Production remains **NOT APPROVED** while physical/provider-owned evidence is pending.
+
+This session repairs the root cause of status drift and CI regression gaps: current authority documents are synchronized to the enterprise roadmap, an executable status-sync validator/self-test is added, and Wave 4–8 live probes are made mandatory in the rescue live-service CI chain. Historical Wave 2/3 entries below remain chronology only and no longer define current execution state.
+
+## Repair scope completed
+
+- Synchronized the current authority blocks across agent, current-state, handoff, gate-status, roadmap, project-state, session checkpoint, Development Kit and next-chat handoff documents.
+- Added `scripts/verify-enterprise-wave-status.mjs` plus a negative-path self-test. The verifier derives the current wave from `docs/ENTERPRISE-WAVE-ROADMAP.md` and rejects stale/ambiguous current-state markers.
+- Wired status self-test/verification into package scripts, the local pre-push chain and GitHub core CI.
+- Restored mandatory Wave 4–8 live regression coverage in the rescue GitHub job: UAT/TLS, webhook+SDK, capability templates/saved reports/MQTT management/NOC, mobile notification+maintenance, and billing lifecycle.
+- Kept external evidence honest: positive provider-owned payment settlement/webhook, physical ESP32/HIL and physical camera/vendor behavior remain PENDING rather than being relabeled software PASS.
+- Increased only the aggregate rescue job budget from 45 to 60 minutes because five additional live-regression groups now execute; individual probe timeouts remain bounded/fail-fast.
+
+## QA executed in this snapshot
+
+- GitHub Actions YAML parse: PASS. Changed Node scripts syntax: PASS. Shell syntax for `scripts/*.sh` and `ops/scripts/*.sh`: PASS.
+- `enterprise:wave-status:self-test`: PASS, including stale-handoff and double-active negative cases.
+- `enterprise:wave-status:verify`: PASS, 10/10 synchronized current-state documents.
+- `baseline:hygiene:self-test` and `baseline:manifest:self-test`: PASS.
+- `wave1:prepush:self-test`: PASS. `wave2:core-runtime:self-test`: PASS. Full Wave 3 ESP32 source/build/API/toolchain/QEMU simulation self-test chain: PASS.
+- `rescue:github-ci:self-test`: PASS, including mandatory Wave 4–8 regression assertions.
+- Production approval receipt/generator self-tests and UAT seed-env self-test: PASS.
+- With a temporary synthetic Git index (QA only; no commit/history/remote), `gitignore:source-scope:self-test`: PASS.
+- `rescue:validate`: PASS **481/481**.
+- Full secret scan reached and cleared the strict credential/pinned-key phase, then could not complete the `secretlint` phase because this ZIP snapshot has no installed dependency tree and the environment cannot fetch the missing CLI. Full Jest/lint/typecheck/build/live Docker probes likewise remain authoritative operator/GitHub gates, not locally fabricated PASS.
+
+## Handoff
+
+The repaired source is ready for operator-side verification in the real Git repository. Before commit/push, use the real `.git` checkout with installed lockfile dependencies, run the maximal local pre-push gate, review the complete diff once, then make the single approved push and let GitHub execute the expanded live-service chain. Production remains NOT APPROVED.
+
+--- HISTORICAL CHAT SESSION CHRONOLOGY BELOW ---
+
 # Chat Session — Enterprise Wave 3 ESP32 + OTA Automated Simulation
 
 ## Active progress — 2026-09-15

@@ -1,8 +1,14 @@
-# PROJECT HANDOFF — ENTERPRISE WAVE 3
+# PROJECT HANDOFF — ENTERPRISE WAVE 13
 
-## ACTIVE HANDOFF — ESP32 + OTA AUTOMATED SIMULATION
+<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
 
-Master roadmap: `docs/ENTERPRISE-WAVE-ROADMAP.md` Wave 1–13. Wave 1 and Wave 2 are **CLOSED GREEN**. Wave 3 is active. Do not audit from zero and do not reopen the foreign Windows Mosquitto issue on port 1883; rescue MQTT remains 18884.
+## ACTIVE HANDOFF — FINAL ENTERPRISE CERTIFICATION SOFTWARE
+
+Master roadmap: `docs/ENTERPRISE-WAVE-ROADMAP.md` Wave 1–13. Waves 1–12 have **software scope CLOSED / GREEN**; Wave 13 is **IN PROGRESS, software deliverables only**. Production remains **NOT APPROVED** until the explicitly external/physical evidence and final approval are complete. Rescue MQTT remains 18884; do not reopen the historical foreign Windows Mosquitto port-1883 issue without new evidence.
+
+Current engineering priority is regression integrity: keep Wave 4–8 live probes, Wave 9–12 probes, performance/security/release gates and source-state synchronization continuously enforced in CI. Missing hardware/provider credentials are PENDING EXTERNAL evidence, never PASS.
+
+--- HISTORICAL WAVE 3 HANDOFF BELOW ---
 
 ### Wave 3 objective
 

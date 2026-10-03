@@ -1,6 +1,6 @@
 # Enterprise Acceptance Evidence Policy
 
-Status date: 2026-09-15
+Status date: 2026-10-03
 
 This policy prevents a green pipeline from being interpreted as proof that every
 real-world function has been exercised. Every wave claim must name the strongest
@@ -32,6 +32,10 @@ evidence tier actually executed.
    PHYSICAL evidence.
 7. GitHub heavy acceptance is authoritative for automated runtime evidence;
    local pre-push remains targeted/lightweight.
+8. `SOFTWARE SCOPE CLOSED / GREEN` is a bounded implementation/regression statement, not a synonym for
+   PHYSICAL / EXTERNAL evidence or PRODUCTION CERTIFICATION. If an exit criterion depends on provider-owned
+   credentials, physical hardware, or a real external environment that is unavailable, that evidence remains
+   explicitly PENDING and production approval remains withheld.
 
 ## Wave 2 minimum evidence matrix
 

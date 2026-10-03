@@ -78,6 +78,7 @@ jobs:
           npm run fastify:v5:compat:self-test
           npm run web:framework:contract:self-test
           npm run wave1:prepush:self-test
+          npm run enterprise:wave-status:self-test
           npm run wave2:prisma:self-test
           npm run gitignore:source-scope:self-test
           npm run uat:seed:env:self-test
@@ -92,6 +93,9 @@ jobs:
           npm run rescue:gate1-validator:self-test
           npm run release:approval:self-test
           npm run release:approval:gate:self-test
+
+      - name: Verify enterprise wave status synchronization
+        run: npm run enterprise:wave-status:verify
 
       - name: Verify Wave 2 core runtime contract
         run: npm run wave2:core-runtime:self-test
@@ -293,7 +297,9 @@ jobs:
     name: Rescue live EMQX / acceptance
     needs: [test, esp32-firmware-simulation]
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # Wave 4–8 live regressions now run here as well. Keep each probe's own fail-fast timeout,
+    # but give the aggregate job enough wall-clock budget to avoid a false job-level timeout.
+    timeout-minutes: 60
     env:
       CI: 'true'
       NODE_ENV: test
@@ -379,6 +385,43 @@ jobs:
         # `UAT login failed: HTTP 401` on a clean runner, which is indistinguishable from a broken
         # login path and would have been read as a regression in the probes themselves.
         run: npm run uat:seed
+
+      - name: Wave 4 staging UAT and TLS regression
+        timeout-minutes: 10
+        # Re-run the production-shaped staging contracts instead of relying on the historical closure
+        # note. UAT credentials are generated on this runner, and nginx is exercised as a real TLS
+        # terminator. The PostgreSQL recovery drill already runs in the core job.
+        run: |
+          npm run uat:docs
+          npm run uat:login
+          npm run tls:verify
+
+      - name: Wave 5 public API webhook and SDK live regression
+        timeout-minutes: 10
+        run: |
+          npm run webhook:probe
+          npm run sdk:probe
+
+      - name: Wave 6 management plane live regression
+        timeout-minutes: 12
+        run: |
+          npm run capability-template:probe
+          npm run saved-reports:probe
+          npm run mqtt-management:probe
+          npm run noc:probe
+
+      - name: Wave 7 mobile and technician live regression
+        timeout-minutes: 12
+        run: |
+          npm run mobile:notification:probe
+          npm run maintenance:probe
+
+      - name: Wave 8 billing lifecycle live regression
+        timeout-minutes: 10
+        # This proves the repository-owned billing lifecycle and fail-closed provider boundary. A
+        # positive provider-owned settlement/webhook still requires real provider credentials and is
+        # explicitly external evidence; CI must not manufacture that PASS.
+        run: npm run billing:probe
 
       - name: Wave 9 media runtime RTSP to WebRTC
         timeout-minutes: 10

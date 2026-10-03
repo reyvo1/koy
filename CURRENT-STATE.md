@@ -1,3 +1,19 @@
+# CURRENT STATE — ENTERPRISE WAVE 13
+
+## Authoritative active state — 2026-10-03
+
+<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
+
+- Waves 1–12: **software scope CLOSED / GREEN** according to the authoritative enterprise roadmap and repository evidence.
+- Wave 13 Final Enterprise Certification: **IN PROGRESS, software deliverables only**.
+- Production: **NOT APPROVED**. A green software pipeline is necessary but cannot stand in for physical ESP32/HIL, physical camera/vendor behavior, real provider-owned payment settlement/webhook evidence, or final production approval.
+- Current software regression boundary: keep all prior wave probes continuously exercised in CI; do not reopen a closed wave unless new evidence fails.
+- The ZIP snapshot has no `.git`, so local audit of commit/branch/remote history is not a substitute for the operator repository or GitHub evidence.
+
+> **Reading rule.** Everything below this separator is historical chronology. Any older activation/blocking statement from pre-Wave-13 chronology is superseded by this block and by `docs/ENTERPRISE-WAVE-ROADMAP.md`.
+
+--- HISTORICAL CHRONOLOGY BELOW ---
+
 # CURRENT STATE — ENTERPRISE WAVE 3
 
 ## Authoritative active state — 2026-09-28
