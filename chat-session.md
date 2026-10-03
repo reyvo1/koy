@@ -28,6 +28,16 @@ This session repairs the root cause of status drift and CI regression gaps: curr
 - `rescue:validate`: PASS **481/481**.
 - Full secret scan reached and cleared the strict credential/pinned-key phase, then could not complete the `secretlint` phase because this ZIP snapshot has no installed dependency tree and the environment cannot fetch the missing CLI. Full Jest/lint/typecheck/build/live Docker probes likewise remain authoritative operator/GitHub gates, not locally fabricated PASS.
 
+## 2026-10-03 User Web + Wave 4 CI root-cause repair
+
+- GitHub run `100557627291` failed in Wave 4 before later live regressions: UAT documentation validation read rescue `PORT=3000` while docs still claimed 5000, and its Prisma account check did not load `DATABASE_URL` from the generated `.env`.
+- Added `scripts/export-rescue-ci-env.mjs` so the generated rescue `.env` becomes the single source of truth for `DATABASE_URL`, `TEST_DATABASE_URL`, `IOT_API`, `PROBE_BASE`, and `PROBE_API_BASE` across subsequent GitHub probe steps without printing secret values.
+- `verify-uat-baseline.mjs` and UAT documentation checks now resolve the same generated rescue environment; UAT/staging docs are synchronized to API port 3000 and Admin Web port 3100.
+- User Web now has seven governed top-level surfaces: Beranda, Ruangan, Perangkat Saya, Realtime, Dashboard, Alerts, Profil. Realtime proxies the VIEW-guarded backend SSE stream; Alerts uses the accessible-device analytics endpoint; Profil uses the authenticated profile GET/POST contract.
+- Added `user-web:navigation:self-test`, including a negative mutation that removes Dashboard and must fail, closing the previous blind spot where navigation completeness could drift while `rescue:validate` stayed green.
+- Scene/Schedule remain intentionally outside User Web navigation until a complete end-user authoring UI exists; their backend boundary is now hardened: scene reads require VIEW across all action devices, scene mutations/run require CONTROL, and schedules inherit VIEW/CONTROL from their target scene.
+- Tenant-wide notification delivery logs are now guarded by `AdminRoleGuard`; MEMBER-facing Alerts continue to use the separate accessible-device analytics endpoint.
+
 ## Handoff
 
 The repaired source is ready for operator-side verification in the real Git repository. Before commit/push, use the real `.git` checkout with installed lockfile dependencies, run the maximal local pre-push gate, review the complete diff once, then make the single approved push and let GitHub execute the expanded live-service chain. Production remains NOT APPROVED.

@@ -22,7 +22,7 @@ import sys
 import urllib.error
 import urllib.request
 
-BASE = os.environ.get("PROBE_API_BASE", "http://127.0.0.1:5000")
+BASE = os.environ.get("PROBE_API_BASE", "http://127.0.0.1:3000")
 TENANT = os.environ.get("PROBE_TENANT", "44444444-4444-4444-8444-444444444444")
 MARKER = "wave7-maint-probe"
 LOGIN = json.load(

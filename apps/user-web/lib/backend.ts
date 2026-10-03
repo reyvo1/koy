@@ -45,7 +45,7 @@ export async function backendFetch(
   init: RequestInit = {},
 ): Promise<Response> {
   const headers = new Headers(init.headers);
-  headers.set('accept', 'application/json');
+  if (!headers.has('accept')) headers.set('accept', 'application/json');
 
   return fetch(backendUrl(pathname), {
     ...init,

@@ -19,7 +19,7 @@ import { resolve } from 'node:path';
 
 type Json = Record<string, unknown>;
 
-const BASE = process.env.PROBE_API_BASE ?? 'http://127.0.0.1:5000';
+const BASE = process.env.PROBE_API_BASE ?? 'http://127.0.0.1:3000';
 const SESSION_TENANT = '11111111-1111-4111-8111-111111111111';
 const TENANT = process.env.PROBE_TENANT ?? '22222222-2222-4222-8222-222222222222';
 const OTHER_TENANT = '33333333-3333-4333-8333-333333333333';

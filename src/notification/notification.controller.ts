@@ -9,6 +9,7 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantContextGuard } from '../users/guards/tenant-context.guard';
 import { NotificationService } from './notification.service';
+import { AdminRoleGuard } from '../admin-operations/admin-role.guard';
 
 /**
  * Tenant-scoped notification delivery log.
@@ -25,7 +26,7 @@ import { NotificationService } from './notification.service';
  * could misuse. Delivery is retried by the worker, not by hand.
  */
 @Controller('notifications')
-@UseGuards(JwtAuthGuard, TenantContextGuard)
+@UseGuards(JwtAuthGuard, TenantContextGuard, AdminRoleGuard)
 export class NotificationController {
   constructor(private readonly notifications: NotificationService) {}
 

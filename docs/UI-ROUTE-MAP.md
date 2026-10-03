@@ -98,8 +98,13 @@ User Web is now room-centric per Product Vision. `apps/user-web/app/page.tsx` re
 | `/ruangan` | KEEP | Authorized ROOM → Devices view; placement never grants access by itself |
 | `/perangkat-saya` | KEEP | Flat owner/share VIEW/CONTROL device directory |
 | `/perangkat-saya/[deviceId]` | KEEP | Authorized Device Detail: capability, latest telemetry, bounded boolean controls, command history, OTA rollout evidence, Module 16 findings; current firmware/protocol remain unavailable unless a real per-device source exists |
-| `/dashboard` | KEEP | Existing dynamic dashboard/workspace surface |
+| `/realtime` | KEEP | VIEW-guarded SSE telemetry stream for an authorized device |
+| `/dashboard` | KEEP | Existing dynamic dashboard/workspace surface; RBAC permission remains authoritative |
+| `/alerts` | KEEP | User-scoped WARNING/CRITICAL analytics findings for accessible devices |
+| `/profil` | KEEP | Authenticated profile read/update for the current user |
 | `/` | MERGE | Redirect to `/beranda` |
+
+The seven top-level User Web menu entries are guarded by `scripts/self-test-user-web-navigation.mjs`; removing one or leaving it without a real page fails closed. Scene/Schedule stay out of User Web until their device-level CONTROL boundary is explicitly hardened.
 
 The backend read model first applies the existing device owner/share authorization policy and only then groups authorized devices by ROOM placement. VIEW-only shares cannot issue commands; CONTROL is separately resolved by `DeviceAccessService`. User Web never infers physical actuator state from HTTP submission and reconciles terminal ACK/FAILED/TIMED_OUT before reloading telemetry. Non-boolean User Web controls stay fail-closed until the typed control surface is shared safely.
 

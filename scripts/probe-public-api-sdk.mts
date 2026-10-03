@@ -23,7 +23,7 @@
  */
 import { PublicApiClient, PublicApiError } from '../packages/sdk/src/index.ts';
 
-const BASE = process.env.PROBE_BASE ?? 'http://127.0.0.1:5000';
+const BASE = process.env.PROBE_BASE ?? 'http://127.0.0.1:3000';
 const TENANT = process.env.PROBE_TENANT_ID ?? '22222222-2222-4222-8222-222222222222';
 
 let passed = 0;

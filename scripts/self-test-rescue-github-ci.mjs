@@ -59,6 +59,9 @@ check('CI self-test package command is exposed', pkg.scripts?.['rescue:github-ci
 check('Wave 2 core runtime self-test package command is exposed', pkg.scripts?.['wave2:core-runtime:self-test'] === 'node scripts/self-test-wave2-core-runtime.mjs');
 check('enterprise wave status verifier command is exposed', pkg.scripts?.['enterprise:wave-status:verify'] === 'node scripts/verify-enterprise-wave-status.mjs');
 check('enterprise wave status self-test command is exposed', pkg.scripts?.['enterprise:wave-status:self-test'] === 'node scripts/self-test-enterprise-wave-status.mjs');
+check('User Web navigation self-test command is exposed', pkg.scripts?.['user-web:navigation:self-test'] === 'node scripts/self-test-user-web-navigation.mjs');
+check('core CI executes the User Web navigation completeness self-test', workflow.includes('npm run user-web:navigation:self-test'));
+check('rescue CI exports generated runtime configuration before live probes', workflow.includes('Export generated rescue runtime to subsequent probes') && workflow.includes('node scripts/export-rescue-ci-env.mjs --env=.env'));
 check(
   'core CI self-tests and executes enterprise wave status synchronization',
   workflow.includes('npm run enterprise:wave-status:self-test') &&

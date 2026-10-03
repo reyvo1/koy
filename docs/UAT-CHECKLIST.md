@@ -16,7 +16,7 @@ Kredensial ditulis ke `.uat-credentials` (git-ignored, mode 600). **Baca dari fi
 kredensial tidak sengaja ditulis di dokumen ini maupun di repository.
 
 - Web Admin: http://127.0.0.1:3100  (jalankan: `cd apps/admin-web && npm run dev`)
-- Backend health: http://127.0.0.1:5000/health
+- Backend health: http://127.0.0.1:3000/health
 
 | Peran | Email | Catatan |
 |---|---|---|
@@ -28,7 +28,7 @@ kredensial tidak sengaja ditulis di dokumen ini maupun di repository.
 
 Versi lama menyuruh login `admin@demo.id / Demo12345!` di tenant "Demo Home" pada port
 3100/3000. Tidak satu pun itu ada: user tersebut tidak ada di database, tenant "Demo Home"
-tidak ada, dan port API yang benar 5000. String `admin@demo.id` bahkan ada di daftar
+tidak ada. Rescue runtime authoritative membaca `PORT` dari `.env` dan saat ini memakai 3000. String `admin@demo.id` bahkan ada di daftar
 *forbidden* di `scripts/validate-rescue-baseline.mjs` — gate dan dokumen saling bertentangan,
 dan gate tetap hijau karena forbidden-check hanya memindai `.ts/.tsx/.js/.mjs`, bukan `.md`.
 
@@ -64,6 +64,10 @@ Cara pakai: centang [x] kalau OK, tulis CATATAN kalau ada masalah.
 - [ ] User Web /ruangan — placement ROOM tidak pernah memberi akses ke perangkat tanpa VIEW/CONTROL
 - [ ] User Web /perangkat-saya — VIEW-only dibedakan dari CONTROL
 - [ ] User Web /perangkat-saya/[deviceId] — capability/telemetry/command history backend-backed; VIEW-only tidak bisa command
+- [ ] User Web /realtime — pilih perangkat terotorisasi; SSE terhubung dan hanya memakai VIEW scope
+- [ ] User Web /alerts — hanya WARNING/CRITICAL untuk device yang dapat diakses
+- [ ] User Web /profil — profil dapat dibaca dan nama dapat disimpan
+- [ ] User Web /dashboard — bila MEMBER tidak diberi permission dashboard.read, UI harus fail-closed; bila diberi role override, dashboard dapat dibuka
 - [ ] User Web Device Detail — OTA hanya tampil sebagai persisted rollout evidence; current firmware/protocol tidak boleh direkayasa dari rollout metadata
 - [ ] User Web Device Detail — Temuan Analitik adalah Module 16 findings, bukan bukti delivery notification
 - [ ] Laporan (/tenant/laporan) — tombol Export CSV ada (klik boleh dicoba)

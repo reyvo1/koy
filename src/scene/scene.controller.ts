@@ -26,6 +26,8 @@ import {
 import { DomainConflictException, DomainNotFoundException } from '../common/errors/domain-exceptions';
 import { ERROR_CODES } from '../common/errors/error-code';
 import { RbacAuditService } from '../rbac/rbac-audit.service';
+import { SceneAccessService } from './scene-access.service';
+import type { DeviceAccessContext } from '../device/device-access.service';
 
 @Controller('scenes')
 @UseGuards(JwtAuthGuard, TenantContextGuard)
@@ -34,17 +36,24 @@ export class SceneController {
     private readonly scenes: SceneRepository,
     private readonly execution: SceneExecutionService,
     private readonly audit: RbacAuditService,
+    private readonly access: SceneAccessService,
   ) {}
 
+  private accessContext(request: any): DeviceAccessContext {
+    return {
+      tenantId: request.user.tenantContext.tenantId,
+      membershipId: request.user.tenantContext.membershipId,
+      userId: request.user.userId,
+      role: request.user.tenantContext.role,
+    };
+  }
+
   /**
-   * Records who changed a scene, without deciding who may.
+   * Records who changed a scene after device-level authorization succeeds.
    *
-   * `Scene` has no owner column, so an owner-or-admin rule is not expressible and a role gate
-   * would either lock ordinary members out of the product's primary function or permit
-   * everything. Before this, these mutations left no trace at all: the policy engine is only
-   * reached through `RbacPermissionGuard`, so an edit left no row anywhere. The audit row states
-   * in its `detail` that permission came from tenant scope alone, so it is never mistaken for a
-   * role check that passed.
+   * `Scene` has no owner column, so authorization is derived from the devices referenced by its
+   * actions. VIEW is required to read a scene; CONTROL is required to create, run, enable,
+   * disable, or delete one. The audit row records that concrete boundary.
    */
   private recordSceneMutation(
     request: any,
@@ -59,13 +68,14 @@ export class SceneController {
       resourceId: sceneId,
       action,
       detail:
-        'permitted by active tenant membership; scene has no owner column and no role gate',
+        'permitted after tenant membership plus device-level CONTROL authorization',
     });
   }
 
   @Post()
   async create(@Request() request: any, @Body() body: unknown) {
     const input = validateCreateSceneInput(body);
+    await this.access.assertDeviceAccess(this.accessContext(request), input.actions.map((action) => action.deviceId), 'CONTROL');
     try {
       const created = await this.scenes.createScene(
         request.user.tenantContext.tenantId,
@@ -93,9 +103,8 @@ export class SceneController {
 
   @Get()
   async list(@Request() request: any) {
-    return this.scenes.listTenantScenes(
-      request.user.tenantContext.tenantId,
-    );
+    const scenes = await this.scenes.listTenantScenes(request.user.tenantContext.tenantId);
+    return this.access.filterReadableScenes(this.accessContext(request), scenes);
   }
 
   @Get(':sceneId')
@@ -103,10 +112,9 @@ export class SceneController {
     @Request() request: any,
     @Param('sceneId') sceneId: string,
   ) {
-    return this.scenes.findTenantScene(
-      request.user.tenantContext.tenantId,
-      sceneId,
-    );
+    const scene = await this.scenes.findTenantScene(request.user.tenantContext.tenantId, sceneId);
+    await this.access.assertSceneAccess(this.accessContext(request), scene, 'VIEW');
+    return scene;
   }
 
   @Post(':sceneId/run')
@@ -120,6 +128,8 @@ export class SceneController {
       typeof body?.requestId === 'string' && body.requestId.trim()
         ? body.requestId.trim()
         : `req-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const scene = await this.scenes.findTenantScene(request.user.tenantContext.tenantId, sceneId);
+    await this.access.assertSceneAccess(this.accessContext(request), scene, 'CONTROL');
     try {
       return await this.execution.runScene({
         tenantId: request.user.tenantContext.tenantId,
@@ -152,6 +162,8 @@ export class SceneController {
     @Param('sceneId') sceneId: string,
     @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
   ) {
+    const scene = await this.scenes.findTenantScene(request.user.tenantContext.tenantId, sceneId);
+    await this.access.assertSceneAccess(this.accessContext(request), scene, 'VIEW');
     return this.scenes.listSceneExecutions(
       request.user.tenantContext.tenantId,
       sceneId,
@@ -161,6 +173,8 @@ export class SceneController {
 
   @Delete(':sceneId')
   async remove(@Request() request: any, @Param('sceneId') sceneId: string) {
+    const scene = await this.scenes.findTenantScene(request.user.tenantContext.tenantId, sceneId);
+    await this.access.assertSceneAccess(this.accessContext(request), scene, 'CONTROL');
     this.recordSceneMutation(request, sceneId, 'DELETE');
     const deleted = await this.scenes.deleteTenantScene(
       request.user.tenantContext.tenantId,
@@ -178,6 +192,8 @@ export class SceneController {
     @Param('sceneId') sceneId: string,
     @Body() body: { enabled?: boolean },
   ) {
+    const scene = await this.scenes.findTenantScene(request.user.tenantContext.tenantId, sceneId);
+    await this.access.assertSceneAccess(this.accessContext(request), scene, 'CONTROL');
     this.recordSceneMutation(request, sceneId, 'UPDATE');
     const updated = await this.scenes.setTenantSceneEnabled(
       request.user.tenantContext.tenantId,

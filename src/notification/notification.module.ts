@@ -7,6 +7,7 @@ import { NotificationHttpsClient } from './notification-https.client';
 import { NotificationService } from './notification.service';
 import { NotificationController } from './notification.controller';
 import { WebhookTransport } from './webhook.transport';
+import { AdminRoleGuard } from '../admin-operations/admin-role.guard';
 
 @Module({
   imports: [ConfigModule, PrismaModule],
@@ -17,6 +18,7 @@ import { WebhookTransport } from './webhook.transport';
     WebhookTransport,
     EmailRelayTransport,
     NotificationDeliveryWorker,
+    AdminRoleGuard,
   ],
   exports: [NotificationService],
 })

@@ -15,7 +15,7 @@
  *
  * Env: PROBE_EMAIL, PROBE_PASSWORD, PROBE_TENANT_ID, PROBE_BASE
  */
-const BASE = process.env.PROBE_BASE ?? 'http://127.0.0.1:5000';
+const BASE = process.env.PROBE_BASE ?? 'http://127.0.0.1:3000';
 // The tenant being administered. It is deliberately NOT the session's own tenant: a tenant admin
 // is refused with PLATFORM_ADMIN_REQUIRED, and that refusal is correct -- these routes rewrite
 // the capability schema of devices belonging to other tenants.

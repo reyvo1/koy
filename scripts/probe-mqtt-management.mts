@@ -17,7 +17,7 @@ import { resolve } from 'node:path';
 
 type Json = Record<string, unknown>;
 
-const BASE = process.env.PROBE_API_BASE ?? 'http://127.0.0.1:5000';
+const BASE = process.env.PROBE_API_BASE ?? 'http://127.0.0.1:3000';
 const SESSION_TENANT = '11111111-1111-4111-8111-111111111111';
 
 let passed = 0;

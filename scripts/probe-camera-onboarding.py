@@ -17,7 +17,7 @@ The camera it registers is named with this probe's marker and swept by that mark
 
 import json, os, sys, urllib.error, urllib.request
 
-BASE = os.environ.get("PROBE_API_BASE", "http://127.0.0.1:5000")
+BASE = os.environ.get("PROBE_API_BASE", "http://127.0.0.1:3000")
 TENANT = os.environ.get("PROBE_TENANT", "44444444-4444-4444-8444-444444444444")
 FOREIGN = "33333333-3333-4333-8333-333333333333"
 MARKER = "wave9-camera-probe"

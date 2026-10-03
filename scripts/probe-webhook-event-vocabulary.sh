@@ -23,7 +23,7 @@
 # Env:   PROBE_EMAIL, PROBE_PASSWORD, PROBE_TENANT_ID (defaults to the demo tenant)
 set -uo pipefail
 
-BASE="${PROBE_BASE:-http://127.0.0.1:5000}"
+BASE="${PROBE_BASE:-http://127.0.0.1:3000}"
 TENANT="${PROBE_TENANT_ID:-22222222-2222-4222-8222-222222222222}"
 CONTAINER="${PROBE_CONTAINER:-iot-rescue-api}"
 DB_CONTAINER="${PROBE_DB_CONTAINER:-iot-rescue-postgres}"

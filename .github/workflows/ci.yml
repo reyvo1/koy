@@ -79,6 +79,8 @@ jobs:
           npm run web:framework:contract:self-test
           npm run wave1:prepush:self-test
           npm run enterprise:wave-status:self-test
+          npm run user-web:navigation:self-test
+          npm run rescue:ci-env:self-test
           npm run wave2:prisma:self-test
           npm run gitignore:source-scope:self-test
           npm run uat:seed:env:self-test
@@ -355,6 +357,9 @@ jobs:
 
       - name: Generate ephemeral rescue environment
         run: npm run rescue:env:init -- --output=.env
+
+      - name: Export generated rescue runtime to subsequent probes
+        run: node scripts/export-rescue-ci-env.mjs --env=.env
 
       - name: Bring up source-bound rescue runtime
         timeout-minutes: 15

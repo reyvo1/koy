@@ -357,9 +357,13 @@ apps/user-mobile/tsconfig.json
 apps/user-web/.env.example
 apps/user-web/AGENTS.md
 apps/user-web/CLAUDE.md
+apps/user-web/app/alerts/page.tsx
+apps/user-web/app/api/alerts/route.ts
 apps/user-web/app/api/dashboard/route.ts
 apps/user-web/app/api/device-command/route.ts
 apps/user-web/app/api/devices/[deviceId]/route.ts
+apps/user-web/app/api/profile/route.ts
+apps/user-web/app/api/realtime/[deviceId]/route.ts
 apps/user-web/app/api/session/login/route.ts
 apps/user-web/app/api/session/logout/route.ts
 apps/user-web/app/api/workspace/route.ts
@@ -374,11 +378,16 @@ apps/user-web/app/not-found.tsx
 apps/user-web/app/page.tsx
 apps/user-web/app/perangkat-saya/[deviceId]/page.tsx
 apps/user-web/app/perangkat-saya/page.tsx
+apps/user-web/app/profil/page.tsx
+apps/user-web/app/realtime/page.tsx
 apps/user-web/app/ruangan/page.tsx
+apps/user-web/components/alerts-experience.tsx
 apps/user-web/components/dashboard-experience.tsx
 apps/user-web/components/dashboard-grid.tsx
 apps/user-web/components/device-detail-experience.tsx
 apps/user-web/components/login-form.tsx
+apps/user-web/components/profile-experience.tsx
+apps/user-web/components/realtime-experience.tsx
 apps/user-web/components/room-workspace-experience.tsx
 apps/user-web/components/user-shell.tsx
 apps/user-web/components/widget-card.tsx
@@ -633,6 +642,7 @@ scripts/clean-generated-build-artifacts.mjs
 scripts/configure-emqx-http-auth.mjs
 scripts/configure-emqx-webhooks.mjs
 scripts/diagnose-rescue-bootstrap.mjs
+scripts/export-rescue-ci-env.mjs
 scripts/init-rescue-02b-evidence.mjs
 scripts/init-rescue-local-env.mjs
 scripts/lib/rescue-mqtt-operations.mjs
@@ -711,6 +721,7 @@ scripts/self-test-gitignore-source-scope.mjs
 scripts/self-test-production-approval-gate.mjs
 scripts/self-test-production-approval-receipt.mjs
 scripts/self-test-rescue-acceptance-runner.mjs
+scripts/self-test-rescue-ci-env.mjs
 scripts/self-test-rescue-failure-summary.mjs
 scripts/self-test-rescue-gate1-validator.mjs
 scripts/self-test-rescue-github-ci.mjs
@@ -723,6 +734,7 @@ scripts/self-test-secure-next-stack.mjs
 scripts/self-test-uat-seed-env.mjs
 scripts/self-test-unit-runtime-regressions.mjs
 scripts/self-test-unit-test-type-boundary.mjs
+scripts/self-test-user-web-navigation.mjs
 scripts/self-test-wave1-prepush.mjs
 scripts/self-test-wave2-core-runtime.mjs
 scripts/self-test-wave2-prisma-schema-check.mjs
@@ -1055,6 +1067,8 @@ src/redis/redis.module.ts
 src/region/region-assignment.service.spec.ts
 src/region/region-assignment.service.ts
 src/region/region.module.ts
+src/scene/scene-access.service.spec.ts
+src/scene/scene-access.service.ts
 src/scene/scene-domain.validator.spec.ts
 src/scene/scene-domain.validator.ts
 src/scene/scene-execution.service.spec.ts

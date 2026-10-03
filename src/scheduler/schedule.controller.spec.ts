@@ -6,7 +6,7 @@ import { ScheduleDomainValidator } from './schedule-domain.validator';
 const originalFlag = process.env.SCHEDULER_RUNTIME_ENABLED;
 
 describe('ScheduleController runtime activation', () => {
-  const request = { user: { tenantContext: { tenantId: 'tenant-1' } } };
+  const request = { user: { userId: 'user-1', tenantContext: { tenantId: 'tenant-1', membershipId: 'membership-1', role: 'MEMBER' } } };
   let update: jest.Mock;
   let controller: ScheduleController;
   let recordMutation: jest.Mock;
@@ -20,18 +20,20 @@ describe('ScheduleController runtime activation', () => {
           tenantId: 'tenant-1',
           kind: 'CRON',
           countdownSeconds: null,
+          targetSceneId: 'scene-1',
         }),
         update,
       },
     };
-    // The third argument is the audit recorder. Schedule has no owner column and no role gate,
-    // so these mutations are permitted by tenant scope alone and the audit row is the only
-    // record of who changed what. Stubbed here; its write-failure behaviour has its own spec.
+    // The audit recorder is stubbed here; target-scene device authorization is also stubbed so these
+    // runtime-flag tests remain focused on scheduler activation semantics.
     recordMutation = jest.fn().mockResolvedValue(undefined);
     controller = new ScheduleController(
       prisma as unknown as PrismaService,
       {} as ScheduleDomainValidator,
       { recordMutation } as unknown as RbacAuditService,
+      { findTenantScene: jest.fn().mockResolvedValue({ id: 'scene-1', actions: [{ deviceId: 'device-1' }] }) } as never,
+      { assertSceneAccess: jest.fn().mockResolvedValue(undefined) } as never,
     );
   });
 

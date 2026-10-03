@@ -17,12 +17,16 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ScheduleDomainValidator } from './schedule-domain.validator';
 import {
   DomainBadRequestException,
+  DomainForbiddenException,
   DomainNotFoundException,
   DomainServiceUnavailableException,
 } from '../common/errors/domain-exceptions';
 import { ERROR_CODES } from '../common/errors/error-code';
 import { isSchedulerRuntimeEnabled } from './scheduler-runtime-policy';
 import { RbacAuditService } from '../rbac/rbac-audit.service';
+import { SceneRepository } from '../scene/scene.repository';
+import { SceneAccessService } from '../scene/scene-access.service';
+import type { DeviceAccessContext } from '../device/device-access.service';
 
 @Controller('schedules')
 @UseGuards(JwtAuthGuard, TenantContextGuard)
@@ -31,16 +35,33 @@ export class ScheduleController {
     private readonly prisma: PrismaService,
     private readonly validator: ScheduleDomainValidator,
     private readonly audit: RbacAuditService,
+    private readonly scenes: SceneRepository,
+    private readonly sceneAccess: SceneAccessService,
   ) {}
 
+  private accessContext(request: any): DeviceAccessContext {
+    return {
+      tenantId: request.user.tenantContext.tenantId,
+      membershipId: request.user.tenantContext.membershipId,
+      userId: request.user.userId,
+      role: request.user.tenantContext.role,
+    };
+  }
+
+  private async assertTargetSceneAccess(request: any, targetSceneId: string | null, level: 'VIEW' | 'CONTROL') {
+    if (!targetSceneId) {
+      if (request.user.tenantContext.role === 'ADMIN' || request.user.tenantContext.role === 'PLATFORM_ADMIN') return;
+      throw new DomainForbiddenException(ERROR_CODES.RbacPermissionDenied, 'Schedule without a target scene is restricted to administrators');
+    }
+    const scene = await this.scenes.findTenantScene(request.user.tenantContext.tenantId, targetSceneId);
+    await this.sceneAccess.assertSceneAccess(this.accessContext(request), scene, level);
+  }
+
   /**
-   * Records who changed a schedule, without deciding who may.
+   * Records who changed a schedule after target-scene device authorization succeeds.
    *
-   * `Schedule` has no owner column, so an owner-or-admin rule is not expressible and a role gate
-   * would either lock ordinary members out of scheduling or permit everything. These mutations
-   * previously left no trace at all, because the policy engine is only reached through
-   * `RbacPermissionGuard`. The `detail` says permission came from tenant scope alone, so the row
-   * is never mistaken for a role check that passed.
+   * `Schedule` has no owner column, so authorization follows its target Scene. VIEW is required
+   * for schedule reads and CONTROL over every Scene action device is required for mutations.
    */
   private recordScheduleMutation(
     request: any,
@@ -55,7 +76,7 @@ export class ScheduleController {
       resourceId: scheduleId,
       action,
       detail:
-        'permitted by active tenant membership; schedule has no owner column and no role gate',
+        'permitted after tenant membership plus target-scene device authorization',
     });
   }
 
@@ -64,16 +85,11 @@ export class ScheduleController {
     this.validator.validate(body);
     const tenantId = request.user.tenantContext.tenantId;
     const targetSceneId = String(body.targetSceneId);
-    const targetScene = await this.prisma.scene.findFirst({
-      where: { id: targetSceneId, tenantId },
-      select: { id: true },
-    });
+    const targetScene = await this.scenes.findTenantScene(tenantId, targetSceneId).catch(() => null);
     if (!targetScene) {
-      throw new DomainNotFoundException(
-        ERROR_CODES.NotFound,
-        'Scene target tidak ditemukan untuk tenant aktif',
-      );
+      throw new DomainNotFoundException(ERROR_CODES.NotFound, 'Scene target tidak ditemukan untuk tenant aktif');
     }
+    await this.sceneAccess.assertSceneAccess(this.accessContext(request), targetScene, 'CONTROL');
 
     const kind = body.kind as 'CRON' | 'COUNTDOWN';
     const created = await this.prisma.schedule.create({
@@ -106,10 +122,21 @@ export class ScheduleController {
 
   @Get()
   async list(@Request() request: any) {
-    return this.prisma.schedule.findMany({
+    const rows = await this.prisma.schedule.findMany({
       where: { tenantId: request.user.tenantContext.tenantId },
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     });
+    if (request.user.tenantContext.role === 'ADMIN' || request.user.tenantContext.role === 'PLATFORM_ADMIN') return rows;
+    const visible = [];
+    for (const row of rows) {
+      try {
+        await this.assertTargetSceneAccess(request, row.targetSceneId, 'VIEW');
+        visible.push(row);
+      } catch {
+        // A MEMBER must not learn schedule metadata for a scene whose devices are not viewable.
+      }
+    }
+    return visible;
   }
 
   @Get(':scheduleId')
@@ -117,12 +144,12 @@ export class ScheduleController {
     @Request() request: any,
     @Param('scheduleId') scheduleId: string,
   ) {
-    return this.prisma.schedule.findFirst({
-      where: {
-        id: scheduleId,
-        tenantId: request.user.tenantContext.tenantId,
-      },
+    const schedule = await this.prisma.schedule.findFirst({
+      where: { id: scheduleId, tenantId: request.user.tenantContext.tenantId },
     });
+    if (!schedule) return null;
+    await this.assertTargetSceneAccess(request, schedule.targetSceneId, 'VIEW');
+    return schedule;
   }
 
   @Post(':scheduleId/enable')
@@ -131,13 +158,13 @@ export class ScheduleController {
     @Param('scheduleId') scheduleId: string,
     @Body() body: { enabled: boolean },
   ) {
-    this.recordScheduleMutation(request, scheduleId, 'UPDATE');
     const schedule = await this.prisma.schedule.findFirstOrThrow({
       where: {
         id: scheduleId,
         tenantId: request.user.tenantContext.tenantId,
       },
     });
+    await this.assertTargetSceneAccess(request, schedule.targetSceneId, 'CONTROL');
     if (typeof body?.enabled !== 'boolean') {
       throw new DomainBadRequestException(
         ERROR_CODES.BadRequest,
@@ -158,6 +185,7 @@ export class ScheduleController {
           : null
         : undefined;
 
+    this.recordScheduleMutation(request, scheduleId, 'UPDATE');
     return this.prisma.schedule.update({
       where: { id: scheduleId },
       data: {
@@ -175,6 +203,9 @@ export class ScheduleController {
     @Param('scheduleId') scheduleId: string,
     @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
   ) {
+    const schedule = await this.prisma.schedule.findFirst({ where: { id: scheduleId, tenantId: request.user.tenantContext.tenantId } });
+    if (!schedule) throw new DomainNotFoundException(ERROR_CODES.NotFound, 'Jadwal tidak ditemukan');
+    await this.assertTargetSceneAccess(request, schedule.targetSceneId, 'VIEW');
     return this.prisma.scheduleRun.findMany({
       where: {
         tenantId: request.user.tenantContext.tenantId,
@@ -195,6 +226,9 @@ export class ScheduleController {
 
   @Delete(':scheduleId')
   async remove(@Request() request: any, @Param('scheduleId') scheduleId: string) {
+    const schedule = await this.prisma.schedule.findFirst({ where: { id: scheduleId, tenantId: request.user.tenantContext.tenantId } });
+    if (!schedule) throw new DomainNotFoundException(ERROR_CODES.NotFound, 'Jadwal tidak ditemukan');
+    await this.assertTargetSceneAccess(request, schedule.targetSceneId, 'CONTROL');
     this.recordScheduleMutation(request, scheduleId, 'DELETE');
     const result = await this.prisma.schedule.deleteMany({
       where: { id: scheduleId, tenantId: request.user.tenantContext.tenantId },

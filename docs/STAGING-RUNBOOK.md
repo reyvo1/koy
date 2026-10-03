@@ -15,7 +15,7 @@ node scripts/seed-demo-accounts.mjs     # akun demo + device + capability
 
 | Service | Port | Cara cek |
 |---|---|---|
-| Backend API | **5000** | `curl http://127.0.0.1:5000/health` → `{"status":"ok"}` |
+| Backend API | **3000** | `curl http://127.0.0.1:3000/health` → `{"status":"ok"}` |
 | Admin Web | **3100** | `curl -o /dev/null -w '%{http_code}' http://127.0.0.1:3100/login` |
 | PostgreSQL | 5432 | `docker exec iot-rescue-postgres pg_isready` |
 | Redis | 6379 | `docker exec iot-rescue-redis redis-cli ping` |
@@ -24,8 +24,7 @@ node scripts/seed-demo-accounts.mjs     # akun demo + device + capability
 > Port web **3100** bukan 5001: `apps/admin-web/package.json` yang mengikat
 > `next dev --port 3100`, jadi itulah default sebenarnya. Dokumentasi yang menulis 5001 itu
 > salah, dan sekarang `scripts/check-uat-documentation.mjs` membacanya dari package.json.
-> Versi runbook sebelumnya juga menyebut API di 3000 dan Redis di 6399 — tidak dipakai stack sekarang. `scripts/seed-uat-baseline.mjs` membaca port API dari `.env` dan
-> `docker-compose.rescue.yml`, bukan dari dokumen ini, supaya nilainya tidak bisa melenceng lagi.
+> API rescue authoritative juga dibaca dari `PORT` di `.env` (default 3000) dan mapping `docker-compose.rescue.yml`. Probe CI mengekspor nilai itu ke proses berikutnya sehingga tidak ada default 5000 yang menyimpang lagi.
 
 ## Admin Web
 
@@ -84,4 +83,4 @@ key, jadi tidak boleh masuk repository.
 docker compose -f docker-compose.rescue.yml down
 ```
 
-Untuk mencari PID yang masih memegang port: `ss -ltnp | grep -E ':3100|:5000|:5432|:6379'`.
+Untuk mencari PID yang masih memegang port: `ss -ltnp | grep -E ':3100|:3000|:5432|:6379'`.

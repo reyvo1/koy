@@ -1,7 +1,7 @@
 # PANDUAN PENGGUNAAN UI — IoT Platform Enterprise
 
 Panduan singkat menjelajahi aplikasi. Server lokal harus jalan:
-- Backend: http://127.0.0.1:5000
+- Backend: http://127.0.0.1:3000
 - Admin Web: http://127.0.0.1:3100
 
 Login UAT — kredensial ada di `.uat-credentials` (git-ignored), dibuat dengan
@@ -13,7 +13,7 @@ Login UAT — kredensial ada di `.uat-credentials` (git-ignored), dibuat dengan
 | Tenant admin | `44444444-4444-4444-8444-444444444444` | `uat.admin@iot.local` |
 | Tenant member | `44444444-4444-4444-8444-444444444444` | `uat.member@iot.local` |
 
-> Versi panduan ini sebelumnya menyebut `admin@demo.id / Demo12345!` di port API 3000. User itu tidak pernah ada
+> Versi panduan ini sebelumnya menyebut `admin@demo.id / Demo12345!` dan kemudian sempat melenceng ke port API 5000. User itu tidak pernah ada
 > di database, dan string-nya justru ada di daftar *forbidden* `scripts/validate-rescue-baseline.mjs`.
 > Password juga sengaja tidak ditulis di dokumen: ada di `.uat-credentials`.
 
@@ -62,7 +62,10 @@ Aplikasi user terpisah — tanpa detail infrastruktur.
 - `/beranda` — ringkasan room-centric dari perangkat yang lolos owner/share VIEW/CONTROL
 - `/perangkat-saya` — daftar perangkat terotorisasi; detail di `/perangkat-saya/[deviceId]` dengan capability, telemetry, command history, OTA rollout evidence, dan Module 16 findings. Current firmware/protocol tidak ditebak dari metadata rollout.
 - `/ruangan` — ROOM → perangkat terotorisasi; placement tidak memberikan izin dengan sendirinya
-- `/dashboard` — dynamic dashboard/workspace yang sudah ada
+- `/realtime` — stream telemetry SSE untuk perangkat yang lolos izin VIEW
+- `/dashboard` — dynamic dashboard/workspace; akses mengikuti permission dashboard yang diberikan tenant admin
+- `/alerts` — WARNING/CRITICAL Module 16 hanya untuk perangkat yang dapat diakses
+- `/profil` — lihat dan ubah nama profil akun
 - PWA: bisa di-install ke layar utama HP (manifest + icon tersedia)
 
 ## 6. Mobile App (`apps/user-mobile`)
@@ -80,7 +83,7 @@ Preview interaktif tersedia di admin: `/mobile-preview`.
 
 ## Troubleshooting
 - **Halaman minta login terus** — sesi kedaluwarsa; login ulang.
-- **Port 5000 dipakai aplikasi lain** — matikan dulu (`ss -ltnp | grep :5000`).
+- **Port 3000 dipakai aplikasi lain** — matikan dulu (`ss -ltnp | grep :3000`).
 - **Probe tiba-tiba 401** — `seed-demo-accounts.mjs` meregenerasi password tiap jalan; re-seed
   lalu baca password barunya.
 - **Tidak ada tombol hapus device** — memang tidak ada `DELETE /devices/:id`; pakai

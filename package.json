@@ -13,6 +13,8 @@
     "baseline:manifest:verify": "node scripts/manage-baseline-manifest.mjs verify",
     "enterprise:wave-status:self-test": "node scripts/self-test-enterprise-wave-status.mjs",
     "enterprise:wave-status:verify": "node scripts/verify-enterprise-wave-status.mjs",
+    "user-web:navigation:self-test": "node scripts/self-test-user-web-navigation.mjs",
+    "rescue:ci-env:self-test": "node scripts/self-test-rescue-ci-env.mjs",
     "build": "nest build --path tsconfig.build.json",
     "db:backup": "./scripts/backup-database.sh",
     "db:backup:quick": "./scripts/backup-database.sh --no-verify",

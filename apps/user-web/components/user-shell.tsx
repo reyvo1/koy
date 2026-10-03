@@ -31,7 +31,10 @@ const NAV: NavItem[] = [
   { href: '/beranda', label: 'Beranda', description: 'Ringkasan ruangan dan perangkat' },
   { href: '/ruangan', label: 'Ruangan', description: 'Ruang dan perangkat di dalamnya' },
   { href: '/perangkat-saya', label: 'Perangkat Saya', description: 'Semua perangkat yang dapat diakses' },
+  { href: '/realtime', label: 'Realtime', description: 'Telemetry langsung perangkat' },
   { href: '/dashboard', label: 'Dashboard', description: 'Dashboard dinamis dan widget' },
+  { href: '/alerts', label: 'Alerts', description: 'Peringatan perangkat yang dapat diakses' },
+  { href: '/profil', label: 'Profil', description: 'Identitas dan akun pengguna' },
 ];
 
 /** A nav item is active on its own route and on any nested route below it. */

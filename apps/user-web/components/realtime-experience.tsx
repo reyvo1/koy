@@ -1,0 +1,11 @@
+'use client';
+import { useEffect, useMemo, useState } from 'react';
+import type { UserWorkspacePayload } from '../lib/contracts';
+
+export function RealtimeExperience() {
+  const [workspace, setWorkspace] = useState<UserWorkspacePayload | null>(null); const [deviceId, setDeviceId] = useState(''); const [state, setState] = useState('Memuat perangkat…'); const [payload, setPayload] = useState<Record<string, unknown> | null>(null);
+  useEffect(() => { void fetch('/api/workspace').then(async (r) => { const p = await r.json(); if (!r.ok) throw new Error(p.message ?? 'Workspace gagal dimuat'); setWorkspace(p); setDeviceId(p.devices?.[0]?.id ?? ''); setState(p.devices?.length ? 'Menghubungkan stream…' : 'Tidak ada perangkat yang dapat diakses.'); }).catch((e) => setState(e instanceof Error ? e.message : 'Workspace gagal dimuat')); }, []);
+  useEffect(() => { if (!deviceId) return; setPayload(null); setState('Menghubungkan stream…'); const source = new EventSource(`/api/realtime/${encodeURIComponent(deviceId)}`); source.addEventListener('connected', () => setState('Terhubung')); source.addEventListener('telemetry', (event) => { try { setPayload(JSON.parse((event as MessageEvent).data)); setState('Realtime aktif'); } catch { setState('Frame telemetry tidak valid'); } }); source.addEventListener('error', () => setState('Stream terputus / mencoba tersambung kembali')); return () => source.close(); }, [deviceId]);
+  const selected = useMemo(() => workspace?.devices.find((d) => d.id === deviceId), [workspace, deviceId]);
+  return <div className="grid gap-4"><div className="rounded-xl border border-slate-200 bg-white p-4"><label className="text-sm font-bold text-slate-700">Perangkat<select value={deviceId} onChange={(e) => setDeviceId(e.target.value)} className="ml-3 rounded-lg border border-slate-300 px-3 py-2">{workspace?.devices.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></label><p className="mt-2 text-xs text-slate-500">{selected ? `${selected.type} · ${selected.status}` : ''}</p></div><div className="rounded-xl border border-slate-200 bg-slate-950 p-4 text-slate-100"><p className="mb-3 text-xs font-bold uppercase tracking-wide text-teal-300">{state}</p><pre className="overflow-auto text-xs">{payload ? JSON.stringify(payload, null, 2) : 'Menunggu telemetry…'}</pre></div></div>;
+}

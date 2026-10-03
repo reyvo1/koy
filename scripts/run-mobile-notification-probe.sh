@@ -15,12 +15,12 @@
 # created, matched on a per-run stamp. The probe asserts zero remaining rows rather than trusting
 # its own DELETE count.
 #
-# Requires: the API container healthy on $PROBE_API_BASE (default http://127.0.0.1:5000) and a
+# Requires: the API container healthy on $PROBE_API_BASE (default http://127.0.0.1:3000) and a
 # UAT tenant session already written to the credentials file by scripts/seed-uat-baseline.mjs.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-PROBE_API_BASE="${PROBE_API_BASE:-http://127.0.0.1:5000}"
+PROBE_API_BASE="${PROBE_API_BASE:-http://127.0.0.1:3000}"
 # Session response, written by probe_login. It defaults to a repo-local path because this used to
 # point at a scratch directory that exists on exactly one machine, where curl could not write on
 # a runner -- and a probe whose session file cannot be created fails as a mystery, not as a config

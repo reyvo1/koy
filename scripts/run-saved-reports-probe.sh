@@ -28,7 +28,7 @@ docker exec -i iot-rescue-postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES
   < scripts/probe-saved-reports-cleanup.sql >/dev/null
 
 PROBE_STATUS=0
-PROBE_API_BASE="${PROBE_API_BASE:-http://127.0.0.1:5000}" \
+PROBE_API_BASE="${PROBE_API_BASE:-http://127.0.0.1:3000}" \
 PROBE_EMAIL=demo.superadmin@iot.local \
 PROBE_PASSWORD="$SUPER_PW" \
 PROBE_TENANT_EMAIL=demo.admin@iot.local \

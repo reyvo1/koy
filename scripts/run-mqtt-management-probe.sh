@@ -27,7 +27,7 @@ fi
 # already stopped when this starts, the outage test would prove nothing -- the reachable case would
 # fail first, which is loud enough, so no pre-check is needed here.
 PROBE_STATUS=0
-PROBE_API_BASE="${PROBE_API_BASE:-http://127.0.0.1:5000}" \
+PROBE_API_BASE="${PROBE_API_BASE:-http://127.0.0.1:3000}" \
 PROBE_EMAIL=demo.superadmin@iot.local \
 PROBE_PASSWORD="$SUPER_PW" \
 PROBE_TENANT_EMAIL=demo.admin@iot.local \

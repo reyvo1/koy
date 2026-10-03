@@ -7,7 +7,7 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-API="${PROBE_API_BASE:-http://127.0.0.1:5000}"
+API="${PROBE_API_BASE:-http://127.0.0.1:3000}"
 CREDS="${PROBE_LOGIN_FILE:-reports/probe-session.json}"
 mkdir -p "$(dirname "$CREDS")"
 TENANT=44444444-4444-4444-8444-444444444444

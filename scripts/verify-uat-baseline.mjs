@@ -11,8 +11,11 @@
  * fails if that file and the running product disagree.
  */
 import { readFileSync } from 'node:fs';
+import { parseEnv } from './manage-rescue-local-runtime.mjs';
 
-const BASE = process.env.IOT_API ?? 'http://127.0.0.1:5000';
+const rescueEnv = parseEnv('.env');
+const rescuePort = String(rescueEnv.PORT ?? '').trim();
+const BASE = process.env.IOT_API ?? (rescuePort ? `http://127.0.0.1:${rescuePort}` : 'http://127.0.0.1:3000');
 const results = [];
 const record = (name, ok, detail) => {
   results.push({ name, ok });

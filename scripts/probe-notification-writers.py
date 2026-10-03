@@ -24,7 +24,7 @@ import time
 import urllib.error
 import urllib.request
 
-BASE = "http://127.0.0.1:5000"
+BASE = os.environ.get("PROBE_API_BASE", "http://127.0.0.1:3000")
 TENANT = os.environ.get("PROBE_TENANT", "44444444-4444-4444-8444-444444444444")
 OTHER_TENANT = "33333333-3333-4333-8333-333333333333"
 STAMP = str(int(time.time()))

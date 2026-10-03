@@ -12,7 +12,7 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-API="${PROBE_API_BASE:-http://127.0.0.1:5000}"
+API="${PROBE_API_BASE:-http://127.0.0.1:3000}"
 # Session response, written by probe_login. It defaults to a repo-local path because this used to
 # point at a scratch directory that exists on exactly one machine, where curl could not write on
 # a runner -- and a probe whose session file cannot be created fails as a mystery, not as a config

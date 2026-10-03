@@ -558,6 +558,13 @@ check(
   automationUi.includes('setDevices(Array.isArray(data) ? data : (data.items ?? []))'),
 );
 
+const notificationController = read('src/notification/notification.controller.ts');
+check(
+  'notification delivery log is administrator-only and cannot leak tenant-wide destinations to MEMBER',
+  notificationController.includes('AdminRoleGuard') &&
+    notificationController.includes('@UseGuards(JwtAuthGuard, TenantContextGuard, AdminRoleGuard)'),
+);
+
 const notificationsUi = read('apps/admin-web/components/tenant-analytics-findings-content.tsx');
 check(
   'analytics findings empty state does not claim device health or notification delivery',
@@ -576,8 +583,8 @@ check(
 const scheduleController = read('src/scheduler/schedule.controller.ts');
 check(
   'schedule target scene is tenant scoped before creation',
-  scheduleController.includes('this.prisma.scene.findFirst({') &&
-    scheduleController.includes('where: { id: targetSceneId, tenantId }') &&
+  scheduleController.includes('this.scenes.findTenantScene(tenantId, targetSceneId)') &&
+    scheduleController.includes("this.sceneAccess.assertSceneAccess(this.accessContext(request), targetScene, 'CONTROL')") &&
     scheduleController.includes('Scene target tidak ditemukan untuk tenant aktif'),
 );
 
@@ -3756,8 +3763,10 @@ for (const [controller, domain] of [
     'without an audit row these mutations leave no trace at all',
   );
   check(
-    `${controller} audit rows say permission came from tenant scope, not a role check`,
-    source.includes('no owner column and no role gate'),
+    `${controller} mutations are constrained by device-level authorization`,
+    domain === 'scene'
+      ? source.includes('device-level CONTROL authorization') && source.includes('assertSceneAccess')
+      : source.includes('target-scene device authorization') && source.includes('assertTargetSceneAccess'),
   );
 }
 

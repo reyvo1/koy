@@ -3,9 +3,9 @@
  * Wave 4 — the documentation must not describe an account that cannot be logged into.
  *
  * `docs/UAT-CHECKLIST.md`, `docs/STAGING-RUNBOOK.md` and `docs/PANDUAN-UI.md` all instructed
- * the operator to log in as `admin@demo.id / Demo12345!` on a tenant called "Demo Home" at
- * ports 3100/3000. None of it existed: no such user in any database, no such tenant, and the
- * real ports are 5000/5001. Worse, `admin@demo.id` is on the *forbidden* list in
+ * the operator to log in as `admin@demo.id / Demo12345!` on a tenant called "Demo Home".
+ * None of it existed. Later revisions also duplicated runtime ports in prose and drifted away
+ * from the generated rescue `.env`, so this checker now derives the API port from that file. Worse, `admin@demo.id` is on the *forbidden* list in
  * `scripts/validate-rescue-baseline.mjs` — the gate and the documents contradicted each other.
  *
  * The forbidden-string check passed because it only concatenates `.ts/.tsx/.js/.mjs` into one
@@ -23,6 +23,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
+import { parseEnv } from './manage-rescue-local-runtime.mjs';
 
 const require = createRequire(import.meta.url);
 const results = [];
@@ -38,14 +39,13 @@ const DOCS = ['docs/UAT-CHECKLIST.md', 'docs/STAGING-RUNBOOK.md', 'docs/PANDUAN-
 // docs" rule, which would ban the legitimate references in this very file.
 const BANNED_ACCOUNT = 'admin@demo.id';
 const BANNED_TENANT = 'Demo Home';
-// 3100 is the real web port — `apps/admin-web/package.json` binds `next dev --port 3100` — so
-// it is NOT banned. What is banned is the API port the old documents gave (3000) and the 5001
-// that appeared in an intermediate revision of these documents, which was simply wrong.
-const BANNED_PORTS = [':3000/', ':5001'];
+// 3100 is the admin-web dev port. 5000/5001 are historical document drift; the rescue API
+// source of truth is PORT in the generated .env (currently 3000).
+const BANNED_PORTS = [':5000', ':5001'];
 
 // Where the stack really is, read from the same sources the runtime reads.
 function realPorts() {
-  const api = /PORT=(\d+)/.exec(readFileSync('.env', 'utf8'))?.[1] ?? '5000';
+  const api = String(parseEnv('.env').PORT ?? '').trim();
   let web = '5001';
   if (existsSync('apps/admin-web/package.json')) {
     const pkg = JSON.parse(readFileSync('apps/admin-web/package.json', 'utf8'));
@@ -79,7 +79,10 @@ function instructionsOnly(text) {
 }
 
 const ports = realPorts();
-record('the real ports were read from the repository', !!ports.api, `api ${ports.api}, web ${ports.web}`);
+record('the real ports were read from the generated rescue environment', /^\d+$/.test(ports.api), `api ${ports.api}, web ${ports.web}`);
+
+const databaseUrl = process.env.DATABASE_URL || parseEnv('.env').DATABASE_URL;
+if (databaseUrl) process.env.DATABASE_URL = databaseUrl;
 
 // 1. No document may name the account that never existed. A quoted mention of the mistake is
 //    allowed, because the documents now explain the history; what is banned is a document that
