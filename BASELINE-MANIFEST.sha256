@@ -400,7 +400,7 @@ bead9f184b27083639c20803cac92b239a55bcea908cf442f5eed777f6b59df9  ./apps/user-we
 ccd2a17f28b9205adc19fbf05b2a9389dc24115b8ce40b6d958777af90bea7a1  ./apps/user-web/postcss.config.mjs
 7794f4a44d2c31c1f33e91477a00025f4e62687a88946b7c17f58f26257ef2e8  ./apps/user-web/public/icon.png
 38ee09e8ee48c7e75cab63bd076513018ca07b655295664d07c107e408606495  ./apps/user-web/tsconfig.json
-d61b885e93460218a2837ea6105ca1a31b884f86f79ab70fa596b206e6e02645  ./chat-session.md
+1a3614dfac6eebdec2a31b051445e22b513c1ba6270b80bece2126bdb2127783  ./chat-session.md
 08395048b09eab1f15b7264df8b76ae8b4e99634c0f516aa3ce775042bd1859e  ./config/performance-budget.json
 57e9cc3083ac5d0b99e00ed9afa5f740d958130437c0d6a1b52d7ed89ad04fb5  ./docker-compose.rescue.yml
 12b78207cb3ce4d59fefc85abb8fb5fe7412c497252d1b0bc61a189996b84f30  ./docker-compose.yml
@@ -721,7 +721,7 @@ b499e0dd8d5b78193db1ea5738632fb3215565e91a49c57346c9135514ba6985  ./scripts/seed
 82ba07e9553a5c2598a83d7340812eca4470e59766e83096f2dbc0aafa446883  ./scripts/self-test-production-approval-gate.mjs
 040348fff39c047a832542d420cb15063ec157c46d8899f4b451b7f3304c6899  ./scripts/self-test-production-approval-receipt.mjs
 f0c58e76f5de82de0491af6a15ff8b47902ec140e3b318cffdf4c7bb9f20a85b  ./scripts/self-test-rescue-acceptance-runner.mjs
-26464e813c20999b2ee80804fa2b966b586ac6eed5cf56902f26dcb3a54de3e2  ./scripts/self-test-rescue-ci-env.mjs
+4cc663267019d18f17c3c86ffdab05b4f83d89c87d705ca83b9c17af4f1cba29  ./scripts/self-test-rescue-ci-env.mjs
 da6b961aa48fa715483ea6c686da3e58b151f7f62d363e73c8b247875187403a  ./scripts/self-test-rescue-failure-summary.mjs
 f6ec81a13cef553e7cbf44149210b65608a97a651e42cd4c440b3e79d1f1c91a  ./scripts/self-test-rescue-gate1-validator.mjs
 2618f52ba6c17853b7b0de004632495fe62f62e8c7b1056edc795f6145e6b5eb  ./scripts/self-test-rescue-github-ci.mjs

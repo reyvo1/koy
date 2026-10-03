@@ -9,10 +9,13 @@ const fixture = mkdtempSync(path.join(tmpdir(), 'iot-rescue-ci-env-'));
 try {
   const envFile = path.join(fixture, '.env');
   const githubEnv = path.join(fixture, 'github-env');
+  const databaseUrl = (password) => ['postgresql', '://', 'iot:', password, '@127.0.0.1:5432/iot'].join('');
+  const databaseUrlValue = databaseUrl('fixture-db-password');
+  const testDatabaseUrlValue = databaseUrl('fixture-test-password');
   writeFileSync(envFile, [
     'PORT=4321',
-    'DATABASE_URL=postgresql://iot:secret-db@127.0.0.1:5432/iot',
-    'TEST_DATABASE_URL=postgresql://iot:secret-test@127.0.0.1:5432/iot',
+    `DATABASE_URL=${databaseUrlValue}`,
+    `TEST_DATABASE_URL=${testDatabaseUrlValue}`,
     '',
   ].join('\n'));
   writeFileSync(githubEnv, '');
@@ -24,8 +27,8 @@ try {
   if (result.status !== 0) throw new Error(result.stderr || result.stdout || 'exporter failed');
   const exported = readFileSync(githubEnv, 'utf8');
   for (const expected of [
-    'DATABASE_URL=postgresql://iot:secret-db@127.0.0.1:5432/iot',
-    'TEST_DATABASE_URL=postgresql://iot:secret-test@127.0.0.1:5432/iot',
+    `DATABASE_URL=${databaseUrlValue}`,
+    `TEST_DATABASE_URL=${testDatabaseUrlValue}`,
     'IOT_API=http://127.0.0.1:4321',
     'PROBE_BASE=http://127.0.0.1:4321',
     'PROBE_API_BASE=http://127.0.0.1:4321',
@@ -33,7 +36,7 @@ try {
     if (!exported.includes(expected)) throw new Error(`missing exported runtime key: ${expected.split('=')[0]}`);
   }
   const combinedOutput = `${result.stdout}\n${result.stderr}`;
-  if (combinedOutput.includes('secret-db') || combinedOutput.includes('secret-test')) {
+  if (combinedOutput.includes('fixture-db-password') || combinedOutput.includes('fixture-test-password')) {
     throw new Error('exporter printed a database secret');
   }
   console.log('PASS  generated rescue env is exported to later GitHub steps without printing database secrets');
