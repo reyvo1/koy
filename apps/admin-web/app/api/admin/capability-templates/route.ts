@@ -33,3 +33,32 @@ export async function GET(request: Request) {
     { unauthorized: 'Sesi tidak valid.', unavailable: 'Gagal memuat template capability' },
   );
 }
+
+export async function POST(request: Request) {
+  const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+  const tenantId = typeof body?.tenantId === 'string' ? body.tenantId.trim() : '';
+  const key = typeof body?.key === 'string' ? body.key.trim() : '';
+  const semanticType = typeof body?.semanticType === 'string' ? body.semanticType.trim() : '';
+  const dataType = typeof body?.dataType === 'string' ? body.dataType.trim() : '';
+
+  if (!tenantId) return NextResponse.json({ message: 'tenantId wajib diisi' }, { status: 400 });
+  if (!key) return NextResponse.json({ message: 'key wajib diisi' }, { status: 400 });
+  if (!semanticType) return NextResponse.json({ message: 'semanticType wajib diisi' }, { status: 400 });
+  if (!dataType) return NextResponse.json({ message: 'dataType wajib diisi' }, { status: 400 });
+
+  return proxyBackend(
+    (client) => client.request('/admin/platform-capability-templates', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        tenantId,
+        key,
+        semanticType,
+        dataType,
+        unit: typeof body?.unit === 'string' ? body.unit.trim() : undefined,
+        description: typeof body?.description === 'string' ? body.description.trim() : undefined,
+      }),
+    }),
+    { unauthorized: 'Sesi tidak valid.', unavailable: 'Gagal membuat template capability' },
+  );
+}

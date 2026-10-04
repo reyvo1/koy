@@ -62,3 +62,6 @@ if (userWeb.includes('useMemo')) {
 console.log('PASS  Wave 1 pre-push gate includes GitHub-equivalent cheap checks in order');
 console.log('PASS  GitHub lint regression markers are removed');
 console.log('WAVE 1 PRE-PUSH SELF-TEST PASS');
+
+if (!script.includes('npm run deep-product:contracts:self-test')) throw new Error('FAIL  Wave 1 pre-push must include deep product contract self-test');
+console.log('PASS  Wave 1 pre-push includes deep product contract self-test');

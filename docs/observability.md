@@ -87,7 +87,7 @@ Example response:
 
 ## MQTT Readiness Truth
 
-The repository currently contains a placeholder MQTT publisher rather than a production broker client.
+The repository contains the production `mqtt-js` publisher path and regression-gated MQTT/TLS integration. Observability must distinguish configured broker connectivity from actual publisher connection/recovery evidence; broker reachability alone is not treated as publisher health.
 
 The readiness contract therefore reports:
 

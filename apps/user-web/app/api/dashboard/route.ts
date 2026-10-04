@@ -19,16 +19,31 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     if (error instanceof BackendRequestError) {
-      if (error.status === 401 || error.status === 403) {
+      if (error.status === 401) {
         const response = NextResponse.json(
           {
             state: 'unauthorized',
-            message: 'Your session is unavailable or no longer authorized',
+            message: 'Your session is unavailable or expired',
             requestId: error.requestId,
           },
           { status: 401 },
         );
         clearSessionCookies(response);
+        return response;
+      }
+
+      if (error.status === 403) {
+        // A valid session without dashboard.read is forbidden, not logged out. Clearing cookies
+        // here used to turn a permission denial into a fake authentication failure.
+        const response = NextResponse.json(
+          {
+            state: 'error',
+            message: 'Your account is signed in but is not allowed to read this dashboard',
+            requestId: error.requestId,
+          },
+          { status: 403 },
+        );
+        client.applySessionUpdate(response);
         return response;
       }
 

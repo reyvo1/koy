@@ -60,7 +60,7 @@ export default function SuperCapabilitiesContent() {
   return (
     <div>
       <div className="mb-4 rounded-xl border border-sky-500/20 bg-sky-500/[.05] px-4 py-3 text-[12.5px] leading-relaxed text-sky-200">
-        Registry ini adalah <strong>observed per-device definitions</strong>. <code>schemaVersion</code>, constraint, unit, dan flag akses berasal dari capability nyata; belum ada entity template global terpisah, jadi UI tidak mengklaim template/version lifecycle yang belum ada.
+        Registry ini menampilkan <strong>observed per-device definitions</strong> dari capability nyata. Template/version lifecycle tenant juga tersedia melalui panel Versioning: deklarasi template, publish/deprecate versi, preview, dan apply tetap dipisahkan agar publikasi tidak mengubah perangkat secara diam-diam.
       </div>
       <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari key, semantic type, data type, version, perangkat, tenant…" className={`${inputClass} mb-4`} />
       {grouped.length === 0 ? <StateBox title={search ? 'Tidak ada hasil' : 'Belum ada capability terdaftar'} /> : (

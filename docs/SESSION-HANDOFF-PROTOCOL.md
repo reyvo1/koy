@@ -6,7 +6,7 @@ Status: mandatory workflow contract for every coding / CI-repair batch.
 
 A chat/session change must never reset project direction, reopen already closed root causes, or discard a known candidate. The repository itself carries the current working context.
 
-This project-level protocol is the current Wave 13 continuation authority. Historical/module-runner portable handoff packages may still carry an `audit-only` first-response rule for their own immutable protocol version; that package-specific rule must not overwrite the current project checkpoint when `docs/SESSION-HANDOFF-PROTOCOL.md` and the current blocks are present.
+This project-level protocol is the current post-certification continuation authority. Historical/module-runner portable handoff packages may still carry an `audit-only` first-response rule for their own immutable protocol version; that package-specific rule must not overwrite the current project checkpoint when `docs/SESSION-HANDOFF-PROTOCOL.md` and the current blocks are present.
 
 ## Resume order for a new session
 
@@ -14,7 +14,7 @@ This project-level protocol is the current Wave 13 continuation authority. Histo
 2. Read the current blocks at the top of `PROJECT-HANDOFF.md`, `CURRENT-STATE.md`, `docs/SESSION-CHECKPOINT.md`, and `chat-session.md`.
 3. Read `docs/ENTERPRISE-WAVE-ROADMAP.md` and `docs/ENTERPRISE-ACCEPTANCE-EVIDENCE.md` for the authoritative wave/evidence boundary.
 4. In the real operator checkout, verify `git rev-parse HEAD`, `git status --short`, branch/upstream and the latest GitHub run/evidence. A dirty tree is **not** automatically an error: if the handoff says a known candidate is mid-validation, preserve it and continue from that candidate.
-5. Continue from the **first failing gate recorded by the handoff or newest CI log**. Do not audit the whole repository from zero unless the handoff/current marker is missing, contradictory, or the checkout no longer matches the recorded candidate.
+5. Continue from the **first failing gate recorded by the handoff or newest CI log**. If the newest heavy run is fully green, continue from the explicitly named post-green audit/hardening objective instead of inventing a failing gate or a new wave. Do not audit the whole repository from zero unless the handoff/current marker is missing, contradictory, or the checkout no longer matches the recorded candidate.
 
 ## Root-cause workflow
 
@@ -49,4 +49,4 @@ The handoff must name the latest known committed baseline if known, but a new se
 
 ## Current invariant
 
-Wave 13 is the active enterprise wave. Waves 1–12 are software-scope closed/green. Automated software completion must continue through GitHub simulation/live-service gates without waiting for physical lab equipment.
+Waves 1–13 are software-scope CLOSED/GREEN after GitHub run `37183166252`; there is no active software wave. Post-green defect/product hardening must start from a named objective, earn the same local + GitHub acceptance again, and must not fabricate Wave 14. Automated software evidence remains source-bound `SIMULATED_HARDWARE_LIVE_SERVICE`; physical/site/HIL and provider-owned external observations remain separate and non-blocking for software closure.

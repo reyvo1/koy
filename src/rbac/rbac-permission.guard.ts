@@ -10,6 +10,7 @@ import { DomainForbiddenException } from '../common/errors/domain-exceptions';
 import { RbacPolicyService } from './rbac-policy.service';
 import { RbacAuditService } from './rbac-audit.service';
 import { ResourceOwnershipRegistry } from './resource-ownership';
+import { auditActionForPermission } from './permission-audit-action';
 
 export const RBAC_PERMISSION_KEY = 'rbacRequiredPermission';
 
@@ -93,7 +94,7 @@ export class RbacPermissionGuard implements CanActivate {
           membershipId: tenantContext.membershipId,
           resourceType,
           resourceId,
-          action: this.actionFor(required),
+          action: auditActionForPermission(required),
           detail: `permitted by resource ownership; role check not required for ${required}`,
         });
         return true;
@@ -132,26 +133,5 @@ export class RbacPermissionGuard implements CanActivate {
     );
   }
 
-  /**
-   * Map a permission to the audit action it represents.
-   *
-   * Permissions are `<resource>.<action>` — `dashboard.delete`, not `delete.dashboard` — so the
-   * action is the SUFFIX. Testing the prefix here meant every string fell through to the
-   * `UPDATE` fallback: an owner deleting a dashboard wrote an audit row saying it had been
-   * updated, and a read was indistinguishable from a write. The only reason this stayed
-   * invisible is that the guard's own spec exercised `automation.update`, the one permission
-   * whose suffix happens to equal the fallback.
-   *
-   * The mapping is by suffix on purpose. `device.provision` and `device.assignOwner` are
-   * mutations with no matching suffix, and `UPDATE` is the honest record for them — the
-   * alternative is inventing a bucket the enum does not have.
-   */
-  private actionFor(permission: string) {
-    const action = permission.split('.').pop();
-    if (action === 'read') return 'READ' as const;
-    if (action === 'create') return 'CREATE' as const;
-    if (action === 'delete') return 'DELETE' as const;
-    if (action === 'update') return 'UPDATE' as const;
-    return 'UPDATE' as const;
-  }
+
 }

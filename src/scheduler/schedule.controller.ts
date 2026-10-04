@@ -24,7 +24,11 @@ import {
 import { ERROR_CODES } from '../common/errors/error-code';
 import { isSchedulerRuntimeEnabled } from './scheduler-runtime-policy';
 import { RbacAuditService } from '../rbac/rbac-audit.service';
-import { SceneRepository } from '../scene/scene.repository';
+import {
+  SceneRepository,
+  ScenePersistenceError,
+  SCENE_PERSISTENCE_ERROR_CODES,
+} from '../scene/scene.repository';
 import { SceneAccessService } from '../scene/scene-access.service';
 import type { DeviceAccessContext } from '../device/device-access.service';
 
@@ -46,6 +50,31 @@ export class ScheduleController {
       userId: request.user.userId,
       role: request.user.tenantContext.role,
     };
+  }
+
+  private isExpectedVisibilityDenial(cause: unknown): boolean {
+    return (
+      cause instanceof DomainForbiddenException ||
+      (cause instanceof ScenePersistenceError &&
+        cause.code === SCENE_PERSISTENCE_ERROR_CODES.SceneNotFound)
+    );
+  }
+
+  private async findTargetScene(tenantId: string, targetSceneId: string) {
+    try {
+      return await this.scenes.findTenantScene(tenantId, targetSceneId);
+    } catch (cause) {
+      if (
+        cause instanceof ScenePersistenceError &&
+        cause.code === SCENE_PERSISTENCE_ERROR_CODES.SceneNotFound
+      ) {
+        throw new DomainNotFoundException(
+          ERROR_CODES.NotFound,
+          'Scene target tidak ditemukan untuk tenant aktif',
+        );
+      }
+      throw cause;
+    }
   }
 
   private async assertTargetSceneAccess(request: any, targetSceneId: string | null, level: 'VIEW' | 'CONTROL') {
@@ -85,10 +114,7 @@ export class ScheduleController {
     this.validator.validate(body);
     const tenantId = request.user.tenantContext.tenantId;
     const targetSceneId = String(body.targetSceneId);
-    const targetScene = await this.scenes.findTenantScene(tenantId, targetSceneId).catch(() => null);
-    if (!targetScene) {
-      throw new DomainNotFoundException(ERROR_CODES.NotFound, 'Scene target tidak ditemukan untuk tenant aktif');
-    }
+    const targetScene = await this.findTargetScene(tenantId, targetSceneId);
     await this.sceneAccess.assertSceneAccess(this.accessContext(request), targetScene, 'CONTROL');
 
     const kind = body.kind as 'CRON' | 'COUNTDOWN';
@@ -132,8 +158,10 @@ export class ScheduleController {
       try {
         await this.assertTargetSceneAccess(request, row.targetSceneId, 'VIEW');
         visible.push(row);
-      } catch {
-        // A MEMBER must not learn schedule metadata for a scene whose devices are not viewable.
+      } catch (cause) {
+        // Hide only expected access/not-found outcomes. Infrastructure/database failures must
+        // propagate so an outage cannot masquerade as an empty schedule list.
+        if (!this.isExpectedVisibilityDenial(cause)) throw cause;
       }
     }
     return visible;

@@ -1,6 +1,6 @@
 # Enterprise Wave Roadmap — Wave 1–13
 
-Status date: 2026-10-03
+Status date: 2026-10-04
 
 This document is the authoritative post-foundation execution roadmap for the IoT Platform. The historical Module 1–30 roadmap remains valid as architecture/foundation evidence, but **30/30 foundation-complete does not mean enterprise-complete**.
 
@@ -38,33 +38,9 @@ Smart Hotel / TAMASYA is intentionally outside Wave 1–13 and starts only after
 
 ## Current gate
 
-- Wave 1: **CLOSED / GREEN**.
-- Wave 2: **CLOSED / GREEN** after V9 heavy GitHub acceptance.
-- Wave 3: **CLOSED / GREEN** for automated software/simulation evidence — ESP-IDF compile, QEMU boot and OTA
-  simulation are regression-gated. Physical ESP32/HIL remains a separately labelled field-validation class and does not reopen or block the automated software wave.
-- Waves 4–11: **SOFTWARE SCOPE CLOSED / GREEN**. Repository, contract, integration and live-service evidence
-  for the implemented slices is closed, but this phrase must not be read as external-provider or physical
-  certification. In particular, the positive real Midtrans settlement/webhook path remains external evidence
-  because no provider server key is present; physical camera/vendor behavior also remains external evidence.
-- Wave 12: **CLOSED / GREEN** — multi-region boundaries (ADR-009), edge gateway identity and attribution
-  (ADR-010), device twin reconciliation (ADR-011), and cross-region operations reporting (ADR-012). These
-  report and record; they do not fail over, route, or bridge, and each ADR says so explicitly.
-- Wave 13: **IN PROGRESS, software deliverables only** — the software-side certification items are being built
-  and measured. Automated software certification must continue to completion without waiting for unavailable physical devices; external/provider and site/HIL observations remain separately labelled evidence rather than blockers to software progress.
-  - Performance evidence: landed. `npm run load:gate` measures the live API with autocannon and holds it to
-    `config/performance-budget.json`. The gate can fail: an impossible budget exits 1 by scenario name, and an
-    unreachable target exits 1 rather than skipping.
-  - Security evidence: an authentication-bypass chain in the production HTTP stack was found and closed
-    (`GHSA-p68q-wchp-6fh7`, `GHSA-9c5c-9qcx-q35q`, `GHSA-4mh8-r7rc-xpvc`). Production high findings went
-    18 -> 10. The remaining 10 are transitively required by Expo's CLI and have no non-breaking fix; they are
-    recorded as open rather than quietly deferred.
-  - Already gated from earlier waves and re-verified here: E2E, release artifact sealing, production artifact
-    startup smoke, the PostgreSQL recovery drill, and the MQTT publisher TLS integration test. The TLS test
-    stands up a real `node:tls` server with a certificate fixture and connects over `mqtts://` with
-    `MQTT_CA_FILE`; it is not a mock.
-  - Physical ESP32/HIL, a physical camera, and real CCTV frames: **SEPARATE FIELD VALIDATION**, not a software-wave blocker. A green pipeline
-    cannot produce them, and Wokwi is a browser simulator — CI records that boundary explicitly and never
-    claims a Wokwi PASS.
+- Waves 1–13: **SOFTWARE SCOPE CLOSED / GREEN** for automated, source-bound software certification. GitHub Actions run `37183166252` on commit `b7b62248ec5fe38973993e981c9b753483cf8e10` completed the full automated acceptance chain, including Wave 4–9 live UAT, `SIMULATED_HARDWARE_LIVE_SERVICE`, Wave 10–12 runtime probes, Wave 13 load/security/certification gates, Gate 1 revalidation, production build, database integration and MQTT integration.
+- There is **no active software wave**. Future code work starts only from a new defect/product-hardening finding and must preserve the same evidence boundaries.
+- Provider-owned external settlement behavior and optional site/PHYSICAL-HIL observations remain separately labelled evidence. They do not reopen software waves and simulation must never be relabelled physical.
 
 ## Production boundary
 

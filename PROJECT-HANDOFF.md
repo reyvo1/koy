@@ -1,22 +1,29 @@
-<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
+# Project Handoff — post-green deep product hardening
 
-Wave 13 remains IN PROGRESS, software deliverables only.
+<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-13; active=none -->
 
-# Current checkpoint — Cross-wave authentication-session hardening — 2026-10-04
+Waves 1–13 are **SOFTWARE SCOPE CLOSED / GREEN** for automated, source-bound software certification. GitHub Actions run `37183166252` on commit `b7b62248ec5fe38973993e981c9b753483cf8e10` completed the full automated acceptance chain. `SIMULATED_HARDWARE_LIVE_SERVICE` remains the automated hardware-equivalent evidence class; PHYSICAL/HIL and provider-owned external observations remain separate and non-blocking for software closure.
 
-- GitHub Actions run `37181327760` / commit `87996698f478d5c2c73cdc90645b1793fdeefd84` / evidence `logs_100711779249.zip`.
-- Wave 4 GREEN: staging docs/login/TLS complete; TLS 12/12 PASS.
-- Wave 5 GREEN: webhook 24/24 PASS; SDK 14/14 PASS.
-- Wave 6 GREEN: capability 37/37, saved reports 27/27, MQTT management 24/24 including bounded broker+publisher recovery, NOC 30/30.
-- Wave 7 mobile notification GREEN: writer checks 22/22 and mobile integration 12/12.
-- FIRST FAILING GATE: Wave 7 technician maintenance did not reach its feature assertions because a second admin login hit HTTP 429.
-- ROOT CAUSE CLASS: live-UAT login storm. The production sensitive-auth limiter is keyed by `/auth/login` + runner IP, while Wave 5-9 feature probes repeatedly re-authenticated identities instead of reusing already valid sessions.
-- REPAIR: Wave 5 mints one validated UAT session; Wave 7-9 reuse it through `probe-common.sh`. Wave 6 authenticates platform + tenant actors once and shares tokens across all four child probes. Cached sessions are validated through `/users/profile`; only an explicit 401 may re-authenticate. Transport/5xx validation errors and real 429 responses remain FAIL. Session files are mode 0600.
-- UAT IS NOT WEAKENED: rate-limit thresholds/guards are unchanged; no 429 is ignored/retried into PASS; authorization still uses separate platform and tenant tokens.
-- LOCAL QA: cross-wave live-probe contract PASS; session handoff PASS; Wave 1/CI contract self-tests PASS; enterprise status 10/10; rescue validator 496/496; final seal 1380 source / 1381 hashes.
-- EVIDENCE POLICY: `SIMULATED_HARDWARE_LIVE_SERVICE`; unavailable physical hardware does **not** block software progress and must never be relabelled PHYSICAL.
-- NEXT: `npm run live-probe:contracts:self-test` → `npm run session:handoff:self-test` → `npm run wave3:prepush:check` → review diff → one commit/push → GitHub heavy UAT.
-- RESUME RULE: read `docs/SESSION-HANDOFF-PROTOCOL.md`, verify real `git rev-parse HEAD` + `git status --short`, then continue from the newest first failing gate. Do not audit from zero.
+- GitHub run `37183166252` / commit `b7b62248ec5fe38973993e981c9b753483cf8e10` / evidence `logs_100716783407.zip`.
+- FIRST FAILING GATE: **none — full automated acceptance is green**.
+- Current candidate purpose: deep audit backend↔frontend↔menu↔RBAC↔error semantics↔workflow/docs/Development Kit after the green certification baseline.
+- Do not reopen closed Wave 1–13 software gates without newer failing evidence.
+- Do not weaken UAT, rate limits, auth, TLS, simulated-hardware evidence or external/provider boundaries to make a test pass.
+- `SIMULATED_HARDWARE_LIVE_SERVICE` closes software-controlled hardware-equivalent behavior; physical/site HIL remains separately labelled and non-blocking.
+
+## Current repair batch
+
+1. Dashboard 403 remains forbidden and preserves session; only 401 clears cookies.
+2. Canonical RBAC audit-action mapping shared by policy and permission guard.
+3. Schedule errors classify expected visibility denial vs infrastructure failure.
+4. Capability template lifecycle is reachable from Admin Web create/publish/deprecate/apply UI.
+5. Directory-dependent UI surfaces fail visibly rather than rendering false empty state.
+6. Profile/session settings surface is labelled truthfully; docs/current authority match real capabilities.
+7. Terminal enterprise-wave state with all 13 software waves closed is verifier-supported.
+
+## Next action
+
+Run deep-product targeted QA + official local pre-push, review diff once, commit once, push once, then GitHub heavy acceptance.
 
 --- HISTORICAL WAVE 3 HANDOFF BELOW ---
 

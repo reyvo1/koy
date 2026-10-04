@@ -53,6 +53,7 @@ export default function SuperBillingContent() {
   const [subscriptions, setSubscriptions] = useState<Subscription[] | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [tenants, setTenants] = useState<TenantOption[]>([]);
+  const [tenantDirectoryError, setTenantDirectoryError] = useState<string | null>(null);
   const [usage, setUsage] = useState<UsageRow[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,12 +73,18 @@ export default function SuperBillingContent() {
         setError(cause instanceof Error ? cause.message : 'gagal memuat');
         setSubscriptions([]);
       });
+    setTenantDirectoryError(null);
     fetch('/api/super/tenants')
-      .then(async (res) => (res.ok ? res.json() : { items: [] }))
-      .then((data: { items?: TenantOption[] }) =>
-        setTenants(Array.isArray(data.items) ? data.items : []),
-      )
-      .catch(() => setTenants([]));
+      .then(async (res) => {
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(`backend ${res.status}`);
+        return body;
+      })
+      .then((data: { items?: TenantOption[] }) => setTenants(Array.isArray(data.items) ? data.items : []))
+      .catch((cause: unknown) => {
+        setTenants([]);
+        setTenantDirectoryError(cause instanceof Error ? cause.message : 'gagal memuat tenant');
+      });
   }, []);
 
   useEffect(() => {
@@ -108,6 +115,11 @@ export default function SuperBillingContent() {
 
   return (
     <div>
+      {tenantDirectoryError ? (
+        <div role="alert" className="mb-4 rounded-xl border border-amber-500/25 bg-amber-500/[.06] px-4 py-3 text-[12px] text-amber-300">
+          Direktori nama tenant tidak tersedia ({tenantDirectoryError}). Data billing tetap ditampilkan dengan ID tenant; ini bukan daftar tenant kosong.
+        </div>
+      ) : null}
       {usage.length > 0 ? (
         <div className="mb-6 grid gap-4 sm:grid-cols-3">
           {usage.map((u) => (

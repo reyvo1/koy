@@ -33,3 +33,7 @@ Read the first failing GitHub step. If red, stay on the same batch/root-cause cl
 ## Handoff
 
 Before a session ends or moves to a new chat, prepend `chat-session.md` and update the current continuation blocks required by `docs/SESSION-HANDOFF-PROTOCOL.md`. Record QA, first remaining blocker, latest known baseline/evidence, and exact next action. Reseal `repository-tree.txt` and `BASELINE-MANIFEST.sha256`.
+
+## Terminal all-green state
+
+When `docs/ENTERPRISE-WAVE-ROADMAP.md` records Waves 1–13 software scope CLOSED/GREEN with `active=none`, do not invent Wave 14 or reopen a closed wave. Resume from the named post-green audit/hardening objective. Any source mutation must still run targeted checks, full local pre-push, one commit/push, and GitHub heavy acceptance before the new candidate becomes authoritative. External/provider and PHYSICAL/HIL evidence remain separate.

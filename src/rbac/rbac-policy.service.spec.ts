@@ -61,6 +61,25 @@ describe('RbacPolicyService', () => {
     );
   });
 
+
+  it.each([
+    ['dashboard.read', 'READ'],
+    ['dashboard.delete', 'DELETE'],
+    ['device.provision', 'UPDATE'],
+  ] as const)('audits denied %s as %s', async (requiredPermission, action) => {
+    await service.evaluate({
+      tenantId,
+      membershipId,
+      baseRole: 'MEMBER',
+      requiredPermission,
+      resourceType: requiredPermission.split('.')[0],
+    });
+
+    expect(auditCreate).toHaveBeenLastCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ action, allowed: false }) }),
+    );
+  });
+
   it('allows MEMBER via a custom role granting the exact permission', async () => {
     overrides.push({ role: { permissions: ['device.update'] } });
     const result = await service.evaluate({

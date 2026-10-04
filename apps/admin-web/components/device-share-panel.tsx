@@ -49,7 +49,8 @@ function expiryLabel(row: ShareRow): string {
 
 export default function DeviceSharePanel({ deviceId }: { deviceId: string }) {
   const [shares, setShares] = useState<ShareRow[] | null>(null);
-  const [members, setMembers] = useState<MemberOption[]>([]);
+  const [members, setMembers] = useState<MemberOption[] | null>(null);
+  const [membersError, setMembersError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -82,13 +83,21 @@ export default function DeviceSharePanel({ deviceId }: { deviceId: string }) {
 
   // The directory is tenant-wide, so it is fetched once per panel rather than per device.
   useEffect(() => {
+    setMembersError(null);
     fetch('/api/admin/tenant-users')
-      .then((res) => (res.ok ? res.json() : { items: [] }))
+      .then(async (res) => {
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error((body as { error?: { message?: string } }).error?.message ?? `backend ${res.status}`);
+        return body;
+      })
       .then((data: unknown) => {
         const items = (data as { items?: MemberOption[] }).items ?? [];
-        setMembers(items.filter((m) => m.membershipId));
+        setMembers(items.filter((member) => member.membershipId));
       })
-      .catch(() => setMembers([]));
+      .catch((cause: unknown) => {
+        setMembers(null);
+        setMembersError(cause instanceof Error ? cause.message : 'gagal memuat direktori anggota');
+      });
   }, []);
 
   const grant = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -149,7 +158,7 @@ export default function DeviceSharePanel({ deviceId }: { deviceId: string }) {
     }
   };
 
-  const shareable = members.filter(
+  const shareable = (members ?? []).filter(
     (m) => !shares?.some((s) => s.grantedToMembershipId === m.membershipId && expiryState(s) === 'active'),
   );
 
@@ -173,11 +182,18 @@ export default function DeviceSharePanel({ deviceId }: { deviceId: string }) {
         </div>
       </div>
 
+      {membersError ? (
+        <p role="alert" className="mb-4 flex items-center gap-2 rounded-lg border border-red-500/25 bg-red-500/10 px-4 py-3 text-[12px] text-red-300">
+          <AlertTriangle className="h-4 w-4 shrink-0" /> Direktori anggota tidak tersedia: {membersError}. Pemberian akses dinonaktifkan sampai direktori pulih.
+        </p>
+      ) : null}
+
       <form onSubmit={grant} className="mb-4 grid gap-3 sm:grid-cols-[1fr_auto_auto_auto]">
         <label className="block">
           <span className="sr-only">Anggota tim</span>
           <select
             value={target}
+            disabled={members === null}
             onChange={(e) => setTarget(e.target.value)}
             className="w-full rounded-xl border border-slate-700/70 bg-slate-900/60 px-3.5 py-2.5 text-[13.5px] text-slate-200 outline-none focus:border-teal-500"
           >
@@ -211,7 +227,7 @@ export default function DeviceSharePanel({ deviceId }: { deviceId: string }) {
             className="w-24 rounded-xl border border-slate-700/70 bg-slate-900/60 px-3.5 py-2.5 text-[13.5px] text-slate-200 outline-none placeholder:text-slate-500 focus:border-teal-500"
           />
         </label>
-        <button disabled={busy || shareable.length === 0} className="iot-button">
+        <button disabled={busy || members === null || shareable.length === 0} className="iot-button">
           {busy ? 'Memproses…' : 'Bagikan'}
         </button>
         {formError ? (
@@ -242,7 +258,7 @@ export default function DeviceSharePanel({ deviceId }: { deviceId: string }) {
         <ul className="m-0 grid list-none gap-2 p-0">
           {shares.map((s) => {
             const state = expiryState(s);
-            const member = members.find((m) => m.membershipId === s.grantedToMembershipId);
+            const member = members?.find((m) => m.membershipId === s.grantedToMembershipId);
             const Icon = s.permission === 'CONTROL' ? Zap : Eye;
             return (
               <li

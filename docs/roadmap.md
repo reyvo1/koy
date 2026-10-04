@@ -1,8 +1,8 @@
 # Master roadmap notice — 2026-10-03
 
-<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
+<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-13; active=none -->
 
-The authoritative active roadmap is `docs/ENTERPRISE-WAVE-ROADMAP.md` (Wave 1–13). The detailed module/slice chronology below is historical engineering evidence. Waves 1–12 have **software scope CLOSED / GREEN** under the recorded evidence tiers; Wave 13 is **IN PROGRESS**. Automated production-readiness must not wait for physical lab equipment: source-bound `SIMULATED_HARDWARE_LIVE_SERVICE` UAT is the software gate, with later PHYSICAL/HIL kept as separately labelled field evidence. Genuinely provider-owned external behavior remains separate. Old `TODO`, `Deferred`, `inactive`, or module-current statements below must not be treated as current without checking the enterprise roadmap.
+The authoritative active roadmap is `docs/ENTERPRISE-WAVE-ROADMAP.md` (Wave 1–13). The detailed module/slice chronology below is historical engineering evidence. Waves 1–13 are **SOFTWARE SCOPE CLOSED / GREEN** under the recorded evidence tiers; no software wave is active after GitHub run `37183166252`. Automated production-readiness must not wait for physical lab equipment: source-bound `SIMULATED_HARDWARE_LIVE_SERVICE` UAT is the software gate, with later PHYSICAL/HIL kept as separately labelled field evidence. Genuinely provider-owned external behavior remains separate. Old `TODO`, `Deferred`, `inactive`, or module-current statements below must not be treated as current without checking the enterprise roadmap.
 
 ---
 

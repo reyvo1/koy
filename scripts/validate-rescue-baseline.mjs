@@ -1699,12 +1699,17 @@ check(
     superTelemetry.includes('Export CSV'),
 );
 check(
-  'capability registry surfaces persisted schemaVersion constraints and unit without inventing global templates',
+  'capability registry surfaces persisted definitions and the real template lifecycle without inventing device mutation on publish',
   platformDeviceController.includes('schemaVersion: true') &&
     platformDeviceController.includes('constraints: true') &&
     platformDeviceController.includes('unit: true') &&
     superCapabilitiesF8.includes('observed per-device definitions') &&
-    superCapabilitiesF8.includes('belum ada entity template global terpisah'),
+    superCapabilitiesF8.includes('Template/version lifecycle tenant juga tersedia') &&
+    read('apps/admin-web/components/super-capability-versions-panel.tsx').includes('Buat template + draft 1.0.0') &&
+    read('apps/admin-web/components/super-capability-versions-panel.tsx').includes('Deprecate v') &&
+    read('apps/admin-web/app/api/admin/capability-templates/route.ts').includes('export async function POST') &&
+    read('apps/admin-web/app/api/admin/capability-templates/[templateId]/versions/route.ts').includes('export async function POST') &&
+    read('apps/admin-web/app/api/admin/capability-templates/[templateId]/deprecate/route.ts').includes('export async function POST'),
 );
 check(
   'platform reports use bounded server-generated tenant evidence and an accepted architecture decision',

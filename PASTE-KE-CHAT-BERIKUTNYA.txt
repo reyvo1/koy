@@ -1,21 +1,30 @@
-LANJUTKAN IOT PLATFORM DARI CHECKPOINT TERBARU. JANGAN AUDIT DARI NOL.
+# NEXT CHAT — IoT deep product hardening
 
-<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
+<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-13; active=none -->
 
-Wave 13 remains IN PROGRESS, software deliverables only.
+Waves 1–13 are **SOFTWARE SCOPE CLOSED / GREEN** for automated, source-bound software certification. GitHub Actions run `37183166252` on commit `b7b62248ec5fe38973993e981c9b753483cf8e10` completed the full automated acceptance chain. `SIMULATED_HARDWARE_LIVE_SERVICE` remains the automated hardware-equivalent evidence class; PHYSICAL/HIL and provider-owned external observations remain separate and non-blocking for software closure.
 
-- GitHub run `37181327760` checkout commit `87996698f478d5c2c73cdc90645b1793fdeefd84`; evidence `logs_100711779249.zip`.
-- Wave 4 = GREEN (TLS 12/12).
-- Wave 5 = GREEN (webhook 24/24, SDK 14/14).
-- Wave 6 = GREEN, termasuk MQTT outage/recovery 24/24 dengan broker + platform publisher bounded recovery.
-- Wave 7 mobile = GREEN (22/22 writer checks + 12/12 integration).
-- FIRST FAILING GATE = Wave 7 technician maintenance: harness melakukan login admin lagi dan terkena HTTP 429 sebelum feature assertions berjalan.
-- ROOT CAUSE = login storm lintas-wave, bukan rate limiter yang salah. Wave 5-9 harus reuse session yang sudah tervalidasi; Wave 6 platform/tenant login sekali per identity.
-- Jangan melemahkan UAT: guard/rate-limit tidak diubah, 429 tetap FAIL, 5xx session validation tetap FAIL, stale session hanya re-auth pada 401.
-- LOCAL QA = live-probe contract PASS, handoff PASS, Wave1/CI self-test PASS, enterprise status 10/10, rescue 496/496, seal 1380/1381.
-- Hardware fisik tidak memblokir software. Mandatory evidence = source-bound `SIMULATED_HARDWARE_LIVE_SERVICE`; PHYSICAL/HIL tetap label terpisah.
-- FIRST ACTION: verifikasi `git rev-parse HEAD` dan `git status --short`, baca `docs/SESSION-HANDOFF-PROTOCOL.md`, lalu lanjut dari first failing gate terbaru.
-- NEXT: `npm run live-probe:contracts:self-test` → `npm run session:handoff:self-test` → `npm run wave3:prepush:check` → satu commit/push → GitHub heavy UAT.
+- GitHub run `37183166252` / commit `b7b62248ec5fe38973993e981c9b753483cf8e10` / evidence `logs_100716783407.zip`.
+- FIRST FAILING GATE: **none — full automated acceptance is green**.
+- Resume discipline: run `git rev-parse HEAD` and `git status --short`; if a newer run is red, resume from the FIRST FAILING GATE. If all green, resume the named deep-product hardening objective.
+- Current candidate purpose: deep audit backend↔frontend↔menu↔RBAC↔error semantics↔workflow/docs/Development Kit after the green certification baseline.
+- Do not reopen closed Wave 1–13 software gates without newer failing evidence.
+- Do not weaken UAT, rate limits, auth, TLS, simulated-hardware evidence or external/provider boundaries to make a test pass.
+- `SIMULATED_HARDWARE_LIVE_SERVICE` closes software-controlled hardware-equivalent behavior; physical/site HIL remains separately labelled and non-blocking.
+
+## Current repair batch
+
+1. Dashboard 403 remains forbidden and preserves session; only 401 clears cookies.
+2. Canonical RBAC audit-action mapping shared by policy and permission guard.
+3. Schedule errors classify expected visibility denial vs infrastructure failure.
+4. Capability template lifecycle is reachable from Admin Web create/publish/deprecate/apply UI.
+5. Directory-dependent UI surfaces fail visibly rather than rendering false empty state.
+6. Profile/session settings surface is labelled truthfully; docs/current authority match real capabilities.
+7. Terminal enterprise-wave state with all 13 software waves closed is verifier-supported.
+
+## Next action
+
+Run deep-product targeted QA + official local pre-push, review diff once, commit once, push once, then GitHub heavy acceptance.
 
 --- HISTORICAL CONTINUATION BELOW ---
 

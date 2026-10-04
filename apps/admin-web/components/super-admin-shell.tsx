@@ -96,7 +96,7 @@ const SUPER_NAV: NavGroup[] = [
   {
     label: 'Platform',
     items: [
-      { href: '/super/settings', label: 'Settings', icon: Settings },
+      { href: '/super/settings', label: 'Profile & Session', icon: Settings },
       { href: '/super/security', label: 'Security & Audit', icon: ShieldCheck },
     ],
   },

@@ -1,8 +1,8 @@
 # Active enterprise state — 2026-10-03
 
-<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
+<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-13; active=none -->
 
-Authoritative execution is `docs/ENTERPRISE-WAVE-ROADMAP.md`. The 30 modules are foundation-complete; enterprise certification is still being closed. Waves 1–12 have **software scope CLOSED / GREEN** under their actual evidence tiers. Wave 13 Final Enterprise Certification is **IN PROGRESS**. Missing ESP32/camera lab hardware is non-blocking: production-shaped `SIMULATED_HARDWARE_LIVE_SERVICE` evidence must cover software-controlled behavior and remain explicitly distinct from later PHYSICAL/HIL field validation. Provider-owned external behavior stays separately gated. Historical module-current statements below are chronology only.
+Authoritative execution is `docs/ENTERPRISE-WAVE-ROADMAP.md`. The 30 modules are foundation-complete; enterprise certification is still being closed. Waves 1–13 are **SOFTWARE SCOPE CLOSED / GREEN** under their actual evidence tiers; no software wave is active after GitHub run `37183166252`. Missing ESP32/camera lab hardware is non-blocking: production-shaped `SIMULATED_HARDWARE_LIVE_SERVICE` evidence must cover software-controlled behavior and remain explicitly distinct from later PHYSICAL/HIL field validation. Provider-owned external behavior stays separately gated. Historical module-current statements below are chronology only.
 
 ---
 

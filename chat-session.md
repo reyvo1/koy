@@ -1,38 +1,30 @@
-# Chat Session — Cross-wave authentication-session root fix — 2026-10-04
+# Chat Session — deep product audit / post-green hardening — 2026-10-04
 
-<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
+<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-13; active=none -->
 
-Wave 13 remains IN PROGRESS. `SIMULATED_HARDWARE_LIVE_SERVICE` remains mandatory automated hardware-equivalent evidence; physical ESP32/camera hardware is non-blocking for software delivery and stays separately labelled field/HIL evidence.
+Waves 1–13 are **SOFTWARE SCOPE CLOSED / GREEN** for automated, source-bound software certification. GitHub Actions run `37183166252` on commit `b7b62248ec5fe38973993e981c9b753483cf8e10` completed the full automated acceptance chain. `SIMULATED_HARDWARE_LIVE_SERVICE` remains the automated hardware-equivalent evidence class; PHYSICAL/HIL and provider-owned external observations remain separate and non-blocking for software closure.
 
 ## Latest evidence
 
-GitHub Actions run `37181327760` checked out commit `87996698f478d5c2c73cdc90645b1793fdeefd84`; operator evidence bundle is `logs_100711779249.zip`. Wave 4 is GREEN with TLS **12/12 PASS**. Wave 5 is GREEN with webhook **24/24 PASS** and SDK **14/14 PASS**. Wave 6 is now GREEN: capability **37/37**, saved reports **27/27**, MQTT management **24/24** including deliberate broker outage plus bounded platform-publisher recovery, and NOC **30/30**. Wave 7 mobile notification is GREEN: writer/runtime checks **22/22** and mobile integration **12/12**. The first failing gate is Wave 7 technician maintenance, which did not reach maintenance assertions because its second UAT-admin login was rejected with **HTTP 429**.
+- GitHub Actions run `37183166252` / commit `b7b62248ec5fe38973993e981c9b753483cf8e10` / evidence `logs_100716783407.zip`.
+- Full Jest: **278/278 suites, 2412/2412 tests PASS**.
+- Wave 4–9 live UAT: GREEN; Wave 6 MQTT outage/recovery and Wave 7 maintenance are GREEN.
+- Wave 10–12 probes, Wave 13 load/certification, Gate 1 revalidation, build, DB integration and MQTT integration: GREEN.
+- FIRST FAILING GATE: **none** in the last automated run. The current task is a post-green deep product audit, not CI repair.
 
-## Root-cause class and repair
+## Deep-audit root findings being fixed in this candidate
 
-- The production sensitive-auth limiter is keyed by auth path + runner IP. Feature probes from Wave 5 onward were independently calling `/auth/login`, so a healthy runner could consume the login budget before later feature probes started. This is a harness orchestration defect, not a reason to relax the limiter.
-- `probe-common.sh` now supports restricted, cached session files. A cached token is validated through authenticated `GET /users/profile`; a valid session is reused, explicit 401 may re-authenticate once, and transport/5xx validation errors remain fail-closed. Fresh session files are written atomically with mode 0600.
-- Wave 5 now authenticates the seeded UAT admin once and exports the token to webhook + SDK; the same session file is reused by Wave 7, Wave 8 and Wave 9 wrappers.
-- Wave 6 now authenticates its platform and tenant actors exactly once after one credential seed, exports both tokens, and the capability/report/MQTT/NOC probes prefer those tokens before any standalone fallback login. Authorization evidence remains two-actor and unchanged.
-- `live-probe:contracts:self-test` now proves cached-session reuse spends no login request, stale 401 causes exactly one re-auth, session files are 0600, 5xx validation cannot fall through to login, and a real 429 remains a hard failure.
-
-## Continuity invariant
-
-Do not reopen Wave 4-6 without newer failing evidence. Resume from Wave 7 technician maintenance. Live UAT must not be weakened: never raise the rate-limit threshold for a feature probe, never ignore/retry 429 into PASS, and never replace separate authorization actors with one privileged token. Prefer validated session/token reuse so feature tests exercise their feature rather than exhaust authentication controls.
-
-## QA in repair workspace
-
-- `live-probe:contracts:self-test`: PASS, including session cache/re-auth/429 fail-closed regressions and existing cross-wave orchestration checks.
-- Shell syntax for changed wrappers: PASS.
-- Changed `.mts` sources pass Node strip-types syntax checks.
-- Documentation/handoff updated to run `37181327760`, commit `87996698f478d5c2c73cdc90645b1793fdeefd84`, first failing Wave 7 maintenance.
-- `wave1:prepush:self-test`, `rescue:github-ci:self-test`, enterprise status sync and rescue validator: PASS; rescue validation **496/496**.
-- Final source seal after all code/docs changes: **1380/1380 source paths, 1381/1381 manifest entries**.
-- Full dependency-backed lint/Jest/live Docker UAT are not claimed in this extracted workspace; the operator checkout must run the official local pre-push before commit, and GitHub remains authoritative for live Wave 7-9 evidence.
+- User Web dashboard must preserve a valid session on HTTP 403 instead of converting forbidden to 401/logout.
+- RBAC permission-to-audit-action mapping must be canonical and suffix-based in both policy and owner-bypass paths.
+- Schedule visibility/create paths must hide only expected forbidden/not-found outcomes and propagate infrastructure failures.
+- Capability template lifecycle already exists in backend; Admin Web BFF/UI/docs must expose create/publish/deprecate/apply truthfully instead of claiming the entity is absent.
+- Device-share and billing directory failures must surface instead of silently becoming an empty directory.
+- `/super/settings` is Profile & Session only; navigation/docs must not imply a platform-settings backend that does not exist.
+- Enterprise current-state docs were stale after the all-green run; terminal software closure is now an explicit supported state (`active=none`).
 
 ## Next action
 
-Run `npm run live-probe:contracts:self-test`, `npm run session:handoff:self-test`, then `npm run wave3:prepush:check`. If green, review one complete diff, commit once, push once, and let GitHub resume from Wave 7.
+Run `npm run deep-product:contracts:self-test`, targeted Jest, then `npm run wave3:prepush:check`. Review the complete deep-audit diff, commit once and push once. GitHub must re-run the full heavy acceptance; any new red gate is repaired by root-cause class without weakening UAT.
 
 --- HISTORICAL CHAT SESSION CHRONOLOGY BELOW ---
 

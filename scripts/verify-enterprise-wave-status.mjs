@@ -80,13 +80,18 @@ function compactRanges(values) {
 const roadmap = read(roadmapRel);
 const states = expandWaveState(currentGateSection(roadmap));
 const active = [...states.entries()].filter(([, status]) => /\b(?:ACTIVE|IN PROGRESS)\b/i.test(status));
-if (active.length !== 1) fail(`expected exactly one active/in-progress wave, found ${active.length}`);
-const [activeWave, activeStatus] = active[0];
+if (active.length > 1) fail(`expected at most one active/in-progress wave, found ${active.length}`);
+const terminal = active.length === 0;
+const [activeWave, activeStatus] = active[0] ?? [null, null];
 const softwareClosed = [...states.entries()]
   .filter(([, status]) => /CLOSED/i.test(status) && /GREEN/i.test(status))
   .map(([wave]) => wave);
 
-const expectedMarker = `<!-- ENTERPRISE-WAVE-SYNC: authority=${roadmapRel}; software-closed=${compactRanges(softwareClosed)}; active=${activeWave} -->`;
+if (terminal && softwareClosed.length !== 13) {
+  fail(`zero active waves is valid only when all 13 waves are CLOSED/GREEN; found ${softwareClosed.length}`);
+}
+const activeMarker = terminal ? 'none' : String(activeWave);
+const expectedMarker = `<!-- ENTERPRISE-WAVE-SYNC: authority=${roadmapRel}; software-closed=${compactRanges(softwareClosed)}; active=${activeMarker} -->`;
 const staleTopPatterns = [
   /Wave 3[^\n]{0,100}\bACTIVE\b/i,
   /Wave 4[^\n]{0,100}\bBLOCKED\b/i,
@@ -125,7 +130,11 @@ function currentAuthorityBlock(text, rel) {
 for (const rel of synchronizedFiles) {
   const text = read(rel);
   const current = currentAuthorityBlock(text, rel);
-  if (!new RegExp(`Wave ${activeWave}[^\n]{0,180}(IN PROGRESS|ACTIVE)`, 'i').test(current)) {
+  if (terminal) {
+    if (!/(?:Waves? 1[–-]13|Wave 13)[^\n]{0,220}(?:CLOSED|software scope closed)[^\n]{0,80}GREEN/i.test(current)) {
+      fail(`${rel} current authority block does not identify terminal Wave 1-13 software closure`);
+    }
+  } else if (!new RegExp(`Wave ${activeWave}[^\n]{0,180}(IN PROGRESS|ACTIVE)`, 'i').test(current)) {
     fail(`${rel} current authority block does not identify Wave ${activeWave} as current (${activeStatus})`);
   }
   for (const pattern of staleTopPatterns) {
@@ -133,7 +142,7 @@ for (const rel of synchronizedFiles) {
   }
 }
 
-console.log(`PASS  roadmap current gate parsed: Wave ${activeWave} = ${activeStatus}`);
+console.log(terminal ? 'PASS  roadmap current gate parsed: terminal software state (no active wave)' : `PASS  roadmap current gate parsed: Wave ${activeWave} = ${activeStatus}`);
 console.log(`PASS  software-closed wave set: ${compactRanges(softwareClosed)}`);
 console.log(`PASS  synchronized current-state documents: ${synchronizedFiles.length}/${synchronizedFiles.length}`);
 console.log('ENTERPRISE WAVE STATUS SYNC PASS');

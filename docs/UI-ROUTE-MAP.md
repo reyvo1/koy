@@ -24,14 +24,14 @@ Status meanings:
 | `/super/provisioning` | KEEP | Backend-issued provisioning |
 | `/super/credentials` | KEEP | Non-secret device credential lifecycle metadata; hashes/secrets never exposed |
 | `/super/firmware` | KEEP | Firmware/OTA |
-| `/super/capabilities` | KEEP | Observed per-device capability registry plus a Versioning section reading `GET /admin/platform-capabilities/versions`: the schemaVersion actually installed per key and which keys disagree across devices. `templateEntity: ABSENT` — no global template lifecycle exists in the schema, so none is presented |
+| `/super/capabilities` | KEEP | Observed per-device capability registry plus real tenant-scoped template lifecycle: create template, publish/deprecate versions, dry-run/apply published versions, and drift/refusal evidence through the Admin Web BFF |
 | `/super/telemetry` | KEEP | Platform-scoped aggregate + bounded raw telemetry explorer/CSV by real device/capability |
 | `/super/mqtt` | KEEP | MQTT operational view |
 | `/super/monitoring` | KEEP | Real readiness dependencies + platform workload context + a Workers section reading `GET /admin/platform-runtime-signals`. Workers are on-demand tick workers with no liveness signal, so the surface reports recorded metric families and states `UNAVAILABLE_BY_CONTRACT` rather than a health tile |
 | `/super/alerts` | KEEP | Analytics-backed alerts |
 | `/super/security` | KEEP | Security/audit |
 | `/super/ai` | KEEP | Persisted analytics findings; roadmap cards are informational only |
-| `/super/settings` | KEEP | Platform settings |
+| `/super/settings` | KEEP | Profile & Session only — backed by `/users/profile`; no platform-configuration backend is claimed |
 | `/super/commands` | KEEP | Read-only platform command queue/ACK/terminal history monitor, plus a platform dispatch section. Dispatch is deliberately tenant-crossing and therefore fail-closed: the operator must name the target tenant explicitly, the device must provably belong to it, a non-empty reason is required, and both the success and failure paths are written to the RBAC audit log with the actor taken from the session |
 | `/super/reports` | KEEP | Bounded server-generated tenant operational report rows + CSV from the same real rows |
 | `/noc` | QUARANTINE | Partial live data; global location/map contract incomplete |
@@ -104,7 +104,7 @@ User Web is now room-centric per Product Vision. `apps/user-web/app/page.tsx` re
 | `/profil` | KEEP | Authenticated profile read/update for the current user |
 | `/` | MERGE | Redirect to `/beranda` |
 
-The seven top-level User Web menu entries are guarded by `scripts/self-test-user-web-navigation.mjs`; removing one or leaving it without a real page fails closed. Scene/Schedule stay out of User Web until their device-level CONTROL boundary is explicitly hardened.
+The seven top-level User Web menu entries are guarded by `scripts/self-test-user-web-navigation.mjs`; removing one or leaving it without a real page fails closed. Scene/Schedule device-level VIEW/CONTROL boundaries are already hardened, but end-user authoring/execution UX is intentionally not a top-level User Web route yet; that is a product-surface decision, not an unresolved security prerequisite.
 
 The backend read model first applies the existing device owner/share authorization policy and only then groups authorized devices by ROOM placement. VIEW-only shares cannot issue commands; CONTROL is separately resolved by `DeviceAccessService`. User Web never infers physical actuator state from HTTP submission and reconciles terminal ACK/FAILED/TIMED_OUT before reloading telemetry. Non-boolean User Web controls stay fail-closed until the typed control surface is shared safely.
 

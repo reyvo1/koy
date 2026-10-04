@@ -1,12 +1,12 @@
 # Active enterprise override — 2026-10-04
 
-<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
+<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-13; active=none -->
 
-Waves 1–12 have **software scope CLOSED / GREEN** under the evidence boundaries in `docs/ENTERPRISE-WAVE-ROADMAP.md`. Wave 13 is **IN PROGRESS**. Missing physical ESP32/camera hardware must **not** stop software completion: GitHub must exercise the strongest production-shaped `SIMULATED_HARDWARE_LIVE_SERVICE` path and bind it to the sealed source plus exact firmware artifact. Simulation is never relabeled PHYSICAL/HIL; later site/HIL observations are a separate, non-blocking field-validation class. Provider-owned behavior that cannot be simulated remains explicitly external.
+Waves 1–13 are **SOFTWARE SCOPE CLOSED / GREEN** for automated, source-bound software certification. GitHub Actions run `37183166252` on commit `b7b62248ec5fe38973993e981c9b753483cf8e10` completed the full automated acceptance chain. `SIMULATED_HARDWARE_LIVE_SERVICE` remains the automated hardware-equivalent evidence class; PHYSICAL/HIL and provider-owned external observations remain separate and non-blocking for software closure.
 
-Do not reopen closed Wave 1–12 software root causes without new failing evidence. Continue Wave 13 certification, regression hardening and automated simulated-hardware UAT until every software-controlled behavior is green. Production approval remains fail-closed on the automated/source-bound approval receipt and any genuinely provider-owned gate, not on possession of optional physical lab equipment.
+Do not invent a new active wave merely because software certification is complete. New work is defect/product hardening against the green baseline and must earn a new full acceptance run before handoff. Missing physical ESP32/camera hardware remains non-blocking; simulation cannot impersonate PHYSICAL/HIL.
 
-Session continuity is mandatory: read `docs/SESSION-HANDOFF-PROTOCOL.md` and the current top blocks before modifying code; verify real `git rev-parse HEAD` / `git status --short`, preserve a recorded dirty candidate, and resume from the first failing gate instead of auditing from zero. Before changing sessions, update the handoff/checkpoint files and run `npm run session:handoff:self-test`.
+Session continuity is mandatory: read `docs/SESSION-HANDOFF-PROTOCOL.md` and current authority blocks, verify `git rev-parse HEAD` / `git status --short`, and resume from the first failing gate when one exists, otherwise from the recorded next action. If the last heavy run is all green, the next action may be a named audit/hardening batch rather than a failing gate. Update handoff files and run `npm run session:handoff:self-test` before handoff.
 
 ---
 

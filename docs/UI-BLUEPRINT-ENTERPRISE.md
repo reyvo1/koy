@@ -14,7 +14,7 @@ ATURAN REY: kerjakan SEMUA dulu, simulasi belakangan, revisi belakangan.
 - Command Center: Send Command, Queue, ACK Monitor, History
 - MQTT Center: Brokers, Sessions, Topics, ACL
 - Monitoring: PostgreSQL, Redis, MQTT, Workers, API Health
-- Security Center, Audit Logs, Alerts, Reports, Settings
+- Security Center, Audit Logs, Alerts, Reports, Profile & Session (no fake platform-settings controls)
 
 ### 1a. Statusimplementasi §1 terhadap fondasi nyata
 
@@ -29,7 +29,7 @@ benar-benar ada. Berikut status yang terverifikasi terhadap skema, service, dan 
 | User Management — API Keys | BUILT | API key metadata/lifecycle |
 | Capability Registry — Definitions | BUILT | Capability per perangkat |
 | Capability Registry — Versioning | BUILT | `Capability.schemaVersion`; drift dihitung nyata per key |
-| Capability Registry — **Templates** | **BELUM — butuh migrasi** | Tidak ada entitas template di skema. Butuh entitas + migrasi; tidak ditampilkan dan tidak dipalsukan |
+| Capability Registry — **Templates** | **BUILT** | `CapabilityTemplate` + `CapabilityTemplateVersion`: create draft, publish/supersede/rollback, deprecate, preview/apply lewat Admin Web dan API nyata |
 | Command Center — Queue/ACK/History | BUILT | `DeviceCommand` + ACK/terminal state nyata |
 | Command Center — Send Command | BUILT (cross-tenant, fail-closed) | `POST /admin/platform-commands/dispatch`: tenant eksplisit, device harus milik tenant itu, reason wajib, audit di kedua jalur, actor dari session |
 | Monitoring — PostgreSQL/Redis/MQTT/API Health | BUILT | `/health/ready` |

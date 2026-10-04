@@ -3,11 +3,11 @@ import SuperSettingsContent from '@/components/super-settings-content';
 
 export const dynamic = 'force-dynamic';
 
-/** Settings — profil nyata (GET/POST /users/profile) + keamanan sesi. */
+/** Profile & Session — profil nyata (GET/POST /users/profile) + keamanan sesi. */
 export default function SuperSettingsPage() {
   return (
     <SuperAdminShell
-      title="Settings"
+      title="Profile & Session"
       subtitle="Profil administrator dan keamanan sesi"
       active="/super/settings"
     >

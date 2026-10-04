@@ -51,10 +51,20 @@ interface VersionsPayload {
   };
 }
 
+interface TemplateVersionRow {
+  id: string;
+  version: string;
+  status: string;
+}
+
 interface TemplateRow {
   id: string;
   key: string;
+  semanticType: string;
+  dataType: string;
+  unit?: string | null;
   publishedVersion: string | null;
+  versions: TemplateVersionRow[];
 }
 
 interface Refusal {
@@ -91,6 +101,12 @@ export default function SuperCapabilityVersionsPanel() {
   const [templates, setTemplates] = useState<TemplateRow[] | null>(null);
   const [templateError, setTemplateError] = useState<string | null>(null);
   const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [lifecycleBusy, setLifecycleBusy] = useState(false);
+  const [lifecycleMessage, setLifecycleMessage] = useState<string | null>(null);
+  const [newTemplate, setNewTemplate] = useState({ key: '', semanticType: '', dataType: 'string', unit: '' });
+  const [publishVersion, setPublishVersion] = useState<Record<string, string>>({});
+  const [supersede, setSupersede] = useState<Record<string, boolean>>({});
+  const [rollback, setRollback] = useState<Record<string, boolean>>({});
 
   const loadTemplates = useCallback(async (nextTenantId: string) => {
     if (!nextTenantId) {
@@ -110,12 +126,91 @@ export default function SuperCapabilityVersionsPanel() {
       if (!response.ok) throw new Error(body?.message ?? `backend ${response.status}`);
       setTemplates(body.templates ?? []);
     } catch (cause) {
-      setTemplates([]);
+      setTemplates(null);
       setTemplateError(cause instanceof Error ? cause.message : 'gagal memuat template');
     } finally {
       setTemplatesLoading(false);
     }
   }, []);
+
+  const createTemplate = useCallback(async () => {
+    const tenant = tenantId.trim();
+    if (!tenant || !newTemplate.key.trim() || !newTemplate.semanticType.trim() || !newTemplate.dataType.trim()) {
+      setLifecycleMessage('Tenant, key, semantic type, dan data type wajib diisi.');
+      return;
+    }
+    setLifecycleBusy(true);
+    setLifecycleMessage(null);
+    try {
+      const response = await fetch('/api/admin/capability-templates', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ tenantId: tenant, ...newTemplate }),
+      });
+      const body = (await response.json().catch(() => ({}))) as { message?: string };
+      if (!response.ok) throw new Error(body.message ?? `backend ${response.status}`);
+      setNewTemplate({ key: '', semanticType: '', dataType: 'string', unit: '' });
+      setLifecycleMessage('Template dibuat dengan draft 1.0.0.');
+      await loadTemplates(tenant);
+    } catch (cause) {
+      setLifecycleMessage(cause instanceof Error ? cause.message : 'gagal membuat template');
+    } finally {
+      setLifecycleBusy(false);
+    }
+  }, [loadTemplates, newTemplate, tenantId]);
+
+  const publishTemplateVersion = useCallback(async (template: TemplateRow) => {
+    const tenant = tenantId.trim();
+    const version = (publishVersion[template.id] ?? '').trim();
+    if (!tenant || !/^\d+\.\d+\.\d+$/.test(version)) {
+      setLifecycleMessage('Versi wajib MAJOR.MINOR.PATCH.');
+      return;
+    }
+    setLifecycleBusy(true);
+    setLifecycleMessage(null);
+    try {
+      const response = await fetch(`/api/admin/capability-templates/${template.id}/versions`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ tenantId: tenant, version, supersede: supersede[template.id] === true, rollback: rollback[template.id] === true }),
+      });
+      const body = (await response.json().catch(() => ({}))) as { message?: string };
+      if (!response.ok) throw new Error(body.message ?? `backend ${response.status}`);
+      setPublishVersion((previous) => ({ ...previous, [template.id]: '' }));
+      setSupersede((previous) => ({ ...previous, [template.id]: false }));
+      setRollback((previous) => ({ ...previous, [template.id]: false }));
+      setLifecycleMessage(`Versi ${version} dipublikasikan.`);
+      await loadTemplates(tenant);
+    } catch (cause) {
+      setLifecycleMessage(cause instanceof Error ? cause.message : 'gagal memublikasikan versi');
+    } finally {
+      setLifecycleBusy(false);
+    }
+  }, [loadTemplates, publishVersion, rollback, supersede, tenantId]);
+
+  const deprecatePublishedVersion = useCallback(async (template: TemplateRow) => {
+    const tenant = tenantId.trim();
+    const version = template.publishedVersion;
+    if (!tenant || !version) return;
+    if (!window.confirm(`Deprekasi ${template.key} v${version}? Perangkat tidak diubah otomatis.`)) return;
+    setLifecycleBusy(true);
+    setLifecycleMessage(null);
+    try {
+      const response = await fetch(`/api/admin/capability-templates/${template.id}/deprecate`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ tenantId: tenant, version, reason: 'Deprecated from platform console' }),
+      });
+      const body = (await response.json().catch(() => ({}))) as { message?: string };
+      if (!response.ok) throw new Error(body.message ?? `backend ${response.status}`);
+      setLifecycleMessage(`Versi ${version} dideprekasi.`);
+      await loadTemplates(tenant);
+    } catch (cause) {
+      setLifecycleMessage(cause instanceof Error ? cause.message : 'gagal mendeprekasi versi');
+    } finally {
+      setLifecycleBusy(false);
+    }
+  }, [loadTemplates, tenantId]);
 
   /**
    * Apply a published template version to one drifting key.
@@ -246,9 +341,23 @@ export default function SuperCapabilityVersionsPanel() {
           className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-[12.5px] text-slate-200 outline-none focus:border-sky-500"
         />
         <p className="mb-0 mt-1.5 text-[11px] text-slate-500">
-          Penerapan mengubah versi capability perangkat nyata. Capability yang sudah terikat ke
-          dashboard atau automation akan ditolak, bukan diubah.
+          Lifecycle nyata: deklarasikan template, publikasikan versi, lalu preview/apply ke perangkat.
+          Publikasi sendiri tidak mengubah perangkat; capability yang terikat tetap ditolak saat apply.
         </p>
+
+        {tenantId.trim() ? (
+          <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/35 p-3">
+            <div className="text-[11.5px] font-bold uppercase tracking-wide text-slate-400">Buat template</div>
+            <div className="mt-2 grid gap-2 sm:grid-cols-4">
+              <input value={newTemplate.key} onChange={(event) => setNewTemplate((value) => ({ ...value, key: event.target.value }))} placeholder="key" className="rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-2 text-[12px] text-slate-200" />
+              <input value={newTemplate.semanticType} onChange={(event) => setNewTemplate((value) => ({ ...value, semanticType: event.target.value }))} placeholder="semantic type" className="rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-2 text-[12px] text-slate-200" />
+              <input value={newTemplate.dataType} onChange={(event) => setNewTemplate((value) => ({ ...value, dataType: event.target.value }))} placeholder="data type" className="rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-2 text-[12px] text-slate-200" />
+              <input value={newTemplate.unit} onChange={(event) => setNewTemplate((value) => ({ ...value, unit: event.target.value }))} placeholder="unit (opsional)" className="rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-2 text-[12px] text-slate-200" />
+            </div>
+            <button type="button" disabled={lifecycleBusy} onClick={() => void createTemplate()} className="mt-2 rounded-lg bg-sky-500/15 px-3 py-1.5 text-[11.5px] font-semibold text-sky-200 disabled:opacity-50">Buat template + draft 1.0.0</button>
+          </div>
+        ) : null}
+        {lifecycleMessage ? <p className="mb-0 mt-2 text-[11.5px] text-sky-300">{lifecycleMessage}</p> : null}
 
         {tenantId.trim() ? (
           templatesLoading ? (
@@ -272,6 +381,16 @@ export default function SuperCapabilityVersionsPanel() {
                     key={template.id}
                     className="rounded-xl border border-slate-800 bg-slate-950/60 p-3"
                   >
+                    <div className="mb-2 rounded-lg border border-slate-800 bg-slate-950/35 p-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <input value={publishVersion[template.id] ?? ''} onChange={(event) => setPublishVersion((previous) => ({ ...previous, [template.id]: event.target.value }))} placeholder="versi baru, mis. 1.1.0" className="min-w-[170px] flex-1 rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-[11.5px] text-slate-200" />
+                        <label className="flex items-center gap-1.5 text-[10.5px] text-slate-400"><input type="checkbox" checked={supersede[template.id] === true} onChange={(event) => setSupersede((previous) => ({ ...previous, [template.id]: event.target.checked }))} /> supersede versi aktif</label>
+                        <label className="flex items-center gap-1.5 text-[10.5px] text-slate-400"><input type="checkbox" checked={rollback[template.id] === true} onChange={(event) => setRollback((previous) => ({ ...previous, [template.id]: event.target.checked }))} /> rollback ke versi lebih rendah</label>
+                        <button type="button" disabled={lifecycleBusy} onClick={() => void publishTemplateVersion(template)} className="rounded-lg bg-teal-500/15 px-2.5 py-1.5 text-[10.5px] font-semibold text-teal-200 disabled:opacity-50">Publish</button>
+                        {template.publishedVersion ? <button type="button" disabled={lifecycleBusy} onClick={() => void deprecatePublishedVersion(template)} className="rounded-lg bg-red-500/10 px-2.5 py-1.5 text-[10.5px] font-semibold text-red-300 disabled:opacity-50">Deprecate v{template.publishedVersion}</button> : null}
+                      </div>
+                      <div className="mt-1 text-[10px] text-slate-600">{template.versions?.length ? template.versions.map((version) => `${version.version}:${version.status}`).join(' · ') : 'Belum ada versi terbaca'}</div>
+                    </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <code className="text-[12.5px] font-bold text-slate-200">{template.key}</code>
                       {template.publishedVersion ? (

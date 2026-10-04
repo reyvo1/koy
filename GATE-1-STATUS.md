@@ -1,8 +1,12 @@
-# Gate naming clarification — 2026-10-03
+# Gate 1 / Enterprise Certification Status
 
-<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
+<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-13; active=none -->
 
-This file is historical Rescue Gate 1 evidence and must not be confused with the enterprise Wave 1–13 master roadmap. The active roadmap is `docs/ENTERPRISE-WAVE-ROADMAP.md`: Waves 1–12 have **software scope CLOSED / GREEN** and Wave 13 is **IN PROGRESS**. Automated production-readiness is closed by source-bound `SIMULATED_HARDWARE_LIVE_SERVICE` plus live-service evidence; lack of physical lab hardware is non-blocking and any later HIL/site run remains separately labelled field evidence. Genuinely provider-owned gates remain external. Status statements below are historical evidence only.
+Waves 1–13 are **SOFTWARE SCOPE CLOSED / GREEN** for automated, source-bound software certification. GitHub Actions run `37183166252` on commit `b7b62248ec5fe38973993e981c9b753483cf8e10` completed the full automated acceptance chain. `SIMULATED_HARDWARE_LIVE_SERVICE` remains the automated hardware-equivalent evidence class; PHYSICAL/HIL and provider-owned external observations remain separate and non-blocking for software closure.
+
+- Latest heavy acceptance run `37183166252` on `b7b62248ec5fe38973993e981c9b753483cf8e10` is GREEN through Wave 13 and Gate 1 source-bound revalidation.
+- Gate 2 / deployment remains an operational/external decision; software closure does not fabricate provider-owned or PHYSICAL/HIL evidence.
+- Current engineering work is post-green deep product hardening; no software wave is active.
 
 ---
 

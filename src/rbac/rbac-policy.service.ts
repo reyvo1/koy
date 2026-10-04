@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { AuditAction } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { auditActionForPermission } from './permission-audit-action';
 
 /**
  * Module 20 Slice 20.1 — policy evaluation with audit trail.
@@ -51,7 +51,7 @@ export class RbacPolicyService {
       await this.prisma.rbacAuditLog.create({
         data: {
           tenantId: input.tenantId,
-          action: this.actionFor(input.requiredPermission),
+          action: auditActionForPermission(input.requiredPermission),
           resourceType: input.resourceType,
           resourceId: input.resourceId ?? null,
           actorMembershipId: input.membershipId,
@@ -64,11 +64,4 @@ export class RbacPolicyService {
     return { allowed };
   }
 
-  private actionFor(permission: string): AuditAction {
-    if (permission.startsWith('read')) return 'READ';
-    if (permission.startsWith('delete')) return 'DELETE';
-    if (permission.startsWith('update')) return 'UPDATE';
-    if (permission.startsWith('share')) return 'GRANT';
-    return 'CREATE';
-  }
 }

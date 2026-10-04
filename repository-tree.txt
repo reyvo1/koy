@@ -74,6 +74,8 @@ apps/admin-web/.env.example
 apps/admin-web/AGENTS.md
 apps/admin-web/CLAUDE.md
 apps/admin-web/app/api/admin/analytics-findings/route.ts
+apps/admin-web/app/api/admin/capability-templates/[templateId]/deprecate/route.ts
+apps/admin-web/app/api/admin/capability-templates/[templateId]/versions/route.ts
 apps/admin-web/app/api/admin/capability-templates/route.ts
 apps/admin-web/app/api/admin/capability-versions/apply/route.ts
 apps/admin-web/app/api/admin/device-capabilities/route.ts
@@ -404,6 +406,7 @@ chat-session.md
 config/performance-budget.json
 docker-compose.rescue.yml
 docker-compose.yml
+docs/DEEP-PRODUCT-AUDIT-2026-10-04.md
 docs/ENTERPRISE-ACCEPTANCE-EVIDENCE.md
 docs/ENTERPRISE-WAVE-ROADMAP.md
 docs/KOMERCIAL-RINGKAS.md
@@ -721,6 +724,7 @@ scripts/seed-uat-baseline.mjs
 scripts/self-test-baseline-hygiene.mjs
 scripts/self-test-baseline-manifest.mjs
 scripts/self-test-dashboard-widget-integration-access.mjs
+scripts/self-test-deep-product-contracts.mjs
 scripts/self-test-emqx-webhooks.mjs
 scripts/self-test-enterprise-wave-status.mjs
 scripts/self-test-fastify-v5-compat.mjs
@@ -1059,6 +1063,8 @@ src/public-api/public-api.service.ts
 src/rbac/domain-access-model.spec.ts
 src/rbac/owned-resource.resolver.spec.ts
 src/rbac/owned-resource.resolver.ts
+src/rbac/permission-audit-action.spec.ts
+src/rbac/permission-audit-action.ts
 src/rbac/rbac-audit.controller.ts
 src/rbac/rbac-audit.service.spec.ts
 src/rbac/rbac-audit.service.ts
