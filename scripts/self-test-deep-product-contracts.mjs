@@ -9,6 +9,51 @@ const assert = (condition, message) => {
   console.log(`PASS  ${message}`);
 };
 
+
+const contractPolicy = JSON.parse(read('test/contract-surface-policy.json'));
+for (const rel of [
+  'test/admin-web-session-lifecycle.contract.spec.ts',
+  'test/deep-product-integrity.contract.spec.ts',
+]) {
+  assert(
+    contractPolicy.contractClasses?.[rel] === 'stable-contract',
+    `repository contract policy classifies new deep-product guard: ${rel}`,
+  );
+}
+
+const packageJson = JSON.parse(read('package.json'));
+const wave2Targeted = packageJson.scripts?.['wave2:test:targeted'] ?? '';
+for (const rel of [
+  'src/admin-operations/tenant-creation-meters.contract.spec.ts',
+  'test/historical-contract-transition-safety.contract.spec.ts',
+  'test/module-10-admin-web-operational-summary-route.spec.ts',
+  'test/module-10-admin-web-operational-dashboard-ui-foundation.contract.spec.ts',
+]) {
+  assert(wave2Targeted.includes(rel), `targeted pre-push includes GitHub regression suite: ${rel}`);
+}
+assert(
+  (packageJson.scripts?.['wave3:prepush:check'] ?? '').includes('npm test -- --runInBand'),
+  'full local pre-push runs the complete Jest suite before ESP32 self-test',
+);
+const tenantMeterContract = read('src/admin-operations/tenant-creation-meters.contract.spec.ts');
+assert(
+  tenantMeterContract.includes('$transaction: jest.fn') &&
+    tenantMeterContract.includes('expect(prisma.$transaction).toHaveBeenCalledTimes(1)'),
+  'tenant metering contract models the interactive Prisma transaction instead of bypassing it',
+);
+for (const rel of [
+  'test/module-10-admin-web-operational-summary-route.spec.ts',
+  'test/module-10-admin-web-operational-dashboard-ui-foundation.contract.spec.ts',
+]) {
+  const source = read(rel);
+  assert(source.includes('if (status === 401)'), `${rel} pins final-401 session invalidation`);
+  assert(
+    source.includes("not.toContain('status === 401 || status === 403')") ||
+      source.includes('not.toMatch(/status\\s*===\\s*401'),
+    `${rel} explicitly rejects 403 impersonating logout`,
+  );
+}
+
 const adminSession = read('apps/admin-web/lib/session.ts');
 const adminProxy = read('apps/admin-web/lib/proxy.ts');
 assert(adminSession.includes('finalizeAdminSessionResponse'), 'Admin BFF centralizes refresh-cookie and final-401 handling');

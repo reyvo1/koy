@@ -47,6 +47,9 @@ Post-green product audits do not reopen completed modules; they test the seams b
 - Module 27 Billing is part of tenant creation/deletion lifecycle. Mandatory system-owned subscription rows must be created and removed atomically with the tenant lifecycle.
 - Capability template apply is a schema convergence operation, not a version-label update: published shape fields and version must move together.
 - Cross-layer blind spots discovered after green certification must become additive targeted/live UAT. Existing acceptance criteria may not be weakened to obtain a PASS.
+- Targeted Jest is an early-failure accelerator only. `wave3:prepush:check` must also run the complete Jest suite before push so local certification cannot be weaker than GitHub core CI.
+- Every new `*.contract.spec.ts` must be deliberately classified in `test/contract-surface-policy.json`; an unclassified contract is a gate failure, not something to exclude from discovery.
+- Packaging/diff hygiene is fail-closed: run `git diff --check` before expensive dependency-backed gates and again after them. Whitespace defects are fixed at source; the diff gate is never bypassed.
 - Hardware simulation evidence remains `SIMULATED_HARDWARE_LIVE_SERVICE`; physical HIL stays a separate optional/non-blocking field-validation class.
 
 ## Gate

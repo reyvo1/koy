@@ -69,13 +69,13 @@ describe('Module 10 Slice 10.10 Admin Web Operational Dashboard UI Foundation co
     expect(session).toContain('refreshAfterUnauthorized(accessToken)');
     expect(session).toContain('this.session.accessToken !== failedAccessToken');
     expect(session).toContain('ADMIN_WEB_AUTH_RESPONSE_INVALID');
-    // Asserted as behaviour, not as the dead route's variable name. The previous expectation
-    // pinned `error.status === 401 || error.status === 403`, which only ever existed in the
-    // duplicate that imported the loader; the surviving route names the same value `status`.
-    // Pinning a local identifier made a correct rename look like a regression.
-    expect(route).toMatch(/status\s*===\s*401\s*\|\|\s*status\s*===\s*403/);
+    // Authentication and authorization are distinct. A final 401 invalidates the browser
+    // session, while a 403 must preserve the valid session and remain backend-authoritative.
+    expect(route).toContain('if (status === 401)');
+    expect(route).not.toMatch(/status\s*===\s*401\s*\|\|\s*status\s*===\s*403/);
     expect(route).toContain('{ status: 401 }');
     expect(route).toContain('clearSessionCookies(response)');
+    expect(route).toContain('finalizeAdminSessionResponse(client, next, response.status)');
     expect(route).not.toContain('ADMIN role');
   });
 

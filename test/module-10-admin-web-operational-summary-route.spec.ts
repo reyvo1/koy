@@ -35,12 +35,17 @@ describe('Module 10 Admin Web operational summary route', () => {
     expect(route).toContain('NextResponse.json(payload, { status: response.status })');
   });
 
-  it('maps an expired or forbidden session to one non-leaking unauthorized response', () => {
-    expect(route).toContain('status === 401 || status === 403');
+  it('clears only an expired session while preserving backend authorization status', () => {
+    // 401 means the session is no longer usable and the browser cookies must be cleared.
+    // 403 is an authorization decision for a still-valid session and must flow through the
+    // normal backend response path instead of being collapsed into logout.
+    expect(route).toContain('if (status === 401)');
+    expect(route).not.toContain('status === 401 || status === 403');
     expect(route).toContain("code: 'UNAUTHORIZED'");
-    // The backend reason code must never reach the browser.
-    expect(route).not.toMatch(/cause\.(code|reasonCode)\b/);
     expect(route).toContain('clearSessionCookies(response)');
+    expect(route).toContain('finalizeAdminSessionResponse(client, next, response.status)');
+    // The backend reason code from an exception must never be reflected from the catch path.
+    expect(route).not.toMatch(/cause\.(code|reasonCode)\b/);
   });
 
   it('bounds an unreachable backend to a server-side failure rather than a device fault', () => {

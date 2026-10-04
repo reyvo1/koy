@@ -3019,6 +3019,24 @@ check(
 );
 check('wave2 targeted test list is not empty', targetedTests.length > 0);
 
+for (const requiredTest of [
+  'src/admin-operations/tenant-creation-meters.contract.spec.ts',
+  'test/historical-contract-transition-safety.contract.spec.ts',
+  'test/module-10-admin-web-operational-summary-route.spec.ts',
+  'test/module-10-admin-web-operational-dashboard-ui-foundation.contract.spec.ts',
+]) {
+  check(
+    `GitHub regression suite is covered by targeted prepush: ${requiredTest}`,
+    targetedTests.includes(requiredTest),
+    'GitHub run 37206734123 exposed this suite after the previous local gate had already passed',
+  );
+}
+check(
+  'wave3 full local prepush runs complete Jest before firmware self-test',
+  (packageJson.scripts?.['wave3:prepush:check'] ?? '').includes('npm test -- --runInBand'),
+  'targeted Jest is an early gate, not a replacement for the GitHub-equivalent full Jest suite',
+);
+
 // ---------------------------------------------------------------------------
 // Command status vocabulary.
 //

@@ -2,6 +2,17 @@
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-13; active=none -->
 
+## Current candidate UAT — RED; root-cause repair in progress
+
+- GitHub run `37206734123` / commit `dd253ef6a67e77469934278b55806819fd292701` / evidence `logs_100779580158.zip` is the newest candidate evidence and is **NOT GREEN**.
+- FIRST FAILING GATE: `test` → Full Jest. Result: **4 failed / 277 passed suites; 7 failed / 2436 passed tests**.
+- The failing classes are precise: two new deep-product contract specs were missing from `test/contract-surface-policy.json`; two legacy Module-10 assertions still required the obsolete `401 || 403 => logout` semantics; and `tenant-creation-meters.contract.spec.ts` mocked Prisma without `$transaction` after tenant creation became atomic.
+- This is not a reason to weaken UAT. The repair classifies the new contracts, changes the stale auth assertions to explicitly require **401 clears / 403 preserves session**, makes the tenant unit mock transaction-aware, adds all four exposed suites to `wave2:test:targeted`, and strengthens `wave3:prepush:check` to run **full Jest serially** before the ESP32 self-test.
+- GitHub steps before Full Jest passed, including lint, Prisma validation/migrations, backend build, web type-check/build, and dependency/security gates. Both Wave-3 ESP-IDF/QEMU matrix jobs also booted successfully. The heavy downstream live chain is not claimed because the core `test` job is red.
+- Last authoritative all-green baseline remains run `37195822587` / commit `e4fdfe11dfd817086ecc93a95dd57cb0b48b8aa4` / evidence `logs_100750579910.zip`.
+- `SIMULATED_HARDWARE_LIVE_SERVICE` remains the mandatory automated hardware-equivalent label; PHYSICAL/HIL stays separate and non-blocking for software.
+
+
 Waves 1–13 are **SOFTWARE SCOPE CLOSED / GREEN** for automated, source-bound software certification. GitHub Actions run `37195822587` on commit `e4fdfe11dfd817086ecc93a95dd57cb0b48b8aa4` completed the full automated acceptance chain. `SIMULATED_HARDWARE_LIVE_SERVICE` remains the automated hardware-equivalent evidence class; PHYSICAL/HIL and provider-owned external observations remain separate and non-blocking for software closure.
 
 - GitHub run `37195822587` / commit `e4fdfe11dfd817086ecc93a95dd57cb0b48b8aa4` / evidence `logs_100750579910.zip`.
@@ -40,9 +51,26 @@ This batch builds on the Admin BFF session/error-semantics repair and does not r
 - `rescue:validate`: reached the repository hygiene gate and failed only because local `tsc --noEmit` created `dist/tsconfig.tsbuildinfo`; that generated `dist/` was removed. No product assertion failed before that hygiene stop.
 - Dependency-backed Jest, Prisma validation/migration execution, full `wave3:prepush:check`, Git diff review, commit/push and GitHub heavy UAT are **not claimed** in this exported no-`.git`/no-`node_modules` workspace. They remain mandatory in the real checkout.
 
+
+## Candidate repair validation before handoff
+
+- `deep-product:contracts:self-test`: **PASS** with explicit checks for contract classification, 401/403 semantics, transaction-aware tenant test, targeted coverage, and full-Jest pre-push parity.
+- `session:handoff:self-test`: **PASS**; all current continuation files agree on failed candidate run `37206734123` / commit `dd253ef6a67e77469934278b55806819fd292701` while retaining the last all-green baseline.
+- `rescue:validate`: **PASS 501/501**.
+- Baseline manifest after the repair: **1389/1389 source paths; 1390/1390 hash entries**.
+- `wave2:prisma:self-test`, `rescue:github-ci:self-test`, enterprise wave-status self-test/verify, and `wave1:prepush:self-test`: **PASS**.
+- Changed TypeScript test files pass TypeScript `transpileModule` syntax diagnostics; changed Node/JSON files parse successfully.
+- A local `npm ci` attempt in this exported tool workspace did not finish, so dependency-backed Jest/full pre-push is **not claimed here**. The real checkout runner must execute expanded targeted Jest and the strengthened full `wave3:prepush:check`; any failure blocks commit/push.
+
+## Local V4 rerun evidence — 2026-10-04
+
+- Real-checkout V4 reached **281/281 Jest suites and 2443/2443 tests PASS**, then completed the Wave 3 ESP32 self-test PASS.
+- The only failing gate was the mandatory post-gate `git diff --check`: `PROJECT-HANDOFF.md:68: new blank line at EOF`. No application/UAT assertion failed in that rerun.
+- V5 fixes the exported handoff whitespace defect, reseals the baseline manifest, and moves an additional `git diff --check` **before** dependency-backed/heavy QA while retaining the existing post-gate check. No UAT, auth, database, TLS, rate-limit, simulated-hardware, or acceptance assertion is relaxed.
+
 ## Next action
 
-Apply this complete integrity batch to a clean real checkout at `e4fdfe11dfd817086ecc93a95dd57cb0b48b8aa4`. Run the expanded targeted tests, Prisma check/migrations, `npm run wave3:prepush:check`, review the complete diff once, commit once, push once, then require GitHub heavy UAT including the new `Deep product lifecycle live regression`. If any gate turns red, repair that root-cause class; do not relax assertions, UAT, auth, FK integrity, TLS, simulated-hardware evidence, or rate limits to force green.
+Run the V5 recovery only on `main` at `dd253ef6a67e77469934278b55806819fd292701`; it accepts either the clean candidate or the exact fail-closed V4-applied working tree. It validates package hashes and the existing V4 diff, fixes the EOF defect, runs an early `git diff --check`, then dependency-free self-tests, Prisma checks, expanded targeted Jest and the strengthened full `wave3:prepush:check`. A second diff check must pass before one commit/push and a new GitHub heavy UAT run. Any failure still blocks commit/push; repair the cause rather than relaxing UAT.
 
 --- HISTORICAL CHRONOLOGY BELOW ---
 

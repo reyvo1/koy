@@ -19,10 +19,22 @@ describe('POST /admin/tenants — a new tenant is metered from the start', () =>
   const dto = { name: '  Tenant Baru  ' };
 
   beforeEach(async () => {
-    prisma = {
-      tenant: { create: jest.fn().mockResolvedValue({ id: 'tenant-1', name: 'Tenant Baru', createdAt: new Date(0) }) },
+    const transactionClient = {
+      tenant: {
+        create: jest.fn().mockResolvedValue({
+          id: 'tenant-1',
+          name: 'Tenant Baru',
+          createdAt: new Date(0),
+        }),
+      },
       billingPlan: { findUnique: jest.fn().mockResolvedValue({ id: 'plan-free' }) },
       billingSubscription: { upsert: jest.fn().mockResolvedValue({}) },
+    };
+    prisma = {
+      ...transactionClient,
+      $transaction: jest.fn(async (callback: (tx: typeof transactionClient) => unknown) =>
+        callback(transactionClient),
+      ),
     };
 
     const moduleRef = await Test.createTestingModule({
@@ -37,9 +49,10 @@ describe('POST /admin/tenants — a new tenant is metered from the start', () =>
     controller = moduleRef.get(AdminDirectoryController);
   });
 
-  it('creates a FREE subscription for the tenant it just created', async () => {
+  it('creates tenant and FREE subscription inside one Prisma transaction', async () => {
     await controller.createTenant(dto);
 
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
     expect(prisma.billingSubscription.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { tenantId: 'tenant-1' },
@@ -65,6 +78,7 @@ describe('POST /admin/tenants — a new tenant is metered from the start', () =>
     await expect(controller.createTenant(dto)).rejects.toMatchObject({
       code: 'BILLING_PLAN_NOT_FOUND',
     });
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
     expect(prisma.billingSubscription.upsert).not.toHaveBeenCalled();
   });
 });
