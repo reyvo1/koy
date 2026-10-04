@@ -47,6 +47,32 @@ describe('deep product integrity regressions', () => {
     );
   });
 
+  it('anchors custom-role assignment tenant isolation in Prisma and SQL', () => {
+    const schema = read('prisma/schema.prisma');
+    const customRole = schema.slice(
+      schema.indexOf('model CustomRole {'),
+      schema.indexOf('model MembershipRoleOverride {'),
+    );
+    const override = schema.slice(
+      schema.indexOf('model MembershipRoleOverride {'),
+      schema.indexOf('model RbacAuditLog {'),
+    );
+
+    expect(customRole).toContain('@@unique([id, tenantId])');
+    expect(override).toMatch(
+      /role\s+CustomRole\s+@relation\(fields:\s*\[roleId,\s*tenantId\],\s*references:\s*\[id,\s*tenantId\]/,
+    );
+
+    const migration = read(
+      'prisma/migrations/20261005011500_tenant_role_override_tenant_integrity/migration.sql',
+    );
+    expect(migration).toContain('cross-tenant membership_role_overrides rows exist');
+    expect(migration).toContain('DROP CONSTRAINT "mro_role_fkey"');
+    expect(migration).toMatch(
+      /FOREIGN KEY \("roleId", "tenantId"\)[\s\S]*REFERENCES "custom_roles"\("id", "tenantId"\)/,
+    );
+  });
+
   it('refuses deleting a scene while a schedule still references it', () => {
     const repo = read('src/scene/scene.repository.ts');
     expect(repo).toContain("SceneInUse: 'SCENE_IN_USE'");
@@ -87,6 +113,32 @@ describe('deep product integrity regressions', () => {
     expect(ui).not.toContain('actionCount?: number');
   });
 
+  it('closes organization, custom-role, and webhook product-surface lifecycles', () => {
+    const orgController = read('src/org/organization.controller.ts');
+    const orgService = read('src/org/organization.service.ts');
+    const superOrg = read('apps/admin-web/components/super-organizations-content.tsx');
+    const roleController = read('src/rbac/tenant-role.controller.ts');
+    const roleUi = read('apps/admin-web/components/tenant-role-management-content.tsx');
+    const webhookUi = read('apps/admin-web/app/tenant/webhooks/page.tsx');
+
+    expect(orgController).toContain('@Get()');
+    expect(orgController).toContain("@Delete(':id/branches/:tenantId')");
+    expect(orgController).toContain("@Delete(':id')");
+    expect(orgService).toContain('listOrganizations(');
+    expect(orgService).toContain('removeBranch(');
+    expect(orgService).toContain('deleteOrganization(');
+    expect(orgService).toContain('OrgPrimaryBranchRemovalForbidden');
+    expect(orgService).toContain('this.prisma.$transaction(async (tx)');
+    expect(superOrg).toContain('+ Tambah cabang');
+    expect(superOrg).toContain('Lepas cabang');
+    expect(superOrg).toContain('Hapus organisasi');
+    expect(roleController).toContain("@Get('catalog')");
+    expect(roleUi).toContain('/api/admin/roles/catalog');
+    expect(roleUi).toContain('/api/admin/roles/members/');
+    expect(webhookUi).toContain('/rotate-secret');
+    expect(webhookUi).toContain('Yakin rotasi');
+  });
+
   it('extends live runtime UAT for the newly discovered blind spots', () => {
     const runner = read('scripts/run-rescue-runtime-flow-extension.mjs');
     expect(runner).toContain('tenant-create-delete-billing-lifecycle');
@@ -97,6 +149,13 @@ describe('deep product integrity regressions', () => {
     expect(runner).toContain("expected: [400]");
     expect(runner).toContain("includes('reportable')");
     expect(runner).toContain('scheduled-scene-delete-refused');
+    expect(runner).toContain('organization-product-lifecycle');
+    expect(runner).toContain('primaryDetachRejectedHttpStatus: 409');
+    expect(runner).toContain('secondaryBranchRemovedViaApi: true');
+    expect(runner).toContain('organizationDeleted: true');
+    expect(runner).toContain('tenantMembershipCleared: true');
+    expect(runner).not.toContain('prisma.organizationBranch.deleteMany');
+    expect(runner).toContain('tenant-custom-role-enforcement-lifecycle');
     expect(runner).toContain("expected: [409]");
   });
 });

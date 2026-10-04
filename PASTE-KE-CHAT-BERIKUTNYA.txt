@@ -1,3 +1,75 @@
+LANJUTKAN PROJECT IOT DARI CHECKPOINT HIJAU TERBARU.
+
+Repo: reyvo1/iot-platform
+Branch: main
+Exact all-green commit: 2cecb7aa4020ffb6a566949f2e5a44794432d0a7
+GitHub Actions run: 37212540616
+Evidence: logs_100795117631.zip
+
+<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-13; active=none -->
+
+## Current authority — latest all-green checkpoint
+
+- GitHub Actions run `37212540616` / commit `2cecb7aa4020ffb6a566949f2e5a44794432d0a7` / evidence `logs_100795117631.zip` is the authoritative **ALL-GREEN** software checkpoint.
+- Evidence confirms 281/281 Jest suites, 2443/2443 tests, E2E, PostgreSQL integration, MQTT integration, ESP32 + ESP32-C3 ESP-IDF/QEMU, and the heavy live acceptance chain are green.
+- UAT was strengthened rather than weakened: non-reportable Automation triggers are required to fail, while a separate valid reportable trigger must pass.
+- `SIMULATED_HARDWARE_LIVE_SERVICE` remains the mandatory automated hardware-equivalent label. PHYSICAL/HIL remains optional/non-blocking for software certification and must never be relabelled as simulated evidence.
+- Waves 1–13 remain **SOFTWARE SCOPE CLOSED / GREEN**. Do not restart them from zero without newer failing evidence.
+
+## Active batch — production product-surface completeness
+
+This batch starts from the green checkpoint above and closes product lifecycles that backend source already supported but the web product did not expose completely:
+
+1. **Organization & Branch:** platform directory (`GET /organizations`), Super Admin create/list/add/detach-non-primary/delete-group UI/BFF, primary-branch detach refusal, tenant existence/duplicate validation, transaction-safe scoped mutations, and stable race/conflict semantics. Organization deletion removes grouping rows only and never deletes Tenant records.
+2. **Tenant Custom Role:** backend permission catalog, bounded assignment read model, Tenant UI/BFF create/assign/revoke/delete lifecycle, and runtime UAT proving a MEMBER changes `403 -> 200 -> 403` for `dashboard.read` as the role is assigned and revoked.
+3. **Webhook signing-secret rotation:** Tenant BFF/UI with explicit two-step confirmation and one-time replacement secret; Wave-5 live probe must prove the new secret validates a real delivery, the old secret no longer validates, and list APIs never expose either secret.
+4. **Docs/Development Kit:** route inventory and production-readiness state are synchronized to the actual green checkpoint without declaring an unknown environment production-approved.
+5. Existing auth/RBAC/TLS/rate-limit/Wave 1–13/full Jest/simulated-hardware gates remain mandatory. No gate is skipped, downgraded, or made allow-failure.
+6. **Custom Role database tenant invariant:** `MembershipRoleOverride.roleId` is hardened from an ID-only FK to a tenant-composite `(roleId, tenantId) -> CustomRole(id, tenantId)` FK. Migration `20261005011500_tenant_role_override_tenant_integrity` aborts if legacy cross-tenant bindings exist instead of silently rewriting authorization data. PostgreSQL integration must prove cross-tenant role assignment fails with `P2003`.
+
+### V1 local retry state / V2 root-hardening note
+
+- The first Production Surface Closure V1 run on the real checkout stopped fail-closed and left the exact V1 payload in the working tree; no commit/push is claimed. The uploaded artifact is only the backup patch, while the named `iot-production-surface-closure-v1-20261005-010151.log` was not uploaded, so the exact V1 failing gate is **not invented or claimed** here.
+- Continued source audit found an independent P1 tenant-isolation gap: application writers scope Custom Role assignments by tenant, but the original database FK protected only `roleId -> custom_roles(id)`. V2 makes tenant identity part of the database FK and adds both structural and real PostgreSQL regression coverage.
+- V2 retry must accept only the clean green base or the **hash-exact V1 dirty tree**; unrelated local changes remain a hard stop.
+
+
+## Validation available in exported snapshot
+
+- `deep-product:contracts:self-test`: PASS after the new lifecycle guards.
+- `session:handoff:self-test`: PASS after current documentation synchronization.
+- `wave2:prisma:self-test`, `rescue:github-ci:self-test`, enterprise wave-status self-test/verify, and `wave1:prepush:self-test`: PASS.
+- `node --check scripts/run-rescue-runtime-flow-extension.mjs`: PASS.
+- `bash -n scripts/probe-webhook-event-vocabulary.sh`: PASS.
+- Dependency-backed targeted Jest, Prisma CLI validation/generation, full local pre-push, live probes, commit/push, and GitHub Heavy UAT are **not claimed yet for this uncommitted batch**; they must run in the real checkout before a new green checkpoint exists.
+
+## Production deployment status
+
+Repository software certification is green at the authority checkpoint, but **production deployment approval remains explicit and environment-specific**. Real production secrets, broker ACL/CA/hostname, DNS/TLS, off-host backup retention/restore ownership, monitoring access, rollback ownership, and any provider-owned observations must be verified by the deployment operator. Repository/UAT green is not permission to invent those facts.
+
+## Next action
+
+Run Production Surface Closure V2 only against `reyvo1/iot-platform` `main@2cecb7aa4020ffb6a566949f2e5a44794432d0a7`; it may start from the clean green base or the hash-exact fail-closed V1 dirty tree. Run early `git diff --check`, manifest/structural guards, Prisma validation/generation, targeted Jest, the strengthened full `wave3:prepush:check`, real PostgreSQL integration including the cross-tenant Custom Role FK proof, final diff review, then one commit/push. Treat the resulting GitHub Heavy UAT as authoritative. **FIRST FAILING GATE: exact V1 gate remains unknown because its log was not uploaded; V2 must print the active stage and failure tail and still stop at the first failing gate without weakening UAT.**
+
+
+Resume discipline:
+- jalankan `git rev-parse HEAD` dan `git status --short` sebelum mutasi;
+- jangan mulai audit Wave 1-13 dari nol;
+- FIRST FAILING GATE adalah authority bila batch baru berhenti;
+- perbaiki root cause, jangan bypass/skip/melemahkan gate;
+- one coherent batch -> targeted QA -> full pre-push -> diff review -> one commit/push -> GitHub Heavy UAT -> handoff.
+
+## V2 local gate result — RED, root cause isolated
+
+- Real-checkout run `iot-production-surface-closure-v2-20261005-013753.log` reached `full-local-prepush` after package hashes, manifest/origin verification, structural QA, Prisma checks, and targeted Jest all passed.
+- Targeted Jest: **30/30 suites, 318/318 tests PASS**.
+- Full Jest: **276/281 suites PASS; 2469/2476 tests PASS**. The 5 failing suites / 7 failing tests all assert the same canonical deployment-safety wording in `docs/production-readiness.md`.
+- Root cause: V2 changed the canonical contract text from `Status: NOT READY FOR PRODUCTION DEPLOYMENT` to a richer software-green phrase. The underlying deployment boundary was not intentionally relaxed, but changing the exact canonical status broke multiple safety contracts.
+- Root fix: restore the canonical `Status: NOT READY FOR PRODUCTION DEPLOYMENT` and `Completion review status: LOCAL GATES PASSED` markers, while retaining authoritative-green checkpoint details on separate lines. Tests are not weakened or changed.
+- The authoritative all-green baseline remains `2cecb7aa4020ffb6a566949f2e5a44794432d0a7` / run `37212540616`; the V2 dirty tree is not a green checkpoint and has not been committed/pushed.
+
+--- HISTORICAL CONTEXT BELOW ---
+
 LANJUTKAN PROJECT IOT DARI CHECKPOINT CANDIDATE TERBARU. JANGAN AUDIT WAVE 1-13 DARI NOL.
 
 Repo: reyvo1/iot-platform
@@ -18,7 +90,7 @@ WAJIB:
 
 # NEXT CHAT — IoT deep product hardening
 
-<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-13; active=none -->
+Historical enterprise-wave state: software-closed=1-13; active=none.
 
 ## Current candidate UAT — RED; root-cause repair in progress
 

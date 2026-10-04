@@ -150,6 +150,33 @@ describe('webhook event vocabulary', () => {
   });
 });
 
+describe('webhook signing-secret rotation surface', () => {
+  it('exposes rotation through the tenant BFF with UUID validation and one-time secret response', () => {
+    const route = read('apps/admin-web/app/api/admin/webhooks/endpoints/[endpointId]/rotate-secret/route.ts');
+    expect(route).toContain("/rotate-secret");
+    expect(route).toContain('UUID.test(endpointId)');
+    expect(route).toContain("method: 'POST'");
+  });
+
+  it('requires explicit confirmation and shows the replacement secret only in one-time state', () => {
+    const page = read(PAGE);
+    expect(page).toContain('confirmRotateId');
+    expect(page).toContain('Yakin rotasi');
+    expect(page).toContain('Secret dirotasi — simpan secret baru sekarang');
+    expect(page).toContain('/rotate-secret');
+  });
+
+  it('live probe proves new-secret validity and immediate old-secret invalidation', () => {
+    const probe = read('scripts/probe-webhook-event-vocabulary.sh');
+    expect(probe).toContain('signing-secret rotation invalidates the old secret');
+    expect(probe).toContain('endpoint listing never leaks the rotated secret');
+    expect(probe).toContain('post-rotation delivery verifies with the new secret');
+    expect(probe).toContain('the old signing secret is invalid immediately after rotation');
+    expect(probe).toContain("createHmac('sha256', oldSecret)");
+    expect(probe).toContain("createHmac('sha256', newSecret)");
+  });
+});
+
 describe('webhook delivery failure disclosure', () => {
   it('records why a delivery failed, not only that it did', () => {
     // A row saying `ok: false, statusCode: null` cannot be told apart from a receiver that

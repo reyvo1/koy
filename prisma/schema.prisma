@@ -1393,6 +1393,10 @@ model CustomRole {
   overrides   MembershipRoleOverride[]
   createdAt   DateTime @default(now())
 
+  // Composite identity is the database authority for tenant-bound override relations.
+  // `id` stays globally unique, but pairing it with tenantId lets the override FK prove
+  // a role cannot be attached across tenant boundaries even if a future writer is buggy.
+  @@unique([id, tenantId])
   @@unique([tenantId, name])
   @@map("custom_roles")
 }
@@ -1403,7 +1407,7 @@ model MembershipRoleOverride {
   membershipId String
   membership   Membership  @relation(fields: [membershipId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
   roleId       String
-  role         CustomRole  @relation(fields: [roleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  role         CustomRole  @relation(fields: [roleId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
   createdAt    DateTime    @default(now())
 
   @@unique([membershipId, roleId])

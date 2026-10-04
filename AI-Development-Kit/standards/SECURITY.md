@@ -15,3 +15,8 @@ rotation, OTA, API key, dan admin action penting.
 - When refresh-token rotation succeeds, every BFF response that continues the session must persist the rotated access + refresh pair before returning to the browser.
 - BFF read failures must remain failures. Infrastructure/auth errors may not be converted into `200` plus empty arrays/graphs merely to keep the UI populated.
 - Multi-resource fan-out may suppress only explicitly expected visibility races (for example resource 403/404 where the product contract intentionally hides inaccessible/disappeared rows); unexpected/network/5xx failures must propagate.
+
+## Tenant-scoped RBAC persistence — current contract (2026-10-05)
+
+- Custom-role membership bindings are tenant-bound at both application and database layers. A role from tenant B must be impossible to persist on a tenant-A membership even through a future buggy writer or direct SQL.
+- Cross-tenant authorization corruption is a deployment blocker; migrations must fail closed and require explicit operator repair rather than guessing intended permissions.

@@ -6,6 +6,11 @@
 
 Baseline: `eb3ecde` — MQTT Production Transport Implementation.
 
+## Current Authority — 2026-10-04
+
+The authoritative repository checkpoint is commit `2cecb7aa4020ffb6a566949f2e5a44794432d0a7`, GitHub Actions run `37212540616`, evidence `logs_100795117631.zip`: full automated acceptance green. The active product-surface completeness batch (Organization/Branch UI lifecycle, tenant Custom Role writer lifecycle, webhook secret rotation) must obtain its own local + GitHub Heavy UAT before replacing that authority. Production deployment approval remains separate and environment-specific.
+
+
 This review closes the repository-level validation loop without claiming that an unknown production environment has been approved. The script commits only after every local gate below succeeds.
 
 ## Required Local Gates

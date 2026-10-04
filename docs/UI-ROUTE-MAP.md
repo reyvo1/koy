@@ -12,7 +12,7 @@ Status meanings:
 | Route | Status | Purpose |
 |---|---|---|
 | `/super/dashboard` | KEEP | Platform-scoped tenant/device overview + real readiness evidence |
-| `/super/tenants` | KEEP | Tenant management |
+| `/super/tenants` | KEEP | Tenant management plus platform Organization/Branch directory, create, add/detach non-primary branch, and delete-group lifecycle |
 | `/super/subscriptions` | KEEP | Per-tenant subscription rows only. Renders the `subscriptions` view of the billing read model; the plan/quota section lives on `/super/quotas` |
 | `/super/quotas` | KEEP | Plan quota definitions plus usage-against-quota from the persisted `BillingUsage` rows the billing endpoint already returns (latest period per tenant, with an over-quota marker). Previously rendered the whole billing page, making it byte-identical to `/super/subscriptions` |
 | `/super/billing` | KEEP | Billing foundation |
@@ -57,8 +57,11 @@ Status meanings:
 | `/tenant/temuan` | KEEP | Canonical Module 16 analytics findings surface; not notification delivery |
 | `/tenant/notifikasi` | KEEP | Real notification delivery log (queue, worker attempts, failure codes) from `GET /notifications` + `/notifications/summary`. Distinct from `/tenant/temuan`, which is analytics findings, not delivery history. |
 | `/tenant/laporan` | KEEP | Real aggregate export |
-| `/tenant/pengguna` | KEEP | Tenant user management |
+| `/tenant/pengguna` | KEEP | Tenant user management plus custom-role create/assign/revoke/delete from the backend permission catalog |
 | `/tenant/grup-perangkat` | KEEP | Real tenant-scoped device groups; create/list/member/remove backed by `/device-groups` |
+| `/tenant/api-keys` | KEEP | Tenant API-key create/list/revoke lifecycle; raw key is one-time output only |
+| `/tenant/webhooks` | KEEP | Tenant webhook endpoint lifecycle, delivery failures, and two-step signing-secret rotation with one-time replacement secret |
+| `/tenant/organisasi` | KEEP | Read-only tenant-visible Organization/Branch membership; organization create/add/detach/delete lifecycle is platform-owned from `/super/tenants` |
 
 ## Menu ownership rule (enforced)
 

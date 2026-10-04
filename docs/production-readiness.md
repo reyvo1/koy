@@ -4,7 +4,9 @@
 
 **Status: NOT READY FOR PRODUCTION DEPLOYMENT**
 
-**Completion review status: LOCAL GATES PASSED — REMOTE CI AND EXPLICIT DEPLOYMENT APPROVAL PENDING**
+**Repository software status: GREEN AT `2cecb7aa4020ffb6a566949f2e5a44794432d0a7` / RUN `37212540616`; CURRENT PRODUCT-SURFACE BATCH REQUIRES RE-CERTIFICATION.**
+
+**Completion review status: LOCAL GATES PASSED FOR THE AUTHORITATIVE GREEN CHECKPOINT — REMOTE CI GREEN AT `2cecb7aa4020ffb6a566949f2e5a44794432d0a7` / RUN `37212540616`; CURRENT PRODUCT-SURFACE BATCH REQUIRES RE-CERTIFICATION; EXPLICIT ENVIRONMENT DEPLOYMENT APPROVAL PENDING.**
 
 All repository-level implementation blockers are resolved or controlled. The completion-review script validates the complete reliability, security, deployment, recovery, release, and MQTT transport gates before committing. Actual deployment remains an explicit environment-specific decision because production broker credentials, broker ACLs, trusted CA material, DNS/TLS, secret installation, off-host backup retention, and operator rollback readiness cannot be proven by repository code alone.
 
@@ -97,12 +99,12 @@ CI includes non-mutating lint, a critical production dependency review policy, v
    - Real readiness and reconnect state
    - Graceful shutdown
    - Focused unit and loopback TLS integration evidence
-6. **Production Readiness Completion Review — Local Gates Passed; Remote CI Pending**
+6. **Production Readiness Completion Review — Repository + Remote CI Green; Environment Approval Pending**
    - Full Jest and coverage gates pass
    - Fastify E2E, PostgreSQL integration, MQTT workflow integration, and MQTT publisher TLS integration pass
    - Recovery drill, release manifest verification, and production artifact startup smoke pass
    - Repository production configuration contracts are verified without committing secrets
-   - Green remote CI remains required before Module 09 activation
+   - Latest authoritative remote CI is green at run `37212540616`; every subsequent source batch must obtain its own green Heavy UAT before becoming the next authority
    - Production deployment approval remains explicit and environment-specific
 
 ## Exit Rule

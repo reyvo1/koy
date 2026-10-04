@@ -132,6 +132,26 @@ assert(
   'database enforces Schedule -> Scene tenant-scoped referential integrity fail-closed',
 );
 
+const roleTenantFkMigration = read(
+  'prisma/migrations/20261005011500_tenant_role_override_tenant_integrity/migration.sql',
+);
+const databaseIntegration = read('test/integration/database.integration-spec.ts');
+assert(
+  prismaSchema.includes('@@unique([id, tenantId])') &&
+    prismaSchema.includes(
+      '@relation(fields: [roleId, tenantId], references: [id, tenantId], onDelete: Cascade',
+    ) &&
+    roleTenantFkMigration.includes('cross-tenant membership_role_overrides rows exist') &&
+    roleTenantFkMigration.includes('mro_role_tenant_fkey'),
+  'database enforces MembershipRoleOverride -> CustomRole tenant-scoped referential integrity fail-closed',
+);
+assert(
+  databaseIntegration.includes(
+    'rejects a custom-role override whose role belongs to another tenant at the database boundary',
+  ) && databaseIntegration.includes("rejects.toMatchObject({ code: 'P2003' })"),
+  'database integration proves cross-tenant custom-role overrides are rejected by PostgreSQL',
+);
+
 const capabilityLifecycle = read('src/admin-operations/capability-template.service.ts');
 for (const required of [
   'schemaVersion: target.version',
@@ -172,9 +192,84 @@ for (const proof of [
   'capability-apply-full-shape',
   'automation-non-reportable-trigger-rejected',
   'scheduled-scene-delete-refused',
+  'organization-product-lifecycle',
+  'tenant-custom-role-enforcement-lifecycle',
 ]) {
   assert(runtimeExtension.includes(proof), `live runtime UAT covers ${proof}`);
 }
+
+const organizationService = read('src/org/organization.service.ts');
+const organizationUi = read('apps/admin-web/components/super-organizations-content.tsx');
+assert(
+  organizationService.includes('listOrganizations(') &&
+    organizationService.includes('this.prisma.organization.count()') &&
+    organizationService.includes("code === 'P2002'") &&
+    organizationUi.includes('+ Tambah cabang'),
+  'organization platform lifecycle is discoverable and database-race safe',
+);
+const organizationController = read('src/org/organization.controller.ts');
+const tenantOrganizationUi = read('apps/admin-web/app/tenant/organisasi/page.tsx');
+const tenantOrganizationCurrentRoute = read('apps/admin-web/app/api/admin/organizations/current/route.ts');
+assert(
+  organizationController.includes("@Post('branches')\n  @UseGuards(JwtAuthGuard, TenantContextGuard, PlatformRoleGuard)") &&
+    organizationController.includes("@Get('current')") &&
+    tenantOrganizationCurrentRoute.includes("client.request('/organizations/current')") &&
+    tenantOrganizationUi.includes('/api/admin/organizations/current') &&
+    !tenantOrganizationUi.includes('/api/admin/organizations/branches') &&
+    !tenantOrganizationUi.includes('Tambah Cabang'),
+  'tenant organization surface is parameter-free/read-only while branch mutation is platform-only',
+);
+
+const organizationBranchDeleteRoute = read(
+  'apps/admin-web/app/api/super/organizations/[organizationId]/branches/[tenantId]/route.ts',
+);
+const organizationDeleteRoute = read(
+  'apps/admin-web/app/api/super/organizations/[organizationId]/route.ts',
+);
+assert(
+  organizationController.includes("@Delete(':id/branches/:tenantId')") &&
+    organizationController.includes("@Delete(':id')") &&
+    organizationService.includes('removeBranch(') &&
+    organizationService.includes('deleteOrganization(') &&
+    organizationService.includes('OrgPrimaryBranchRemovalForbidden') &&
+    organizationBranchDeleteRoute.includes("method: 'DELETE'") &&
+    organizationDeleteRoute.includes("method: 'DELETE'") &&
+    organizationUi.includes('Lepas cabang') &&
+    organizationUi.includes('Hapus organisasi'),
+  'organization lifecycle supports guarded branch detach and organization deletion through product surfaces',
+);
+assert(
+  runtimeExtension.includes('primaryDetachRejectedHttpStatus: 409') &&
+    runtimeExtension.includes('secondaryBranchRemovedViaApi: true') &&
+    runtimeExtension.includes('organizationDeleted: true') &&
+    runtimeExtension.includes('tenantMembershipCleared: true') &&
+    !runtimeExtension.includes('prisma.organizationBranch.deleteMany'),
+  'organization live UAT proves primary protection and performs cleanup through product APIs instead of direct Prisma mutation',
+);
+
+const roleController = read('src/rbac/tenant-role.controller.ts');
+const roleUi = read('apps/admin-web/components/tenant-role-management-content.tsx');
+assert(
+  roleController.includes("@Get('catalog')") &&
+    roleUi.includes('/api/admin/roles/catalog') &&
+    roleUi.includes('/api/admin/roles/members/'),
+  'tenant custom-role catalog and assignment lifecycle are operable from the web console',
+);
+assert(
+  roleController.includes("membership.role !== 'MEMBER'") &&
+    roleUi.includes("user.role === 'MEMBER'"),
+  'tenant custom-role assignment remains MEMBER-only while ADMIN keeps wildcard base permissions',
+);
+
+const webhookUi = read('apps/admin-web/app/tenant/webhooks/page.tsx');
+const webhookRotateRoute = read('apps/admin-web/app/api/admin/webhooks/endpoints/[endpointId]/rotate-secret/route.ts');
+const webhookProbe = read('scripts/probe-webhook-event-vocabulary.sh');
+assert(
+  webhookUi.includes('Yakin rotasi') &&
+    webhookRotateRoute.includes('/rotate-secret') &&
+    webhookProbe.includes('the old signing secret is invalid immediately after rotation'),
+  'webhook secret rotation is operator-accessible and live-probed for old-secret invalidation',
+);
 
 assert(
   runtimeExtension.includes("const automationTriggerCapabilityKey = 'signal'") &&
@@ -193,13 +288,24 @@ const shell = read('apps/admin-web/components/super-admin-shell.tsx');
 assert(shell.includes("label: 'Profile & Session'"), 'super navigation truthfully labels profile/session settings surface');
 const routeMap = read('docs/UI-ROUTE-MAP.md');
 assert(!routeMap.includes('templateEntity: ABSENT') && routeMap.includes('Profile & Session only'), 'UI route map matches implemented capability lifecycle and settings scope');
+for (const route of ['/tenant/api-keys', '/tenant/webhooks', '/tenant/organisasi']) {
+  assert(routeMap.includes(route), `UI route map includes runtime tenant route ${route}`);
+}
+
+const productionReadiness = read('docs/production-readiness.md');
+assert(
+  productionReadiness.includes('Status: NOT READY FOR PRODUCTION DEPLOYMENT') &&
+    productionReadiness.includes('Completion review status: LOCAL GATES PASSED') &&
+    productionReadiness.includes('Repository software status: GREEN AT'),
+  'production readiness keeps canonical fail-closed deployment status while recording repository-green authority separately',
+);
 
 const roadmap = read('docs/ENTERPRISE-WAVE-ROADMAP.md');
 assert(/Waves 1[–-]13: \*\*SOFTWARE SCOPE CLOSED \/ GREEN\*\*/.test(roadmap), 'enterprise roadmap records terminal Waves 1-13 software closure');
 for (const rel of ['CURRENT-STATE.md','PROJECT-HANDOFF.md','docs/SESSION-CHECKPOINT.md','chat-session.md']) {
   const text = read(rel).split(/--- HISTORICAL/)[0];
   assert(text.includes('software-closed=1-13; active=none'), `${rel} uses terminal enterprise-wave marker`);
-  assert(text.includes('37195822587') && text.includes('e4fdfe11dfd817086ecc93a95dd57cb0b48b8aa4'), `${rel} points to the latest all-green evidence baseline`);
+  assert(text.includes('37212540616') && text.includes('2cecb7aa4020ffb6a566949f2e5a44794432d0a7'), `${rel} points to the latest all-green evidence baseline`);
 }
 
 console.log('DEEP PRODUCT CONTRACT SELF-TEST PASS');

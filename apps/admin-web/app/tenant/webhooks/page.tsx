@@ -27,6 +27,7 @@ import {
   AlertTriangle,
   Power,
   PowerOff,
+  RotateCcw,
 } from 'lucide-react';
 
 interface EndpointRow {
@@ -83,7 +84,9 @@ export default function TenantWebhooksPage() {
   const [events, setEvents] = useState<string[]>(['device.state_changed']);
   const [formError, setFormError] = useState<string | null>(null);
   const [secret, setSecret] = useState<string | null>(null);
+  const [secretTitle, setSecretTitle] = useState('Endpoint dibuat — simpan signing secret sekarang');
   const [copied, setCopied] = useState(false);
+  const [confirmRotateId, setConfirmRotateId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -157,6 +160,7 @@ export default function TenantWebhooksPage() {
           'Endpoint dibuat, tetapi signing secret tidak dikembalikan. Cabut dan daftar ulang.',
         );
       }
+      setSecretTitle('Endpoint dibuat — simpan signing secret sekarang');
       setSecret(payload?.signingSecret ?? null);
       setUrl('');
       setEvents(['device.state_changed']);
@@ -185,6 +189,41 @@ export default function TenantWebhooksPage() {
     } catch (cause) {
       setError(
         `Gagal mengubah status ${row.url}: ${
+          cause instanceof Error ? cause.message : 'tidak diketahui'
+        }`,
+      );
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const rotateSecret = async (row: EndpointRow) => {
+    setBusy(`rotate-${row.id}`);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/webhooks/endpoints/${row.id}/rotate-secret`, {
+        method: 'POST',
+      });
+      const payload = (await res.json().catch(() => null)) as {
+        signingSecret?: string;
+        message?: string;
+        error?: { message?: string };
+      } | null;
+      if (!res.ok) {
+        throw new Error(
+          payload?.message ?? payload?.error?.message ?? `backend ${res.status}`,
+        );
+      }
+      if (!payload?.signingSecret) {
+        throw new Error('Backend tidak mengembalikan signing secret baru.');
+      }
+      setSecretTitle('Secret dirotasi — simpan secret baru sekarang');
+      setSecret(payload.signingSecret);
+      setCopied(false);
+      setConfirmRotateId(null);
+    } catch (cause) {
+      setError(
+        `Gagal merotasi secret ${row.url}: ${
           cause instanceof Error ? cause.message : 'tidak diketahui'
         }`,
       );
@@ -246,11 +285,12 @@ export default function TenantWebhooksPage() {
         <div className="mb-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/[.07] p-5">
           <div className="flex items-center gap-2 text-[14px] font-bold text-emerald-300">
             <Check className="h-4 w-4" strokeWidth={2.4} />
-            Endpoint dibuat — simpan signing secret sekarang
+            {secretTitle}
           </div>
           <p className="mb-3 mt-1.5 text-[12.5px] text-emerald-200/80">
-            Ditampilkan satu kali saja. Receiver Anda harus memverifikasi tanda tangan
-            HMAC-SHA256 pada body dengan header <code>X-IOT-Signature</code>.
+            Ditampilkan satu kali saja. Setelah rotasi, secret lama langsung tidak berlaku.
+            Receiver Anda harus memverifikasi tanda tangan HMAC-SHA256 pada body dengan header{' '}
+            <code>X-IOT-Signature</code>.
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <code className="min-w-0 flex-1 break-all rounded-lg border border-emerald-500/25 bg-black/30 px-3 py-2 font-mono text-[12px] text-emerald-200">
@@ -446,6 +486,37 @@ export default function TenantWebhooksPage() {
                     <PowerOff strokeWidth={2} className="h-4 w-4" />
                   )}
                 </button>
+                {confirmRotateId === row.id ? (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => void rotateSecret(row)}
+                      disabled={busy !== null}
+                      className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-[11.5px] font-bold text-amber-200 hover:bg-amber-500/15 disabled:opacity-50"
+                    >
+                      {busy === `rotate-${row.id}` ? 'Merotasi…' : 'Yakin rotasi'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmRotateId(null)}
+                      disabled={busy !== null}
+                      className="rounded-lg border border-slate-700 px-2.5 py-2 text-[11.5px] font-semibold text-slate-300 hover:border-slate-500 disabled:opacity-50"
+                    >
+                      Batal
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmRotateId(row.id)}
+                    disabled={busy !== null}
+                    aria-label={`Rotasi signing secret ${row.url}`}
+                    title="Rotasi signing secret"
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-amber-500/30 text-amber-300 transition-colors hover:bg-amber-500/10 disabled:opacity-50"
+                  >
+                    <RotateCcw className="h-4 w-4" strokeWidth={2} />
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => void remove(row)}

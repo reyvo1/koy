@@ -48,14 +48,16 @@ describe('Tenant roles — a custom role can actually be created and assigned', 
         findMany: jest.fn().mockResolvedValue([]),
         findFirst: jest.fn().mockResolvedValue({ id: roleId, tenantId: tenantA, name: 'Operator', permissions: ['dashboard.read'] }),
         delete: jest.fn().mockResolvedValue({}),
+        deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
       membershipRoleOverride: {
         create: jest.fn().mockResolvedValue({ id: 'ov-1' }),
         findFirst: jest.fn().mockResolvedValue({ id: 'ov-1' }),
         delete: jest.fn().mockResolvedValue({}),
+        deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
         findMany: jest.fn().mockResolvedValue([]),
       },
-      membership: { findFirst: jest.fn().mockResolvedValue({ id: membershipId, tenantId: tenantA }) },
+      membership: { findFirst: jest.fn().mockResolvedValue({ id: membershipId, tenantId: tenantA, role: 'MEMBER', status: 'ACTIVE' }) },
     };
 
     const moduleRef = await Test.createTestingModule({
@@ -71,6 +73,39 @@ describe('Tenant roles — a custom role can actually be created and assigned', 
       .compile();
 
     controller = moduleRef.get(TenantRoleController);
+  });
+
+  it('publishes the exact permission catalog used by runtime policy evaluation', () => {
+    const catalog = controller.permissionCatalog();
+    expect(catalog.permissions).toEqual(RBAC_PERMISSION_CATALOG);
+    expect(catalog.baseRoleModel.ADMIN).toContain('Wildcard');
+    expect(catalog.baseRoleModel.MEMBER).toContain('Denied unless');
+  });
+
+  it('lists role assignments without leaking Prisma _count/override internals', async () => {
+    prisma.customRole.findMany.mockResolvedValue([
+      {
+        id: roleId,
+        name: 'Operator',
+        permissions: ['dashboard.read'],
+        createdAt: new Date(0),
+        _count: { overrides: 1 },
+        overrides: [
+          { membershipId, membership: { user: { email: 'member@example.test', name: 'Member' } } },
+        ],
+      },
+    ]);
+    const result = await controller.listRoles(request);
+    expect(result.items).toEqual([
+      expect.objectContaining({
+        id: roleId,
+        memberCount: 1,
+        members: [{ membershipId, email: 'member@example.test', name: 'Member' }],
+        assignmentsBounded: false,
+      }),
+    ]);
+    expect(result.items[0]).not.toHaveProperty('_count');
+    expect(result.items[0]).not.toHaveProperty('overrides');
   });
 
   describe('creating a role', () => {
@@ -97,6 +132,13 @@ describe('Tenant roles — a custom role can actually be created and assigned', 
       await expect(controller.createRole(request, { name: 'Empty', permissions: [] } as never)).rejects.toMatchObject({
         status: 400,
       });
+      expect(prisma.customRole.create).not.toHaveBeenCalled();
+    });
+
+    it('validates the trimmed role name, not whitespace padding', async () => {
+      await expect(
+        controller.createRole(request, { name: '   a   ', permissions: ['dashboard.read'] } as never),
+      ).rejects.toMatchObject({ status: 400 });
       expect(prisma.customRole.create).not.toHaveBeenCalled();
     });
 
@@ -128,6 +170,31 @@ describe('Tenant roles — a custom role can actually be created and assigned', 
       expect(prisma.membershipRoleOverride.create).not.toHaveBeenCalled();
     });
 
+    it('refuses assigning a custom role to a non-ACTIVE membership', async () => {
+      prisma.membership.findFirst.mockResolvedValue({
+        id: membershipId,
+        tenantId: tenantA,
+        role: 'MEMBER',
+        status: 'REVOKED',
+      });
+
+      await expect(controller.assignRole(request, membershipId, { roleId } as never)).rejects.toMatchObject({
+        status: 400,
+      });
+      expect(prisma.membershipRoleOverride.findFirst).not.toHaveBeenCalled();
+      expect(prisma.membershipRoleOverride.create).not.toHaveBeenCalled();
+    });
+
+    it('refuses assigning a custom role to ADMIN because base ADMIN is wildcard', async () => {
+      prisma.membership.findFirst.mockResolvedValue({ id: membershipId, tenantId: tenantA, role: 'ADMIN', status: 'ACTIVE' });
+
+      await expect(controller.assignRole(request, membershipId, { roleId } as never)).rejects.toMatchObject({
+        status: 400,
+      });
+      expect(prisma.membershipRoleOverride.findFirst).not.toHaveBeenCalled();
+      expect(prisma.membershipRoleOverride.create).not.toHaveBeenCalled();
+    });
+
     it('writes the override with the tenant from the context', async () => {
       // The suite default has findFirst resolving an existing override, which would take the
       // already-assigned branch and never reach the create.
@@ -149,6 +216,19 @@ describe('Tenant roles — a custom role can actually be created and assigned', 
 
       expect(prisma.membershipRoleOverride.create).not.toHaveBeenCalled();
     });
+
+    it('treats a concurrent duplicate assignment race as the same idempotent success', async () => {
+      prisma.membershipRoleOverride.findFirst.mockResolvedValue(null);
+      prisma.membershipRoleOverride.create.mockRejectedValue(
+        Object.assign(new Error('unique'), { code: 'P2002' }),
+      );
+
+      await expect(controller.assignRole(request, membershipId, { roleId } as never)).resolves.toEqual({
+        membershipId,
+        roleId,
+        alreadyAssigned: true,
+      });
+    });
   });
 
   describe('revoking a role from a member', () => {
@@ -156,7 +236,7 @@ describe('Tenant roles — a custom role can actually be created and assigned', 
       prisma.membershipRoleOverride.findFirst.mockResolvedValue(null);
 
       await expect(controller.revokeRole(request, membershipId, roleId)).rejects.toMatchObject({ status: 404 });
-      expect(prisma.membershipRoleOverride.delete).not.toHaveBeenCalled();
+      expect(prisma.membershipRoleOverride.deleteMany).not.toHaveBeenCalled();
     });
 
     it('deletes the override when the member does hold it', async () => {
@@ -164,7 +244,16 @@ describe('Tenant roles — a custom role can actually be created and assigned', 
 
       await controller.revokeRole(request, membershipId, roleId);
 
-      expect(prisma.membershipRoleOverride.delete).toHaveBeenCalledWith({ where: { id: 'ov-1' } });
+      expect(prisma.membershipRoleOverride.deleteMany).toHaveBeenCalledWith({
+        where: { id: 'ov-1', membershipId, roleId, tenantId: tenantA },
+      });
+    });
+
+    it('returns 404 instead of Prisma P2025 semantics when revoke loses a race', async () => {
+      prisma.membershipRoleOverride.findFirst.mockResolvedValue({ id: 'ov-1' });
+      prisma.membershipRoleOverride.deleteMany.mockResolvedValue({ count: 0 });
+
+      await expect(controller.revokeRole(request, membershipId, roleId)).rejects.toMatchObject({ status: 404 });
     });
   });
 

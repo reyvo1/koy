@@ -916,3 +916,35 @@ Remote-green selection evidence is `5781c65014c24fb5498b02fb611eaf885eea2c85` / 
 Slice 11.9 is closed and remote-green at `7de76596c6c1d52bd725406f3fad381cc62aedaf` / GitHub Actions run `30983551478`. The immutable closure evidence is `docs/module-11-automation-telemetry-coordination-foundation-closure.md`. The coordinator remains internal and runtime-inactive.
 
 Slice 11.10 Automation Retry Safety Foundation is selected by `docs/module-11-automation-retry-safety-foundation.md`. Retry is not implemented or active. The selection requires PostgreSQL-authoritative attempt state, exact reuse of the existing action command idempotency key, at most three total dispatch attempts, explicit transient-error allowlisting, deterministic bounded backoff, and no direct MQTT publication. Worker, queue, scheduler, telemetry wiring, public API, Module 12, and production deployment remain inactive.
+
+<!-- PRODUCTION-PRODUCT-SURFACE-CLOSURE-2026-10-04:START -->
+
+## Production product-surface closure candidate — 2026-10-04
+
+Authoritative pre-batch green baseline: `2cecb7aa4020ffb6a566949f2e5a44794432d0a7`
+/ GitHub Actions run `37212540616` / evidence `logs_100795117631.zip`.
+Waves 1-13 remain closed and are not reopened by this work.
+
+The production-readiness candidate closes three operator-surface gaps without
+weakening existing acceptance gates: platform Organization/Branch lifecycle,
+tenant Custom Role lifecycle using the exact runtime permission catalog, and
+one-time Webhook signing-secret rotation. Custom-role assignment is MEMBER-only
+because ADMIN retains wildcard base permissions. Live runtime coverage proves
+Organization create/list/add/detach-non-primary/delete-group, MEMBER permission enforcement
+`403 -> 200 -> 403`, and webhook old-secret invalidation after rotation.
+
+Source-level readiness is not production-deployment approval. Environment-owned
+secrets, broker ACL/CA material, DNS/TLS, off-host backup/restore evidence,
+monitoring/alert routing, rollback ownership and the production approval receipt
+remain mandatory before a real production release is approved.
+<!-- PRODUCTION-PRODUCT-SURFACE-CLOSURE-2026-10-04:END -->
+
+
+### Organization lifecycle production invariant
+- Platform Organization mutations are platform-owned. Non-primary branches may be detached explicitly; primary-branch detach is rejected. Deleting an Organization removes only Organization/Branch grouping rows and must never delete Tenant records. Live UAT must exercise these operations through HTTP product APIs, not direct Prisma cleanup.
+
+<!-- PRODUCTION-RBAC-TENANT-FK-2026-10-05:START -->
+## Production RBAC tenant-FK hardening candidate — 2026-10-05
+
+Authoritative green software baseline remains `2cecb7aa4020ffb6a566949f2e5a44794432d0a7` / GitHub run `37212540616`. During the post-green Production Surface Closure audit, the runtime Custom Role writer was confirmed tenant-scoped but `membership_role_overrides.roleId` still had an ID-only database FK. The candidate adds a fail-closed tenant-composite role FK and a real PostgreSQL negative test requiring cross-tenant assignment to fail with `P2003`. The first V1 local closure run stopped before commit/push; only its backup patch, not its named log, was supplied, so no exact V1 failing gate is claimed.
+<!-- PRODUCTION-RBAC-TENANT-FK-2026-10-05:END -->

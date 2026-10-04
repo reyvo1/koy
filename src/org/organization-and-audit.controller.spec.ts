@@ -23,11 +23,33 @@ const CTX = {
 describe('OrganizationController', () => {
   const svc = (over: Record<string, jest.Mock> = {}) =>
     ({
+      listOrganizations: jest.fn().mockResolvedValue({ total: 0, bounded: false, items: [] }),
       createOrganization: jest.fn().mockResolvedValue({ id: 'org-1' }),
+      getTenantOrganization: jest.fn().mockResolvedValue(null),
       addBranch: jest.fn().mockResolvedValue({ id: 'branch-1' }),
+      removeBranch: jest.fn().mockResolvedValue({ organizationId: 'org-1', tenantId: CTX.user.tenantContext.tenantId, removed: true }),
+      deleteOrganization: jest.fn().mockResolvedValue({ id: 'org-1', deleted: true }),
       listBranches: jest.fn().mockResolvedValue([]),
       ...over,
     }) as any;
+
+  it('lists the bounded platform organization directory through the service', async () => {
+    const listOrganizations = jest.fn().mockResolvedValue({ total: 1, bounded: false, items: [{ id: 'org-1' }] });
+    await expect(new OrganizationController(svc({ listOrganizations })).list(CTX)).resolves.toEqual({
+      total: 1,
+      bounded: false,
+      items: [{ id: 'org-1' }],
+    });
+    expect(listOrganizations).toHaveBeenCalledWith(CTX.user.tenantContext.membershipId);
+  });
+
+  it('resolves current organization from the verified tenant context only', async () => {
+    const getTenantOrganization = jest.fn().mockResolvedValue({ id: 'org-1' });
+    await expect(new OrganizationController(svc({ getTenantOrganization })).current(CTX)).resolves.toEqual({
+      organization: { id: 'org-1' },
+    });
+    expect(getTenantOrganization).toHaveBeenCalledWith(CTX.user.tenantContext.tenantId);
+  });
 
   it('creates an organization with the caller membership as owner', async () => {
     const organizationService = svc();
@@ -50,6 +72,11 @@ describe('OrganizationController', () => {
     ['ORG_ALREADY_EXISTS', 409],
     ['ORG_NOT_OWNER', 403],
     ['ORG_BRANCH_TENANT_CONFLICT', 409],
+    ['ORG_BRANCH_ALREADY_MEMBER', 409],
+    ['ORG_BRANCH_TENANT_NOT_FOUND', 404],
+    ['ORG_BRANCH_NOT_FOUND', 404],
+    ['ORG_PRIMARY_BRANCH_REMOVAL_FORBIDDEN', 409],
+    ['VALIDATION_FAILED', 400],
   ])('translates %s to HTTP %i rather than 500', async (code, status) => {
     const organizationService = svc({
       addBranch: jest.fn().mockRejectedValue(Object.assign(new Error('x'), { code })),
@@ -62,6 +89,37 @@ describe('OrganizationController', () => {
         label: 'Second Branch',
       }),
     ).rejects.toMatchObject({ status, response: { code } });
+  });
+
+  it('removes a non-primary branch through the verified platform membership', async () => {
+    const removeBranch = jest.fn().mockResolvedValue({
+      organizationId: 'org-1',
+      tenantId: CTX.user.tenantContext.tenantId,
+      removed: true,
+    });
+    await expect(
+      new OrganizationController(svc({ removeBranch })).removeBranch(
+        CTX,
+        'org-1',
+        CTX.user.tenantContext.tenantId,
+      ),
+    ).resolves.toMatchObject({ removed: true });
+    expect(removeBranch).toHaveBeenCalledWith({
+      actorMembershipId: CTX.user.tenantContext.membershipId,
+      organizationId: 'org-1',
+      tenantId: CTX.user.tenantContext.tenantId,
+    });
+  });
+
+  it('deletes only the organization grouping through the verified platform membership', async () => {
+    const deleteOrganization = jest.fn().mockResolvedValue({ id: 'org-1', deleted: true });
+    await expect(
+      new OrganizationController(svc({ deleteOrganization })).remove(CTX, 'org-1'),
+    ).resolves.toEqual({ id: 'org-1', deleted: true });
+    expect(deleteOrganization).toHaveBeenCalledWith({
+      actorMembershipId: CTX.user.tenantContext.membershipId,
+      organizationId: 'org-1',
+    });
   });
 
   it('passes an unrelated failure through untouched', async () => {

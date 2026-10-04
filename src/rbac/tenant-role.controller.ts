@@ -15,6 +15,7 @@ import {
   ArrayMinSize,
   IsArray,
   IsString,
+  IsUUID,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -22,7 +23,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantContextGuard } from '../users/guards/tenant-context.guard';
 import { AdminRoleGuard } from '../admin-operations/admin-role.guard';
-import { RBAC_PERMISSION_CATALOG } from './rbac-permission-catalog';
+import { RBAC_BASE_ROLE_MODEL, RBAC_PERMISSION_CATALOG } from './rbac-permission-catalog';
 import {
   DomainBadRequestException,
   DomainConflictException,
@@ -41,12 +42,12 @@ class CreateRoleDto {
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(64)
+  @IsString({ each: true })
   permissions: string[];
 }
 
 class AssignRoleDto {
-  @IsString()
-  @MinLength(1)
+  @IsUUID()
   roleId: string;
 }
 
@@ -88,6 +89,12 @@ const catalogReject = (value: string) =>
 export class TenantRoleController {
   constructor(private readonly prisma: PrismaService) {}
 
+  @Get('catalog')
+  @ApiOperation({ summary: 'Read the permission catalog available to tenant custom roles' })
+  permissionCatalog() {
+    return { permissions: RBAC_PERMISSION_CATALOG, baseRoleModel: RBAC_BASE_ROLE_MODEL };
+  }
+
   @Get()
   @ApiOperation({ summary: 'List the active tenant’s custom roles (tenant admin)' })
   async listRoles(@Request() request: { user: { tenantContext: { tenantId: string } } }) {
@@ -95,13 +102,34 @@ export class TenantRoleController {
       where: { tenantId: request.user.tenantContext.tenantId },
       orderBy: [{ name: 'asc' }],
       take: 200,
-      select: { id: true, name: true, permissions: true, createdAt: true },
+      select: {
+        id: true,
+        name: true,
+        permissions: true,
+        createdAt: true,
+        _count: { select: { overrides: true } },
+        overrides: {
+          orderBy: { createdAt: 'asc' },
+          take: 200,
+          select: {
+            membershipId: true,
+            membership: { select: { user: { select: { email: true, name: true } } } },
+          },
+        },
+      },
     });
     return {
-      items: roles.map((r) => ({
-        ...r,
-        permissions: Array.isArray(r.permissions) ? r.permissions : [],
-        createdAt: r.createdAt.toISOString(),
+      items: roles.map(({ _count, overrides, ...role }) => ({
+        ...role,
+        permissions: Array.isArray(role.permissions) ? role.permissions : [],
+        createdAt: role.createdAt.toISOString(),
+        memberCount: _count.overrides,
+        members: overrides.map((assignment) => ({
+          membershipId: assignment.membershipId,
+          email: assignment.membership.user.email,
+          name: assignment.membership.user.name,
+        })),
+        assignmentsBounded: _count.overrides > overrides.length,
       })),
     };
   }
@@ -112,6 +140,13 @@ export class TenantRoleController {
     @Request() request: { user: { tenantContext: { tenantId: string } } },
     @Body() dto: CreateRoleDto,
   ) {
+    const roleName = dto.name.trim();
+    if (roleName.length < 2 || roleName.length > 60) {
+      throw new DomainBadRequestException(
+        ERROR_CODES.ValidationFailed,
+        'Nama role harus 2-60 karakter non-spasi.',
+      );
+    }
     const unknown = dto.permissions.filter((p) => !PERMISSION_NAMES.has(p));
     if (unknown.length > 0) throw catalogReject(unknown[0]);
     // Checked here as well as on the DTO. `@ArrayMinSize(1)` only runs through Nest's
@@ -136,7 +171,7 @@ export class TenantRoleController {
         data: {
           // From the verified context, never from the body.
           tenantId: request.user.tenantContext.tenantId,
-          name: dto.name.trim(),
+          name: roleName,
           permissions: [...dto.permissions],
         },
         select: { id: true, name: true, permissions: true, createdAt: true },
@@ -149,7 +184,7 @@ export class TenantRoleController {
       if ((error as { code?: string })?.code === 'P2002') {
         throw new DomainConflictException(
           ERROR_CODES.Conflict,
-          `Role dengan nama "${dto.name.trim()}" sudah ada di tenant ini.`,
+          `Role dengan nama "${roleName}" sudah ada di tenant ini.`,
         );
       }
       throw error;
@@ -170,7 +205,14 @@ export class TenantRoleController {
       throw new DomainNotFoundException(ERROR_CODES.NotFound, 'Role tidak ditemukan');
     }
     // MembershipRoleOverride cascades on delete, so the members holding it lose the grant.
-    await this.prisma.customRole.delete({ where: { id: role.id } });
+    // `deleteMany` keeps the tenant predicate at the mutation boundary and turns a concurrent
+    // delete into a stable 404 rather than leaking Prisma P2025 as HTTP 500.
+    const deleted = await this.prisma.customRole.deleteMany({
+      where: { id: role.id, tenantId: request.user.tenantContext.tenantId },
+    });
+    if (deleted.count !== 1) {
+      throw new DomainNotFoundException(ERROR_CODES.NotFound, 'Role tidak ditemukan');
+    }
     return { id: role.id, deleted: true, note: 'Assignment role ikut terhapus.' };
   }
 
@@ -192,12 +234,24 @@ export class TenantRoleController {
       }),
       this.prisma.membership.findFirst({
         where: { id: membershipId, tenantId },
-        select: { id: true },
+        select: { id: true, role: true, status: true },
       }),
     ]);
     if (!role) throw new DomainNotFoundException(ERROR_CODES.NotFound, 'Role tidak ditemukan');
     if (!membership) {
       throw new DomainNotFoundException(ERROR_CODES.NotFound, 'Member tidak ditemukan');
+    }
+    if (membership.status !== 'ACTIVE') {
+      throw new DomainBadRequestException(
+        ERROR_CODES.ValidationFailed,
+        'Custom role hanya dapat diberikan ke membership ACTIVE.',
+      );
+    }
+    if (membership.role !== 'MEMBER') {
+      throw new DomainBadRequestException(
+        ERROR_CODES.ValidationFailed,
+        'Custom role hanya dapat diberikan ke MEMBER.',
+      );
     }
 
     const existing = await this.prisma.membershipRoleOverride.findFirst({
@@ -208,10 +262,18 @@ export class TenantRoleController {
       return { membershipId, roleId: role.id, alreadyAssigned: true };
     }
 
-    await this.prisma.membershipRoleOverride.create({
-      data: { tenantId, membershipId: membership.id, roleId: role.id },
-    });
-    return { membershipId, roleId: role.id, alreadyAssigned: false };
+    try {
+      await this.prisma.membershipRoleOverride.create({
+        data: { tenantId, membershipId: membership.id, roleId: role.id },
+      });
+      return { membershipId, roleId: role.id, alreadyAssigned: false };
+    } catch (error) {
+      if ((error as { code?: string })?.code === 'P2002') {
+        // A concurrent grant of the same role is equivalent to the idempotent existing path.
+        return { membershipId, roleId: role.id, alreadyAssigned: true };
+      }
+      throw error;
+    }
   }
 
   @Delete('members/:membershipId/:roleId')
@@ -228,13 +290,24 @@ export class TenantRoleController {
     if (!override) {
       throw new DomainNotFoundException(ERROR_CODES.NotFound, 'Member tidak memegang role itu');
     }
-    await this.prisma.membershipRoleOverride.delete({ where: { id: override.id } });
+    const revoked = await this.prisma.membershipRoleOverride.deleteMany({
+      where: {
+        id: override.id,
+        membershipId,
+        roleId,
+        tenantId: request.user.tenantContext.tenantId,
+      },
+    });
+    if (revoked.count !== 1) {
+      throw new DomainNotFoundException(ERROR_CODES.NotFound, 'Member tidak memegang role itu');
+    }
     return { membershipId, roleId, revoked: true };
   }
 }
 
 /** Exported for the DTO-less surface of the seeded fixtures and for the contract spec. */
 export const TENANT_ROLE_ROUTES = {
+  catalog: 'GET /admin/roles/catalog',
   list: 'GET /admin/roles',
   create: 'POST /admin/roles',
   remove: 'DELETE /admin/roles/:roleId',

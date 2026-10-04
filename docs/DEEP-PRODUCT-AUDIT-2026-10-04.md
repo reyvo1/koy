@@ -1,7 +1,7 @@
 # Deep Product Audit — 2026-10-04
 
-Baseline: `e4fdfe11dfd817086ecc93a95dd57cb0b48b8aa4`
-Heavy evidence: GitHub Actions run `37195822587` (`logs_100750579910.zip`) — full automated chain green.
+Latest certified baseline: `2cecb7aa4020ffb6a566949f2e5a44794432d0a7`
+Heavy evidence: GitHub Actions run `37212540616` (`logs_100795117631.zip`) — full automated chain green, including strengthened deep-product lifecycle UAT.
 
 ## Scope
 
@@ -65,3 +65,7 @@ Canonical Super Admin, Tenant Admin and the seven User Web top-level routes reso
 ## Regression strategy
 
 `deep-product:contracts:self-test` statically guards the repaired backend↔frontend/docs contracts and is part of local pre-push. Targeted Jest adds RBAC mapper/policy and Schedule error-classification coverage. Any dependency-backed lint/Jest/build result must be produced by the real operator checkout or GitHub; this audit workspace must not fabricate those results.
+
+## Production-surface closure batch — pending re-certification
+
+The remaining web-console lifecycle gaps identified by this audit are now implemented in the candidate source: platform Organization create/list/add/detach-non-primary/delete-group, tenant Custom Role create/assign/revoke/delete using the canonical permission catalog, and Webhook signing-secret rotation with one-time secret display. Live UAT is extended to prove Organization lifecycle, MEMBER permission enforcement (`403 -> 200 -> 403`), and cryptographic webhook rotation where the new secret validates and the old secret immediately fails. These changes are **not a new green checkpoint until the full local pre-push and GitHub Heavy UAT pass on the resulting commit**.

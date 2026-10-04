@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Param, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Request, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantContextGuard } from '../users/guards/tenant-context.guard';
 import { PlatformRoleGuard } from '../admin-operations/platform-role.guard';
 import { AdminRoleGuard } from '../admin-operations/admin-role.guard';
 import {
+  DomainBadRequestException,
   DomainConflictException,
   DomainForbiddenException,
   DomainNotFoundException,
@@ -20,14 +21,21 @@ import { OrganizationService } from './organization.service';
  * violation — but had no controller, so `createOrganization` and `addBranch` had no caller
  * outside their own spec. This exposes them.
  *
- * Guard choice: organizations group whole tenants, so creating one is a platform action
- * (`PlatformRoleGuard`), while listing and extending an existing organization is a tenant
- * action (`AdminRoleGuard`). The service independently enforces that only the organization's
- * owner may add a branch, so the check does not rest on the guard alone.
+ * Guard choice: organizations group whole tenants, so creating, listing and extending an
+ * organization are platform actions (`PlatformRoleGuard`). Tenant admins may read branches of
+ * an organization their tenant belongs to through the separate read route, but cannot move a
+ * tenant between organization boundaries. The service independently keeps the owner check on
+ * branch writes so the invariant does not rest on the guard alone.
  */
 @Controller('organizations')
 export class OrganizationController {
   constructor(private readonly organizationService: OrganizationService) {}
+
+  @Get()
+  @UseGuards(JwtAuthGuard, TenantContextGuard, PlatformRoleGuard)
+  async list(@Request() req: any) {
+    return this.organizationService.listOrganizations(this.membership(req));
+  }
 
   @Post()
   @UseGuards(JwtAuthGuard, TenantContextGuard, PlatformRoleGuard)
@@ -40,6 +48,14 @@ export class OrganizationController {
         firstBranchLabel: dto.firstBranchLabel,
       }),
     );
+  }
+
+  @Get('current')
+  @UseGuards(JwtAuthGuard, TenantContextGuard, AdminRoleGuard)
+  async current(@Request() req: any) {
+    return {
+      organization: await this.organizationService.getTenantOrganization(this.tenant(req)),
+    };
   }
 
   /**
@@ -62,7 +78,7 @@ export class OrganizationController {
   }
 
   @Post('branches')
-  @UseGuards(JwtAuthGuard, TenantContextGuard, AdminRoleGuard)
+  @UseGuards(JwtAuthGuard, TenantContextGuard, PlatformRoleGuard)
   async addBranch(@Request() req: any, @Body() dto: AddBranchDto) {
     return this.translated(() =>
       this.organizationService.addBranch({
@@ -70,6 +86,33 @@ export class OrganizationController {
         organizationId: dto.organizationId,
         tenantId: dto.tenantId,
         label: dto.label,
+      }),
+    );
+  }
+
+  @Delete(':id/branches/:tenantId')
+  @UseGuards(JwtAuthGuard, TenantContextGuard, PlatformRoleGuard)
+  async removeBranch(
+    @Request() req: any,
+    @Param('id') organizationId: string,
+    @Param('tenantId') tenantId: string,
+  ) {
+    return this.translated(() =>
+      this.organizationService.removeBranch({
+        actorMembershipId: this.membership(req),
+        organizationId,
+        tenantId,
+      }),
+    );
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, TenantContextGuard, PlatformRoleGuard)
+  async remove(@Request() req: any, @Param('id') organizationId: string) {
+    return this.translated(() =>
+      this.organizationService.deleteOrganization({
+        actorMembershipId: this.membership(req),
+        organizationId,
       }),
     );
   }
@@ -119,12 +162,14 @@ export class OrganizationController {
   private toDomainError(error: unknown): unknown {
     const code = (error as { code?: unknown } | null)?.code;
     switch (code) {
+      case ERROR_CODES.ValidationFailed:
+        return new DomainBadRequestException(code, (error as Error)?.message ?? 'Invalid organization input.');
       case ERROR_CODES.OrgAlreadyExists:
         return new DomainConflictException(code, 'This owner already has an organization.');
       case ERROR_CODES.OrgNotOwner:
         return new DomainForbiddenException(
           code,
-          'Only the organization owner may add branches.',
+          'Only the organization owner may manage this organization.',
         );
       case ERROR_CODES.OrgNotAMember:
         return new DomainForbiddenException(
@@ -140,6 +185,23 @@ export class OrganizationController {
         return new DomainConflictException(
           code,
           'This tenant already belongs to another organization.',
+        );
+      case ERROR_CODES.OrgBranchAlreadyMember:
+        return new DomainConflictException(
+          code,
+          'This tenant is already a branch of this organization.',
+        );
+      case ERROR_CODES.OrgBranchNotFound:
+        return new DomainNotFoundException(code, 'Organization branch not found.');
+      case ERROR_CODES.OrgPrimaryBranchRemovalForbidden:
+        return new DomainConflictException(
+          code,
+          'Primary branch cannot be removed directly; delete the organization instead.',
+        );
+      case ERROR_CODES.OrgBranchTenantNotFound:
+        return new DomainNotFoundException(
+          code,
+          'Branch tenant not found.',
         );
       default:
         return error;

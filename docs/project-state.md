@@ -2,7 +2,7 @@
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-13; active=none -->
 
-Authoritative execution is `docs/ENTERPRISE-WAVE-ROADMAP.md`. The 30 modules are foundation-complete; enterprise certification is still being closed. Waves 1–13 are **SOFTWARE SCOPE CLOSED / GREEN** under their actual evidence tiers; no software wave is active after GitHub run `37183166252`. Missing ESP32/camera lab hardware is non-blocking: production-shaped `SIMULATED_HARDWARE_LIVE_SERVICE` evidence must cover software-controlled behavior and remain explicitly distinct from later PHYSICAL/HIL field validation. Provider-owned external behavior stays separately gated. Historical module-current statements below are chronology only.
+Authoritative execution is `docs/ENTERPRISE-WAVE-ROADMAP.md`. The 30 modules are foundation-complete and Waves 1–13 are **SOFTWARE SCOPE CLOSED / GREEN** under their actual evidence tiers. Latest authoritative software checkpoint: commit `2cecb7aa4020ffb6a566949f2e5a44794432d0a7`, GitHub run `37212540616`, evidence `logs_100795117631.zip`. The active post-green work is product-surface/production-readiness completeness, not a reopened wave. Missing ESP32/camera lab hardware is non-blocking: production-shaped `SIMULATED_HARDWARE_LIVE_SERVICE` evidence covers software-controlled behavior and remains distinct from later PHYSICAL/HIL field validation. Production deployment remains **NOT APPROVED** until environment-specific secrets, DNS/TLS, broker ACL/CA, backup/restore ownership, monitoring and rollback ownership are verified. Historical module-current statements below are chronology only.
 
 ---
 

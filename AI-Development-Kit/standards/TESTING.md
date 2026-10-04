@@ -14,3 +14,10 @@ kecuali source/runtime berubah atau profile authoritative mewajibkan broad test.
 Gate formatting, lint/static, dan focused checks harus mendahului Full Jest.
 
 Agent tidak boleh mengklaim test lulus tanpa exact command evidence.
+
+## Database tenant-isolation proof — current contract (2026-10-05)
+
+For tenant-composite authorization foreign keys, static schema checks are not sufficient. The PostgreSQL integration profile must attempt a real cross-tenant write and require the database to reject it (Prisma `P2003` or the exact equivalent FK violation). This test adds coverage; it may not replace or relax service/controller RBAC tests.
+## Production-deployment status contract
+
+Until an environment-specific production approval has actually been completed, `docs/production-readiness.md` must retain the canonical machine-checked marker `Status: NOT READY FOR PRODUCTION DEPLOYMENT`. Repository software may be green and remote CI may be authoritative, but those facts must be recorded separately and must never replace the deployment-approval boundary. Existing contract tests asserting this marker are safety gates and must not be weakened to accommodate documentation drift.

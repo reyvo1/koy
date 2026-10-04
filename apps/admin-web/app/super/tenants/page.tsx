@@ -1,5 +1,6 @@
 import { SuperAdminShell, SuperPage } from '@/components/super-admin-shell';
 import SuperTenantsContent from '@/components/super-tenants-content';
+import SuperOrganizationsContent from '@/components/super-organizations-content';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +14,7 @@ export default function SuperTenantsPage() {
     >
       <SuperPage>
         <SuperTenantsContent />
+        <SuperOrganizationsContent />
       </SuperPage>
     </SuperAdminShell>
   );

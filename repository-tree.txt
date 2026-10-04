@@ -87,7 +87,12 @@ apps/admin-web/app/api/admin/device-maintenance/route.ts
 apps/admin-web/app/api/admin/devices/route.ts
 apps/admin-web/app/api/admin/operational-summary/route.ts
 apps/admin-web/app/api/admin/organizations/[organizationId]/branches/route.ts
-apps/admin-web/app/api/admin/organizations/branches/route.ts
+apps/admin-web/app/api/admin/organizations/current/route.ts
+apps/admin-web/app/api/admin/roles/[roleId]/route.ts
+apps/admin-web/app/api/admin/roles/catalog/route.ts
+apps/admin-web/app/api/admin/roles/members/[membershipId]/[roleId]/route.ts
+apps/admin-web/app/api/admin/roles/members/[membershipId]/route.ts
+apps/admin-web/app/api/admin/roles/route.ts
 apps/admin-web/app/api/admin/telemetry-chart/route.ts
 apps/admin-web/app/api/admin/telemetry-history/route.ts
 apps/admin-web/app/api/admin/telemetry-stream/route.ts
@@ -96,6 +101,7 @@ apps/admin-web/app/api/admin/tenant-users/[userId]/reset-password/route.ts
 apps/admin-web/app/api/admin/tenant-users/[userId]/route.ts
 apps/admin-web/app/api/admin/tenant-users/route.ts
 apps/admin-web/app/api/admin/webhooks/deliveries/route.ts
+apps/admin-web/app/api/admin/webhooks/endpoints/[endpointId]/rotate-secret/route.ts
 apps/admin-web/app/api/admin/webhooks/endpoints/[endpointId]/route.ts
 apps/admin-web/app/api/admin/webhooks/endpoints/route.ts
 apps/admin-web/app/api/auth/forgot-password/route.ts
@@ -133,6 +139,10 @@ apps/admin-web/app/api/super/mqtt/management/route.ts
 apps/admin-web/app/api/super/noc/acknowledgements/route.ts
 apps/admin-web/app/api/super/noc/findings/[findingId]/acknowledge/route.ts
 apps/admin-web/app/api/super/noc/findings/[findingId]/resolve/route.ts
+apps/admin-web/app/api/super/organizations/[organizationId]/branches/[tenantId]/route.ts
+apps/admin-web/app/api/super/organizations/[organizationId]/route.ts
+apps/admin-web/app/api/super/organizations/branches/route.ts
+apps/admin-web/app/api/super/organizations/route.ts
 apps/admin-web/app/api/super/platform-devices/[deviceId]/revoke/route.ts
 apps/admin-web/app/api/super/platform-devices/route.ts
 apps/admin-web/app/api/super/platform-users/[userId]/reset-password/route.ts
@@ -271,6 +281,7 @@ apps/admin-web/components/super-devices-content.tsx
 apps/admin-web/components/super-firmware-content.tsx
 apps/admin-web/components/super-monitoring-content.tsx
 apps/admin-web/components/super-mqtt-content.tsx
+apps/admin-web/components/super-organizations-content.tsx
 apps/admin-web/components/super-provisioning-content.tsx
 apps/admin-web/components/super-reports-content.tsx
 apps/admin-web/components/super-roles-content.tsx
@@ -290,6 +301,7 @@ apps/admin-web/components/tenant-devices-content.tsx
 apps/admin-web/components/tenant-historical-content.tsx
 apps/admin-web/components/tenant-realtime-content.tsx
 apps/admin-web/components/tenant-reports-content.tsx
+apps/admin-web/components/tenant-role-management-content.tsx
 apps/admin-web/components/tenant-scenes-content.tsx
 apps/admin-web/components/tenant-schedules-content.tsx
 apps/admin-web/components/tenant-shell.tsx
@@ -412,6 +424,7 @@ docs/ENTERPRISE-WAVE-ROADMAP.md
 docs/KOMERCIAL-RINGKAS.md
 docs/NIGHT-CHECKPOINT-20260822.md
 docs/PANDUAN-UI.md
+docs/PRODUCTION-PRODUCT-SURFACE-CLOSURE-2026-10-04.md
 docs/README.md
 docs/RESCUE-02-RUNTIME-RUNBOOK.md
 docs/RESCUE-WORKFLOW.md
@@ -630,6 +643,7 @@ prisma/migrations/20261002200000_wave12_region_boundaries/migration.sql
 prisma/migrations/20261002210000_wave12_edge_gateways/migration.sql
 prisma/migrations/20261002220000_wave12_device_twin/migration.sql
 prisma/migrations/20261004213000_schedule_scene_referential_integrity/migration.sql
+prisma/migrations/20261005011500_tenant_role_override_tenant_integrity/migration.sql
 prisma/migrations/migration_lock.toml
 prisma/schema.prisma
 prisma/seed.ts

@@ -69,6 +69,10 @@ export const ERROR_CODES = {
   OrgNotAMember: 'ORG_NOT_A_MEMBER',
   OrgNotFound: 'ORG_NOT_FOUND',
   OrgBranchTenantConflict: 'ORG_BRANCH_TENANT_CONFLICT',
+  OrgBranchTenantNotFound: 'ORG_BRANCH_TENANT_NOT_FOUND',
+  OrgBranchAlreadyMember: 'ORG_BRANCH_ALREADY_MEMBER',
+  OrgBranchNotFound: 'ORG_BRANCH_NOT_FOUND',
+  OrgPrimaryBranchRemovalForbidden: 'ORG_PRIMARY_BRANCH_REMOVAL_FORBIDDEN',
 
   // Firmware & OTA (Module 15). These mirror the `code` that OtaRolloutRepository and
   // OtaDomainValidator attach to the plain Error / OtaDomainError they throw; the REST

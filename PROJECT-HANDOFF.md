@@ -1,6 +1,26 @@
-# Project Handoff — post-green deep product hardening
+# Project Handoff — Production Surface Closure Recovery
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-13; active=none -->
+
+## Current recovery authority — Production Surface Closure V3
+
+- Authoritative all-green baseline: commit `2cecb7aa4020ffb6a566949f2e5a44794432d0a7`, GitHub Actions run `37212540616`, evidence `logs_100795117631.zip`.
+- Waves 1–13 remain **SOFTWARE SCOPE CLOSED / GREEN**; this recovery does not reopen them.
+- V2 real-checkout local run `iot-production-surface-closure-v2-20261005-013753.log` is **RED** at `full-local-prepush`; it is not a release authority and no commit/push is claimed.
+- Package/manifest/origin/structural QA/Prisma/targeted Jest passed before the failure. Targeted Jest result: **30/30 suites, 318/318 tests PASS**.
+- Full Jest result: **276/281 suites PASS; 2469/2476 tests PASS**. All 7 failures in 5 suites share one documentation-safety root cause: `docs/production-readiness.md` no longer contained the canonical `Status: NOT READY FOR PRODUCTION DEPLOYMENT` marker.
+- V3 restores that canonical fail-closed deployment status and the `Completion review status: LOCAL GATES PASSED` marker without changing any Jest expectation or weakening UAT. The richer repository-software-green checkpoint remains separate metadata.
+- Custom Role tenant-composite database FK hardening from V2 remains included and must still pass Prisma/PostgreSQL/full pre-push gates.
+
+## Next action
+
+Apply V3 only to the hash-exact V2 failed tree (or clean authoritative green baseline), rerun early diff/manifest/structural QA, Prisma, targeted Jest, full `wave3:prepush:check`, final diff review, then one commit/push only if every local gate is green. GitHub Heavy UAT for the resulting commit becomes the next candidate authority; production deployment remains separately unapproved pending environment-specific checks.
+
+--- HISTORICAL CONTEXT BELOW ---
+
+# Project Handoff — post-green deep product hardening
+
+
 
 ## Latest candidate UAT — RED at additive deep-product live regression
 

@@ -147,7 +147,59 @@ SIGNATURE=$(node -e 'const l=require("fs").readFileSync("/tmp/probe-received.jso
 check "the delivery is signed with HMAC" "$([[ ${#SIGNATURE} -gt 32 ]] && echo true || echo false)"
 
 echo
-echo "== 3. the failure reason is recorded, and distinguishes causes =="
+echo "== 3. signing-secret rotation invalidates the old secret =="
+ROTATED=$(curl -s -X POST "$BASE/admin/webhooks/endpoints/$EID/rotate-secret" \
+  -H "$AUTH" -H "x-tenant-id: $TENANT")
+printf '%s' "$ROTATED" > /tmp/probe-rotated-secret.json
+NEW_SECRET=$(node -e 'const d=require("/tmp/probe-rotated-secret.json");process.stdout.write(d.signingSecret||"")')
+check "rotation returns a new signing secret exactly once" \
+  "$([[ ${#NEW_SECRET} -gt 10 && "$NEW_SECRET" != "$SECRET" ]] && echo true || echo false)"
+
+curl -s "$BASE/admin/webhooks/endpoints" -H "$AUTH" -H "x-tenant-id: $TENANT" > /tmp/probe-endpoints-after-rotate.json
+SECRET_LEAK=$(node -e '
+const d=require("/tmp/probe-endpoints-after-rotate.json");
+const items=Array.isArray(d)?d:(d.items||[]);
+const row=items.find((x)=>x.id===process.argv[1]);
+process.stdout.write(String(Boolean(row && Object.prototype.hasOwnProperty.call(row,"signingSecret"))));
+' "$EID")
+check "endpoint listing never leaks the rotated secret" \
+  "$([[ "$SECRET_LEAK" == "false" ]] && echo true || echo false)"
+
+docker exec "$CONTAINER" sh -c ": > $RECEIVER_PATH"
+curl -s -o /tmp/probe-device-rotated.json -X POST "$BASE/devices" -H "$AUTH" -H "x-tenant-id: $TENANT" \
+  -H 'content-type: application/json' -d "{\"name\":\"probe-rotated-$STAMP\",\"type\":\"SENSOR\"}"
+ROTATED_DID=$(node -e 'const d=require("/tmp/probe-device-rotated.json");process.stdout.write(d.id||"")')
+check "a post-rotation device is created" "$([[ -n "$ROTATED_DID" ]] && echo true || echo false)" "$(cat /tmp/probe-device-rotated.json | head -c 160)"
+for _ in $(seq 1 40); do
+  COUNT=$(docker exec "$CONTAINER" sh -c "wc -l < $RECEIVER_PATH" 2>/dev/null | tr -d ' ')
+  [[ "${COUNT:-0}" != "0" ]] && break
+  sleep 0.25
+done
+docker exec "$CONTAINER" sh -c "cat $RECEIVER_PATH" > /tmp/probe-received-rotated.jsonl 2>/dev/null
+node - "$SECRET" "$NEW_SECRET" <<'NODE'
+const { createHmac } = require('node:crypto');
+const fs = require('node:fs');
+const [oldSecret, newSecret] = process.argv.slice(2);
+const lines = fs.readFileSync('/tmp/probe-received-rotated.jsonl', 'utf8').trim().split('\n').filter(Boolean);
+const row = lines.map((line) => JSON.parse(line)).find((entry) => entry.event === 'device.registered');
+if (!row) process.exit(3);
+const oldSignature = createHmac('sha256', oldSecret).update(row.body).digest('hex');
+const newSignature = createHmac('sha256', newSecret).update(row.body).digest('hex');
+fs.writeFileSync('/tmp/probe-rotate-verdict.json', JSON.stringify({
+  newMatches: row.signature === newSignature,
+  oldMatches: row.signature === oldSignature,
+}));
+NODE
+ROTATE_VERDICT=$(cat /tmp/probe-rotate-verdict.json 2>/dev/null || echo '{}')
+NEW_MATCHES=$(node -e 'const d=JSON.parse(process.argv[1]);process.stdout.write(String(d.newMatches===true))' "$ROTATE_VERDICT")
+OLD_MATCHES=$(node -e 'const d=JSON.parse(process.argv[1]);process.stdout.write(String(d.oldMatches===true))' "$ROTATE_VERDICT")
+check "post-rotation delivery verifies with the new secret" \
+  "$([[ "$NEW_MATCHES" == "true" ]] && echo true || echo false)" "$ROTATE_VERDICT"
+check "the old signing secret is invalid immediately after rotation" \
+  "$([[ "$OLD_MATCHES" == "false" ]] && echo true || echo false)" "$ROTATE_VERDICT"
+
+echo
+echo "== 4. the failure reason is recorded, and distinguishes causes =="
 # Port 45098 is closed on loopback, so the connection is refused and nothing answers.
 # Verified against the container before it was used here: `fetch` reports
 # `connect ECONNREFUSED 127.0.0.1:45098` there.
@@ -263,7 +315,7 @@ check "no probe endpoint is left behind" "$([[ "$LEFT" == "0" ]] && echo true ||
 LEFT_PROBE=$(db "select count(*) from devices where name like 'probe-%'")
 printf '  note: %s probe device(s) remain; there is no DELETE /devices/:id, and the next run sweeps them\n' "$LEFT_PROBE"
 check "the remaining residue is only probe-prefixed devices" \
-  "$([[ "$LEFT_PROBE" -le 2 ]] && echo true || echo false)" "$LEFT_PROBE probe devices"
+  "$([[ "$LEFT_PROBE" -le 3 ]] && echo true || echo false)" "$LEFT_PROBE probe devices"
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [[ "$fail" == "0" ]]

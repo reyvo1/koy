@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
 
 interface CurrentSchemaRow {
@@ -52,6 +53,56 @@ describe('PostgreSQL database integration foundation', () => {
       key,
       value: 'created',
     });
+  });
+
+  it('rejects a custom-role override whose role belongs to another tenant at the database boundary', async () => {
+    const tenantA = await prisma.tenant.create({
+      data: { name: `rbac-integrity-a-${randomUUID()}` },
+    });
+    const tenantB = await prisma.tenant.create({
+      data: { name: `rbac-integrity-b-${randomUUID()}` },
+    });
+    const userA = await prisma.user.create({
+      data: {
+        email: `${randomUUID()}@rbac-integrity.test`,
+        tenantId: tenantA.id,
+      },
+    });
+    const membershipA = await prisma.membership.create({
+      data: {
+        userId: userA.id,
+        tenantId: tenantA.id,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      },
+    });
+    const roleB = await prisma.customRole.create({
+      data: {
+        tenantId: tenantB.id,
+        name: `cross-tenant-${randomUUID()}`,
+        permissions: ['device.read'],
+      },
+    });
+
+    await expect(
+      prisma.membershipRoleOverride.create({
+        data: {
+          tenantId: tenantA.id,
+          membershipId: membershipA.id,
+          roleId: roleB.id,
+        },
+      }),
+    ).rejects.toMatchObject({ code: 'P2003' });
+
+    await expect(
+      prisma.membershipRoleOverride.count({
+        where: {
+          tenantId: tenantA.id,
+          membershipId: membershipA.id,
+          roleId: roleB.id,
+        },
+      }),
+    ).resolves.toBe(0);
   });
 
   it('preserves transaction rollback semantics', async () => {

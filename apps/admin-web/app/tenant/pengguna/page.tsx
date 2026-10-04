@@ -1,5 +1,6 @@
 import { TenantShell } from '@/components/tenant-shell';
 import TenantUsersContent from '@/components/tenant-users-content';
+import TenantRoleManagementContent from '@/components/tenant-role-management-content';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,6 +9,7 @@ export default function PenggunaPage() {
   return (
     <TenantShell title="Pengguna" subtitle="Anggota tenant dan perannya" active="/tenant/pengguna">
       <TenantUsersContent />
+      <TenantRoleManagementContent />
     </TenantShell>
   );
 }

@@ -224,6 +224,281 @@ async function provisionFixture() {
   const adminLogin = await login(adminEmail, adminPassword, tenant.id);
   const adminToken = adminLogin.accessToken;
 
+  // ------------------------------------------------ organization product lifecycle
+  // Organization creation is a platform-owned operation. Prove the complete product contract:
+  // create with a real first-branch tenant, discover it through the platform directory, read it
+  // from the branch tenant, add a second unassigned tenant, then remove only the temporary
+  // branch/tenant fixture. The primary organization remains as bounded evidence for this run.
+  const organization = (
+    await apiRequest('POST', '/organizations', {
+      token: platformToken,
+      tenantId: platformTenantId,
+      body: {
+        name: `Runtime Organization ${runId.slice(-8)}`,
+        firstBranchTenantId: tenant.id,
+        firstBranchLabel: 'Primary',
+      },
+    })
+  ).body;
+  assert(organization?.id, 'Organization creation did not return an id');
+
+  const organizationDirectory = (
+    await apiRequest('GET', '/organizations', {
+      token: platformToken,
+      tenantId: platformTenantId,
+    })
+  ).body;
+  const organizationRows = Array.isArray(organizationDirectory)
+    ? organizationDirectory
+    : (organizationDirectory?.items ?? []);
+  assert(
+    organizationRows.some((row) => row?.id === organization.id),
+    'Platform organization directory did not return the organization just created',
+  );
+
+  const currentOrganizationInitial = (
+    await apiRequest('GET', '/organizations/current', {
+      token: adminToken,
+      tenantId: tenant.id,
+    })
+  ).body;
+  assert(
+    currentOrganizationInitial?.organization?.id === organization.id &&
+      Array.isArray(currentOrganizationInitial.organization.branches) &&
+      currentOrganizationInitial.organization.branches.some(
+        (row) => row?.tenantId === tenant.id && row?.isPrimary === true,
+      ),
+    'Current-tenant organization lookup did not resolve the primary organization membership',
+  );
+
+  const primaryBranches = (
+    await apiRequest('GET', `/organizations/${encodeURIComponent(organization.id)}/branches`, {
+      token: adminToken,
+      tenantId: tenant.id,
+    })
+  ).body;
+  assert(
+    Array.isArray(primaryBranches) &&
+      primaryBranches.some((row) => row?.tenantId === tenant.id && row?.isPrimary === true),
+    'Primary branch tenant cannot read its organization membership',
+  );
+
+  const secondaryTenant = (
+    await apiRequest('POST', '/admin/tenants', {
+      token: platformToken,
+      tenantId: platformTenantId,
+      body: { name: `Runtime Branch Tenant ${runId.slice(-8)}` },
+    })
+  ).body;
+  assert(secondaryTenant?.id, 'Secondary branch tenant creation did not return an id');
+  await apiRequest('POST', '/organizations/branches', {
+    token: platformToken,
+    tenantId: platformTenantId,
+    body: {
+      organizationId: organization.id,
+      tenantId: secondaryTenant.id,
+      label: 'Secondary',
+    },
+  });
+  const currentOrganizationAfterAdd = (
+    await apiRequest('GET', '/organizations/current', {
+      token: adminToken,
+      tenantId: tenant.id,
+    })
+  ).body;
+  assert(
+    currentOrganizationAfterAdd?.organization?.branches?.some(
+      (row) => row?.tenantId === secondaryTenant.id,
+    ),
+    'Current-tenant organization lookup did not include the platform-added secondary branch',
+  );
+
+  const twoBranches = (
+    await apiRequest('GET', `/organizations/${encodeURIComponent(organization.id)}/branches`, {
+      token: adminToken,
+      tenantId: tenant.id,
+    })
+  ).body;
+  assert(
+    Array.isArray(twoBranches) && twoBranches.some((row) => row?.tenantId === secondaryTenant.id),
+    'Organization owner add-branch path did not persist the secondary tenant',
+  );
+  const primaryDetachRejected = await apiRequest(
+    'DELETE',
+    `/organizations/${encodeURIComponent(organization.id)}/branches/${encodeURIComponent(tenant.id)}`,
+    { token: platformToken, tenantId: platformTenantId, expected: [409] },
+  );
+  assert(
+    primaryDetachRejected.response.status === 409,
+    'Primary organization branch detach must remain fail-closed with HTTP 409',
+  );
+
+  const secondaryDetach = await apiRequest(
+    'DELETE',
+    `/organizations/${encodeURIComponent(organization.id)}/branches/${encodeURIComponent(secondaryTenant.id)}`,
+    { token: platformToken, tenantId: platformTenantId, expected: [200] },
+  );
+  assert(
+    secondaryDetach.body?.removed === true,
+    'Secondary organization branch was not removed through the product API',
+  );
+
+  const currentOrganizationAfterDetach = (
+    await apiRequest('GET', '/organizations/current', {
+      token: adminToken,
+      tenantId: tenant.id,
+    })
+  ).body;
+  assert(
+    currentOrganizationAfterDetach?.organization?.id === organization.id &&
+      !currentOrganizationAfterDetach.organization.branches?.some(
+        (row) => row?.tenantId === secondaryTenant.id,
+      ),
+    'Current-tenant organization lookup still exposed the detached secondary branch',
+  );
+
+  const secondaryDelete = await apiRequest(
+    'DELETE',
+    `/admin/tenants/${encodeURIComponent(secondaryTenant.id)}`,
+    { token: platformToken, tenantId: platformTenantId, expected: [200] },
+  );
+  assert(secondaryDelete.body?.deleted === true, 'Detached branch tenant did not clean up');
+
+  const organizationDelete = await apiRequest(
+    'DELETE',
+    `/organizations/${encodeURIComponent(organization.id)}`,
+    { token: platformToken, tenantId: platformTenantId, expected: [200] },
+  );
+  assert(
+    organizationDelete.body?.deleted === true,
+    'Organization grouping did not delete through the product API',
+  );
+
+  const currentOrganizationAfterDelete = (
+    await apiRequest('GET', '/organizations/current', {
+      token: adminToken,
+      tenantId: tenant.id,
+    })
+  ).body;
+  assert(
+    currentOrganizationAfterDelete?.organization === null,
+    'Deleting the organization grouping must detach the tenant without deleting the tenant',
+  );
+
+  const organizationDirectoryAfterDelete = (
+    await apiRequest('GET', '/organizations', {
+      token: platformToken,
+      tenantId: platformTenantId,
+    })
+  ).body;
+  const organizationRowsAfterDelete = Array.isArray(organizationDirectoryAfterDelete)
+    ? organizationDirectoryAfterDelete
+    : (organizationDirectoryAfterDelete?.items ?? []);
+  assert(
+    !organizationRowsAfterDelete.some((row) => row?.id === organization.id),
+    'Deleted organization still appears in the platform organization directory',
+  );
+
+  writeArtifact('organization-product-lifecycle', {
+    organizationId: organization.id,
+    primaryTenantId: tenant.id,
+    platformDirectoryVisible: true,
+    primaryBranchReadableByTenantAdmin: true,
+    currentTenantLookupVerified: true,
+    secondaryBranchAdded: true,
+    primaryDetachRejectedHttpStatus: 409,
+    secondaryBranchRemovedViaApi: true,
+    secondaryTenantDeleted: true,
+    organizationDeleted: true,
+    tenantMembershipCleared: true,
+  });
+
+  // ------------------------------------------------ tenant custom-role lifecycle
+  // A role management UI is meaningful only when the runtime policy changes. Prove the MEMBER
+  // starts forbidden, gains dashboard.read from a custom-role assignment, and loses it again
+  // immediately after revoke. The same access token is reused so this cannot pass by changing
+  // token claims; RbacPolicyService must read the persisted assignment.
+  const memberEmail = `rfe-member-${runId.slice(-8)}@evidence.iot.test`;
+  const memberPassword = randomSecret('TenantMember');
+  await apiRequest('POST', '/admin/platform-users', {
+    token: platformToken,
+    tenantId: platformTenantId,
+    body: {
+      tenantId: tenant.id,
+      email: memberEmail,
+      name: 'Runtime Flow Tenant Member',
+      password: memberPassword,
+      role: 'MEMBER',
+    },
+  });
+  const memberLogin = await login(memberEmail, memberPassword, tenant.id);
+  const memberToken = memberLogin.accessToken;
+  await apiRequest('GET', '/dashboards', {
+    token: memberToken,
+    tenantId: tenant.id,
+    expected: [403],
+  });
+
+  const tenantUsers = (
+    await apiRequest('GET', '/admin/tenant-users', { token: adminToken, tenantId: tenant.id })
+  ).body;
+  const tenantUserRows = Array.isArray(tenantUsers) ? tenantUsers : (tenantUsers?.items ?? []);
+  const memberRow = tenantUserRows.find((row) => row?.email === memberEmail);
+  assert(memberRow?.membershipId, 'Tenant member directory did not return membershipId');
+
+  const roleCatalog = (
+    await apiRequest('GET', '/admin/roles/catalog', { token: adminToken, tenantId: tenant.id })
+  ).body;
+  const catalogPermissions = Array.isArray(roleCatalog?.permissions) ? roleCatalog.permissions : [];
+  assert(
+    catalogPermissions.some((row) => row?.permission === 'dashboard.read'),
+    'Tenant role catalog does not expose dashboard.read',
+  );
+
+  const customRole = (
+    await apiRequest('POST', '/admin/roles', {
+      token: adminToken,
+      tenantId: tenant.id,
+      body: { name: `Runtime Reader ${runId.slice(-8)}`, permissions: ['dashboard.read'] },
+    })
+  ).body;
+  assert(customRole?.id, 'Custom role creation did not return an id');
+  await apiRequest('POST', `/admin/roles/members/${encodeURIComponent(memberRow.membershipId)}`, {
+    token: adminToken,
+    tenantId: tenant.id,
+    body: { roleId: customRole.id },
+  });
+  await apiRequest('GET', '/dashboards', {
+    token: memberToken,
+    tenantId: tenant.id,
+    expected: [200],
+  });
+  await apiRequest(
+    'DELETE',
+    `/admin/roles/members/${encodeURIComponent(memberRow.membershipId)}/${encodeURIComponent(customRole.id)}`,
+    { token: adminToken, tenantId: tenant.id, expected: [200] },
+  );
+  await apiRequest('GET', '/dashboards', {
+    token: memberToken,
+    tenantId: tenant.id,
+    expected: [403],
+  });
+  await apiRequest('DELETE', `/admin/roles/${encodeURIComponent(customRole.id)}`, {
+    token: adminToken,
+    tenantId: tenant.id,
+    expected: [200],
+  });
+  writeArtifact('tenant-custom-role-enforcement-lifecycle', {
+    tenantId: tenant.id,
+    memberUserId: memberRow.id,
+    membershipId: memberRow.membershipId,
+    permission: 'dashboard.read',
+    beforeAssignHttpStatus: 403,
+    afterAssignHttpStatus: 200,
+    afterRevokeHttpStatus: 403,
+    roleDeletedAfterProof: true,
+  });
+
   const provision = (
     await apiRequest('POST', '/admin/platform-devices', {
       token: platformToken,
