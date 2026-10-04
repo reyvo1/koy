@@ -1,6 +1,30 @@
-# Chat Session — GitHub Full Jest contract-drift root fix — 2026-10-04
+# Chat Session — GitHub Wave 4 TLS protocol-probe root fix — 2026-10-04
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
+
+Wave 13 remains IN PROGRESS. `SIMULATED_HARDWARE_LIVE_SERVICE` remains the mandatory automated hardware-equivalent UAT class; unavailable physical ESP32/camera equipment is non-blocking for software progression and remains separately labelled field evidence.
+
+## Latest evidence
+
+GitHub Actions run `100697590638` checked out commit `15bf8263294075911633eeccbd19de12c807c1a1`. Core Full Jest is now fully green: **278/278 suites and 2412/2412 tests PASS**; coverage rerun also completed 278/278 and 2412/2412. Both Wave 3 firmware matrix targets reached their native ESP-IDF/QEMU path. The rescue live-service job progressed through real rescue runtime, UAT seed, UAT documentation **24/24 PASS**, UAT login/authorization **9/9 PASS**, and then stopped in `Wave 4 staging UAT and TLS regression` with exactly one failed TLS assertion: `TLS 1.3 is negotiable — unknown`; the same probe passed nginx config, zero warnings, live listener, HTTP/2 ALPN, proxy round trip, HTTP→HTTPS redirect, `/metrics` denial, HSTS, and TLS 1.0 refusal.
+
+## Root-cause repair
+
+- `scripts/verify-tls-terminator.mjs` no longer assumes one OpenSSL human-output shape or stdout-only negotiation evidence. It captures stdout + stderr + the real process exit status and recognizes classic `Protocol:`, OpenSSL `Protocol version:`, and `New, TLSv1.x, Cipher is ...` negotiation summaries.
+- TLS 1.3 PASS now requires **exit 0 plus explicit TLSv1.3 negotiation**. A failed process cannot become PASS merely because error text mentions TLSv1.3.
+- TLS 1.0 refusal now requires a failed handshake with no negotiated protocol. A successful `New, TLSv1, Cipher is ...` result is recognized as a security failure instead of being falsely classified as refusal.
+- Added `tls:protocol:self-test` with positive/negative parser fixtures, and made it mandatory in local `wave1:prepush:check` plus the core GitHub verifier-self-test step so OpenSSL formatting drift is caught before live Wave 4 UAT.
+- CI/self-test governance now pins this requirement through `scripts/self-test-wave1-prepush.mjs`, `scripts/self-test-rescue-github-ci.mjs`, and `scripts/validate-rescue-baseline.mjs`.
+
+## Next action
+
+Run `npm run tls:protocol:self-test`, then the official `npm run wave3:prepush:check`. If green, review the complete diff once, commit once, push once, and let GitHub resume heavy UAT. Do not reopen Full Jest, RBAC, ESP32/QEMU, or UAT account/port work unless a new run produces new evidence; the current first failing gate is the Wave 4 TLS protocol-probe portability class.
+
+--- HISTORICAL CHAT SESSION CHRONOLOGY BELOW ---
+
+# Chat Session — GitHub Full Jest contract-drift root fix — 2026-10-04
+
+<!-- historical session block; current authority marker removed -->
 
 Wave 13 remains IN PROGRESS. `SIMULATED_HARDWARE_LIVE_SERVICE` remains the mandatory automated hardware-equivalent UAT class; unavailable physical ESP32/camera equipment is non-blocking for software progression and remains separately labelled field evidence.
 
@@ -31,8 +55,6 @@ GitHub Actions run `100595907100` checked out commit `23af7c26cd57d513becc7f9205
 ## Next action
 
 Run the two newly targeted contracts first, then `npm run wave3:prepush:check`. If green, review the complete diff once, commit once, push once, and let GitHub heavy UAT continue. Do not reopen ESP32/QEMU/runtime work: the current first failing gate is the two Full Jest governance contracts above.
-
---- HISTORICAL CHAT SESSION CHRONOLOGY BELOW ---
 
 # Chat Session — GitHub status verifier + simulated hardware UAT hardening — 2026-10-03
 

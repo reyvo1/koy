@@ -2461,6 +2461,21 @@ check(
 );
 
 check(
+  'TLS protocol probe captures stdout stderr and exit status across OpenSSL output formats',
+  read('scripts/verify-tls-terminator.mjs').includes("spawnSync('openssl'") &&
+    read('scripts/verify-tls-terminator.mjs').includes('Protocol(?:\\s+version)?') &&
+    read('scripts/verify-tls-terminator.mjs').includes('New,\\s*(TLSv1') &&
+    read('scripts/verify-tls-terminator.mjs').includes('tlsProbeRefused'),
+);
+const tlsPackageJson = JSON.parse(read('package.json'));
+check(
+  'TLS protocol parser self-test is mandatory in local prepush and core CI',
+  tlsPackageJson.scripts?.['tls:protocol:self-test'] === 'node scripts/verify-tls-terminator.mjs --self-test' &&
+    tlsPackageJson.scripts?.['wave1:prepush:check']?.includes('tls:protocol:self-test') &&
+    read('.github/workflows/ci.yml').includes('npm run tls:protocol:self-test'),
+);
+
+check(
   'camera and device-location probe wrappers fail closed while still cleaning residue',
   read('scripts/run-camera-probe.sh').includes('set -euo pipefail') &&
     read('scripts/run-camera-probe.sh').includes('trap cleanup_probe EXIT') &&

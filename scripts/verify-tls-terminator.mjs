@@ -24,7 +24,7 @@
  *
  * Requirements: docker, openssl, curl. Leaves no containers behind.
  */
-import { execFileSync, execFile } from 'node:child_process';
+import { execFileSync, execFile, spawnSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -45,6 +45,93 @@ const record = (name, ok, detail) => {
 };
 
 const sh = (cmd, args, opts = {}) => run(cmd, args, { encoding: 'utf8', ...opts });
+
+function negotiatedTlsProtocol(output) {
+  const text = String(output ?? '');
+  const patterns = [
+    /Protocol(?:\s+version)?\s*:\s*(TLSv1(?:\.[0-3])?)/i,
+    /\bNew,\s*(TLSv1(?:\.[0-3])?),\s*Cipher is\b/i,
+  ];
+  for (const pattern of patterns) {
+    const match = pattern.exec(text);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+function tlsProbeSucceeded(result, expectedProtocol) {
+  return result.code === 0 && negotiatedTlsProtocol(result.out) === expectedProtocol;
+}
+
+function tlsProbeRefused(result) {
+  return result.code !== 0 && negotiatedTlsProtocol(result.out) === null;
+}
+
+function runTlsProtocolParserSelfTest() {
+  const fixtures = [
+    {
+      name: 'classic OpenSSL protocol line',
+      text: 'Protocol  : TLSv1.3\nCipher    : TLS_AES_256_GCM_SHA384',
+      expected: 'TLSv1.3',
+    },
+    {
+      name: 'OpenSSL 3 protocol line',
+      text: 'Protocol: TLSv1.3\nCipher is TLS_AES_256_GCM_SHA384',
+      expected: 'TLSv1.3',
+    },
+    {
+      name: 'OpenSSL brief protocol line',
+      text: 'CONNECTION ESTABLISHED\nProtocol version: TLSv1.3\nCiphersuite: TLS_AES_256_GCM_SHA384',
+      expected: 'TLSv1.3',
+    },
+    {
+      name: 'OpenSSL negotiated summary without Protocol line',
+      text: 'New, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384',
+      expected: 'TLSv1.3',
+    },
+    {
+      name: 'TLS 1.0 negotiated summary is recognized rather than mistaken for refusal',
+      text: 'New, TLSv1, Cipher is ECDHE-RSA-AES256-SHA',
+      expected: 'TLSv1',
+    },
+    {
+      name: 'error text mentioning a protocol is not negotiation evidence',
+      text: 'tlsv1 alert protocol version\nno peer certificate available',
+      expected: null,
+    },
+  ];
+
+  for (const fixture of fixtures) {
+    const actual = negotiatedTlsProtocol(fixture.text);
+    if (actual !== fixture.expected) {
+      throw new Error(`FAIL  ${fixture.name}: expected ${fixture.expected ?? 'none'}, got ${actual ?? 'none'}`);
+    }
+    console.log(`PASS  ${fixture.name}`);
+  }
+
+  const modern = { code: 0, out: 'New, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384' };
+  if (!tlsProbeSucceeded(modern, 'TLSv1.3')) throw new Error('FAIL  TLS 1.3 success requires exit 0 plus explicit TLSv1.3 negotiation');
+  console.log('PASS  TLS 1.3 success requires exit 0 plus explicit TLSv1.3 negotiation');
+
+  const falseModern = { code: 1, out: 'Protocol version: TLSv1.3\nhandshake failure' };
+  if (tlsProbeSucceeded(falseModern, 'TLSv1.3')) throw new Error('FAIL  failed process cannot become a TLS 1.3 PASS');
+  console.log('PASS  failed process cannot become a TLS 1.3 PASS');
+
+  const refusedLegacy = { code: 1, out: 'no protocols available\nno peer certificate available' };
+  if (!tlsProbeRefused(refusedLegacy)) throw new Error('FAIL  failed TLS 1.0 handshake with no negotiated protocol is accepted as refusal evidence');
+  console.log('PASS  failed TLS 1.0 handshake with no negotiated protocol is accepted as refusal evidence');
+
+  const negotiatedLegacy = { code: 0, out: 'New, TLSv1, Cipher is ECDHE-RSA-AES256-SHA' };
+  if (tlsProbeRefused(negotiatedLegacy)) throw new Error('FAIL  negotiated TLS 1.0 cannot be misreported as refused');
+  console.log('PASS  negotiated TLS 1.0 cannot be misreported as refused');
+
+  console.log('TLS PROTOCOL PARSER SELF-TEST PASS');
+}
+
+if (process.argv.includes('--self-test')) {
+  runTlsProtocolParserSelfTest();
+  process.exit(0);
+}
 
 async function curl(args) {
   try {
@@ -143,21 +230,31 @@ try {
   record('HSTS reaches the client', /strict-transport-security: max-age=31536000/i.test(headers.out),
     /strict-transport-security: max-age=31536000/i.test(headers.out) ? 'max-age=31536000' : 'absent');
 
-  // 7. TLS 1.3 must be negotiable, and 1.0/1.1 must not be offered.
+  // 7. TLS 1.3 must be negotiable, and TLS 1.0 must actually be refused. OpenSSL
+  //    has changed the human-readable negotiation summary across supported releases, and some
+  //    builds emit useful summary text on stderr even when the handshake succeeds. Capture both
+  //    streams plus the real exit status so formatting drift cannot create either a false red or
+  //    a false green.
   const sClient = (args) => {
-    try {
-      return execFileSync('openssl', ['s_client', '-connect', `127.0.0.1:${HTTPS_PORT}`, '-servername', HOST_NAME, ...args],
-        { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 20_000 });
-    } catch (error) {
-      return `${error.stdout ?? ''}${error.stderr ?? ''}`;
-    }
+    const child = spawnSync('openssl', [
+      's_client', '-connect', `127.0.0.1:${HTTPS_PORT}`, '-servername', HOST_NAME, ...args,
+    ], { encoding: 'utf8', input: '', timeout: 20_000 });
+    return {
+      code: typeof child.status === 'number' ? child.status : 1,
+      out: `${child.stdout ?? ''}${child.stderr ?? ''}`,
+      error: child.error ?? null,
+    };
   };
+
   const modern = sClient(['-tls1_3']);
-  record('TLS 1.3 is negotiable', /Protocol\s*:\s*TLSv1\.3/.test(modern),
-    /Protocol\s*:\s*(\S+)/.exec(modern)?.[1] ?? 'unknown');
+  const modernProtocol = negotiatedTlsProtocol(modern.out);
+  record('TLS 1.3 is negotiable', tlsProbeSucceeded(modern, 'TLSv1.3'),
+    modernProtocol ?? (modern.error?.message || `handshake exit ${modern.code}`));
+
   const legacy = sClient(['-tls1']);
-  record('TLS 1.0 is refused', !/Protocol\s*:\s*TLSv1(\s|$)/.test(legacy) && !/Cipher\s*:\s*0000/.test(legacy),
-    /Cipher\s*:\s*(\S+)/.exec(legacy)?.[1] ?? 'no cipher offered');
+  const legacyProtocol = negotiatedTlsProtocol(legacy.out);
+  record('TLS 1.0 is refused', tlsProbeRefused(legacy),
+    legacyProtocol ? `negotiated ${legacyProtocol}` : (legacy.error?.message || `handshake refused (exit ${legacy.code})`));
   }
 } finally {
   await sh('docker', ['rm', '-f', CONTAINER]).catch(() => {});

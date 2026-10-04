@@ -59,6 +59,8 @@ check('CI self-test package command is exposed', pkg.scripts?.['rescue:github-ci
 check('Wave 2 core runtime self-test package command is exposed', pkg.scripts?.['wave2:core-runtime:self-test'] === 'node scripts/self-test-wave2-core-runtime.mjs');
 check('session handoff self-test command is exposed', pkg.scripts?.['session:handoff:self-test'] === 'node scripts/self-test-session-handoff.mjs');
 check('core CI executes the session handoff continuity self-test', workflow.includes('npm run session:handoff:self-test'));
+check('TLS protocol parser self-test command is exposed', pkg.scripts?.['tls:protocol:self-test'] === 'node scripts/verify-tls-terminator.mjs --self-test');
+check('core CI executes the TLS protocol parser self-test before live Wave 4 TLS', workflow.includes('npm run tls:protocol:self-test') && workflow.indexOf('npm run tls:protocol:self-test') < workflow.indexOf('Wave 4 staging UAT and TLS regression'));
 check('enterprise wave status verifier command is exposed', pkg.scripts?.['enterprise:wave-status:verify'] === 'node scripts/verify-enterprise-wave-status.mjs');
 check('enterprise wave status self-test command is exposed', pkg.scripts?.['enterprise:wave-status:self-test'] === 'node scripts/self-test-enterprise-wave-status.mjs');
 check('User Web navigation self-test command is exposed', pkg.scripts?.['user-web:navigation:self-test'] === 'node scripts/self-test-user-web-navigation.mjs');

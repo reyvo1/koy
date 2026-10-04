@@ -5,14 +5,14 @@
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
 
 - Waves 1–12: **software scope CLOSED / GREEN**. Wave 13 Final Enterprise Certification: **IN PROGRESS**.
-- Latest GitHub evidence: run `100595907100`, commit `23af7c26cd57d513becc7f92059829da666e8247`. Core Full Jest: **276/278 suites PASS, 2409/2411 tests PASS**; only two stale governance contracts failed.
-- Active root-cause batch: synchronize Development Kit resume/failure contract and Scene/Schedule device-derived authorization contract, then add both specs to the local targeted pre-push gate so the same drift cannot first appear in GitHub.
-- Scene/Schedule are **not tenant-open**: Scene read=VIEW across action devices, mutation=CONTROL; Schedule inherits target-Scene VIEW/CONTROL and targetless schedules are admin-only.
-- Production remains not declared merely from simulation; source-bound `SIMULATED_HARDWARE_LIVE_SERVICE` is the required automated hardware-equivalent UAT and missing physical boards/cameras do not block software progression.
+- Latest GitHub evidence: run `100697590638`, commit `15bf8263294075911633eeccbd19de12c807c1a1`. Core Full Jest and coverage are green at **278/278 suites, 2412/2412 tests**.
+- Rescue live-service first failure is Wave 4 TLS runtime verification: UAT docs **24/24 PASS**, UAT login/authorization **9/9 PASS**, TLS **11/12 PASS**, with only `TLS 1.3 is negotiable — unknown` failing after HTTP/2/HSTS/proxy/listener checks passed.
+- Active root-cause batch hardens the OpenSSL negotiation parser: combined stdout/stderr + exit status, multiple supported output formats, strict TLS1.3 success semantics, strict TLS1.0 refusal semantics, and a cheap parser self-test wired into local pre-push + core CI.
+- Production is not declared merely from simulation; source-bound `SIMULATED_HARDWARE_LIVE_SERVICE` remains the required automated hardware-equivalent UAT and missing physical boards/cameras do not block software progression.
 - Session continuity: follow `docs/SESSION-HANDOFF-PROTOCOL.md`; resume from verified HEAD/status and the first failing gate, not from a full re-audit.
 - The ZIP snapshot has no `.git`, so operator checkout/GitHub evidence remains authoritative for real commit/branch status.
 
-> **Reading rule.** Everything below this separator is historical chronology. Any older activation/blocking statement from pre-Wave-13 chronology is superseded by this block and by `docs/ENTERPRISE-WAVE-ROADMAP.md`.
+> **Reading rule.** Everything below this separator is historical chronology. Any older activation/blocking statement is superseded by this block and by `docs/ENTERPRISE-WAVE-ROADMAP.md`.
 
 --- HISTORICAL CHRONOLOGY BELOW ---
 

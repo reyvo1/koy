@@ -24,6 +24,7 @@ const required = [
   'gitignore:source-scope:self-test',
   'fastify:v5:compat:verify',
   'web:framework:contract:verify',
+  'tls:protocol:self-test',
   'baseline:hygiene:self-test',
   'baseline:hygiene:clean',
   'baseline:manifest:generate',

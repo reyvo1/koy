@@ -2,17 +2,17 @@
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
 
-## ACTIVE HANDOFF — GITHUB FULL JEST CONTRACT DRIFT
+## ACTIVE HANDOFF — GITHUB WAVE 4 TLS PROTOCOL-PROBE PORTABILITY
 
 Master roadmap: `docs/ENTERPRISE-WAVE-ROADMAP.md`. Waves 1–12 are software-scope CLOSED/GREEN; Wave 13 is IN PROGRESS. Missing physical ESP32/camera hardware is not a software blocker. Mandatory automated certification uses source-bound `SIMULATED_HARDWARE_LIVE_SERVICE`; physical/site/HIL remains separately labelled field validation.
 
-GitHub run `100595907100` on commit `23af7c26cd57d513becc7f92059829da666e8247` reached Full Jest. Result: **276/278 suites PASS and 2409/2411 tests PASS**. The two failures are governance-contract drift, not runtime failures: Development Kit execution workflow still expects superseded audit-only/module-runner wording, and the RBAC domain-access contract/catalog still describes Scene/Schedule as tenant-open even though controller enforcement is now device-derived VIEW/CONTROL.
+GitHub run `100697590638` on commit `15bf8263294075911633eeccbd19de12c807c1a1` proves the prior Full Jest contract repair: **278/278 suites and 2412/2412 tests PASS**, with coverage rerun equally green. Rescue live-service reached Wave 4 after real runtime/UAT setup; `uat:docs` is **24/24 PASS**, `uat:login` is **9/9 PASS**, and TLS is **11/12 PASS**. The only failure is `TLS 1.3 is negotiable — unknown` even though the same nginx instance passes config, no-warning, listener, HTTP/2 ALPN, proxy, redirect, metrics-denial, HSTS, and TLS1.0-refusal checks.
 
-The repair synchronizes Development Kit instructions/tests, RBAC catalog/blueprint/source comments/tests, and adds both exposed specs to `wave2:test:targeted`. This makes local pre-push cover the same cheap governance contracts that GitHub Full Jest exposed.
+The repair fixes the verifier rather than weakening TLS policy: OpenSSL negotiation parsing now uses stdout+stderr+exit status, recognizes multiple legitimate OpenSSL summary formats, requires exit-0 explicit TLSv1.3 evidence for TLS1.3 PASS, and refuses to call TLS1.0 blocked if a TLSv1 handshake was actually negotiated. A dependency-free `tls:protocol:self-test` is mandatory locally and in core CI.
 
 ## Resume rule
 
-Follow `docs/SESSION-HANDOFF-PROTOCOL.md`: verify real HEAD/status, preserve a recorded dirty candidate, and continue from the FIRST FAILING GATE rather than auditing from zero. For this candidate run the two governance specs first, then `npm run wave3:prepush:check`. Only after full green: review complete diff once, commit once, push once, then read GitHub heavy UAT.
+Follow `docs/SESSION-HANDOFF-PROTOCOL.md`: verify real HEAD/status and continue from the FIRST FAILING GATE rather than auditing from zero. For this candidate run `npm run tls:protocol:self-test`, then `npm run wave3:prepush:check`. Only after full green: review complete diff once, commit once, push once, then read GitHub heavy UAT. Do not reopen already-green Full Jest/RBAC/ESP32/UAT-account work without new evidence.
 
 --- HISTORICAL WAVE 3 HANDOFF BELOW ---
 

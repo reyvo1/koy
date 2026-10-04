@@ -77,6 +77,7 @@ jobs:
           npm run security:web-stack:self-test
           npm run fastify:v5:compat:self-test
           npm run web:framework:contract:self-test
+          npm run tls:protocol:self-test
           npm run wave1:prepush:self-test
           npm run session:handoff:self-test
           npm run enterprise:wave-status:self-test

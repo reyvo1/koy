@@ -6,16 +6,16 @@
 
 - Waves 1–12: **software scope CLOSED / GREEN**. Wave 13: **IN PROGRESS**.
 - Missing physical hardware is **NON-BLOCKING for software delivery**. Required automated evidence is source-bound `SIMULATED_HARDWARE_LIVE_SERVICE`; physical/site/HIL stays separately labelled field validation.
-- Latest GitHub checkout: `23af7c26cd57d513becc7f92059829da666e8247`, run `100595907100`.
-- First failing gate: Full Jest with exactly **2 failed / 2409 passed tests** (2 failed / 276 passed suites). Failing specs: `test/module-execution-efficiency.contract.spec.ts` and `src/rbac/domain-access-model.spec.ts`.
-- Root cause is stale governance documentation/tests: active session workflow superseded audit-only resume wording; Scene/Schedule implementation superseded tenant-open/audit-only authorization wording with device-derived VIEW/CONTROL.
-- Current repair synchronizes the whole contract class and registers both specs in `wave2:test:targeted`, closing the local-prepush coverage gap.
-- Do not reopen ESP-IDF/QEMU/live-device simulation based on this run; those are not the first failure.
+- Latest GitHub checkout: `15bf8263294075911633eeccbd19de12c807c1a1`, run `100697590638`.
+- Core Full Jest + coverage: **278/278 suites, 2412/2412 tests PASS**.
+- First failing gate: `Wave 4 staging UAT and TLS regression`. UAT docs **24/24 PASS**, UAT login **9/9 PASS**, TLS **11/12 PASS**; only `TLS 1.3 is negotiable — unknown` failed.
+- Root cause is verifier portability, not evidence that nginx disabled TLS1.3: the old script assumed one stdout format. Current repair captures stdout/stderr/exit status, parses classic/brief/`New, TLSv1.x` summaries, and makes TLS1.3/TLS1.0 verdicts fail-closed.
+- `tls:protocol:self-test` is now required by local pre-push and core CI so parser drift is caught before live Wave 4.
 - Workflow continuity remains governed by `docs/SESSION-HANDOFF-PROTOCOL.md` and `npm run session:handoff:self-test`.
 
 ### Next action
 
-1. Run `npx jest --runInBand --runTestsByPath test/module-execution-efficiency.contract.spec.ts src/rbac/domain-access-model.spec.ts`.
+1. Run `npm run tls:protocol:self-test`.
 2. If green, run `npm run wave3:prepush:check`.
 3. Review complete diff once; one commit/push only.
 4. Read the first failing GitHub heavy-UAT step; fix that root-cause class without reopening already-green work.
