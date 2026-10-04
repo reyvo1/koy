@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import {
   AdminSessionBackendClient,
   clearSessionCookies,
+  finalizeAdminSessionResponse,
 } from '@/lib/session';
 
 export async function proxyBackend(
@@ -12,7 +13,8 @@ export async function proxyBackend(
     const client = await AdminSessionBackendClient.create();
     const response = await handler(client);
     const payload = await response.json();
-    return NextResponse.json(payload, { status: response.status });
+    const next = NextResponse.json(payload, { status: response.status });
+    return finalizeAdminSessionResponse(client, next, response.status);
   } catch (cause) {
     const status =
       cause instanceof Error && 'status' in cause

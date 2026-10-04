@@ -39,6 +39,16 @@ The numbered Module 1–30 list below is the completed **foundation roadmap**. I
 29. Security Hardening
 30. ESP32 Device SDK & Provisioning
 
+## Cross-module integrity hardening — 2026-10-04
+
+Post-green product audits do not reopen completed modules; they test the seams between them.
+
+- Module 12 Scene and Module 13 Schedule must use database-enforced tenant-scoped referential integrity. A Schedule target may not silently become orphaned.
+- Module 27 Billing is part of tenant creation/deletion lifecycle. Mandatory system-owned subscription rows must be created and removed atomically with the tenant lifecycle.
+- Capability template apply is a schema convergence operation, not a version-label update: published shape fields and version must move together.
+- Cross-layer blind spots discovered after green certification must become additive targeted/live UAT. Existing acceptance criteria may not be weakened to obtain a PASS.
+- Hardware simulation evidence remains `SIMULATED_HARDWARE_LIVE_SERVICE`; physical HIL stays a separate optional/non-blocking field-validation class.
+
 ## Gate
 
 Agent tidak boleh melompat modul kecuali pengguna memerintahkan. Setiap

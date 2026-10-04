@@ -65,6 +65,20 @@ export function clearSessionCookies(response: NextResponse): void {
   }
 }
 
+export function finalizeAdminSessionResponse(
+  client: AdminSessionBackendClient,
+  response: NextResponse,
+  backendStatus: number,
+): NextResponse {
+  if (backendStatus === 401) {
+    clearSessionCookies(response);
+    return response;
+  }
+
+  client.applySessionUpdate(response);
+  return response;
+}
+
 /**
  * UX-only role hint set at login. Never a security boundary:
  * real authorization is enforced by backend guards.

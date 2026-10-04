@@ -70,7 +70,7 @@ export async function GET(
     return response;
   } catch (cause) {
     const status = statusOf(cause);
-    if (status === 401 || status === 403) return unauthorizedResponse();
+    if (status === 401) return unauthorizedResponse();
     return NextResponse.json(
       {
         error: {
@@ -124,7 +124,7 @@ export async function POST(
     return response;
   } catch (cause) {
     const status = statusOf(cause);
-    if (status === 401 || status === 403) return unauthorizedResponse();
+    if (status === 401) return unauthorizedResponse();
     return NextResponse.json(
       {
         error: {

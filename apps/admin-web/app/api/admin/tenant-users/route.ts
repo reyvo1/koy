@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import {
   AdminSessionBackendClient,
   clearSessionCookies,
+  finalizeAdminSessionResponse,
 } from '@/lib/session';
 
 /** GET /api/admin/tenant-users — active-tenant user directory proxy. */
@@ -27,13 +28,14 @@ async function proxyTenantUsers(makeBody: () => string | null) {
     }
     const response = await client.request('/admin/tenant-users', init);
     const payload = await response.json();
-    return NextResponse.json(payload, { status: response.status });
+    const next = NextResponse.json(payload, { status: response.status });
+    return finalizeAdminSessionResponse(client, next, response.status);
   } catch (cause) {
     const status =
       cause instanceof Error && 'status' in cause
         ? Number((cause as { status: number }).status)
         : 502;
-    if (status === 401 || status === 403) {
+    if (status === 401) {
       const response = NextResponse.json(
         { error: { code: 'UNAUTHORIZED', message: 'Sesi admin tenant tidak valid.' } },
         { status: 401 },

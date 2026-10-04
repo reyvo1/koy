@@ -30,3 +30,12 @@ tetap abstraction sampai keputusan eksplisit.
 Gunakan output contract System Instructions. Jika blocker nyata tidak
 dapat diselesaikan setelah failure protocol, jangan berpura-pura
 selesai.
+
+
+## Post-green integrity note — 2026-10-04
+
+Tenant provisioning and its mandatory billing subscription are one transaction. A tenant must never
+exist in an unmetered half-created state because billing-plan/subscription creation failed. Conversely,
+an otherwise-empty tenant may remove its automatically-created system subscription in the same
+transaction as tenant deletion; other tenant-owned `RESTRICT` relations remain hard blockers and must
+surface as domain conflict rather than being cascaded away.

@@ -2,28 +2,47 @@
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-13; active=none -->
 
-Waves 1–13 are **SOFTWARE SCOPE CLOSED / GREEN** for automated, source-bound software certification. GitHub Actions run `37183166252` on commit `b7b62248ec5fe38973993e981c9b753483cf8e10` completed the full automated acceptance chain. `SIMULATED_HARDWARE_LIVE_SERVICE` remains the automated hardware-equivalent evidence class; PHYSICAL/HIL and provider-owned external observations remain separate and non-blocking for software closure.
+Waves 1–13 are **SOFTWARE SCOPE CLOSED / GREEN** for automated, source-bound software certification. GitHub Actions run `37195822587` on commit `e4fdfe11dfd817086ecc93a95dd57cb0b48b8aa4` completed the full automated acceptance chain. `SIMULATED_HARDWARE_LIVE_SERVICE` remains the automated hardware-equivalent evidence class; PHYSICAL/HIL and provider-owned external observations remain separate and non-blocking for software closure.
 
-- GitHub run `37183166252` / commit `b7b62248ec5fe38973993e981c9b753483cf8e10` / evidence `logs_100716783407.zip`.
+- GitHub run `37195822587` / commit `e4fdfe11dfd817086ecc93a95dd57cb0b48b8aa4` / evidence `logs_100750579910.zip`.
 - FIRST FAILING GATE: **none — full automated acceptance is green**.
 - Current candidate purpose: deep audit backend↔frontend↔menu↔RBAC↔error semantics↔workflow/docs/Development Kit after the green certification baseline.
 - Do not reopen closed Wave 1–13 software gates without newer failing evidence.
 - Do not weaken UAT, rate limits, auth, TLS, simulated-hardware evidence or external/provider boundaries to make a test pass.
 - `SIMULATED_HARDWARE_LIVE_SERVICE` closes software-controlled hardware-equivalent behavior; physical/site HIL remains separately labelled and non-blocking.
 
-## Current repair batch
+## Current repair batch — Admin BFF session/error semantics
 
-1. Dashboard 403 remains forbidden and preserves session; only 401 clears cookies.
-2. Canonical RBAC audit-action mapping shared by policy and permission guard.
-3. Schedule errors classify expected visibility denial vs infrastructure failure.
-4. Capability template lifecycle is reachable from Admin Web create/publish/deprecate/apply UI.
-5. Directory-dependent UI surfaces fail visibly rather than rendering false empty state.
-6. Profile/session settings surface is labelled truthfully; docs/current authority match real capabilities.
-7. Terminal enterprise-wave state with all 13 software waves closed is verifier-supported.
+1. `AdminSessionBackendClient` refresh rotation is now finalized through one response helper: a final 401 clears cookies, while successful/403 responses preserve the session and persist rotated access/refresh tokens.
+2. Shared `proxyBackend` uses that helper, so its 76 route consumers inherit the corrected session lifecycle.
+3. Remaining direct Admin BFF routes no longer collapse 403 into 401/logout; Scene Run now preserves a valid forbidden session.
+4. Device capability and telemetry-chart routes no longer translate upstream auth/infrastructure failures into `200` empty states.
+5. Tenant command aggregation hides only expected per-device 403/404 visibility races and propagates unexpected/infrastructure failures.
+6. Current authority is the exact green checkpoint `e4fdfe11dfd817086ecc93a95dd57cb0b48b8aa4` / run `37195822587` / `logs_100750579910.zip`; Waves 1–13 remain closed and are not being reopened.
+
+## Current repair batch — deep product integrity root-cause closure
+
+This batch builds on the Admin BFF session/error-semantics repair and does not reopen Waves 1–13.
+
+1. **Tenant ↔ Billing lifecycle:** tenant creation and mandatory FREE subscription now share one Prisma transaction; deleting an otherwise-empty tenant removes the system-owned subscription in the same transaction, while any other `RESTRICT` dependency remains fail-closed and surfaces as `409 Conflict`.
+2. **Capability lifecycle:** apply now converges the complete published shape (`schemaVersion`, semantic/data type, unit, constraints, readable/writable/reportable flags). The drift scan paginates deterministically so later drift cannot remain hidden behind already-aligned rows.
+3. **Scene ↔ Schedule integrity:** Prisma now models the tenant-scoped Scene relation and migration `20261004213000_schedule_scene_referential_integrity` adds a composite `ON DELETE RESTRICT` FK. Migration aborts on legacy orphan schedule rows instead of deleting or rewriting operator data. Scene delete also returns a domain `409` and records DELETE audit only after the delete succeeds.
+4. **Scene UI contract:** action count is derived from backend `actions[]`; create+enable reports partial failure honestly instead of claiming an inactive Scene is active.
+5. **UAT strengthened, not weakened:** `wave2:test:targeted` now also runs Scene persistence + deep-product integrity contracts. GitHub heavy CI gains `Deep product lifecycle live regression`, which exercises tenant create/delete with billing, complete capability-shape apply, and scheduled-Scene delete refusal against the live stack. Existing Wave 4–13, simulated-hardware, EMQX, TLS, security, load and full-acceptance gates remain unchanged.
+6. Physical HIL remains optional/non-blocking for software. Automated hardware evidence keeps the exact `SIMULATED_HARDWARE_LIVE_SERVICE` label.
+
+### Validation in exported snapshot
+
+- TypeScript/TSX syntax diagnostics for every changed source/spec: PASS via TypeScript `transpileModule`.
+- `node --check scripts/run-rescue-runtime-flow-extension.mjs`: PASS.
+- `deep-product:contracts:self-test`: PASS with the new integrity checks.
+- `session:handoff:self-test`: PASS before the final documentation reseal.
+- `rescue:validate`: reached the repository hygiene gate and failed only because local `tsc --noEmit` created `dist/tsconfig.tsbuildinfo`; that generated `dist/` was removed. No product assertion failed before that hygiene stop.
+- Dependency-backed Jest, Prisma validation/migration execution, full `wave3:prepush:check`, Git diff review, commit/push and GitHub heavy UAT are **not claimed** in this exported no-`.git`/no-`node_modules` workspace. They remain mandatory in the real checkout.
 
 ## Next action
 
-Run deep-product targeted QA + official local pre-push, review diff once, commit once, push once, then GitHub heavy acceptance.
+Apply this complete integrity batch to a clean real checkout at `e4fdfe11dfd817086ecc93a95dd57cb0b48b8aa4`. Run the expanded targeted tests, Prisma check/migrations, `npm run wave3:prepush:check`, review the complete diff once, commit once, push once, then require GitHub heavy UAT including the new `Deep product lifecycle live regression`. If any gate turns red, repair that root-cause class; do not relax assertions, UAT, auth, FK integrity, TLS, simulated-hardware evidence, or rate limits to force green.
 
 --- HISTORICAL CHRONOLOGY BELOW ---
 

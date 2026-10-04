@@ -185,3 +185,7 @@ Slice 10.10 is therefore remote-complete. Slice 10.11 remains inactive until the
 closure commit is green remotely and the owner explicitly approves the next bounded
 product slice. Module 11 remains inactive and production deployment remains NOT
 APPROVED.
+
+## Current deep-audit correction — 2026-10-04
+
+The original Slice 10.10 text above records the historical foundation behavior, where backend 401 and 403 were intentionally collapsed into one browser unauthorized state. That behavior is **superseded** by the current product security contract: 401 and 403 are distinct facts. A final 401 invalidates the local session; 403 preserves it and reports authorization refusal. Successful refresh-token rotation must be persisted to the Admin Web HttpOnly cookies on the response that used the rotated credentials. Shared and direct BFF routes are contract-tested against this rule, and upstream failures must not be rewritten as successful empty data.

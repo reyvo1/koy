@@ -901,6 +901,7 @@ model Scene {
   revision  Int      @default(1)
   actions   SceneAction[]
   executions SceneExecution[]
+  schedules Schedule[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1001,6 +1002,7 @@ model Schedule {
   expression      String
   timezone        String
   targetSceneId   String?
+  targetScene     Scene?                      @relation(fields: [targetSceneId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
   countdownSeconds Int?
   repeat          ScheduleRepeat             @default(INDEFINITE)
   maxRuns         Int?

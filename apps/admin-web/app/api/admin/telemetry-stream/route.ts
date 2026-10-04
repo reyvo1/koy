@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
-import { AdminSessionBackendClient } from '@/lib/session';
+import {
+  AdminSessionBackendClient,
+  clearSessionCookies,
+  finalizeAdminSessionResponse,
+} from '@/lib/session';
 
 /**
  * GET /api/admin/telemetry-stream?deviceId=&intervalSec= — SSE proxy.
@@ -18,34 +22,52 @@ export async function GET(request: Request) {
   }
 
   let backendResponse: Response;
+  let client: AdminSessionBackendClient;
   try {
-    const client = await AdminSessionBackendClient.create();
+    client = await AdminSessionBackendClient.create();
     backendResponse = await client.request(
       `/devices/${deviceId}/telemetry/stream`,
     );
   } catch (cause) {
-    return NextResponse.json(
-      { error: { code: 'STREAM_UNAVAILABLE', message: String(cause) } },
-      { status: 502 },
+    const status =
+      cause instanceof Error && 'status' in cause
+        ? Number((cause as { status: number }).status)
+        : 502;
+    const response = NextResponse.json(
+      { error: { code: status === 401 ? 'UNAUTHORIZED' : 'STREAM_UNAVAILABLE', message: String(cause) } },
+      { status: status >= 500 ? 502 : status },
     );
+    if (status === 401) clearSessionCookies(response);
+    return response;
   }
 
-  if (!backendResponse.ok || !backendResponse.body) {
-    // Fail-closed: no stream, UI falls back to polling.
-    return NextResponse.json(
+  if (!backendResponse.ok) {
+    const payload = await backendResponse.json().catch(() => null);
+    const next = NextResponse.json(
+      payload ?? {
+        error: { code: 'STREAM_NOT_READY', message: 'stream belum tersedia' },
+      },
+      { status: backendResponse.status },
+    );
+    return finalizeAdminSessionResponse(client, next, backendResponse.status);
+  }
+  if (!backendResponse.body) {
+    const next = NextResponse.json(
       { error: { code: 'STREAM_NOT_READY', message: 'stream belum tersedia' } },
       { status: 503 },
     );
+    return finalizeAdminSessionResponse(client, next, backendResponse.status);
   }
 
   const { readable, writable } = new TransformStream();
   backendResponse.body!.pipeTo(writable).catch(() => undefined);
 
-  return new Response(readable, {
+  const response = new NextResponse(readable, {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache, no-transform',
       Connection: 'keep-alive',
     },
   });
+  return finalizeAdminSessionResponse(client, response, backendResponse.status);
 }

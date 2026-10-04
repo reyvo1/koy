@@ -179,6 +179,25 @@ async function provisionFixture() {
   const platformLogin = await login(platformEmail, platformPassword, platformTenantId);
   const platformToken = platformLogin.accessToken;
 
+  // Tenant creation automatically provisions a billing subscription. Prove that the same
+  // product lifecycle can also delete a truly empty tenant: this catches a RESTRICT FK left
+  // behind by system-owned billing rows and proves create+subscription are one coherent unit.
+  const disposableTenant = (
+    await apiRequest('POST', '/admin/tenants', {
+      token: platformToken,
+      tenantId: platformTenantId,
+      body: { name: `Runtime Disposable Tenant ${runId.slice(-8)}` },
+    })
+  ).body;
+  assert(disposableTenant?.id, 'Disposable tenant creation did not return an id');
+  const disposableDelete = await apiRequest(
+    'DELETE',
+    `/admin/tenants/${encodeURIComponent(disposableTenant.id)}`,
+    { token: platformToken, tenantId: platformTenantId, expected: [200, 201] },
+  );
+  assert(disposableDelete.body?.deleted === true, 'Empty tenant lifecycle did not delete cleanly');
+  console.log('CHECK tenant-create-delete-billing-lifecycle... PASS');
+
   const tenant = (
     await apiRequest('POST', '/admin/tenants', {
       token: platformToken,
@@ -272,6 +291,7 @@ async function provisionFixture() {
 
   return {
     tenantId: tenant.id,
+    platformToken,
     adminToken,
     deviceId: provision.device.id,
     capabilityId,
@@ -294,9 +314,83 @@ async function main() {
   console.log(`RUNTIME FLOW EXTENSION  api=${apiBase}  run=${runId}`);
 
   const fixture = await provisionFixture();
-  const { tenantId, adminToken, deviceId, capabilityId, capabilityKey, deviceBId } =
+  const { tenantId, platformToken, adminToken, deviceId, capabilityId, capabilityKey, deviceBId } =
     fixture;
   console.log(`FIXTURE  tenant=${tenantId} device=${deviceId} capability=${capabilityId}`);
+
+  // ------------------------------------------------------ capability lifecycle
+  // Run this before creating Scene/Automation bindings: apply must rewrite the complete
+  // published shape, not merely stamp schemaVersion. Both fixture devices are intentionally
+  // unbound here, so refusing them would also be a regression.
+  const capabilityTemplate = (
+    await apiRequest('POST', '/admin/platform-capability-templates', {
+      token: platformToken,
+      tenantId: '11111111-1111-4111-8111-111111111111',
+      body: {
+        tenantId,
+        key: capabilityKey,
+        semanticType: 'switch',
+        dataType: 'boolean',
+      },
+    })
+  ).body;
+  const capabilityTemplateId = capabilityTemplate?.template?.id ?? capabilityTemplate?.id;
+  assert(capabilityTemplateId, 'Capability template creation did not return an id');
+
+  await apiRequest(
+    'POST',
+    `/admin/platform-capability-templates/${encodeURIComponent(capabilityTemplateId)}/versions`,
+    {
+      token: platformToken,
+      tenantId: '11111111-1111-4111-8111-111111111111',
+      body: {
+        tenantId,
+        version: '2.0.0',
+        constraints: { enum: [false, true] },
+        isReadable: true,
+        isWritable: true,
+        isReportable: false,
+      },
+      expected: [200, 201],
+    },
+  );
+  const capabilityApply = await apiRequest('POST', '/admin/platform-capability-versions/apply', {
+    token: platformToken,
+    tenantId: '11111111-1111-4111-8111-111111111111',
+    body: { tenantId, templateId: capabilityTemplateId },
+    expected: [200, 201],
+  });
+  assert(
+    Number(capabilityApply.body?.updated ?? 0) >= 2,
+    `Capability apply did not update both fixture devices: ${shortBody(capabilityApply.body)}`,
+  );
+
+  const registry = (
+    await apiRequest('GET', '/admin/platform-capabilities', {
+      token: platformToken,
+      tenantId: '11111111-1111-4111-8111-111111111111',
+    })
+  ).body;
+  const registryItems = Array.isArray(registry) ? registry : (registry?.items ?? []);
+  const fixtureCapabilities = registryItems.filter(
+    (row) => row?.tenantId === tenantId && row?.key === capabilityKey,
+  );
+  assert(fixtureCapabilities.length >= 2, 'Capability registry did not return both fixture rows');
+  assert(
+    fixtureCapabilities.every(
+      (row) =>
+        row?.schemaVersion === '2.0.0' &&
+        row?.semanticType === 'switch' &&
+        row?.dataType === 'boolean' &&
+        row?.isReadable === true &&
+        row?.isWritable === true &&
+        row?.isReportable === false &&
+        Array.isArray(row?.constraints?.enum) &&
+        row.constraints.enum.length === 2,
+    ),
+    `Capability apply changed version without complete shape: ${shortBody(fixtureCapabilities)}`,
+  );
+  console.log('CHECK capability-apply-full-shape... PASS');
 
   // ---------------------------------------------------------------- scene runtime
   const before = await deviceCommands(tenantId, deviceId, adminToken);
@@ -495,6 +589,23 @@ async function main() {
     createdSchedule?.enabled === false,
     'Schedule must be created disabled and then explicitly enabled',
   );
+
+  const sceneDeleteWhileScheduled = await apiRequest(
+    'DELETE',
+    `/scenes/${encodeURIComponent(sceneId)}`,
+    { token: adminToken, tenantId, expected: [409] },
+  );
+  assert(
+    sceneDeleteWhileScheduled.status === 409,
+    'Scene referenced by a schedule must be protected by lifecycle integrity',
+  );
+  const sceneStillExists = await apiRequest('GET', `/scenes/${encodeURIComponent(sceneId)}`, {
+    token: adminToken,
+    tenantId,
+    expected: [200],
+  });
+  assert(sceneStillExists.body?.id === sceneId, 'Protected scene disappeared after rejected delete');
+  console.log('CHECK scheduled-scene-delete-refused... PASS (HTTP 409)');
 
   // Despite the path, this handler is a generic setEnabled: it requires an explicit
   // boolean and is gated on the scheduler runtime flag. Toggling it both ways proves the

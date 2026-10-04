@@ -92,18 +92,20 @@ export class AdminDirectoryController {
   @Post('tenants')
   @ApiOperation({ summary: 'Create a tenant (platform admin)' })
   async createTenant(@Body() dto: CreateTenantDto) {
-    const tenant = await this.prisma.tenant.create({
-      data: { name: dto.name.trim() },
-      select: { id: true, name: true, createdAt: true },
+    // Tenant + its mandatory quota subscription are one business operation. Keeping them in
+    // one transaction prevents a failed/missing billing-plan seed from leaving an unmetered
+    // tenant row behind.
+    const tenant = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.tenant.create({
+        data: { name: dto.name.trim() },
+        select: { id: true, name: true, createdAt: true },
+      });
+      await this.billingQuota.ensureSubscription(
+        { tenantId: created.id, planTier: 'FREE' },
+        tx,
+      );
+      return created;
     });
-    // A tenant created without a subscription is unmetered: `checkDeviceQuota` has no plan
-    // to compare a device count against, and it fails closed. That makes the subscription
-    // part of creating a tenant rather than an optional later step — a platform admin who
-    // creates a tenant expects a working meter, not a tenant that cannot provision its
-    // first device. FREE is a seeded plan with a real allowance, and `ensureSubscription`
-    // throws if the plan row is missing, so a broken plan seeds surface here instead of
-    // silently yielding an unmetered tenant.
-    await this.billingQuota.ensureSubscription({ tenantId: tenant.id, planTier: 'FREE' });
     return { ...tenant, createdAt: tenant.createdAt.toISOString() };
   }
 
@@ -156,7 +158,29 @@ export class AdminDirectoryController {
         `Tenant masih berisi ${tenant._count.users} user dan ${tenant._count.devices} perangkat — kosongkan dulu`,
       );
     }
-    await this.prisma.tenant.delete({ where: { id: tenantId } });
+    // The FREE subscription is infrastructure created automatically with the tenant, not
+    // tenant-owned business data. Remove that system-owned row in the same transaction as the
+    // tenant. Any other RESTRICT relation remains a hard database refusal and is surfaced as a
+    // conflict rather than being silently cascaded away.
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.billingSubscription.deleteMany({ where: { tenantId } });
+        await tx.tenant.delete({ where: { id: tenantId } });
+      });
+    } catch (cause) {
+      if (
+        cause &&
+        typeof cause === 'object' &&
+        'code' in cause &&
+        (cause as { code?: unknown }).code === 'P2003'
+      ) {
+        throw new DomainConflictException(
+          ERROR_CODES.Conflict,
+          'Tenant masih memiliki data terkait — hapus atau pindahkan data tersebut sebelum menghapus tenant',
+        );
+      }
+      throw cause;
+    }
     return { id: tenantId, deleted: true };
   }
 

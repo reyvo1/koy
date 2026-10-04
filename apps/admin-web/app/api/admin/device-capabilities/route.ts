@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import {
   AdminSessionBackendClient,
   clearSessionCookies,
+  finalizeAdminSessionResponse,
 } from '@/lib/session';
 
 /**
@@ -18,19 +19,28 @@ export async function GET(request: Request) {
   try {
     const client = await AdminSessionBackendClient.create();
     const response = await client.request(`/devices/${deviceId}/capabilities`);
-    const payload = (await response.json()) as
+    const payload = (await response.json().catch(() => null)) as
       | { items?: unknown[] }
-      | unknown[];
+      | unknown[]
+      | null;
+    if (!response.ok) {
+      const next = NextResponse.json(
+        payload ?? { error: { code: 'CAPABILITIES_UNAVAILABLE', message: 'Daftar capability tidak tersedia.' } },
+        { status: response.status },
+      );
+      return finalizeAdminSessionResponse(client, next, response.status);
+    }
     const capabilities = Array.isArray(payload)
       ? payload
-      : payload.items ?? [];
-    return NextResponse.json({ capabilities, items: capabilities }, { status: 200 });
+      : payload?.items ?? [];
+    const next = NextResponse.json({ capabilities, items: capabilities }, { status: 200 });
+    return finalizeAdminSessionResponse(client, next, response.status);
   } catch (cause) {
     const status =
       cause instanceof Error && 'status' in cause
         ? Number((cause as { status: number }).status)
         : 502;
-    if (status === 401 || status === 403) {
+    if (status === 401) {
       const response = NextResponse.json(
         { error: { code: 'UNAUTHORIZED', message: 'Sesi admin tidak valid.' } },
         { status: 401 },
@@ -73,14 +83,13 @@ export async function POST(request: Request) {
     });
     const payload = await response.json().catch(() => null);
     const next = NextResponse.json(payload ?? {}, { status: response.status });
-    client.applySessionUpdate(next);
-    return next;
+    return finalizeAdminSessionResponse(client, next, response.status);
   } catch (cause) {
     const status =
       cause instanceof Error && 'status' in cause
         ? Number((cause as { status: number }).status)
         : 502;
-    if (status === 401 || status === 403) {
+    if (status === 401) {
       const response = NextResponse.json(
         { error: { code: 'UNAUTHORIZED', message: 'Sesi admin tidak valid.' } },
         { status: 401 },

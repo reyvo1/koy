@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import {
   AdminSessionBackendClient,
   clearSessionCookies,
+  finalizeAdminSessionResponse,
 } from '@/lib/session';
 
 /** GET /api/super/firmware — firmware artifacts + OTA rollouts proxy. */
@@ -10,13 +11,14 @@ export async function GET() {
     const client = await AdminSessionBackendClient.create();
     const response = await client.request('/admin/firmware');
     const payload = await response.json();
-    return NextResponse.json(payload, { status: response.status });
+    const next = NextResponse.json(payload, { status: response.status });
+    return finalizeAdminSessionResponse(client, next, response.status);
   } catch (cause) {
     const status =
       cause instanceof Error && 'status' in cause
         ? Number((cause as { status: number }).status)
         : 502;
-    if (status === 401 || status === 403) {
+    if (status === 401) {
       const response = NextResponse.json(
         { error: { code: 'UNAUTHORIZED', message: 'Sesi tidak valid.' } },
         { status: 401 },

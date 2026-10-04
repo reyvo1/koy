@@ -138,6 +138,16 @@ check('Wave 3 QEMU runner self-test executes before expensive ESP-IDF install', 
 check('Wave 3 QEMU setup exports only the newly installed QEMU binary directory', workflow.includes('QEMU_PATH="$(find "$IDF_TOOLS_PATH/tools/$QEMU_TOOL"') && workflow.includes('echo "$QEMU_DIR" >> "$GITHUB_PATH"'));
 check('Wave 3 firmware artifact is downloaded before live device simulation', workflow.indexOf('Download exact Wave 3 firmware artifact') < workflow.indexOf('Wave 3 simulated ESP32 provisioning reconnect command and OTA'));
 check('Wave 3 live simulation runs after real EMQX smoke', workflow.indexOf('Real EMQX auth ACL webhook and ACK smoke') < workflow.indexOf('Wave 3 simulated ESP32 provisioning reconnect command and OTA'));
+check(
+  'core CI runs the deep product lifecycle live regression without replacing existing wave gates',
+  workflow.includes('Deep product lifecycle live regression') &&
+    workflow.includes('npm run rescue:runtime:flow:extension') &&
+    workflow.indexOf('Wave 6 management plane live regression') <
+      workflow.indexOf('Deep product lifecycle live regression') &&
+    workflow.indexOf('Deep product lifecycle live regression') <
+      workflow.indexOf('Wave 7 mobile and technician live regression'),
+);
+
 check('combined simulated hardware UAT is sealed after the canonical Wave 9 aggregate', workflow.includes('Seal simulated hardware UAT evidence') && workflow.indexOf('npm run wave9:simulated-hardware:probe') < workflow.indexOf('npm run uat:simulated-hardware:verify'));
 check(
   'rescue CI re-runs Wave 2 runtime invariant guard before live runtime',

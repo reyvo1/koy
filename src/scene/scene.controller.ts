@@ -175,15 +175,28 @@ export class SceneController {
   async remove(@Request() request: any, @Param('sceneId') sceneId: string) {
     const scene = await this.scenes.findTenantScene(request.user.tenantContext.tenantId, sceneId);
     await this.access.assertSceneAccess(this.accessContext(request), scene, 'CONTROL');
-    this.recordSceneMutation(request, sceneId, 'DELETE');
-    const deleted = await this.scenes.deleteTenantScene(
-      request.user.tenantContext.tenantId,
-      sceneId,
-    );
-    if (!deleted) {
-      throw new DomainNotFoundException(ERROR_CODES.NotFound, 'Scene tidak ditemukan');
+    try {
+      const deleted = await this.scenes.deleteTenantScene(
+        request.user.tenantContext.tenantId,
+        sceneId,
+      );
+      if (!deleted) {
+        throw new DomainNotFoundException(ERROR_CODES.NotFound, 'Scene tidak ditemukan');
+      }
+      this.recordSceneMutation(request, sceneId, 'DELETE');
+      return { id: sceneId, deleted: true };
+    } catch (cause) {
+      if (
+        cause instanceof ScenePersistenceError &&
+        cause.code === SCENE_PERSISTENCE_ERROR_CODES.SceneInUse
+      ) {
+        throw new DomainConflictException(
+          ERROR_CODES.Conflict,
+          'Scene masih dipakai Schedule — ubah atau hapus Schedule tersebut sebelum menghapus Scene',
+        );
+      }
+      throw cause;
     }
-    return { id: sceneId, deleted: true };
   }
 
   @Patch(':sceneId')

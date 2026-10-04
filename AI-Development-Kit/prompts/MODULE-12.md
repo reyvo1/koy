@@ -29,3 +29,9 @@ dan partial failure handling.
 Gunakan output contract System Instructions. Jika blocker nyata tidak
 dapat diselesaikan setelah failure protocol, jangan berpura-pura
 selesai.
+
+## Post-green integrity note — 2026-10-04
+
+Scene deletion is not valid while any Schedule targets that Scene. Enforce this both at the domain
+surface (409 conflict with actionable message) and at the database boundary using a tenant-scoped
+composite FK. Record deletion audit only after persistence succeeds.

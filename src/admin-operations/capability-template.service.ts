@@ -377,21 +377,72 @@ export class CapabilityTemplateService {
 
     // Scoped by tenant and by the template's own key. An apply route that took only a
     // templateId would rewrite every tenant's devices from a platform console click.
-    const candidates = await this.prisma.capability.findMany({
-      where: {
-        device: { tenantId: input.tenantId },
-        key: template.key,
-        NOT: { schemaVersion: target.version },
-      },
-      select: {
-        id: true,
-        deviceId: true,
-        schemaVersion: true,
-        device: { select: { name: true } },
-      },
-      orderBy: { device: { name: 'asc' } },
-      take: cap + 1,
-    });
+    type Candidate = {
+      id: string;
+      deviceId: string;
+      schemaVersion: string;
+      semanticType: string;
+      dataType: string;
+      unit: string | null;
+      constraints: Prisma.JsonValue | null;
+      isReadable: boolean;
+      isWritable: boolean;
+      isReportable: boolean;
+      device: { name: string };
+    };
+
+    const candidates: Candidate[] = [];
+    let cursorId: string | undefined;
+    const scanBatch = Math.min(Math.max(cap, 100), 500);
+
+    // Scan the tenant/key deterministically until we have one more drift than this apply may
+    // change. Filtering only the first `cap` rows is incorrect: if those happen to be aligned,
+    // a drifted row later in the fleet becomes permanently invisible on every repeated press.
+    while (candidates.length <= cap) {
+      const page = await this.prisma.capability.findMany({
+        where: {
+          device: { tenantId: input.tenantId },
+          key: template.key,
+        },
+        select: {
+          id: true,
+          deviceId: true,
+          schemaVersion: true,
+          semanticType: true,
+          dataType: true,
+          unit: true,
+          constraints: true,
+          isReadable: true,
+          isWritable: true,
+          isReportable: true,
+          device: { select: { name: true } },
+        },
+        orderBy: { id: 'asc' },
+        take: scanBatch,
+        ...(cursorId ? { cursor: { id: cursorId }, skip: 1 } : {}),
+      });
+
+      for (const candidate of page) {
+        if (
+          candidate.schemaVersion !== target.version ||
+          candidate.semanticType !== template.semanticType ||
+          candidate.dataType !== template.dataType ||
+          candidate.unit !== template.unit ||
+          JSON.stringify(candidate.constraints ?? null) !==
+            JSON.stringify(target.constraints ?? null) ||
+          candidate.isReadable !== target.isReadable ||
+          candidate.isWritable !== target.isWritable ||
+          candidate.isReportable !== target.isReportable
+        ) {
+          candidates.push(candidate);
+          if (candidates.length > cap) break;
+        }
+      }
+
+      if (page.length < scanBatch || candidates.length > cap) break;
+      cursorId = page[page.length - 1]?.id;
+      if (!cursorId) break;
+    }
 
     const truncated = candidates.length > cap;
     const scoped = candidates.slice(0, cap);
@@ -479,7 +530,16 @@ export class CapabilityTemplateService {
       updated = (
         await this.prisma.capability.updateMany({
           where: { id: { in: applicable.map((c) => c.id) } },
-          data: { schemaVersion: target.version },
+          data: {
+            schemaVersion: target.version,
+            semanticType: template.semanticType,
+            dataType: template.dataType,
+            unit: template.unit,
+            constraints: target.constraints === null ? Prisma.DbNull : target.constraints,
+            isReadable: target.isReadable,
+            isWritable: target.isWritable,
+            isReportable: target.isReportable,
+          },
         })
       ).count;
     }

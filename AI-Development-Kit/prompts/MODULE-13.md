@@ -29,3 +29,9 @@ durable execution dan missed-run policy.
 Gunakan output contract System Instructions. Jika blocker nyata tidak
 dapat diselesaikan setelah failure protocol, jangan berpura-pura
 selesai.
+
+## Post-green integrity note — 2026-10-04
+
+`targetSceneId` is a real relation, not an unvalidated string. Schedule→Scene integrity must be
+tenant-scoped and database-enforced; migration must fail closed on legacy orphan targets rather than
+silently rewriting operator schedules.

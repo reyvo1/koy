@@ -221,6 +221,28 @@ describe('capability template lifecycle', () => {
       expect(transaction).toMatch(/capabilityTemplateVersion\.create\(/);
     });
 
+    it('applies the complete published shape rather than stamping schemaVersion alone', () => {
+      const service = read(SERVICE);
+      const apply = service.slice(service.indexOf('async applyVersion'));
+      const update = apply.slice(
+        apply.indexOf('capability.updateMany({'),
+        apply.indexOf('this.audit('),
+      );
+      expect(update).toMatch(/schemaVersion:\s*target\.version/);
+      expect(update).toMatch(/semanticType:\s*template\.semanticType/);
+      expect(update).toMatch(/dataType:\s*template\.dataType/);
+      expect(update).toMatch(/unit:\s*template\.unit/);
+      expect(update).toMatch(/constraints:\s*target\.constraints/);
+      expect(update).toMatch(/isReadable:\s*target\.isReadable/);
+      expect(update).toMatch(/isWritable:\s*target\.isWritable/);
+      expect(update).toMatch(/isReportable:\s*target\.isReportable/);
+
+      // A row already labelled with the published version can still carry the old shape from
+      // the historical bug, so candidate selection must inspect fields other than version.
+      expect(apply).toMatch(/candidate\.semanticType !== template\.semanticType/);
+      expect(apply).toMatch(/candidate\.isWritable !== target\.isWritable/);
+    });
+
     it('records the apply in the audit log', () => {
       // A capability schema change is exactly the kind of mutation that leaves no other
       // trace: the row is updated in place, so without an audit row there is no way to ask

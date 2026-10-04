@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { proxyBackend } from '@/lib/proxy';
 import {
   AdminSessionBackendClient,
+  clearSessionCookies,
+  finalizeAdminSessionResponse,
 } from '../../../lib/session';
 import { BackendRequestError } from '../../../lib/backend';
 
@@ -60,19 +62,20 @@ export async function POST(request: Request) {
       body: JSON.stringify(payload),
     });
 
-    if (!upstream.ok) {
-      return NextResponse.json(
-        { message: 'Pendaftaran kamera gagal' },
-        { status: upstream.status === 429 ? 429 : 400 },
-      );
-    }
-    return NextResponse.json(await upstream.json());
+    const upstreamPayload = await upstream.json().catch(() => null);
+    const next = NextResponse.json(
+      upstreamPayload ?? { message: upstream.ok ? 'Respons kamera tidak valid' : 'Pendaftaran kamera gagal' },
+      { status: upstream.status },
+    );
+    return finalizeAdminSessionResponse(client, next, upstream.status);
   } catch (error) {
     if (error instanceof BackendRequestError) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { message: error.message },
         { status: error.status },
       );
+      if (error.status === 401) clearSessionCookies(response);
+      return response;
     }
     return NextResponse.json(
       { message: 'IoT Platform API tidak terjangkau' },

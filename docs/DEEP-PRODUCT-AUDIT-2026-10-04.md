@@ -1,7 +1,7 @@
 # Deep Product Audit — 2026-10-04
 
-Baseline: `b7b62248ec5fe38973993e981c9b753483cf8e10`
-Heavy evidence: GitHub Actions run `37183166252` (`logs_100716783407.zip`) — full automated chain green.
+Baseline: `e4fdfe11dfd817086ecc93a95dd57cb0b48b8aa4`
+Heavy evidence: GitHub Actions run `37195822587` (`logs_100750579910.zip`) — full automated chain green.
 
 ## Scope
 
@@ -16,6 +16,41 @@ Static and contract audit across API/controllers, Admin Web, User Web, canonical
 5. **Directory-dependent UI could show false empty state.** Device sharing now surfaces tenant-directory failure and disables grants; billing surfaces a tenant-name-directory warning while preserving authoritative billing rows/IDs.
 6. **`/super/settings` overstated its scope.** The backend only supports profile/session operations, so navigation/docs now say **Profile & Session** rather than inventing platform configuration controls.
 7. **Current authority was stale after the all-green run.** Enterprise governance now supports the terminal state `software-closed=1-13; active=none`; no fictitious active Wave is required after software certification closes.
+8. **Admin Web refresh/session finalization was inconsistent outside User Web.** The server client could rotate tokens after a backend 401, but most Admin BFF responses did not persist the rotated pair; several direct routes also retained legacy 401/403 collapse logic. The BFF now finalizes session state centrally: final 401 clears cookies, 403 preserves the valid session, and rotated tokens are written on normal responses.
+9. **Several Admin BFF read paths fabricated empty success on backend failure.** Device capability and telemetry chart failures now retain upstream status, and tenant command aggregation propagates unexpected/infrastructure failures instead of silently dropping them.
+
+
+## Recheck findings closed by the integrity batch
+
+A second cross-layer audit followed the actual path UI → BFF → controller/service/repository →
+Prisma schema/migrations rather than treating the previous green run as whole-product coverage.
+The following confirmed defects are now repaired and regression-gated:
+
+10. **Tenant create/delete disagreed with BillingSubscription FK semantics.** Tenant creation and
+    mandatory FREE subscription now share one transaction. Empty-tenant deletion removes only the
+    automatically-created subscription in the same transaction; other tenant-owned restrictive
+    dependencies still block deletion with `409` instead of being cascaded away.
+11. **Capability apply stamped only `schemaVersion`.** Apply now converges the full published shape
+    and scans the fleet deterministically, including same-version rows carrying stale constraints or
+    flags from the historical implementation.
+12. **Schedule targets were strings rather than referentially-protected Scene relations.** Prisma and
+    PostgreSQL now enforce `(targetSceneId, tenantId) -> Scene(id, tenantId)` with `ON DELETE
+    RESTRICT`. Migration fails closed on pre-existing orphans. Scene deletion returns an actionable
+    conflict and the database remains the race-proof final boundary.
+13. **Scene UI response contract was stale.** Action count is read from backend `actions[]`, and
+    create+enable cannot report “active” when the enable mutation fails.
+
+The live UAT surface is strengthened accordingly: GitHub heavy CI now runs
+`rescue:runtime:flow:extension`, which proves tenant create/delete with billing, complete capability
+shape application, and scheduled-Scene delete protection against the live database/API stack.
+Existing wave gates are retained unchanged.
+
+## Remaining product-surface follow-up
+
+The recheck also identified lifecycle surfaces that are backend-capable but not fully operable from
+the web console: platform organization creation, tenant custom-role writers, and webhook signing
+secret rotation. They are not hidden as “green”; they remain the next product-completeness batch
+after this integrity batch earns local pre-push and GitHub heavy UAT.
 
 ## Menu/function audit result
 

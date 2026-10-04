@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import {
   AdminSessionBackendClient,
   clearSessionCookies,
+  finalizeAdminSessionResponse,
 } from '@/lib/session';
 
 /**
@@ -19,13 +20,14 @@ export async function GET(request: Request) {
     const client = await AdminSessionBackendClient.create();
     const response = await client.request(`/devices/${deviceId}`);
     const payload = await response.json();
-    return NextResponse.json(payload, { status: response.status });
+    const next = NextResponse.json(payload, { status: response.status });
+    return finalizeAdminSessionResponse(client, next, response.status);
   } catch (cause) {
     const status =
       cause instanceof Error && 'status' in cause
         ? Number((cause as { status: number }).status)
         : 502;
-    if (status === 401 || status === 403) {
+    if (status === 401) {
       const response = NextResponse.json(
         { error: { code: 'UNAUTHORIZED', message: 'Sesi admin tidak valid.' } },
         { status: 401 },

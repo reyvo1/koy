@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import {
   AdminSessionBackendClient,
   clearSessionCookies,
+  finalizeAdminSessionResponse,
 } from '@/lib/session';
 
 /**
@@ -25,7 +26,15 @@ export async function GET(request: Request) {
     let deviceId = url.searchParams.get('deviceId');
     if (!deviceId) {
       const listResponse = await client.request('/devices?limit=100');
-      const list = (await listResponse.json()) as Array<{
+      const listPayload = await listResponse.json().catch(() => null);
+      if (!listResponse.ok) {
+        const next = NextResponse.json(
+          listPayload ?? { error: { code: 'DEVICES_UNAVAILABLE', message: 'Daftar perangkat tidak tersedia.' } },
+          { status: listResponse.status },
+        );
+        return finalizeAdminSessionResponse(client, next, listResponse.status);
+      }
+      const list = listPayload as Array<{
         id: string;
         name?: string;
       }>;
@@ -34,7 +43,8 @@ export async function GET(request: Request) {
         list.find((d) => (d.name ?? '').toLowerCase().includes('suhu')) ??
         list[0];
       if (!preferred) {
-        return NextResponse.json({ buckets: [] });
+        const next = NextResponse.json({ buckets: [] });
+        return finalizeAdminSessionResponse(client, next, listResponse.status);
       }
       deviceId = preferred.id;
     }
@@ -54,18 +64,23 @@ export async function GET(request: Request) {
     const response = await client.request(
       `/devices/${deviceId}/telemetry/aggregate?${query.toString()}`,
     );
+    const responsePayload = await response.json().catch(() => null);
     if (!response.ok) {
-      // Numeric capability may not exist on chosen device — empty chart.
-      return NextResponse.json({ buckets: [] });
+      const next = NextResponse.json(
+        responsePayload ?? { error: { code: 'TELEMETRY_UNAVAILABLE', message: 'Aggregate telemetry tidak tersedia.' } },
+        { status: response.status },
+      );
+      return finalizeAdminSessionResponse(client, next, response.status);
     }
-    const payload = (await response.json()) as { buckets?: unknown[] };
-    return NextResponse.json({ buckets: payload.buckets ?? [] });
+    const payload = responsePayload as { buckets?: unknown[] } | null;
+    const next = NextResponse.json({ buckets: payload?.buckets ?? [] });
+    return finalizeAdminSessionResponse(client, next, response.status);
   } catch (cause) {
     const status =
       cause instanceof Error && 'status' in cause
         ? Number((cause as { status: number }).status)
         : 502;
-    if (status === 401 || status === 403) {
+    if (status === 401) {
       const response = NextResponse.json(
         { error: { code: 'UNAUTHORIZED', message: 'Sesi admin tidak valid.' } },
         { status: 401 },

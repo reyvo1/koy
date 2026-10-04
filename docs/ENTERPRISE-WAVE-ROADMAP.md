@@ -38,7 +38,7 @@ Smart Hotel / TAMASYA is intentionally outside Wave 1–13 and starts only after
 
 ## Current gate
 
-- Waves 1–13: **SOFTWARE SCOPE CLOSED / GREEN** for automated, source-bound software certification. GitHub Actions run `37183166252` on commit `b7b62248ec5fe38973993e981c9b753483cf8e10` completed the full automated acceptance chain, including Wave 4–9 live UAT, `SIMULATED_HARDWARE_LIVE_SERVICE`, Wave 10–12 runtime probes, Wave 13 load/security/certification gates, Gate 1 revalidation, production build, database integration and MQTT integration.
+- Waves 1–13: **SOFTWARE SCOPE CLOSED / GREEN** for automated, source-bound software certification. GitHub Actions run `37195822587` on commit `e4fdfe11dfd817086ecc93a95dd57cb0b48b8aa4` completed the full automated acceptance chain, including Wave 4–9 live UAT, `SIMULATED_HARDWARE_LIVE_SERVICE`, Wave 10–12 runtime probes, Wave 13 load/security/certification gates, Gate 1 revalidation, production build, database integration and MQTT integration.
 - There is **no active software wave**. Future code work starts only from a new defect/product-hardening finding and must preserve the same evidence boundaries.
 - Provider-owned external settlement behavior and optional site/PHYSICAL-HIL observations remain separately labelled evidence. They do not reopen software waves and simulation must never be relabelled physical.
 

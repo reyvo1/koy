@@ -27,9 +27,8 @@ import { createLoadGuard } from '@/lib/safe-fetch';
 interface SceneCard {
   id: string;
   name: string;
-  description?: string;
-  actionCount?: number;
   enabled?: boolean;
+  actions?: Array<{ id?: string }>;
 }
 
 interface ExecutionRow {
@@ -199,12 +198,27 @@ export default function TenantScenesContent() {
       });
       const body = (await res.json().catch(() => ({}))) as { id?: string; error?: { message?: string }; message?: string };
       if (!res.ok) throw new Error(body.error?.message ?? body.message ?? 'Gagal membuat scene');
-      if (body.id) {
-        await fetch(`/api/tenant/scenes/${body.id}`, {
-          method: 'PATCH',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ enabled: true }),
-        });
+      if (!body.id) {
+        throw new Error('Backend tidak mengembalikan id scene yang baru dibuat');
+      }
+      const enableResponse = await fetch(`/api/tenant/scenes/${body.id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ enabled: true }),
+      });
+      const enableBody = (await enableResponse.json().catch(() => ({}))) as {
+        error?: { message?: string };
+        message?: string;
+      };
+      if (!enableResponse.ok) {
+        // Creation did succeed; report that exact partial state instead of claiming the scene
+        // is active. The operator can retry activation from the card after the list reloads.
+        await load();
+        throw new Error(
+          `Scene dibuat tetapi gagal diaktifkan: ${
+            enableBody.error?.message ?? enableBody.message ?? `HTTP ${enableResponse.status}`
+          }`,
+        );
       }
       toast.push('success', `Scene "${payload.name}" dibuat & aktif.`);
       setName('');
@@ -405,7 +419,7 @@ export default function TenantScenesContent() {
                   {scene.name}
                 </div>
                 <div className="mt-1 line-clamp-2 min-h-[36px] text-[12.5px] font-medium text-slate-500">
-                  {scene.description ?? `${scene.actionCount ?? 0} aksi terkait`}
+                  {`${scene.actions?.length ?? 0} aksi terkait`}
                 </div>
                 <div className="mt-4 flex gap-2">
                   <button

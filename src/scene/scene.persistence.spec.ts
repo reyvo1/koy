@@ -122,6 +122,28 @@ describe('Scene persistence contract', () => {
     expect(tx.scene.create).not.toHaveBeenCalled();
   });
 
+
+  it('refuses deletion when a schedule still references the scene', async () => {
+    const tx = {
+      schedule: { count: jest.fn().mockResolvedValue(1) },
+      sceneExecution: { deleteMany: jest.fn() },
+      scene: { deleteMany: jest.fn() },
+    };
+    const prisma = {
+      $transaction: jest.fn(async (callback: (transaction: typeof tx) => unknown) => callback(tx)),
+    } as unknown as PrismaService;
+    const repo = new (await import('./scene.repository')).SceneRepository(prisma);
+
+    await expect(
+      repo.deleteTenantScene(
+        '00000000-0000-4000-8000-000000000001',
+        '00000000-0000-4000-8000-000000000002',
+      ),
+    ).rejects.toMatchObject({ code: SCENE_PERSISTENCE_ERROR_CODES.SceneInUse });
+    expect(tx.sceneExecution.deleteMany).not.toHaveBeenCalled();
+    expect(tx.scene.deleteMany).not.toHaveBeenCalled();
+  });
+
   it('types scene records with ordered actions', () => {
     const sample = {
       id: 's1',

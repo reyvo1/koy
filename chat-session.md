@@ -1,32 +1,63 @@
-# Chat Session — deep product audit / post-green hardening — 2026-10-04
+# Chat Session — Admin BFF session/error semantics deep-audit batch — 2026-10-04
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-13; active=none -->
 
-Waves 1–13 are **SOFTWARE SCOPE CLOSED / GREEN** for automated, source-bound software certification. GitHub Actions run `37183166252` on commit `b7b62248ec5fe38973993e981c9b753483cf8e10` completed the full automated acceptance chain. `SIMULATED_HARDWARE_LIVE_SERVICE` remains the automated hardware-equivalent evidence class; PHYSICAL/HIL and provider-owned external observations remain separate and non-blocking for software closure.
+Waves 1–13 remain **SOFTWARE SCOPE CLOSED / GREEN** at GitHub Actions run `37195822587` on commit `e4fdfe11dfd817086ecc93a95dd57cb0b48b8aa4` with evidence `logs_100750579910.zip`. `SIMULATED_HARDWARE_LIVE_SERVICE` remains the automated hardware-equivalent evidence class; PHYSICAL/HIL and provider-owned external observations remain separate and non-blocking for software closure.
 
 ## Latest evidence
 
-- GitHub Actions run `37183166252` / commit `b7b62248ec5fe38973993e981c9b753483cf8e10` / evidence `logs_100716783407.zip`.
-- Full Jest: **278/278 suites, 2412/2412 tests PASS**.
-- Wave 4–9 live UAT: GREEN; Wave 6 MQTT outage/recovery and Wave 7 maintenance are GREEN.
-- Wave 10–12 probes, Wave 13 load/certification, Gate 1 revalidation, build, DB integration and MQTT integration: GREEN.
-- FIRST FAILING GATE: **none** in the last automated run. The current task is a post-green deep product audit, not CI repair.
+- GitHub Actions run `37195822587` / commit `e4fdfe11dfd817086ecc93a95dd57cb0b48b8aa4` / evidence `logs_100750579910.zip`: GREEN; no active CI blocker in the uploaded checkpoint.
+- Snapshot SHA-256 matches the handoff export: `7de58e9d9ad3bb56e546577c34fd1becd5c4fe6d769d5a207d4d0f62975cea01`.
+- Evidence bundle SHA-256 matches handoff: `b6d58dae9af280d6e14f252accb7fdbd25d9cbc600b04c920dd222bde65dae58`.
+- FIRST FAILING GATE: **none** in the authoritative green run. This session continues product hardening, not Wave 1–13 debugging.
 
-## Deep-audit root findings being fixed in this candidate
+## Root-cause finding and repair in this batch
 
-- User Web dashboard must preserve a valid session on HTTP 403 instead of converting forbidden to 401/logout.
-- RBAC permission-to-audit-action mapping must be canonical and suffix-based in both policy and owner-bypass paths.
-- Schedule visibility/create paths must hide only expected forbidden/not-found outcomes and propagate infrastructure failures.
-- Capability template lifecycle already exists in backend; Admin Web BFF/UI/docs must expose create/publish/deprecate/apply truthfully instead of claiming the entity is absent.
-- Device-share and billing directory failures must surface instead of silently becoming an empty directory.
-- `/super/settings` is Profile & Session only; navigation/docs must not imply a platform-settings backend that does not exist.
-- Enterprise current-state docs were stale after the all-green run; terminal software closure is now an explicit supported state (`active=none`).
+- Admin Web refresh was rotated inside `AdminSessionBackendClient` but most BFF responses never persisted the rotated pair back to HttpOnly cookies. A request could recover once and then repeat refresh with the stale browser access token.
+- Manual BFF routes still contained the legacy `401 || 403` invalid-session pattern, including Scene Run; 403 authorization must never destroy a valid session.
+- `device-capabilities` and tenant telemetry chart could turn upstream failures into empty-success UI, while tenant command aggregation swallowed unexpected per-device failures.
+- Added one central `finalizeAdminSessionResponse` boundary, wired shared proxy responses through it, migrated direct routes to preserve 403 and refresh state, and tightened false-empty error semantics.
+- Added `test/admin-web-session-lifecycle.contract.spec.ts` and strengthened `deep-product:contracts:self-test` so these failures cannot silently return.
+- Updated current authority/docs/Development Kit from the older b7b evidence to the uploaded exact green `e4fdfe11dfd817086ecc93a95dd57cb0b48b8aa4` / run `37195822587` checkpoint.
+
+## Validation status
+
+- Source identity/evidence hash verification: PASS.
+- `node --check scripts/self-test-deep-product-contracts.mjs`: PASS.
+- `deep-product:contracts:self-test`: PASS after the Admin BFF repairs and latest-authority update.
+- `session:handoff:self-test`: PASS after continuity-doc synchronization.
+- Enterprise wave-status self-test/verify: PASS; terminal `software-closed=1-13; active=none` remains synchronized.
+- Baseline manifest resealed and verified: **1387/1387 source paths**, **1388/1388 manifest entries**.
+- TypeScript parse-level check found no syntax-class diagnostics; dependency imports/types are unresolved because the exported snapshot has no installed dependency tree.
+- A bounded `npm ci` attempt did not complete inside this tool environment and was stopped/cleaned; no dependency-backed Jest/pre-push PASS is claimed.
+- Full dependency-backed `wave3:prepush:check`, real diff review against git, commit/push, and GitHub heavy UAT cannot be truthfully executed from this exported ZIP because it contains no `.git` metadata. They remain mandatory in the real `reyvo1/iot-platform` checkout.
+
+## Current repair batch — deep product integrity root-cause closure
+
+This batch builds on the Admin BFF session/error-semantics repair and does not reopen Waves 1–13.
+
+1. **Tenant ↔ Billing lifecycle:** tenant creation and mandatory FREE subscription now share one Prisma transaction; deleting an otherwise-empty tenant removes the system-owned subscription in the same transaction, while any other `RESTRICT` dependency remains fail-closed and surfaces as `409 Conflict`.
+2. **Capability lifecycle:** apply now converges the complete published shape (`schemaVersion`, semantic/data type, unit, constraints, readable/writable/reportable flags). The drift scan paginates deterministically so later drift cannot remain hidden behind already-aligned rows.
+3. **Scene ↔ Schedule integrity:** Prisma now models the tenant-scoped Scene relation and migration `20261004213000_schedule_scene_referential_integrity` adds a composite `ON DELETE RESTRICT` FK. Migration aborts on legacy orphan schedule rows instead of deleting or rewriting operator data. Scene delete also returns a domain `409` and records DELETE audit only after the delete succeeds.
+4. **Scene UI contract:** action count is derived from backend `actions[]`; create+enable reports partial failure honestly instead of claiming an inactive Scene is active.
+5. **UAT strengthened, not weakened:** `wave2:test:targeted` now also runs Scene persistence + deep-product integrity contracts. GitHub heavy CI gains `Deep product lifecycle live regression`, which exercises tenant create/delete with billing, complete capability-shape apply, and scheduled-Scene delete refusal against the live stack. Existing Wave 4–13, simulated-hardware, EMQX, TLS, security, load and full-acceptance gates remain unchanged.
+6. Physical HIL remains optional/non-blocking for software. Automated hardware evidence keeps the exact `SIMULATED_HARDWARE_LIVE_SERVICE` label.
+
+### Validation in exported snapshot
+
+- TypeScript/TSX syntax diagnostics for every changed source/spec: PASS via TypeScript `transpileModule`.
+- `node --check scripts/run-rescue-runtime-flow-extension.mjs`: PASS.
+- `deep-product:contracts:self-test`: PASS with the new integrity checks.
+- `session:handoff:self-test`: PASS before the final documentation reseal.
+- `rescue:validate`: reached the repository hygiene gate and failed only because local `tsc --noEmit` created `dist/tsconfig.tsbuildinfo`; that generated `dist/` was removed. No product assertion failed before that hygiene stop.
+- Dependency-backed Jest, Prisma validation/migration execution, full `wave3:prepush:check`, Git diff review, commit/push and GitHub heavy UAT are **not claimed** in this exported no-`.git`/no-`node_modules` workspace. They remain mandatory in the real checkout.
 
 ## Next action
 
-Run `npm run deep-product:contracts:self-test`, targeted Jest, then `npm run wave3:prepush:check`. Review the complete deep-audit diff, commit once and push once. GitHub must re-run the full heavy acceptance; any new red gate is repaired by root-cause class without weakening UAT.
+Apply this complete integrity batch to a clean real checkout at `e4fdfe11dfd817086ecc93a95dd57cb0b48b8aa4`. Run the expanded targeted tests, Prisma check/migrations, `npm run wave3:prepush:check`, review the complete diff once, commit once, push once, then require GitHub heavy UAT including the new `Deep product lifecycle live regression`. If any gate turns red, repair that root-cause class; do not relax assertions, UAT, auth, FK integrity, TLS, simulated-hardware evidence, or rate limits to force green.
 
 --- HISTORICAL CHAT SESSION CHRONOLOGY BELOW ---
+
 
 # Chat Session — GitHub Full Jest contract-drift root fix — 2026-10-04
 

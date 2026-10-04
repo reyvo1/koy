@@ -415,6 +415,13 @@ jobs:
         # failures. This avoids repeated password rotation and prevents one red probe hiding the next.
         run: npm run wave6:management:probe
 
+      - name: Deep product lifecycle live regression
+        timeout-minutes: 12
+        # Cross-layer proof for bugs that source/unit gates can miss: tenant+subscription
+        # create/delete, complete capability-shape apply, and Schedule->Scene delete protection.
+        # This strengthens the existing live UAT; it does not replace or skip any wave gate.
+        run: npm run rescue:runtime:flow:extension
+
       - name: Wave 7 mobile and technician live regression
         timeout-minutes: 14
         run: npm run wave7:operations:probe

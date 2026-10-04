@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import {
   AdminSessionBackendClient,
   clearSessionCookies,
+  finalizeAdminSessionResponse,
 } from '@/lib/session';
 
 /** POST /api/tenant/scenes/[sceneId]/run — runs a scene (Modul 12). */
@@ -18,13 +19,14 @@ export async function POST(
       body: JSON.stringify({ requestId: crypto.randomUUID() }),
     });
     const payload = await response.json();
-    return NextResponse.json(payload, { status: response.status });
+    const next = NextResponse.json(payload, { status: response.status });
+    return finalizeAdminSessionResponse(client, next, response.status);
   } catch (cause) {
     const status =
       cause instanceof Error && 'status' in cause
         ? Number((cause as { status: number }).status)
         : 502;
-    if (status === 401 || status === 403) {
+    if (status === 401) {
       const response = NextResponse.json(
         { error: { code: 'UNAUTHORIZED', message: 'Sesi tidak valid.' } },
         { status: 401 },

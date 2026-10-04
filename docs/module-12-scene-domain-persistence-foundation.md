@@ -41,3 +41,16 @@ Implement only:
 Ordered/parallel execution engine, history queries, permission model beyond
 tenant isolation, partial-failure handling runtime, public API, frontend,
 Module 13+, production deployment.
+
+
+## Post-green lifecycle hardening — 2026-10-04
+
+Module 12 now has a cross-module invariant with Module 13: `Schedule.targetSceneId` is a
+tenant-scoped optional relation to `Scene(id, tenantId)` enforced by a PostgreSQL foreign key with
+`ON DELETE RESTRICT`. Scene deletion performs a user-friendly schedule preflight and also relies on
+the FK as the race-proof final boundary. Existing orphan schedules are not auto-deleted or silently
+retargeted by migration; migration fails closed until an operator explicitly repairs them.
+
+Scene UI contract also follows the persisted response shape directly: action count comes from
+`actions[]`, and Scene creation does not report “active” unless the follow-up enable mutation
+actually succeeds.

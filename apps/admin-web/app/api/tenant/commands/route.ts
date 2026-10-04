@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import {
   AdminSessionBackendClient,
   clearSessionCookies,
+  finalizeAdminSessionResponse,
 } from '@/lib/session';
 
 /**
@@ -13,7 +14,14 @@ export async function GET() {
   try {
     const client = await AdminSessionBackendClient.create();
     const listResponse = await client.request('/devices?limit=100');
-    const list = (await listResponse.json()) as
+    const listPayload = await listResponse.json().catch(() => null);
+    if (!listResponse.ok) {
+      const error = Object.assign(new Error(`HTTP ${listResponse.status}`), {
+        status: listResponse.status,
+      });
+      throw error;
+    }
+    const list = listPayload as
       | Array<{ id: string; name?: string }>
       | { items?: Array<{ id: string; name?: string }> };
     const deviceItems = Array.isArray(list) ? list : (list.items ?? []);
@@ -26,7 +34,13 @@ export async function GET() {
           const response = await client.request(
             `/devices/${device.id}/commands`,
           );
-          if (!response.ok) return [];
+          if (!response.ok) {
+            if (response.status === 403 || response.status === 404) return [];
+            const error = Object.assign(new Error(`HTTP ${response.status}`), {
+              status: response.status,
+            });
+            throw error;
+          }
           const payload = (await response.json()) as unknown;
           const items = Array.isArray(payload)
             ? payload
@@ -63,8 +77,13 @@ export async function GET() {
                 acknowledgedAt: row.acknowledgedAt ?? null,
               };
             });
-        } catch {
-          return [];
+        } catch (cause) {
+          const status =
+            cause instanceof Error && 'status' in cause
+              ? Number((cause as { status: number }).status)
+              : 502;
+          if (status === 403 || status === 404) return [];
+          throw cause;
         }
       }),
     );
@@ -76,13 +95,14 @@ export async function GET() {
       )
       .slice(0, 50);
 
-    return NextResponse.json({ total: rows.length, items: rows });
+    const next = NextResponse.json({ total: rows.length, items: rows });
+    return finalizeAdminSessionResponse(client, next, listResponse.status);
   } catch (cause) {
     const status =
       cause instanceof Error && 'status' in cause
         ? Number((cause as { status: number }).status)
         : 502;
-    if (status === 401 || status === 403) {
+    if (status === 401) {
       const response = NextResponse.json(
         { error: { code: 'UNAUTHORIZED', message: 'Sesi tidak valid.' } },
         { status: 401 },

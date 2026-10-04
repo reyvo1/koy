@@ -629,6 +629,7 @@ prisma/migrations/20261002150000_wave11_device_risk/migration.sql
 prisma/migrations/20261002200000_wave12_region_boundaries/migration.sql
 prisma/migrations/20261002210000_wave12_edge_gateways/migration.sql
 prisma/migrations/20261002220000_wave12_device_twin/migration.sql
+prisma/migrations/20261004213000_schedule_scene_referential_integrity/migration.sql
 prisma/migrations/migration_lock.toml
 prisma/schema.prisma
 prisma/seed.ts
@@ -1153,6 +1154,7 @@ src/webhook/webhook.controller.ts
 src/webhook/webhook.module.ts
 test/admin-web-bff-content-type.contract.spec.ts
 test/admin-web-proxy-session.contract.spec.ts
+test/admin-web-session-lifecycle.contract.spec.ts
 test/application.smoke.e2e-spec.ts
 test/capability-template-lifecycle.contract.spec.ts
 test/ci-dependency-bootstrap.contract.spec.ts
@@ -1161,6 +1163,7 @@ test/console-fail-closed-surfaces.contract.spec.ts
 test/contract-surface-policy.json
 test/credential-column-exposure.contract.spec.ts
 test/database-testing.contract.spec.ts
+test/deep-product-integrity.contract.spec.ts
 test/demo-seed-reentry.contract.spec.ts
 test/deployment-recovery.contract.spec.ts
 test/fixtures/historical-contract-policy/advanced-indirection.fixture.ts

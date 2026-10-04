@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DeviceStatus } from '@prisma/client';
+import { DeviceStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+
+type BillingDbClient = Pick<Prisma.TransactionClient, 'billingPlan' | 'billingSubscription'>;
 
 /**
  * Why a quota check answered the way it did. `null` means there was headroom.
@@ -95,11 +97,14 @@ export class BillingQuotaService {
     };
   }
 
-  async ensureSubscription(input: {
-    tenantId: string;
-    planTier: 'FREE' | 'STANDARD' | 'ENTERPRISE';
-  }): Promise<void> {
-    const plan = await this.prisma.billingPlan.findUnique({
+  async ensureSubscription(
+    input: {
+      tenantId: string;
+      planTier: 'FREE' | 'STANDARD' | 'ENTERPRISE';
+    },
+    database: BillingDbClient = this.prisma,
+  ): Promise<void> {
+    const plan = await database.billingPlan.findUnique({
       where: { tier: input.planTier },
     });
     if (!plan) {
@@ -107,7 +112,7 @@ export class BillingQuotaService {
         code: 'BILLING_PLAN_NOT_FOUND',
       });
     }
-    await this.prisma.billingSubscription.upsert({
+    await database.billingSubscription.upsert({
       where: { tenantId: input.tenantId },
       create: {
         tenantId: input.tenantId,

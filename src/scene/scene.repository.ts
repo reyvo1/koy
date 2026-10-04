@@ -13,6 +13,7 @@ export const SCENE_PERSISTENCE_ERROR_CODES = {
   InvalidInput: 'SCENE_INVALID_INPUT',
   SceneNotFound: 'SCENE_NOT_FOUND',
   NameConflict: 'SCENE_NAME_CONFLICT',
+  SceneInUse: 'SCENE_IN_USE',
   ExecutionNotFound: 'SCENE_EXECUTION_NOT_FOUND',
 } as const;
 
@@ -170,19 +171,45 @@ export class SceneRepository {
     });
   }
 
-  /** Tenant-scoped hard delete; execution history removed with the scene. */
+  /** Tenant-scoped hard delete; schedules are an explicit lifecycle dependency. */
   async deleteTenantScene(tenantId: string, sceneId: string): Promise<boolean> {
     this.assertUuid(tenantId, 'tenantId');
     this.assertUuid(sceneId, 'sceneId');
-    const result = await this.prisma.$transaction([
-      this.prisma.sceneExecution.deleteMany({
-        where: { sceneId, tenantId },
-      }),
-      this.prisma.scene.deleteMany({
-        where: { id: sceneId, tenantId },
-      }),
-    ]);
-    return result[1].count > 0;
+
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const scheduleCount = await tx.schedule.count({
+          where: { tenantId, targetSceneId: sceneId },
+        });
+        if (scheduleCount > 0) {
+          throw new ScenePersistenceError(
+            SCENE_PERSISTENCE_ERROR_CODES.SceneInUse,
+            `Scene is referenced by ${scheduleCount} schedule(s)`,
+          );
+        }
+
+        await tx.sceneExecution.deleteMany({ where: { sceneId, tenantId } });
+        const deleted = await tx.scene.deleteMany({
+          where: { id: sceneId, tenantId },
+        });
+        return deleted.count > 0;
+      });
+    } catch (cause) {
+      // The database FK is the final race-proof boundary. If a schedule is created between
+      // the preflight count and DELETE, surface the same domain refusal instead of a Prisma 500.
+      if (
+        cause &&
+        typeof cause === 'object' &&
+        'code' in cause &&
+        (cause as { code?: unknown }).code === 'P2003'
+      ) {
+        throw new ScenePersistenceError(
+          SCENE_PERSISTENCE_ERROR_CODES.SceneInUse,
+          'Scene is referenced by a schedule',
+        );
+      }
+      throw cause;
+    }
   }
 
   /** Enable/disable a tenant scene; false when the scene does not exist. */
