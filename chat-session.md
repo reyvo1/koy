@@ -1,4 +1,4 @@
-# Chat Session — GitHub Wave 4 TLS protocol-probe root fix — 2026-10-04
+# Chat Session — GitHub Wave 5 UAT credential root fix — 2026-10-04
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
 
@@ -6,19 +6,34 @@ Wave 13 remains IN PROGRESS. `SIMULATED_HARDWARE_LIVE_SERVICE` remains the manda
 
 ## Latest evidence
 
-GitHub Actions run `100697590638` checked out commit `15bf8263294075911633eeccbd19de12c807c1a1`. Core Full Jest is now fully green: **278/278 suites and 2412/2412 tests PASS**; coverage rerun also completed 278/278 and 2412/2412. Both Wave 3 firmware matrix targets reached their native ESP-IDF/QEMU path. The rescue live-service job progressed through real rescue runtime, UAT seed, UAT documentation **24/24 PASS**, UAT login/authorization **9/9 PASS**, and then stopped in `Wave 4 staging UAT and TLS regression` with exactly one failed TLS assertion: `TLS 1.3 is negotiable — unknown`; the same probe passed nginx config, zero warnings, live listener, HTTP/2 ALPN, proxy round trip, HTTP→HTTPS redirect, `/metrics` denial, HSTS, and TLS 1.0 refusal.
+GitHub Actions run `37177331993` checked out commit `9523a6f0b369e9f06faa10ae3f1a326b41a79fd0`; operator evidence bundle is `logs_100701175302.zip`. Core Full Jest completed **278/278 suites and 2412/2412 tests PASS**. Both Wave 3 firmware matrix targets completed their native ESP-IDF/QEMU paths. Rescue source validation is **488/488 PASS**. The rescue live-service job then proved UAT docs **24/24 PASS**, UAT login/authorization **9/9 PASS**, and TLS **12/12 PASS**.
+
+The first new failure is Wave 5: `scripts/probe-webhook-event-vocabulary.sh` exited at `PROBE_EMAIL: unbound variable`. Because the GitHub Wave 5 step starts a fresh shell, it does not inherit any ad-hoc `PROBE_*` variables. The source-bound UAT password is already generated correctly by `uat:seed` and stored in `.uat-credentials`, but Wave 5 bypassed the existing UAT credential helper. The later `Unexpected end of JSON input` for `/tmp/probe-login.json` is an effect of the aborted login, not an independent backend failure. `probe-public-api-sdk.mts` consumes the same email/password env contract, so it is included in the same root-cause repair before it becomes the next red step.
 
 ## Root-cause repair
 
-- `scripts/verify-tls-terminator.mjs` no longer assumes one OpenSSL human-output shape or stdout-only negotiation evidence. It captures stdout + stderr + the real process exit status and recognizes classic `Protocol:`, OpenSSL `Protocol version:`, and `New, TLSv1.x, Cipher is ...` negotiation summaries.
-- TLS 1.3 PASS now requires **exit 0 plus explicit TLSv1.3 negotiation**. A failed process cannot become PASS merely because error text mentions TLSv1.3.
-- TLS 1.0 refusal now requires a failed handshake with no negotiated protocol. A successful `New, TLSv1, Cipher is ...` result is recognized as a security failure instead of being falsely classified as refusal.
-- Added `tls:protocol:self-test` with positive/negative parser fixtures, and made it mandatory in local `wave1:prepush:check` plus the core GitHub verifier-self-test step so OpenSSL formatting drift is caught before live Wave 4 UAT.
-- CI/self-test governance now pins this requirement through `scripts/self-test-wave1-prepush.mjs`, `scripts/self-test-rescue-github-ci.mjs`, and `scripts/validate-rescue-baseline.mjs`.
+- Added canonical `scripts/run-wave5-public-api-probes.sh`, which sources `scripts/probe-common.sh`, loads the UAT admin password from `.uat-credentials`, derives the rescue API port from `.env`, exports one tenant/email/password/API contract, and runs webhook then SDK sequentially.
+- Added `probe_export_uat_admin_env` to the shared probe helper; it fails closed if UAT credentials are missing/blank and avoids hardcoded or committed passwords.
+- Low-level webhook/SDK probes now report a named missing-credential cause instead of an unbound variable/ambiguous login failure.
+- GitHub Wave 5 calls only `npm run wave5:public-api:probe`, removing the ambient-shell dependency between UAT seed and the live probes.
+- Added `wave5:public-api:self-test` and wired it into local `wave1:prepush:check`, core CI verifier self-tests, rescue GitHub CI governance, and rescue baseline validation.
+- Corrected the stale UAT seed comment that still described API port 5000; runtime authority remains `.env`/3000.
+- Session handoff/current-state files are updated in the same batch, preserving `37177331993` + `9523a6f0b369e9f06faa10ae3f1a326b41a79fd0` as the resume checkpoint and keeping physical hardware non-blocking.
+
+## QA in repair workspace
+
+- `wave5:public-api:self-test`: PASS, including real fixture parsing, unknown-placeholder refusal, missing-file refusal, wrapper syntax and CI/package wiring.
+- `session:handoff:self-test`: PASS, including exact run/SHA agreement across current continuation files and the new fresh-step credential invariant.
+- `rescue:github-ci:self-test`: PASS with canonical Wave 5 wrapper enforcement.
+- `enterprise:wave-status:self-test` + `enterprise:wave-status:verify`: PASS, 10/10 synchronized current-state documents.
+- `validate-rescue-baseline.mjs`: PASS **490/490**.
+- Changed shell scripts pass `bash -n`; changed `.mjs` files pass Node syntax checks; `probe-public-api-sdk.mts` passes Node type-stripping syntax check.
+- Extracted repair workspace has no `node_modules`, so full lint/Jest/secretlint/live Wave 5 are deliberately not claimed here; the operator command runs the official local pre-push before commit and GitHub remains authoritative for live service evidence.
+- Final seal after documentation update: **1374/1374 source paths, 1375/1375 manifest entries**.
 
 ## Next action
 
-Run `npm run tls:protocol:self-test`, then the official `npm run wave3:prepush:check`. If green, review the complete diff once, commit once, push once, and let GitHub resume heavy UAT. Do not reopen Full Jest, RBAC, ESP32/QEMU, or UAT account/port work unless a new run produces new evidence; the current first failing gate is the Wave 4 TLS protocol-probe portability class.
+Run `npm run wave5:public-api:self-test`, then `npm run wave3:prepush:check`. If green, review the complete diff once, commit once, push once, and let GitHub continue from Wave 5. Do not reopen Wave 4 TLS, Full Jest, RBAC, or ESP32/QEMU unless newer evidence fails there.
 
 --- HISTORICAL CHAT SESSION CHRONOLOGY BELOW ---
 

@@ -78,6 +78,7 @@ jobs:
           npm run fastify:v5:compat:self-test
           npm run web:framework:contract:self-test
           npm run tls:protocol:self-test
+          npm run wave5:public-api:self-test
           npm run wave1:prepush:self-test
           npm run session:handoff:self-test
           npm run enterprise:wave-status:self-test
@@ -406,9 +407,10 @@ jobs:
 
       - name: Wave 5 public API webhook and SDK live regression
         timeout-minutes: 10
-        run: |
-          npm run webhook:probe
-          npm run sdk:probe
+        # Consume the exact UAT identity seeded above. Do not rely on ambient PROBE_* shell state:
+        # every GitHub step starts with a fresh shell and the generated password lives only in
+        # `.uat-credentials` unless the source-controlled wrapper exports it.
+        run: npm run wave5:public-api:probe
 
       - name: Wave 6 management plane live regression
         timeout-minutes: 12

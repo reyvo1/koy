@@ -38,10 +38,10 @@ probe_require_uat() {
 probe_login() {
   local api="$1" creds="$2" password status
   password=$(probe_uat_password)
-  if [ -z "$password" ]; then
-    # Refuse rather than sending an empty password: a 401 here is indistinguishable from a wrong
-    # tenant, and the failure would be diagnosed in the wrong place.
-    echo "could not read the UAT admin password from .uat-credentials" >&2
+  if [ -z "$password" ] || [[ "$password" == \(unknown* ]]; then
+    # Refuse rather than sending an empty/placeholder password: a 401 here is indistinguishable
+    # from a wrong tenant, and the failure would be diagnosed in the wrong place.
+    echo "could not read a usable UAT admin password from .uat-credentials" >&2
     exit 2
   fi
   status=$(curl -s -o "$creds" -w '%{http_code}' -X POST "$api/auth/login" \
@@ -52,4 +52,21 @@ probe_login() {
     exit 2
   fi
   printf 'UAT session ok (%s)\n' "$api"
+}
+
+probe_export_uat_admin_env() {
+  probe_require_uat
+
+  local password
+  password="${PROBE_PASSWORD:-$(probe_uat_password)}"
+  if [ -z "$password" ] || [[ "$password" == \(unknown* ]]; then
+    echo "could not read a usable UAT admin password from .uat-credentials" >&2
+    exit 2
+  fi
+
+  export PROBE_EMAIL="${PROBE_EMAIL:-uat.admin@iot.local}"
+  export PROBE_PASSWORD="$password"
+  export PROBE_TENANT_ID="${PROBE_TENANT_ID:-44444444-4444-4444-8444-444444444444}"
+  export PROBE_BASE="${PROBE_BASE:-$(probe_resolve_api_base)}"
+  export PROBE_API_BASE="${PROBE_API_BASE:-$PROBE_BASE}"
 }

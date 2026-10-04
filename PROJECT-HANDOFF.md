@@ -2,17 +2,21 @@
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
 
-## ACTIVE HANDOFF — GITHUB WAVE 4 TLS PROTOCOL-PROBE PORTABILITY
+## ACTIVE HANDOFF — GITHUB WAVE 5 UAT CREDENTIAL CONTRACT
 
 Master roadmap: `docs/ENTERPRISE-WAVE-ROADMAP.md`. Waves 1–12 are software-scope CLOSED/GREEN; Wave 13 is IN PROGRESS. Missing physical ESP32/camera hardware is not a software blocker. Mandatory automated certification uses source-bound `SIMULATED_HARDWARE_LIVE_SERVICE`; physical/site/HIL remains separately labelled field validation.
 
-GitHub run `100697590638` on commit `15bf8263294075911633eeccbd19de12c807c1a1` proves the prior Full Jest contract repair: **278/278 suites and 2412/2412 tests PASS**, with coverage rerun equally green. Rescue live-service reached Wave 4 after real runtime/UAT setup; `uat:docs` is **24/24 PASS**, `uat:login` is **9/9 PASS**, and TLS is **11/12 PASS**. The only failure is `TLS 1.3 is negotiable — unknown` even though the same nginx instance passes config, no-warning, listener, HTTP/2 ALPN, proxy, redirect, metrics-denial, HSTS, and TLS1.0-refusal checks.
+GitHub Actions run `37177331993` on commit `9523a6f0b369e9f06faa10ae3f1a326b41a79fd0` (evidence bundle `logs_100701175302.zip`) proves the previous TLS repair: Core Full Jest **278/278 suites, 2412/2412 tests PASS**, both Wave 3 firmware/QEMU matrix targets PASS, rescue validation **488/488 PASS**, UAT docs **24/24 PASS**, UAT login/authorization **9/9 PASS**, and TLS **12/12 PASS** including TLS1.3 negotiation and TLS1.0 refusal.
 
-The repair fixes the verifier rather than weakening TLS policy: OpenSSL negotiation parsing now uses stdout+stderr+exit status, recognizes multiple legitimate OpenSSL summary formats, requires exit-0 explicit TLSv1.3 evidence for TLS1.3 PASS, and refuses to call TLS1.0 blocked if a TLSv1 handshake was actually negotiated. A dependency-free `tls:protocol:self-test` is mandatory locally and in core CI.
+The first failing gate moved to Wave 5. `scripts/probe-webhook-event-vocabulary.sh` was launched as a naked low-level probe in a fresh GitHub step, but that script requires `PROBE_EMAIL`/`PROBE_PASSWORD`; the generated UAT password exists only in `.uat-credentials` from `uat:seed`. `set -u` therefore aborted on `PROBE_EMAIL: unbound variable`. The subsequent empty `/tmp/probe-login.json` parse error is secondary. `sdk:probe` carries the same ambient-env assumption and is repaired in the same root-cause batch.
+
+The repair standardizes Wave 5 on one source-controlled wrapper that loads the seeded UAT admin identity via `scripts/probe-common.sh`, exports the shared tenant/API/credential contract, then runs webhook and SDK sequentially. A dependency-free `wave5:public-api:self-test` verifies the credential loader, missing-credential fail-closed behavior, package wiring, shell syntax, and GitHub workflow wiring before any live Wave 5 run.
+
+Repair-workspace QA is green: Wave 5 credential self-test PASS, session handoff PASS, GitHub CI contract PASS, enterprise status 10/10 PASS, rescue validation **490/490 PASS**. Final sealed source is **1374/1374 paths and 1375/1375 hashes**.
 
 ## Resume rule
 
-Follow `docs/SESSION-HANDOFF-PROTOCOL.md`: verify real HEAD/status and continue from the FIRST FAILING GATE rather than auditing from zero. For this candidate run `npm run tls:protocol:self-test`, then `npm run wave3:prepush:check`. Only after full green: review complete diff once, commit once, push once, then read GitHub heavy UAT. Do not reopen already-green Full Jest/RBAC/ESP32/UAT-account work without new evidence.
+Follow `docs/SESSION-HANDOFF-PROTOCOL.md`: verify real HEAD/status and continue from the FIRST FAILING GATE rather than auditing from zero. For this batch run `npm run wave5:public-api:self-test`, then `npm run wave3:prepush:check`. Only after full green: review complete diff once, commit once, push once, then read GitHub heavy UAT. Do not reopen Wave 4 TLS, Full Jest, RBAC or ESP32/QEMU without new evidence.
 
 --- HISTORICAL WAVE 3 HANDOFF BELOW ---
 

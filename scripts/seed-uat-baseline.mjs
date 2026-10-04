@@ -8,7 +8,8 @@
  *
  *   - no user with that email, in any database;
  *   - no tenant named "Demo Home";
- *   - the real ports are 5000 for the API and 3100 for the admin web, the latter bound by
+ *   - historical docs drifted to API port 5000; the rescue runtime now derives API port 3000
+ *     from `.env`, while admin web remains 3100 and is bound by
  *     `apps/admin-web/package.json` (`next dev --port 3100`);
  *   - and `admin@demo.id` is on the *forbidden* list in
  *     `scripts/validate-rescue-baseline.mjs`, so the gate and the docs contradicted each

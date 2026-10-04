@@ -37,6 +37,7 @@ const pkg = JSON.parse(read('package.json'));
 assert(protocol.includes('first failing gate') || protocol.includes('FIRST FAILING GATE'), 'handoff protocol resumes from the first failing gate instead of auditing from zero');
 assert(protocol.includes('git rev-parse HEAD') && protocol.includes('git status --short'), 'handoff protocol requires real checkout verification');
 assert(protocol.includes('SIMULATED_HARDWARE_LIVE_SERVICE') && protocol.includes('does **not** block software progress'), 'handoff protocol makes physical hardware non-blocking while preserving evidence labels');
+assert(protocol.includes('ambient shell variables') && protocol.includes('fresh-step isolation'), 'handoff protocol forbids cross-step ambient credential assumptions for live probes');
 assert(agents.includes('SESSION-HANDOFF-PROTOCOL.md') && agents.includes('first failing gate'), 'AGENTS current override forces session-resume continuity before mutations');
 assert(['PASTE-KE-CHAT-BERIKUTNYA.txt', 'PROJECT-HANDOFF.md', 'docs/SESSION-CHECKPOINT.md', 'chat-session.md'].every((name) => protocol.includes(`\`${name}\``)), 'handoff protocol names every current continuation artifact');
 

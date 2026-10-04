@@ -4,13 +4,14 @@ LANJUTKAN PROJECT IOT DARI HANDOFF TERBARU. JANGAN AUDIT DARI NOL.
 
 CURRENT CONTINUATION — 2026-10-04:
 - Wave 13 = IN PROGRESS. Waves 1–12 = SOFTWARE SCOPE CLOSED/GREEN.
-- Latest GitHub candidate: `15bf8263294075911633eeccbd19de12c807c1a1`, run `100697590638`. Sesi baru WAJIB cek real `git rev-parse HEAD`, branch/upstream, dan `git status --short`.
-- Core Full Jest + coverage sudah hijau: **278/278 suites, 2412/2412 tests PASS**.
-- FIRST FAILING GATE: Wave 4 staging UAT/TLS. `uat:docs` 24/24 PASS, `uat:login` 9/9 PASS, TLS 11/12 PASS; hanya `TLS 1.3 is negotiable — unknown` gagal.
-- Root cause: `verify-tls-terminator.mjs` lama menganggap satu bentuk output OpenSSL/stdout. Repair sekarang membaca stdout+stderr+exit status, mengenali `Protocol:`, `Protocol version:`, dan `New, TLSv1.x, Cipher is ...`, serta membuat TLS1.3 success/TLS1.0 refusal fail-closed.
-- Cheap regression `tls:protocol:self-test` sekarang wajib di local pre-push + core CI. Jangan melemahkan `ssl_protocols TLSv1.2 TLSv1.3` atau menghapus check untuk mengejar hijau.
+- Latest committed GitHub baseline: `9523a6f0b369e9f06faa10ae3f1a326b41a79fd0`, Actions run `37177331993`; evidence bundle `logs_100701175302.zip`. Sesi baru WAJIB cek real `git rev-parse HEAD`, branch/upstream, dan `git status --short`.
+- Core Full Jest hijau **278/278 suites, 2412/2412 tests**. Dual-target ESP32/QEMU hijau. Rescue validator **488/488 PASS**.
+- Wave 4 sekarang benar-benar hijau: UAT docs **24/24**, login/authorization **9/9**, TLS **12/12**. Jangan buka ulang TLS kecuali ada evidence baru.
+- FIRST FAILING GATE: Wave 5 public API/webhook live regression. `webhook:probe` berhenti sebelum login karena `PROBE_EMAIL`/`PROBE_PASSWORD` tidak diekspor di fresh GitHub step; JSON parse error sesudahnya adalah efek domino. `sdk:probe` memakai env yang sama dan termasuk akar yang sama.
+- Root repair: satu canonical Wave 5 wrapper mengambil identity dari `.uat-credentials` hasil `uat:seed`, mengekspor email/password/tenant/API untuk webhook + SDK, low-level probes fail dengan sebab bernama bila credential hilang, dan cheap self-test diwajibkan local pre-push + core CI.
+- Repair QA: Wave 5 self-test PASS, handoff PASS, CI-contract PASS, enterprise status 10/10, rescue validator 490/490; final seal 1374/1374 source + 1375/1375 hash.
 - Hardware fisik bukan blocker software. GitHub wajib menutup source-bound `SIMULATED_HARDWARE_LIVE_SERVICE`; physical/site/HIL tetap field evidence terpisah.
-- NEXT: `npm run tls:protocol:self-test` → `npm run wave3:prepush:check` → review diff → satu commit/push → baca first failing GitHub step berikutnya. Jangan audit ulang dari nol.
+- NEXT: `npm run wave5:public-api:self-test` → `npm run wave3:prepush:check` → review diff → satu commit/push → baca FIRST FAILING GATE GitHub berikutnya.
 - Sebelum pindah chat lagi, update `chat-session.md`, file ini, `PROJECT-HANDOFF.md`, `CURRENT-STATE.md`, `docs/SESSION-CHECKPOINT.md`, docs terkait, reseal baseline, dan jalankan `npm run session:handoff:self-test`.
 
 BACA URUTAN: `docs/SESSION-HANDOFF-PROTOCOL.md` → file ini → `PROJECT-HANDOFF.md` → `CURRENT-STATE.md` → `docs/SESSION-CHECKPOINT.md` → `chat-session.md` → enterprise roadmap/evidence policy.

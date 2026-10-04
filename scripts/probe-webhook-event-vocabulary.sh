@@ -20,7 +20,7 @@
 # runs before anything is asserted so the quota is available.
 #
 # Usage: bash scripts/probe-webhook-event-vocabulary.sh
-# Env:   PROBE_EMAIL, PROBE_PASSWORD, PROBE_TENANT_ID (defaults to the demo tenant)
+# Env:   PROBE_EMAIL, PROBE_PASSWORD, PROBE_TENANT_ID. Canonical CI entrypoint: npm run wave5:public-api:probe
 set -uo pipefail
 
 BASE="${PROBE_BASE:-http://127.0.0.1:3000}"
@@ -33,6 +33,9 @@ WEDGED_PORT="${PROBE_WEDGED_PORT:-45097}"
 RECEIVER_PATH="/tmp/webhook-received.jsonl"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STAMP="$(date +%s | tr '[:upper:]' '[:lower:]')"
+
+: "${PROBE_EMAIL:?PROBE_EMAIL is required; run npm run wave5:public-api:probe after npm run uat:seed}"
+: "${PROBE_PASSWORD:?PROBE_PASSWORD is required; run npm run wave5:public-api:probe after npm run uat:seed}"
 
 pass=0; fail=0
 check() {

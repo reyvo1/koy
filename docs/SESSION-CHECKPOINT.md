@@ -1,24 +1,22 @@
-# IOT SESSION CHECKPOINT — CURRENT AUTHORITY
-
-## Status terkini — 2026-10-04
+# SESSION CHECKPOINT — ENTERPRISE WAVE 13
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
 
-- Waves 1–12: **software scope CLOSED / GREEN**. Wave 13: **IN PROGRESS**.
-- Missing physical hardware is **NON-BLOCKING for software delivery**. Required automated evidence is source-bound `SIMULATED_HARDWARE_LIVE_SERVICE`; physical/site/HIL stays separately labelled field validation.
-- Latest GitHub checkout: `15bf8263294075911633eeccbd19de12c807c1a1`, run `100697590638`.
-- Core Full Jest + coverage: **278/278 suites, 2412/2412 tests PASS**.
-- First failing gate: `Wave 4 staging UAT and TLS regression`. UAT docs **24/24 PASS**, UAT login **9/9 PASS**, TLS **11/12 PASS**; only `TLS 1.3 is negotiable — unknown` failed.
-- Root cause is verifier portability, not evidence that nginx disabled TLS1.3: the old script assumed one stdout format. Current repair captures stdout/stderr/exit status, parses classic/brief/`New, TLSv1.x` summaries, and makes TLS1.3/TLS1.0 verdicts fail-closed.
-- `tls:protocol:self-test` is now required by local pre-push and core CI so parser drift is caught before live Wave 4.
-- Workflow continuity remains governed by `docs/SESSION-HANDOFF-PROTOCOL.md` and `npm run session:handoff:self-test`.
+## Current checkpoint — 2026-10-04
+
+- Wave 13 remains IN PROGRESS; Waves 1–12 remain software-scope CLOSED/GREEN.
+- Latest GitHub checkout: `9523a6f0b369e9f06faa10ae3f1a326b41a79fd0`, Actions run `37177331993`; evidence bundle `logs_100701175302.zip`.
+- Core evidence: Full Jest **278/278 suites, 2412/2412 tests PASS**; dual ESP32/QEMU PASS; rescue validation **488/488 PASS**.
+- Wave 4 is green on the live rescue runner: UAT docs **24/24 PASS**, UAT login **9/9 PASS**, TLS **12/12 PASS**.
+- FIRST FAILING GATE: `Wave 5 public API webhook and SDK live regression`. `webhook:probe` aborts on `PROBE_EMAIL: unbound variable` before login because the fresh GitHub step does not export the UAT credentials. `/tmp/probe-login.json` then parses empty only as a secondary failure. `sdk:probe` requires the same missing env contract and is repaired in the same batch.
+- Root repair: Wave 5 must consume `.uat-credentials` emitted by `uat:seed` through `probe-common.sh`; one wrapper exports `PROBE_EMAIL`, `PROBE_PASSWORD`, `PROBE_TENANT_ID`, `PROBE_BASE`/`PROBE_API_BASE` then executes webhook + SDK.
+- Cheap guard: `wave5:public-api:self-test` validates loader parsing, fresh-step env export, fail-closed missing credentials, wrapper syntax and CI/package wiring; it is required by local pre-push and core CI.
+- Repair QA PASS: Wave 5 credential self-test, session handoff self-test, GitHub CI contract, enterprise status 10/10, rescue validator 490/490; final seal 1374/1374 source and 1375/1375 hashes.
+- Hardware policy unchanged: `SIMULATED_HARDWARE_LIVE_SERVICE` closes automated software UAT; physical/HIL remains separately labelled non-blocking field evidence.
 
 ### Next action
 
-1. Run `npm run tls:protocol:self-test`.
-2. If green, run `npm run wave3:prepush:check`.
-3. Review complete diff once; one commit/push only.
-4. Read the first failing GitHub heavy-UAT step; fix that root-cause class without reopening already-green work.
+`npm run wave5:public-api:self-test` → `npm run wave3:prepush:check` → diff review → one commit/push → inspect the next GitHub FIRST FAILING GATE. Do not reopen Wave 4 TLS without new evidence.
 
 --- HISTORICAL CHECKPOINT CHRONOLOGY BELOW ---
 

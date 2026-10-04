@@ -61,6 +61,8 @@ check('session handoff self-test command is exposed', pkg.scripts?.['session:han
 check('core CI executes the session handoff continuity self-test', workflow.includes('npm run session:handoff:self-test'));
 check('TLS protocol parser self-test command is exposed', pkg.scripts?.['tls:protocol:self-test'] === 'node scripts/verify-tls-terminator.mjs --self-test');
 check('core CI executes the TLS protocol parser self-test before live Wave 4 TLS', workflow.includes('npm run tls:protocol:self-test') && workflow.indexOf('npm run tls:protocol:self-test') < workflow.indexOf('Wave 4 staging UAT and TLS regression'));
+check('Wave 5 UAT credential self-test command is exposed', pkg.scripts?.['wave5:public-api:self-test'] === 'node scripts/self-test-wave5-public-api-probes.mjs');
+check('core CI executes the Wave 5 UAT credential self-test before live Wave 5', workflow.includes('npm run wave5:public-api:self-test') && workflow.indexOf('npm run wave5:public-api:self-test') < workflow.indexOf('Wave 5 public API webhook and SDK live regression'));
 check('enterprise wave status verifier command is exposed', pkg.scripts?.['enterprise:wave-status:verify'] === 'node scripts/verify-enterprise-wave-status.mjs');
 check('enterprise wave status self-test command is exposed', pkg.scripts?.['enterprise:wave-status:self-test'] === 'node scripts/self-test-enterprise-wave-status.mjs');
 check('User Web navigation self-test command is exposed', pkg.scripts?.['user-web:navigation:self-test'] === 'node scripts/self-test-user-web-navigation.mjs');
@@ -87,7 +89,16 @@ check(
   'Wave 5 webhook and SDK live regressions are mandatory before Wave 9',
   workflow.indexOf('Wave 5 public API webhook and SDK live regression') > uatSeedIndex &&
     workflow.indexOf('Wave 5 public API webhook and SDK live regression') < wave9Index &&
-    ['npm run webhook:probe', 'npm run sdk:probe'].every((token) => workflow.includes(token)),
+    workflow.includes('npm run wave5:public-api:probe'),
+);
+check(
+  'Wave 5 live regression consumes seeded UAT credentials through one canonical wrapper',
+  pkg.scripts?.['wave5:public-api:probe'] === 'bash scripts/run-wave5-public-api-probes.sh' &&
+    read('scripts/run-wave5-public-api-probes.sh').includes('probe_export_uat_admin_env') &&
+    !workflow.slice(
+      workflow.indexOf('Wave 5 public API webhook and SDK live regression'),
+      workflow.indexOf('Wave 6 management plane live regression'),
+    ).includes('npm run webhook:probe'),
 );
 check(
   'Wave 6 management plane live regressions are mandatory before Wave 9',

@@ -27,6 +27,7 @@ Rules:
 - Local checks prove cheap/static/targeted contracts; GitHub is authoritative for heavy Docker/PostgreSQL/API/EMQX/ESP-IDF/QEMU/live UAT.
 - Missing physical ESP32/camera hardware does **not** block software progress. The mandatory automated evidence is source-bound `SIMULATED_HARDWARE_LIVE_SERVICE`; physical/site/HIL remains separately labelled field validation and simulation must never be renamed PHYSICAL.
 - Provider-owned behavior that cannot be truthfully simulated remains explicit external evidence; do not fabricate PASS.
+- Live probes must consume credentials from the source-controlled seed/credential contract for that run. Do not rely on ambient shell variables crossing GitHub steps; fresh-step isolation is part of the CI contract.
 
 ## Mandatory handoff update before ending a batch/session
 

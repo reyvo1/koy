@@ -2476,6 +2476,21 @@ check(
 );
 
 check(
+  'Wave 5 public API probes consume the seeded UAT identity through one fail-closed wrapper',
+  read('scripts/run-wave5-public-api-probes.sh').includes('probe_export_uat_admin_env') &&
+    read('scripts/probe-common.sh').includes('probe_export_uat_admin_env()') &&
+    read('scripts/probe-webhook-event-vocabulary.sh').includes('PROBE_EMAIL is required') &&
+    read('scripts/probe-public-api-sdk.mts').includes('requireProbeCredential'),
+);
+check(
+  'Wave 5 UAT credential contract is tested locally and in core CI before the live Wave 5 gate',
+  tlsPackageJson.scripts?.['wave5:public-api:self-test'] === 'node scripts/self-test-wave5-public-api-probes.mjs' &&
+    tlsPackageJson.scripts?.['wave1:prepush:check']?.includes('wave5:public-api:self-test') &&
+    read('.github/workflows/ci.yml').includes('npm run wave5:public-api:self-test') &&
+    read('.github/workflows/ci.yml').includes('npm run wave5:public-api:probe'),
+);
+
+check(
   'camera and device-location probe wrappers fail closed while still cleaning residue',
   read('scripts/run-camera-probe.sh').includes('set -euo pipefail') &&
     read('scripts/run-camera-probe.sh').includes('trap cleanup_probe EXIT') &&

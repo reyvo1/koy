@@ -19,12 +19,22 @@
  * the SDK: `node --experimental-strip-types` imports this same file fine, which is the
  * consumer an integrator actually is. Naming the file honestly keeps the failure legible.
  *
- * Env: PROBE_EMAIL, PROBE_PASSWORD, PROBE_TENANT_ID, PROBE_BASE
+ * Env: PROBE_EMAIL, PROBE_PASSWORD, PROBE_TENANT_ID, PROBE_BASE.
+ * Canonical CI entrypoint: npm run wave5:public-api:probe
  */
 import { PublicApiClient, PublicApiError } from '../packages/sdk/src/index.ts';
 
 const BASE = process.env.PROBE_BASE ?? 'http://127.0.0.1:3000';
 const TENANT = process.env.PROBE_TENANT_ID ?? '22222222-2222-4222-8222-222222222222';
+
+function requireProbeCredential(name: 'PROBE_EMAIL' | 'PROBE_PASSWORD'): string {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    throw new Error(`${name} is required; run npm run wave5:public-api:probe after npm run uat:seed`);
+  }
+  return value;
+}
+
 
 let passed = 0;
 let failed = 0;
@@ -55,8 +65,8 @@ async function main(): Promise<void> {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
-      email: process.env.PROBE_EMAIL,
-      password: process.env.PROBE_PASSWORD,
+      email: requireProbeCredential('PROBE_EMAIL'),
+      password: requireProbeCredential('PROBE_PASSWORD'),
       tenantId: TENANT,
     }),
   });

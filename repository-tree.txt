@@ -709,6 +709,7 @@ scripts/run-saved-reports-probe.sh
 scripts/run-secret-scan.mjs
 scripts/run-wave3-esp32-simulation.mjs
 scripts/run-wave3-qemu-boot.mjs
+scripts/run-wave5-public-api-probes.sh
 scripts/seed-demo-accounts-for-browser.sh
 scripts/seed-demo-accounts.mjs
 scripts/seed-uat-baseline.mjs
@@ -747,6 +748,7 @@ scripts/self-test-wave3-esp-idf-toolchain-lifecycle.mjs
 scripts/self-test-wave3-esp32-simulation.mjs
 scripts/self-test-wave3-esp32-source.mjs
 scripts/self-test-wave3-qemu-boot-runner.mjs
+scripts/self-test-wave5-public-api-probes.mjs
 scripts/self-test-web-framework-contract-sync.mjs
 scripts/validate-rescue-02b-evidence.mjs
 scripts/validate-rescue-baseline.mjs

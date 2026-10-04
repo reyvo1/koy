@@ -25,6 +25,7 @@ const required = [
   'fastify:v5:compat:verify',
   'web:framework:contract:verify',
   'tls:protocol:self-test',
+  'wave5:public-api:self-test',
   'baseline:hygiene:self-test',
   'baseline:hygiene:clean',
   'baseline:manifest:generate',
