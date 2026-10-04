@@ -177,27 +177,32 @@ describe('Module Execution Kit efficiency contract', () => {
     for (const document of [
       systemInstructions,
       failureProtocol,
-      executionLoop,
       failedValidationPrompt,
     ]) {
       expect(document).toContain('first proven failure');
+      expect(document.toLowerCase()).toContain('root-cause');
       expect(document).not.toContain('Maksimum tiga');
       expect(document).not.toContain('rerun smallest relevant command');
       expect(document).not.toContain('Edit repository directly');
     }
 
+    expect(systemInstructions).toContain('RESUME CHECKPOINT');
     expect(systemInstructions).toContain('satu clean dependency bootstrap');
     expect(systemInstructions).toContain('satu Full Jest');
     expect(systemInstructions).toContain(
       'satu Doctor authoritative di dalam official package',
     );
     expect(systemInstructions).toContain('`%TEMP%\\iw`');
-    expect(executionLoop).toContain('OFFICIAL VALIDATION+COMMIT');
-    expect(executionLoop).toContain(
-      '`module:package` melakukan satu Doctor authoritative',
-    );
-    expect(resumePrompt).toContain('AUDIT ONLY');
-    expect(resumePrompt).toContain('No repository changes made.');
+    expect(executionLoop).toContain('FIRST FAILING GATE');
+    expect(executionLoop).toContain('ROOT-CAUSE CLASS');
+    expect(executionLoop).toContain('ONE COMMIT/PUSH');
+    expect(executionLoop).toContain('GITHUB HEAVY UAT');
+    expect(executionLoop).toContain('HANDOFF');
+    expect(resumePrompt).toContain('RESUME CHECKPOINT');
+    expect(resumePrompt).toContain('first failing gate');
+    expect(resumePrompt).toContain('SIMULATED_HARDWARE_LIVE_SERVICE');
+    expect(resumePrompt).not.toContain('AUDIT ONLY');
+    expect(resumePrompt).not.toContain('No repository changes made.');
     expect(testingStandard).toContain(
       'broad Full Jest dijalankan maksimal satu kali',
     );

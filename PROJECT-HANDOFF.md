@@ -2,15 +2,17 @@
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
 
-## ACTIVE HANDOFF — SIMULATED-HARDWARE UAT + SESSION CONTINUITY
+## ACTIVE HANDOFF — GITHUB FULL JEST CONTRACT DRIFT
 
-Master roadmap: `docs/ENTERPRISE-WAVE-ROADMAP.md`. Waves 1–12 are software-scope CLOSED/GREEN; Wave 13 is IN PROGRESS. Missing physical ESP32/camera hardware is not a software blocker. Mandatory automated certification uses source-bound `SIMULATED_HARDWARE_LIVE_SERVICE` with the exact firmware artifact plus live PostgreSQL/API/EMQX and synthetic camera/media. Physical/site/HIL remains separately labelled field validation.
+Master roadmap: `docs/ENTERPRISE-WAVE-ROADMAP.md`. Waves 1–12 are software-scope CLOSED/GREEN; Wave 13 is IN PROGRESS. Missing physical ESP32/camera hardware is not a software blocker. Mandatory automated certification uses source-bound `SIMULATED_HARDWARE_LIVE_SERVICE`; physical/site/HIL remains separately labelled field validation.
 
-Current candidate status (2026-10-04): the simulated-hardware UAT hardening batch is applied on top of latest known committed baseline `f4ed5cd`. The local pre-push sequence passed secret scan, Wave status, User Web navigation, CI-env, simulated UAT, production approval, baseline/rescue validation (484/484), targeted Jest (154/154), and Wave 3 ESP32 simulation/build/API/toolchain/QEMU tests until the final source self-test hit a **stale contract assertion** expecting `SIMULATED_LIVE_SERVICE` and a physical-production blocker. The implementation already uses `SIMULATED_HARDWARE_LIVE_SERVICE`; the current fix updates that test contract and the durable session-resume workflow.
+GitHub run `100595907100` on commit `23af7c26cd57d513becc7f92059829da666e8247` reached Full Jest. Result: **276/278 suites PASS and 2409/2411 tests PASS**. The two failures are governance-contract drift, not runtime failures: Development Kit execution workflow still expects superseded audit-only/module-runner wording, and the RBAC domain-access contract/catalog still describes Scene/Schedule as tenant-open even though controller enforcement is now device-derived VIEW/CONTROL.
+
+The repair synchronizes Development Kit instructions/tests, RBAC catalog/blueprint/source comments/tests, and adds both exposed specs to `wave2:test:targeted`. This makes local pre-push cover the same cheap governance contracts that GitHub Full Jest exposed.
 
 ## Resume rule
 
-Follow `docs/SESSION-HANDOFF-PROTOCOL.md`: verify real `git rev-parse HEAD` + `git status --short`, preserve a recorded dirty candidate, and continue from the FIRST FAILING GATE rather than auditing from zero. After this correction run `npm run wave3:esp32:self-test`, then the full `npm run wave3:prepush:check`. Only after full green: review complete diff once, commit once, push once, then read GitHub heavy UAT.
+Follow `docs/SESSION-HANDOFF-PROTOCOL.md`: verify real HEAD/status, preserve a recorded dirty candidate, and continue from the FIRST FAILING GATE rather than auditing from zero. For this candidate run the two governance specs first, then `npm run wave3:prepush:check`. Only after full green: review complete diff once, commit once, push once, then read GitHub heavy UAT.
 
 --- HISTORICAL WAVE 3 HANDOFF BELOW ---
 

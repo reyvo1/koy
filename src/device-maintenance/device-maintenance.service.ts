@@ -273,8 +273,8 @@ export class DeviceMaintenanceService {
       resourceType: 'device_maintenance',
       resourceId,
       action,
-      // The wording is load-bearing: this domain has no role gate, so an unqualified audit row
-      // would read as though a permission check had passed when none was consulted.
+      // Keep the audit detail explicit about the concrete authorization path; this service is
+      // called behind AdminRoleGuard rather than the permission/ownership resolver.
       detail,
     });
   }

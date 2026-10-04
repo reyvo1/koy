@@ -9,9 +9,10 @@ import { Injectable, Type } from '@nestjs/common';
  * may change anyone's". This file adds that missing dimension without inventing a new role and
  * without pretending a permission string can encode it.
  *
- * `Scene` and `Schedule` deliberately do NOT register a resolver: neither model has an owner
- * field, so there is nothing to compare. That is the reason they are audit-only rather than
- * gated, and it is why a uniform rule across all four domains is not expressible.
+ * `Scene` and `Schedule` deliberately do NOT register an ownership resolver: neither model has
+ * an owner field, so there is nothing to compare. Their authorization is enforced elsewhere from
+ * referenced-device VIEW/CONTROL (and Schedule's target Scene), so absence from this registry must
+ * never be interpreted as open tenant-wide access.
  */
 export interface ResourceOwnershipResolver {
   /**

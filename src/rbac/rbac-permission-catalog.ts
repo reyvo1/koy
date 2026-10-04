@@ -96,10 +96,11 @@ export const RBAC_PERMISSION_CATALOG: readonly RbacPermissionDefinition[] = [
  * `DashboardRepository` has an `audience` column and an explicit `assertMutationAccess`: PERSONAL
  * is owner-only, TENANT_SHARED requires an admin role plus a `canManageShared` request flag.
  *
- * `Scene` and `Schedule` have no owner column at all. Gating them on a role today would either
- * lock ordinary members out of the product's daily function or permit everything, so they stay
- * open and are audited instead. Those audit rows are the evidence for whether an owner column is
- * worth adding, which is a product decision rather than a refactor.
+ * `Scene` and `Schedule` have no owner column, so they do not use the ownership resolver or a
+ * `@RequirePermission(..., { allowOwner: true })` path. They are not open-by-tenant: Scene access
+ * is derived from the referenced devices (VIEW for reads, CONTROL for mutations), while Schedule
+ * access inherits the target Scene boundary; an ownerless schedule without a target Scene is
+ * administrator-only. Audit rows record that concrete device-derived authorization.
  */
 export const RBAC_OWNERSHIP_MODEL = {
   automation:
@@ -107,9 +108,9 @@ export const RBAC_OWNERSHIP_MODEL = {
   dashboard:
     'PERSONAL hanya untuk pemiliknya. TENANT_SHARED hanya untuk admin tenant, dan hanya bila permintaan menyatakan canManageShared.',
   scene:
-    'Tidak ada kolom pemilik dan tidak ada role gate. Semua membership aktif dalam tenant boleh mengubah, dan setiap perubahan kini tercatat di RbacAuditLog.',
+    'Tidak ada kolom pemilik/ownership resolver. Read memerlukan VIEW pada seluruh device action; create/run/enable/disable/delete memerlukan CONTROL pada seluruh device action. Mutasi dicatat di RbacAuditLog.',
   schedule:
-    'Tidak ada kolom pemilik dan tidak ada role gate. Semua membership aktif dalam tenant boleh mengubah, dan setiap perubahan kini tercatat di RbacAuditLog.',
+    'Tidak ada kolom pemilik/ownership resolver. Read/mutasi mewarisi VIEW/CONTROL dari target Scene; schedule tanpa target Scene dibatasi ke ADMIN/PLATFORM_ADMIN. Mutasi dicatat di RbacAuditLog.',
 } as const;
 
 /**

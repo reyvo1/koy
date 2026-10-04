@@ -11,7 +11,7 @@ describe('RbacAuditService', () => {
     resourceType: 'scene',
     resourceId: 's1',
     action: 'UPDATE' as const,
-    detail: 'permitted by active tenant membership; scene has no owner column and no role gate',
+    detail: 'permitted after tenant membership plus device-level CONTROL authorization',
   };
 
   beforeEach(() => {

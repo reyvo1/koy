@@ -6,18 +6,19 @@
 
 - Waves 1–12: **software scope CLOSED / GREEN**. Wave 13: **IN PROGRESS**.
 - Missing physical hardware is **NON-BLOCKING for software delivery**. Required automated evidence is source-bound `SIMULATED_HARDWARE_LIVE_SERVICE`; physical/site/HIL stays separately labelled field validation.
-- Latest known committed baseline before the active candidate is `f4ed5cd`; every resumed session must verify real HEAD/status rather than trust this historical SHA.
-- Active candidate: simulated-hardware UAT/release hardening plus session-continuity guard. Local pre-push passed all earlier checks and stopped only at the last Wave 3 source self-test because that self-test still asserted the superseded simulation label/physical-blocker policy.
-- Root cause: stale self-test contract, not failed ESP-IDF/QEMU/device simulation. The current repair updates the assertion to `SIMULATED_HARDWARE_LIVE_SERVICE` and verifies physical/HIL remains distinct but non-blocking.
-- Workflow continuity is now governed by `docs/SESSION-HANDOFF-PROTOCOL.md` and `npm run session:handoff:self-test`.
-- Production is not declared merely from simulation; final automated approval and genuinely provider-owned external evidence remain fail-closed.
+- Latest GitHub checkout: `23af7c26cd57d513becc7f92059829da666e8247`, run `100595907100`.
+- First failing gate: Full Jest with exactly **2 failed / 2409 passed tests** (2 failed / 276 passed suites). Failing specs: `test/module-execution-efficiency.contract.spec.ts` and `src/rbac/domain-access-model.spec.ts`.
+- Root cause is stale governance documentation/tests: active session workflow superseded audit-only resume wording; Scene/Schedule implementation superseded tenant-open/audit-only authorization wording with device-derived VIEW/CONTROL.
+- Current repair synchronizes the whole contract class and registers both specs in `wave2:test:targeted`, closing the local-prepush coverage gap.
+- Do not reopen ESP-IDF/QEMU/live-device simulation based on this run; those are not the first failure.
+- Workflow continuity remains governed by `docs/SESSION-HANDOFF-PROTOCOL.md` and `npm run session:handoff:self-test`.
 
 ### Next action
 
-1. Run `npm run wave3:esp32:self-test`.
-2. If green, run full `npm run wave3:prepush:check`.
+1. Run `npx jest --runInBand --runTestsByPath test/module-execution-efficiency.contract.spec.ts src/rbac/domain-access-model.spec.ts`.
+2. If green, run `npm run wave3:prepush:check`.
 3. Review complete diff once; one commit/push only.
-4. Read the first failing GitHub heavy-UAT step; fix its root-cause class without reopening already-green work.
+4. Read the first failing GitHub heavy-UAT step; fix that root-cause class without reopening already-green work.
 
 --- HISTORICAL CHECKPOINT CHRONOLOGY BELOW ---
 

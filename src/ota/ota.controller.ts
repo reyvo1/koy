@@ -41,8 +41,9 @@ import { OtaRolloutRepository } from './ota-rollout.repository';
  * exercised at all.
  *
  * Gating: `AdminRoleGuard`, not `@RequirePermission`. `FirmwareArtifact` and `OtaRollout`
- * have no owner column, so an owner-or-admin rule is not expressible — the same reason
- * `scene` and `schedule` are ungated. But a rollout pushes firmware to every targeted device
+ * have no owner column, so an owner-or-admin rule is not expressible. Scene/Schedule are also
+ * ownerless but derive authorization from referenced devices; OTA instead uses an admin role
+ * because a rollout pushes firmware to every targeted device
  * in the tenant, so "any member may do it" is not acceptable either. The precedent for a
  * tenant-wide, ownerless, high-blast-radius action is the org surface
  * (`organization.controller.ts`): role-gated, tenant-scoped. The catalog has no `firmware.*`

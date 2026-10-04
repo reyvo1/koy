@@ -1,24 +1,36 @@
-# Chat Session — stale ESP32 source contract + durable session handoff — 2026-10-04
+# Chat Session — GitHub Full Jest contract-drift root fix — 2026-10-04
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
 
-Wave 13 remains IN PROGRESS. `SIMULATED_HARDWARE_LIVE_SERVICE` is the mandatory automated hardware-equivalent UAT class; unavailable physical ESP32/camera equipment is not a blocker for software progression and remains separately labelled field evidence.
+Wave 13 remains IN PROGRESS. `SIMULATED_HARDWARE_LIVE_SERVICE` remains the mandatory automated hardware-equivalent UAT class; unavailable physical ESP32/camera equipment is non-blocking for software progression and remains separately labelled field evidence.
 
-## Root cause
+## Latest evidence
 
-The operator applied the simulated-hardware UAT hardening and ran the full local pre-push chain. Secret scan, status/navigation/CI-env/UAT/approval self-tests, baseline/rescue validation **484/484**, targeted Jest **154/154**, and the ESP32 simulation/build/API/toolchain/QEMU guards all passed. The chain stopped only in `scripts/self-test-wave3-esp32-source.mjs`: that test still expected the old literal `SIMULATED_LIVE_SERVICE` and an old runbook sentence making physical OTA/HIL a production-certification blocker, while production source/docs had already moved to `SIMULATED_HARDWARE_LIVE_SERVICE` with physical field validation non-blocking.
+GitHub Actions run `100595907100` checked out commit `23af7c26cd57d513becc7f92059829da666e8247`. Both Wave 3 ESP-IDF matrix jobs built/booted successfully far enough to upload their artifacts. Core job `test` reached Full Jest and finished **2 failed / 276 passed suites; 2 failed / 2409 passed tests**. The only failures were stale source-contract assertions:
 
-## Repair
+1. `test/module-execution-efficiency.contract.spec.ts` still required superseded audit-only/module-runner wording (`first proven failure` on the new execution-loop document, `OFFICIAL VALIDATION+COMMIT`, and `AUDIT ONLY`/`No repository changes made.` in the resume prompt) even though the active handoff protocol now resumes from a verified checkpoint/first failing gate.
+2. `src/rbac/domain-access-model.spec.ts` still required Scene/Schedule audit text saying `no owner column and no role gate`, while the controllers now enforce device-derived VIEW/CONTROL and target-Scene authorization. The stale statement also remained in the RBAC ownership catalog/UI blueprint and several source comments.
 
-- Updated the Wave 3 source self-test to require the real `SIMULATED_HARDWARE_LIVE_SERVICE` classification plus the non-blocking software-progression boundary, while still asserting that simulation can never impersonate PHYSICAL/HIL.
-- Updated the runbook assertion to require both truthful PHYSICAL/HIL separation and explicit non-blocking physical-lab policy. No simulator/runtime behavior or evidence strength is weakened.
-- Added `docs/SESSION-HANDOFF-PROTOCOL.md` and `scripts/self-test-session-handoff.mjs`; wired the continuity test into local pre-push and GitHub cheap verifier tests.
-- Updated the new-session prompt and agent execution loop to resume from real HEAD/status + the first failing gate, preserve a known dirty candidate, use one coherent batch/commit/push, and refresh handoff files before changing sessions.
-- Refreshed `PASTE-KE-CHAT-BERIKUTNYA.txt`, `PROJECT-HANDOFF.md`, and `docs/SESSION-CHECKPOINT.md` so a new chat has current direction without reading historical chronology as active state.
+## Root-cause repair
+
+- Synchronized Development Kit system/failure/fix-validation instructions and the execution-efficiency contract with the durable `RESUME CHECKPOINT → FIRST FAILING GATE → ROOT-CAUSE CLASS → ... → HANDOFF` workflow.
+- Replaced stale Scene/Schedule “open to any active tenant member” documentation with the implemented access model: Scene reads require VIEW across action devices; Scene mutations require CONTROL; Schedule inherits target-Scene VIEW/CONTROL; targetless schedules are administrator-only.
+- Updated RBAC catalog, ownership/audit comments, enterprise UI blueprint, and domain-access contract to describe the same enforced boundary.
+- Added both `src/rbac/domain-access-model.spec.ts` and `test/module-execution-efficiency.contract.spec.ts` to `wave2:test:targeted`, and pinned that coverage in `scripts/validate-rescue-baseline.mjs`. This closes the local-vs-GitHub coverage gap that allowed both stale contracts to pass local pre-push and fail only in GitHub Full Jest.
+
+## QA in repair workspace
+
+- `scripts/self-test-session-handoff.mjs`: PASS, including dynamic agreement of latest GitHub run + full commit SHA across all current continuation files.
+- `enterprise:wave-status:self-test` and `enterprise:wave-status:verify`: PASS, 10/10 synchronized current-state documents.
+- `scripts/self-test-wave1-prepush.mjs`: PASS.
+- `scripts/self-test-rescue-github-ci.mjs`: PASS.
+- `scripts/validate-rescue-baseline.mjs`: PASS **486/486** after adding local coverage assertions for both exposed contract specs.
+- Changed TypeScript files pass TypeScript `transpileModule` syntax diagnostics; changed Node/JSON sources parse successfully.
+- A dependency-free semantic replay of the two failed GitHub assertions now PASS. The extracted repair workspace does not contain `node_modules`, so actual Jest remains deliberately **not claimed** until the operator repository runs the exact two specs and official pre-push gate.
 
 ## Next action
 
-Run `npm run wave3:esp32:self-test`; if green, run the full `npm run wave3:prepush:check`. After full local green, review the complete candidate diff once, commit once, push once, and let GitHub heavy UAT expose the next real failure (if any). Do not restart a repository-wide audit and do not wait for physical hardware.
+Run the two newly targeted contracts first, then `npm run wave3:prepush:check`. If green, review the complete diff once, commit once, push once, and let GitHub heavy UAT continue. Do not reopen ESP32/QEMU/runtime work: the current first failing gate is the two Full Jest governance contracts above.
 
 --- HISTORICAL CHAT SESSION CHRONOLOGY BELOW ---
 

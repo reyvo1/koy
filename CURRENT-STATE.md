@@ -1,15 +1,16 @@
 # CURRENT STATE — ENTERPRISE WAVE 13
 
-## Authoritative active state — 2026-10-03
+## Authoritative active state — 2026-10-04
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
 
-- Waves 1–12: **software scope CLOSED / GREEN** according to the authoritative enterprise roadmap and repository evidence.
-- Wave 13 Final Enterprise Certification: **IN PROGRESS, software deliverables only**.
-- Production: **NOT APPROVED** pending the remaining automated/final approval gates and any provider-owned evidence that cannot be simulated. Missing physical ESP32/camera hardware does **not** block software work: GitHub must close the strongest `SIMULATED-HARDWARE / LIVE-SERVICE` UAT, while any later site/HIL run remains separately labelled field evidence.
-- Current software regression boundary: keep all prior wave probes continuously exercised in CI; do not reopen a closed wave unless new evidence fails.
+- Waves 1–12: **software scope CLOSED / GREEN**. Wave 13 Final Enterprise Certification: **IN PROGRESS**.
+- Latest GitHub evidence: run `100595907100`, commit `23af7c26cd57d513becc7f92059829da666e8247`. Core Full Jest: **276/278 suites PASS, 2409/2411 tests PASS**; only two stale governance contracts failed.
+- Active root-cause batch: synchronize Development Kit resume/failure contract and Scene/Schedule device-derived authorization contract, then add both specs to the local targeted pre-push gate so the same drift cannot first appear in GitHub.
+- Scene/Schedule are **not tenant-open**: Scene read=VIEW across action devices, mutation=CONTROL; Schedule inherits target-Scene VIEW/CONTROL and targetless schedules are admin-only.
+- Production remains not declared merely from simulation; source-bound `SIMULATED_HARDWARE_LIVE_SERVICE` is the required automated hardware-equivalent UAT and missing physical boards/cameras do not block software progression.
 - Session continuity: follow `docs/SESSION-HANDOFF-PROTOCOL.md`; resume from verified HEAD/status and the first failing gate, not from a full re-audit.
-- The ZIP snapshot has no `.git`, so local audit of commit/branch/remote history is not a substitute for the operator repository or GitHub evidence.
+- The ZIP snapshot has no `.git`, so operator checkout/GitHub evidence remains authoritative for real commit/branch status.
 
 > **Reading rule.** Everything below this separator is historical chronology. Any older activation/blocking statement from pre-Wave-13 chronology is superseded by this block and by `docs/ENTERPRISE-WAVE-ROADMAP.md`.
 

@@ -27,6 +27,7 @@ const protocol = read('docs/SESSION-HANDOFF-PROTOCOL.md');
 const agents = read('AGENTS.md').split('---')[0];
 const paste = read('PASTE-KE-CHAT-BERIKUTNYA.txt').split('--- HISTORICAL CONTINUATION BELOW ---')[0];
 const handoff = read('PROJECT-HANDOFF.md').split('--- HISTORICAL WAVE 3 HANDOFF BELOW ---')[0];
+const currentState = read('CURRENT-STATE.md').split('--- HISTORICAL CHRONOLOGY BELOW ---')[0];
 const checkpoint = read('docs/SESSION-CHECKPOINT.md').split('--- HISTORICAL CHECKPOINT CHRONOLOGY BELOW ---')[0];
 const chat = read('chat-session.md').split('--- HISTORICAL CHAT SESSION CHRONOLOGY BELOW ---')[0];
 const resume = read('AI-Development-Kit/prompts/98-RESUME-AFTER-NEW-SESSION.md');
@@ -50,6 +51,18 @@ for (const [name, text] of [
 }
 
 assert(paste.includes('FIRST FAILING GATE') && paste.includes('git rev-parse HEAD') && paste.includes('git status --short'), 'next-chat handoff contains the exact resume discipline');
+
+const evidenceTexts = [paste, handoff, currentState, checkpoint, chat];
+const runMatch = chat.match(/(?:GitHub(?: Actions)? run|run) `?(\d{8,})`?/i);
+const shaMatch = chat.match(/(?:commit|checkout(?:ed)?(?: commit)?) `?([0-9a-f]{40})`?/i);
+assert(Boolean(runMatch && shaMatch), 'current chat-session records a concrete GitHub run and full commit SHA');
+const latestRun = runMatch?.[1] ?? '';
+const latestSha = shaMatch?.[1] ?? '';
+assert(
+  evidenceTexts.every((text) => text.includes(latestRun) && text.includes(latestSha)),
+  'all current continuation blocks agree on the latest GitHub run and commit checkpoint',
+);
+
 assert(chat.includes('## Next action'), 'current chat-session block records an exact next action');
 assert(checkpoint.includes('Next action'), 'session checkpoint records the current next action');
 assert(!resume.includes('Pesan pertama wajib AUDIT ONLY'), 'new-session prompt no longer forces a from-zero audit');

@@ -9,31 +9,28 @@ const SRC = join(__dirname, '..'); // .../src — every path below is relative t
 const read = (relative: string) => readFileSync(join(SRC, relative), 'utf8');
 
 /**
- * Scene and Schedule are audited, not gated. That is a deliberate asymmetry with automation and
- * dashboard, and this file exists so it stays a decision rather than drifting into an accident.
- *
- * The reasoning: neither model has an owner column, so "your own, or anyone's if you are an
- * admin" cannot be written down. Gating them on a role today would either lock ordinary members
- * out of the product's primary function or permit everything. Audit-only keeps today's behaviour
- * intact while producing the evidence needed to decide whether an owner column is worth adding.
+ * Scene and Schedule have no owner column, so they cannot participate in the owner resolver used
+ * by Automation/Dashboard. That does not make them open-by-tenant: Scene authorization is derived
+ * from every referenced device (VIEW for reads, CONTROL for mutations), and Schedule authorization
+ * inherits the target Scene boundary. Audit rows must state that concrete enforced boundary.
  */
-describe('ungated domains are audited instead', () => {
+describe('ownerless domains derive authorization from devices and are audited', () => {
   const scene = read('scene/scene.controller.ts');
   const schedule = read('scheduler/schedule.controller.ts');
 
-  it('states the asymmetry in the catalog for all four domains', () => {
+  it('states the distinct access model in the catalog for all four domains', () => {
     for (const domain of ['automation', 'dashboard', 'scene', 'schedule'] as const) {
       expect(RBAC_OWNERSHIP_MODEL[domain].length).toBeGreaterThan(0);
     }
-    // The two gated domains must not describe themselves as ungated, and vice versa.
-    expect(RBAC_OWNERSHIP_MODEL.scene).toContain('tidak ada role gate');
-    expect(RBAC_OWNERSHIP_MODEL.schedule).toContain('tidak ada role gate');
-    expect(RBAC_OWNERSHIP_MODEL.automation).not.toContain('tidak ada role gate');
+    expect(RBAC_OWNERSHIP_MODEL.scene).toContain('VIEW');
+    expect(RBAC_OWNERSHIP_MODEL.scene).toContain('CONTROL');
+    expect(RBAC_OWNERSHIP_MODEL.schedule).toContain('target Scene');
+    expect(RBAC_OWNERSHIP_MODEL.schedule).toContain('ADMIN/PLATFORM_ADMIN');
+    expect(RBAC_OWNERSHIP_MODEL.automation).toContain('Milik pemanggil');
   });
 
   it('records a scene mutation on every mutating route', () => {
     expect(scene).toContain('RbacAuditService');
-    // DELETE, the enable toggle, and CREATE.
     expect(scene.match(/recordSceneMutation\(/g)?.length ?? 0).toBeGreaterThanOrEqual(4);
     expect(scene).toContain("resourceType: 'scene'");
   });
@@ -44,15 +41,18 @@ describe('ungated domains are audited instead', () => {
     expect(schedule).toContain("resourceType: 'schedule'");
   });
 
-  it('says in the audit row that permission came from tenant scope, not a role check', () => {
-    // Without this the row is indistinguishable from one written by a passing permission
-    // check, and the audit trail would overstate what the system actually enforced.
-    for (const [source, needle] of [
-      [scene, 'no owner column and no role gate'],
-      [schedule, 'no owner column and no role gate'],
-    ]) {
-      expect(source).toContain(needle);
-    }
+  it('pins Scene reads to VIEW and Scene mutations to CONTROL', () => {
+    expect(scene).toContain("assertSceneAccess(this.accessContext(request), scene, 'VIEW')");
+    expect(scene).toContain("assertSceneAccess(this.accessContext(request), scene, 'CONTROL')");
+    expect(scene).toContain('device-level CONTROL authorization');
+  });
+
+  it('pins Schedule access to the target Scene and keeps targetless schedules admin-only', () => {
+    expect(schedule).toContain("assertTargetSceneAccess(request, schedule.targetSceneId, 'VIEW')");
+    expect(schedule).toContain("assertTargetSceneAccess(request, schedule.targetSceneId, 'CONTROL')");
+    expect(schedule).toContain("role === 'ADMIN'");
+    expect(schedule).toContain("role === 'PLATFORM_ADMIN'");
+    expect(schedule).toContain('target-scene device authorization');
   });
 
   it('does not register an ownership resolver for a domain that has no owner column', () => {

@@ -48,8 +48,8 @@ export interface MaintenanceRequest {
  *
  * A maintenance window does not have an owner — the device does, but the device's owner is who uses
  * it, not who maintains it, and a device may legitimately need maintenance while its owner is
- * elsewhere. An owner-or-admin rule is therefore not expressible, for the same reason `scene`,
- * `schedule` and `ota` are ungated by ownership.
+ * elsewhere. An owner-or-admin rule is therefore not expressible. Scene/Schedule are likewise
+ * ownerless, but they derive VIEW/CONTROL from referenced devices instead of using this admin gate.
  *
  * It is still gated, because "any member may take a device off the floor" is not acceptable, and the
  * precedent for a tenant-wide action with wide blast radius is this one: role-gated and

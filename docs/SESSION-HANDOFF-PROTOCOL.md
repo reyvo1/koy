@@ -6,6 +6,8 @@ Status: mandatory workflow contract for every coding / CI-repair batch.
 
 A chat/session change must never reset project direction, reopen already closed root causes, or discard a known candidate. The repository itself carries the current working context.
 
+This project-level protocol is the current Wave 13 continuation authority. Historical/module-runner portable handoff packages may still carry an `audit-only` first-response rule for their own immutable protocol version; that package-specific rule must not overwrite the current project checkpoint when `docs/SESSION-HANDOFF-PROTOCOL.md` and the current blocks are present.
+
 ## Resume order for a new session
 
 1. Read the **current block at the top** of `PASTE-KE-CHAT-BERIKUTNYA.txt`.

@@ -26,9 +26,13 @@ Jangan menebak atau memakai jalur alternatif.
 
 ## Repository Operating Mode
 
-Pada sesi baru, mulai dengan AUDIT ONLY. Verifikasi exact checkpoint dan baca
-hanya context serta file yang relevan atau berubah. Jangan mengulang audit penuh
-pada input identik.
+Pada sesi baru, mulai dengan **RESUME CHECKPOINT**. Baca `docs/SESSION-HANDOFF-PROTOCOL.md`
+dan blok current teratas, lalu verifikasi exact HEAD, branch/upstream, `git status --short`,
+serta evidence CI terbaru. Lanjutkan dari first proven failure/first failing gate terakhir dan
+jangan mengulang audit penuh pada input identik. Dirty candidate yang tercatat di handoff harus
+dipertahankan sampai root-cause class selesai atau dinyatakan invalid. Bila sebuah immutable
+portable module-handoff secara eksplisit membawa protocol-specific audit-only first response,
+hormati boundary paket tersebut tanpa menganggapnya sebagai current project checkpoint.
 
 Jangan mengedit atau bereksperimen langsung pada main. Susun perubahan sebagai
 bounded exact-file candidate untuk disposable isolated worktree. Gunakan official
@@ -85,17 +89,17 @@ owner, tanpa keep-worktree, serta cleanup terverifikasi. Jangan memakai
 
 Pada first proven failure:
 
-1. STOP;
-2. jangan retry candidate identik;
-3. jangan mencoba command alternatif;
-4. jangan membuat rescue patch pada main;
-5. tandai artifact INVALID;
-6. verifikasi repository impact dan cleanup secara read-only;
-7. laporkan exact command, exact error, Git status, safe checkpoint, tindakan
-   yang belum dilakukan, dan keputusan owner berikutnya.
+1. STOP pada gate yang gagal dan jangan lanjut ke gate/wave yang tidak terkait;
+2. jangan retry candidate identik atau mencoba command alternatif untuk mengejar hijau;
+3. simpan exact command, exact error, Git status, dan safe checkpoint;
+4. audit **root-cause class** beserta source/script/config/document contract yang satu kelas;
+5. perbaiki seluruh konsekuensi lokal yang dapat dibuktikan sebelum rerun;
+6. jalankan cheap/targeted checks dahulu, kemudian official local pre-push satu kali;
+7. tandai artifact INVALID hanya bila candidate memang tidak dapat diteruskan dengan aman.
 
-Candidate baru hanya boleh dibuat setelah root cause dan seluruh konsekuensi
-lokalnya diaudit. Version baru memerlukan perubahan bytes nyata.
+Jangan menunggu hardware fisik untuk software certification. Gunakan source-bound
+`SIMULATED_HARDWARE_LIVE_SERVICE` dan pertahankan physical/site/HIL sebagai field evidence
+terpisah yang tidak boleh dipalsukan. Candidate baru/version baru memerlukan perubahan bytes nyata.
 
 ## Commit, Push, and Lifecycle
 

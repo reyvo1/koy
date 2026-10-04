@@ -4,15 +4,14 @@
 
 Saat command resmi pertama gagal:
 
-1. STOP pada gate tersebut;
-2. simpan exact command, exit code, error, dan validation log;
+1. STOP pada gate tersebut dan jangan pindah ke gate/wave yang tidak terkait;
+2. simpan exact command, exit code, error, validation log, dan Git status;
 3. jangan retry candidate identik;
-4. jangan mencoba flag, runner, registry, atau command alternatif;
-5. jangan lanjut ke gate berikutnya;
-6. tandai artifact INVALID;
-7. verifikasi repository impact, Git status, workspace, dan cleanup secara
-   read-only;
-8. tunggu keputusan owner.
+4. jangan mencoba flag, runner, registry, atau command alternatif untuk mengejar hijau;
+5. identifikasi root-cause class dan audit source/script/config/document contract yang satu kelas;
+6. perbaiki seluruh konsekuensi lokal yang dapat ditemukan oleh gate murah;
+7. jalankan targeted/cheap checks lalu official local pre-push sekali untuk candidate baru;
+8. bila candidate tidak dapat diteruskan dengan aman, tandai INVALID dan laporkan safe checkpoint.
 
 Jangan menghapus, skip, atau melemahkan test, lint rule, type checking,
 validation, tenant boundary, atau security control untuk membuat validation
@@ -48,4 +47,4 @@ Laporan harus menyatakan:
 - artifact status;
 - cleanup status;
 - tindakan yang tidak dilakukan;
-- keputusan owner berikutnya.
+- exact next action pada root-cause class yang sama.

@@ -9,21 +9,19 @@ export interface MutationAuditInput {
   resourceId: string;
   action: AuditAction;
   /**
-   * Free text describing what the decision actually was. For a domain with no role gate this
-   * must say so, because the audit row is the only record of who changed what and why it was
-   * allowed — an unqualified row would read as though a permission check had passed.
+   * Free text describing what authorization boundary actually permitted the mutation. This must
+   * name the concrete guard/access decision (for example device-level CONTROL) rather than imply
+   * a permission check that was never consulted.
    */
   detail: string;
 }
 
 /**
- * Audit trail for mutations that are permitted by tenant scope alone.
+ * Audit trail for mutations whose authorization may be enforced outside `RbacPermissionGuard`.
  *
- * `scene` and `schedule` have no role or permission guard, and no ownership field, so there is
- * nothing to enforce yet. But until recently those mutations left no trace at all: the policy
- * engine is only reached through `RbacPermissionGuard`, so a scene edited by any member of a
- * tenant produced no row anywhere. This closes that gap without changing who may act — the
- * difference between "permitted" and "enforced" is exactly what the `detail` field records.
+ * Scene and Schedule have no ownership field, but they are not open-by-tenant: their controllers
+ * enforce device-derived VIEW/CONTROL access before mutations. The policy engine is not the only
+ * authorization source, so `detail` records the concrete boundary that was enforced.
  *
  * Audit failures are swallowed. Losing a mutating request because its audit row could not be
  * written would be a worse outcome than the missing row, and the alternative — failing closed on

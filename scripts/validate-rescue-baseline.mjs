@@ -2915,6 +2915,16 @@ check(
   targetedTests.includes('src/rbac/rbac-permission-catalog.spec.ts'),
   'wave2:test:targeted uses --runTestsByPath, so an unlisted spec is never executed by the gate',
 );
+check(
+  'device-derived domain access contract runs in the prepush gate',
+  targetedTests.includes('src/rbac/domain-access-model.spec.ts'),
+  'GitHub Full Jest previously caught stale Scene/Schedule authorization assertions that local pre-push missed',
+);
+check(
+  'Development Kit execution-workflow contract runs in the prepush gate',
+  targetedTests.includes('test/module-execution-efficiency.contract.spec.ts'),
+  'GitHub Full Jest previously caught stale session/workflow assertions that local pre-push missed',
+);
 check('wave2 targeted test list is not empty', targetedTests.length > 0);
 
 // ---------------------------------------------------------------------------
@@ -3722,13 +3732,13 @@ check(
 //   dashboard   every route declares a permission; addressed routes also allow the owner.
 //               DashboardRepository additionally enforces its audience rule — PERSONAL is
 //               owner-only, TENANT_SHARED needs an admin role — and remains the authority.
-//   scene       no owner column and no role gate, so it stays open to any active member. Every
-//   schedule    mutation is recorded in RbacAuditLog instead.
+//   scene       no owner column/ownership resolver; VIEW/CONTROL is derived from action devices.
+//   schedule    no owner column/ownership resolver; access inherits the target Scene boundary,
+//               with targetless schedules restricted to administrators. Mutations are audited.
 //
-// The scene/schedule asymmetry is a decision, not an oversight: with no owner column there is
-// nothing for "your own, or anyone's if admin" to compare against, and gating these on a role
-// would either lock members out of the product's primary function or permit everything. Pinning
-// it here means the next person has to make that choice deliberately.
+// The scene/schedule asymmetry is a decision, not an oversight: owner-aware RBAC cannot apply
+// without an owner column, so these domains use centralized device access instead of being left
+// open to every active tenant member.
 //
 // The check also fails if `allowOwner` is added to a route that addresses no resource, and if a
 // collection route is given one — a create route has no id, so ownership cannot apply to it and
@@ -3778,9 +3788,9 @@ for (const [controller, domain] of [
 ]) {
   const source = read(controller);
   check(
-    `${controller} stays ungated because it has no owner column`,
+    `${controller} stays outside owner-aware permission routing because it has no owner column`,
     !/@RequirePermission\(/.test(source),
-    'a role gate here needs a decision about which role may do what; it is not expressible as owner-or-admin',
+    'owner-aware permission routing is not expressible without an owner column; device-derived authorization must remain present instead',
   );
   check(
     `${controller} records every mutation in the audit log`,

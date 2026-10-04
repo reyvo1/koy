@@ -93,31 +93,17 @@ uniform, and treating them as one is what produced the original gap.
 |---|---|---|---|
 | `automation` | `ownerMembershipId` | yes | Every query filters by owner, so it is owner-only and an admin gets no automatic access to another member's automation. |
 | `dashboard` | `ownerMembershipId` + `audience` | yes | `PERSONAL` is owner-only; `TENANT_SHARED` additionally needs an admin role and a `canManageShared` request flag. |
-| `scene` | none | none | Open to any active member. Every mutation is recorded in `RbacAuditLog`. |
-| `schedule` | none | none | Same as `scene`. |
+| `scene` | none | device-derived access | Reads require VIEW on every referenced action device; create/run/enable/disable/delete require CONTROL. Mutations are audited. |
+| `schedule` | none | target-scene-derived access | Reads/mutations inherit VIEW/CONTROL from the target Scene; targetless schedules are admin-only. Mutations are audited. |
 
-`scene` and `schedule` are audited rather than gated on purpose. With no owner column there is
-nothing for "your own, or anyone's if you are an admin" to compare against, so a role gate today
-would either lock ordinary members out of the product's primary function or permit everything.
-Audit-only keeps current behaviour intact while producing the evidence needed to decide whether
-an owner column is worth adding — which is a product decision, not a refactor.
+`scene` and `schedule` deliberately do not use owner-aware `@RequirePermission(..., allowOwner)`
+because neither model has an owner column. They are nevertheless gated: `SceneAccessService`
+derives authorization from the devices referenced by Scene actions, and Schedule delegates to the
+target Scene boundary. This preserves member functionality without opening every tenant member to
+every Scene/Schedule. Audit rows name the concrete device-derived authorization that permitted the
+mutation.
 
-Every gated route declares a permission through `@RequirePermission`, and the catalog is pinned
-to the decorator set in both directions by `src/rbac/rbac-permission-catalog.spec.ts`. Before
-this, mutations to scenes and schedules produced no audit row anywhere, because the policy engine
-is only reached through the permission guard.
-
-
-These four business domains authenticate the caller and resolve the tenant, but carry no role or
-permission guard on any of their 27 routes. Any authenticated member of a tenant can create,
-modify and delete scenes, schedules, automations and dashboards.
-
-This is stated here rather than left implicit, because the permission UI deliberately shows only
-what the backend enforces. The RBAC catalog holds exactly the permissions that `@RequirePermission`
-decorators actually require, and none of them belongs to these four domains — so the UI does not
-claim a control the API does not have.
-
-Fixing it is a policy decision, not a cleanup: it requires deciding which role may do what. Until
-that decision is made, `scripts/validate-rescue-baseline.mjs` pins the current guard set for all
-four controllers. That check passes today and fails if a guard is removed, and it also fails if a
-permission is added without the justification being written down here.
+Automation and Dashboard continue to use the RBAC permission/ownership path. Scene and Schedule
+use a separate device-access path. `src/rbac/domain-access-model.spec.ts` and
+`scripts/validate-rescue-baseline.mjs` pin both models so a future refactor cannot silently collapse
+them into a single, weaker rule.

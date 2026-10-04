@@ -4,13 +4,14 @@ LANJUTKAN PROJECT IOT DARI HANDOFF TERBARU. JANGAN AUDIT DARI NOL.
 
 CURRENT CONTINUATION — 2026-10-04:
 - Wave 13 = IN PROGRESS. Waves 1–12 = SOFTWARE SCOPE CLOSED/GREEN.
-- Latest known committed baseline before the current candidate: `f4ed5cd`; sesi baru WAJIB cek `git rev-parse HEAD` dan `git status --short` daripada menganggap SHA ini masih current.
-- Simulated-hardware UAT hardening sudah di-apply. Local pre-push mencapai `wave3:esp32:self-test` dan seluruh gate sebelumnya hijau; first failure terakhir adalah assertion lama di `scripts/self-test-wave3-esp32-source.mjs` yang masih mengharapkan klasifikasi/policy physical lama. Fix continuity batch memperbarui assertion ke `SIMULATED_HARDWARE_LIVE_SERVICE` + physical field validation non-blocking.
-- FIRST FAILING GATE adalah sumber arah kerja. Setelah fix, rerun targeted `npm run wave3:esp32:self-test`, lalu `npm run wave3:prepush:check`; jangan ulang audit repository penuh.
-- Hardware fisik bukan blocker software. GitHub wajib menutup source-bound `SIMULATED_HARDWARE_LIVE_SERVICE` menggunakan exact firmware + live PostgreSQL/API/EMQX + synthetic camera/media. Physical/site/HIL hanya field evidence terpisah.
-- Pola kerja wajib: satu coherent root-cause batch → local gate hijau → review diff → satu commit/push → GitHub heavy UAT. Red GitHub diperbaiki di root-cause class yang sama, bukan micro-push.
-- Sebelum pindah chat lagi, update `chat-session.md`, file ini, `PROJECT-HANDOFF.md`, `docs/SESSION-CHECKPOINT.md`, docs terkait, reseal baseline, dan jalankan `npm run session:handoff:self-test`.
-- Rescue MQTT canonical tetap `mqtt://127.0.0.1:18884`; jangan buka ulang broker 1883 tanpa bukti baru.
+- Latest GitHub candidate: `23af7c26cd57d513becc7f92059829da666e8247`, run `100595907100`. Sesi baru WAJIB cek real `git rev-parse HEAD`, branch/upstream, dan `git status --short`.
+- FIRST FAILING GATE: GitHub Full Jest, hanya 2 stale governance contracts dari 2,411 tests: `test/module-execution-efficiency.contract.spec.ts` dan `src/rbac/domain-access-model.spec.ts`. 2,409 tests lainnya PASS.
+- Root cause #1: Development Kit contract masih mengunci audit-only/module-runner wording lama, sementara active workflow sudah RESUME CHECKPOINT → FIRST FAILING GATE → ROOT-CAUSE CLASS → one coherent batch → one commit/push → GitHub heavy UAT → HANDOFF.
+- Root cause #2: RBAC catalog/blueprint/test masih menyebut Scene/Schedule open/audit-only, padahal implementation sekarang device-derived: Scene VIEW untuk read dan CONTROL untuk mutation; Schedule mewarisi target Scene; targetless schedule admin-only.
+- Current repair menyinkronkan seluruh source/test/docs kelas ini dan memasukkan kedua failing specs ke `wave2:test:targeted`, sehingga local pre-push wajib menangkap drift yang sama sebelum GitHub Full Jest.
+- Hardware fisik bukan blocker software. GitHub wajib menutup source-bound `SIMULATED_HARDWARE_LIVE_SERVICE`; physical/site/HIL tetap field evidence terpisah.
+- NEXT: jalankan dua targeted contract specs → `npm run wave3:prepush:check` → review diff → satu commit/push → baca first failing GitHub step berikutnya. Jangan audit ulang dari nol.
+- Sebelum pindah chat lagi, update `chat-session.md`, file ini, `PROJECT-HANDOFF.md`, `CURRENT-STATE.md`, `docs/SESSION-CHECKPOINT.md`, docs terkait, reseal baseline, dan jalankan `npm run session:handoff:self-test`.
 
 BACA URUTAN: `docs/SESSION-HANDOFF-PROTOCOL.md` → file ini → `PROJECT-HANDOFF.md` → `CURRENT-STATE.md` → `docs/SESSION-CHECKPOINT.md` → `chat-session.md` → enterprise roadmap/evidence policy.
 
