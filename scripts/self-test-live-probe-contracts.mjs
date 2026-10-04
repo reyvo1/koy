@@ -86,6 +86,44 @@ assert(
   'demo seeder supports a 0600 machine-readable credential file and quiet mode',
 );
 
+const wave5 = read('scripts/run-wave5-public-api-probes.sh');
+assert(
+  wave5.includes('probe_login "$PROBE_BASE" "$PROBE_LOGIN_FILE"') &&
+    wave5.includes('PROBE_ACCESS_TOKEN="$(probe_session_token "$PROBE_LOGIN_FILE")"'),
+  'Wave 5 authenticates the seeded UAT admin once and exports the shared session token',
+);
+assert(
+  common.includes('probe_session_is_usable()') &&
+    common.includes('$api/users/profile') &&
+    common.includes('cached probe session validation failed closed'),
+  'shared UAT helper validates cached sessions and fails closed on non-auth validation errors',
+);
+
+assert(
+  wave6.includes('PLATFORM_SESSION="reports/wave6-platform-session.json"') &&
+    wave6.includes('TENANT_SESSION="reports/wave6-tenant-session.json"') &&
+    wave6.includes('PROBE_ACCESS_TOKEN="$(probe_session_token "$PLATFORM_SESSION")"') &&
+    wave6.includes('PROBE_TENANT_ACCESS_TOKEN="$(probe_session_token "$TENANT_SESSION")"'),
+  'Wave 6 authenticates each actor once and shares tokens with every child probe',
+);
+for (const rel of [
+  'scripts/probe-capability-template-lifecycle.mts',
+  'scripts/probe-saved-reports.mts',
+  'scripts/probe-mqtt-management.mts',
+  'scripts/probe-noc-operations.mts',
+]) {
+  const source = read(rel);
+  assert(
+    source.includes('PROBE_ACCESS_TOKEN') && source.includes('PROBE_TENANT_ACCESS_TOKEN'),
+    `${rel} reuses Wave 6 actor tokens before attempting a fallback login`,
+  );
+}
+assert(
+  read('scripts/probe-webhook-event-vocabulary.sh').includes('PROBE_ACCESS_TOKEN') &&
+    read('scripts/probe-public-api-sdk.mts').includes('PROBE_ACCESS_TOKEN'),
+  'Wave 5 webhook and SDK consume the shared UAT token instead of independently spending login budget',
+);
+
 const wave6Wrappers = [
   'scripts/run-capability-template-probe.sh',
   'scripts/run-saved-reports-probe.sh',
@@ -222,6 +260,88 @@ try {
   );
 } finally {
   rmSync(temp, { recursive: true, force: true });
+}
+
+const sessionTemp = mkdtempSync(path.join(tmpdir(), 'iot-live-probe-session-'));
+try {
+  const bin = path.join(sessionTemp, 'bin');
+  const creds = path.join(sessionTemp, 'session.json');
+  const callLog = path.join(sessionTemp, 'curl.log');
+  const { mkdirSync, chmodSync, statSync } = await import('node:fs');
+  mkdirSync(bin);
+  const fakeCurl = path.join(bin, 'curl');
+  writeFileSync(fakeCurl, `#!/usr/bin/env bash
+set -euo pipefail
+out=""
+url=""
+method="GET"
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -o) out="$2"; shift 2 ;;
+    -X) method="$2"; shift 2 ;;
+    -w|-H|--data) shift 2 ;;
+    -s|-S|-sS) shift ;;
+    http://*|https://*) url="$1"; shift ;;
+    *) shift ;;
+  esac
+done
+if [[ "$url" == */users/profile ]]; then
+  printf 'PROFILE\\n' >> "$FAKE_CURL_LOG"
+  printf '%s' "\${FAKE_PROFILE_STATUS:-200}"
+  exit 0
+fi
+if [[ "$url" == */auth/login ]]; then
+  printf 'LOGIN\\n' >> "$FAKE_CURL_LOG"
+  if [ -n "$out" ] && [ "$out" != "/dev/null" ]; then
+    printf '{"accessToken":"fresh-token"}' > "$out"
+  fi
+  printf '%s' "\${FAKE_LOGIN_STATUS:-200}"
+  exit 0
+fi
+printf 'UNEXPECTED:%s:%s\\n' "$method" "$url" >> "$FAKE_CURL_LOG"
+exit 9
+`);
+  chmodSync(fakeCurl, 0o755);
+  writeFileSync(creds, JSON.stringify({ accessToken: 'cached-token' }));
+
+  const helper = path.join(root, 'scripts/probe-common.sh').replaceAll("'", "'\\''");
+  const runHelper = (profileStatus, loginStatus, prelude = '') =>
+    spawnSync('bash', ['-lc', [
+      'set -euo pipefail',
+      `export PATH='${bin.replaceAll("\'", "\'\\\'\'")}':"$PATH"`,
+      `export FAKE_CURL_LOG='${callLog.replaceAll("'", "'\\''")}'`,
+      `export FAKE_PROFILE_STATUS='${profileStatus}'`,
+      `export FAKE_LOGIN_STATUS='${loginStatus}'`,
+      `source '${helper}'`,
+      prelude,
+      `probe_login_identity http://probe.invalid '${creds.replaceAll("'", "'\\''")}' user@example.invalid secret tenant-1`,
+    ].filter(Boolean).join('; ')], { cwd: sessionTemp, encoding: 'utf8' });
+
+  writeFileSync(callLog, '');
+  let result = runHelper('200', '429');
+  assert(result.status === 0, 'validated cached session is reused without re-authenticating', result.stderr.trim());
+  assert(readFileSync(callLog, 'utf8') === 'PROFILE\n', 'cached-session reuse spends no login request');
+
+  writeFileSync(callLog, '');
+  result = runHelper('401', '200');
+  assert(result.status === 0, 'an explicitly invalid cached session re-authenticates once', result.stderr.trim());
+  assert(readFileSync(callLog, 'utf8') === 'PROFILE\nLOGIN\n', 'stale-session recovery performs exactly one login');
+  assert(statSync(creds).mode % 0o1000 === 0o600, 'fresh session file is restricted to mode 0600');
+  assert(JSON.parse(readFileSync(creds, 'utf8')).accessToken === 'fresh-token', 'fresh login atomically replaces the stale session');
+
+  writeFileSync(creds, JSON.stringify({ accessToken: 'cached-token' }));
+  writeFileSync(callLog, '');
+  result = runHelper('500', '200');
+  assert(result.status !== 0, 'cached-session validation 5xx remains fail-closed instead of hiding the runtime fault');
+  assert(readFileSync(callLog, 'utf8') === 'PROFILE\n', 'non-auth session validation failure does not fall through to login');
+
+  rmSync(creds, { force: true });
+  writeFileSync(callLog, '');
+  result = runHelper('200', '429');
+  assert(result.status !== 0, 'real login rate-limit response remains a hard failure');
+  assert(readFileSync(callLog, 'utf8') === 'LOGIN\n', '429 is not retried or converted into PASS');
+} finally {
+  rmSync(sessionTemp, { recursive: true, force: true });
 }
 
 console.log('CROSS-WAVE LIVE PROBE CONTRACT SELF-TEST PASS');

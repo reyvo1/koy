@@ -61,18 +61,21 @@ async function main(): Promise<void> {
   check('the client refuses to be constructed without a key', refusedToConstruct);
 
   // --- 2. mint a key through the product ----------------------------------
-  const login = await fetch(`${BASE}/auth/login`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      email: requireProbeCredential('PROBE_EMAIL'),
-      password: requireProbeCredential('PROBE_PASSWORD'),
-      tenantId: TENANT,
-    }),
-  });
-  const session = (await login.json()) as { accessToken?: string; token?: string };
-  const token = session.accessToken ?? session.token;
-  if (!login.ok || !token) throw new Error(`login failed: ${login.status}`);
+  let token = process.env.PROBE_ACCESS_TOKEN;
+  if (!token) {
+    const login = await fetch(`${BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: requireProbeCredential('PROBE_EMAIL'),
+        password: requireProbeCredential('PROBE_PASSWORD'),
+        tenantId: TENANT,
+      }),
+    });
+    const session = (await login.json()) as { accessToken?: string; token?: string };
+    token = session.accessToken ?? session.token;
+    if (!login.ok || !token) throw new Error(`login failed: ${login.status}`);
+  }
 
   const createKey = await fetch(`${BASE}/admin/api-keys`, {
     method: 'POST',

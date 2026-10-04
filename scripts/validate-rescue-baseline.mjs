@@ -2528,6 +2528,26 @@ check(
 );
 
 check(
+  'Wave 5-9 live UAT reuses validated sessions instead of exhausting the production auth limiter',
+  read('scripts/probe-common.sh').includes('probe_session_is_usable()') &&
+    read('scripts/probe-common.sh').includes('$api/users/profile') &&
+    read('scripts/run-wave5-public-api-probes.sh').includes('PROBE_ACCESS_TOKEN="$(probe_session_token') &&
+    read('scripts/run-wave6-management-probes.sh').includes('PROBE_TENANT_ACCESS_TOKEN="$(probe_session_token') &&
+    ['probe-capability-template-lifecycle.mts','probe-saved-reports.mts','probe-mqtt-management.mts','probe-noc-operations.mts']
+      .every((name) => read(`scripts/${name}`).includes('PROBE_ACCESS_TOKEN')) &&
+    ['probe-capability-template-lifecycle.mts','probe-saved-reports.mts','probe-mqtt-management.mts','probe-noc-operations.mts']
+      .every((name) => read(`scripts/${name}`).includes('PROBE_TENANT_ACCESS_TOKEN')),
+);
+check(
+  'live UAT session reuse does not weaken the sensitive authentication limiter',
+  !githubCiR30.includes('SENSITIVE_RATE_LIMIT_MAX:') &&
+    !githubCiR30.includes('SENSITIVE_RATE_LIMIT_WINDOW_MS:') &&
+    read('scripts/probe-common.sh').includes('probe login failed for $email: HTTP $status') &&
+    read('scripts/self-test-live-probe-contracts.mjs').includes('real login rate-limit response remains a hard failure') &&
+    read('docs/SESSION-HANDOFF-PROTOCOL.md').includes('Do not raise/disable the production limiter'),
+);
+
+check(
   'camera and device-location probe wrappers fail closed while still cleaning residue',
   read('scripts/run-camera-probe.sh').includes('set -euo pipefail') &&
     read('scripts/run-camera-probe.sh').includes('trap cleanup_probe EXIT') &&
@@ -3900,4 +3920,3 @@ if (failures.length > 0) {
   process.exit(1);
 }
 console.log(`\nRESCUE VALIDATION PASS (${checks.length}/${checks.length})`);
-

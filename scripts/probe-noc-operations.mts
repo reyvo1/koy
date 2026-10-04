@@ -100,12 +100,12 @@ async function login(
 }
 
 async function main(): Promise<void> {
-  const superToken = await login(
+  const superToken = process.env.PROBE_ACCESS_TOKEN ?? await login(
     process.env.PROBE_EMAIL!,
     process.env.PROBE_PASSWORD!,
     SESSION_TENANT,
   );
-  console.log('login ok\n');
+  console.log('session ok\n');
 
   // ------------------------------------------------- 0. the routes are registered
   // 401 rather than 404: the router matched the path and the guard rejected the caller. Probing
@@ -274,7 +274,7 @@ async function main(): Promise<void> {
   // own isolation. The tenant admin's own token can: their acknowledgement route resolves the
   // tenant from their session context, so a finding belonging to another tenant is not theirs to
   // act on.
-  const tenantAdminToken = await login(
+  const tenantAdminToken = process.env.PROBE_TENANT_ACCESS_TOKEN ?? await login(
     process.env.PROBE_TENANT_ADMIN_EMAIL!,
     process.env.PROBE_TENANT_ADMIN_PASSWORD!,
     TENANT,

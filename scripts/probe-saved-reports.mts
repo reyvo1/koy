@@ -63,17 +63,20 @@ function messageOf(body: Json): string {
 }
 
 async function main(): Promise<void> {
-  const login = await call('/auth/login', {
-    method: 'POST',
-    body: {
-      email: process.env.PROBE_EMAIL,
-      password: process.env.PROBE_PASSWORD,
-      tenantId: SESSION_TENANT,
-    },
-  });
-  const token = (login.body.accessToken ?? login.body.token) as string | undefined;
-  if (!token) throw new Error(`login failed: ${login.status}: ${messageOf(login.body)}`);
-  console.log('login ok\n');
+  let token = process.env.PROBE_ACCESS_TOKEN;
+  if (!token) {
+    const login = await call('/auth/login', {
+      method: 'POST',
+      body: {
+        email: process.env.PROBE_EMAIL,
+        password: process.env.PROBE_PASSWORD,
+        tenantId: SESSION_TENANT,
+      },
+    });
+    token = (login.body.accessToken ?? login.body.token) as string | undefined;
+    if (!token) throw new Error(`login failed: ${login.status}: ${messageOf(login.body)}`);
+  }
+  console.log('session ok\n');
 
   // ------------------------------------------------------------ 1. the live report runs
   const live = await call('/admin/platform-reports/tenant-summary?hours=24', {
@@ -272,15 +275,18 @@ async function main(): Promise<void> {
   );
 
   // ------------------------------------------------------------ 9. tenant admin cannot use platform routes
-  const tenantLogin = await call('/auth/login', {
-    method: 'POST',
-    body: {
-      email: process.env.PROBE_TENANT_EMAIL,
-      password: process.env.PROBE_TENANT_PASSWORD,
-      tenantId: TENANT,
-    },
-  });
-  const tenantToken = (tenantLogin.body.accessToken ?? tenantLogin.body.token) as string | undefined;
+  let tenantToken = process.env.PROBE_TENANT_ACCESS_TOKEN;
+  if (!tenantToken) {
+    const tenantLogin = await call('/auth/login', {
+      method: 'POST',
+      body: {
+        email: process.env.PROBE_TENANT_EMAIL,
+        password: process.env.PROBE_TENANT_PASSWORD,
+        tenantId: TENANT,
+      },
+    });
+    tenantToken = (tenantLogin.body.accessToken ?? tenantLogin.body.token) as string | undefined;
+  }
   if (tenantToken) {
     const asTenant = await call(`/admin/platform-reports/saved?tenantId=${TENANT}`, {
       token: tenantToken,

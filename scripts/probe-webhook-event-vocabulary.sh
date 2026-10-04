@@ -65,10 +65,13 @@ check "the sweep leaves no probe device behind" \
 
 auth_header() {
   local body token
-  body=$(curl -s -X POST "$BASE/auth/login" -H 'content-type: application/json' \
-    -d "{\"email\":\"$PROBE_EMAIL\",\"password\":\"$PROBE_PASSWORD\",\"tenantId\":\"$TENANT\"}")
-  token=$(printf '%s' "$body" > /tmp/probe-login.json && \
-    node -e 'const d=require("/tmp/probe-login.json");process.stdout.write(d.accessToken||d.token||"")')
+  token="${PROBE_ACCESS_TOKEN:-}"
+  if [ -z "$token" ]; then
+    body=$(curl -sS -X POST "$BASE/auth/login" -H 'content-type: application/json' \
+      -d "{\"email\":\"$PROBE_EMAIL\",\"password\":\"$PROBE_PASSWORD\",\"tenantId\":\"$TENANT\"}")
+    token=$(printf '%s' "$body" > /tmp/probe-login.json && \
+      node -e 'const d=require("/tmp/probe-login.json");process.stdout.write(d.accessToken||d.token||"")')
+  fi
   printf 'authorization: Bearer %s' "$token"
 }
 

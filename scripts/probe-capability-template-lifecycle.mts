@@ -114,16 +114,19 @@ async function call(
 }
 
 async function main(): Promise<void> {
-  const login = await call('/auth/login', {
-    method: 'POST',
-    body: {
-      email: process.env.PROBE_EMAIL,
-      password: process.env.PROBE_PASSWORD,
-      tenantId: SESSION_TENANT,
-    },
-  });
-  const token = (login.body.accessToken ?? login.body.token) as string | undefined;
-  if (!token) throw new Error(`login failed: ${login.status}`);
+  let token = process.env.PROBE_ACCESS_TOKEN;
+  if (!token) {
+    const login = await call('/auth/login', {
+      method: 'POST',
+      body: {
+        email: process.env.PROBE_EMAIL,
+        password: process.env.PROBE_PASSWORD,
+        tenantId: SESSION_TENANT,
+      },
+    });
+    token = (login.body.accessToken ?? login.body.token) as string | undefined;
+    if (!token) throw new Error(`login failed: ${login.status}`);
+  }
 
   // ---------------------------------------------------------------- 1. create
   const created = await call('/admin/platform-capability-templates', {
@@ -146,15 +149,18 @@ async function main(): Promise<void> {
   // escalation a management plane must not offer. Checked rather than assumed: the class
   // decorator could be dropped in a later refactor and nothing else here would notice.
   if (process.env.PROBE_TENANT_ADMIN_EMAIL) {
-    const tenantLogin = await call('/auth/login', {
-      method: 'POST',
-      body: {
-        email: process.env.PROBE_TENANT_ADMIN_EMAIL,
-        password: process.env.PROBE_TENANT_ADMIN_PASSWORD,
-        tenantId: TENANT,
-      },
-    });
-    const tenantToken = (tenantLogin.body.accessToken ?? tenantLogin.body.token) as string | undefined;
+    let tenantToken = process.env.PROBE_TENANT_ACCESS_TOKEN;
+    if (!tenantToken) {
+      const tenantLogin = await call('/auth/login', {
+        method: 'POST',
+        body: {
+          email: process.env.PROBE_TENANT_ADMIN_EMAIL,
+          password: process.env.PROBE_TENANT_ADMIN_PASSWORD,
+          tenantId: TENANT,
+        },
+      });
+      tenantToken = (tenantLogin.body.accessToken ?? tenantLogin.body.token) as string | undefined;
+    }
     if (tenantToken) {
       const forbidden = await call('/admin/platform-capability-templates', {
         method: 'POST',

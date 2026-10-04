@@ -35,23 +35,111 @@ probe_require_uat() {
   fi
 }
 
+probe_session_token() {
+  local creds="$1"
+  [ -f "$creds" ] || return 1
+  node -e '
+    const fs = require("node:fs");
+    const file = process.argv[1];
+    try {
+      const data = JSON.parse(fs.readFileSync(file, "utf8"));
+      const token = data.accessToken ?? data.token;
+      if (typeof token !== "string" || token.length === 0) process.exit(2);
+      process.stdout.write(token);
+    } catch {
+      process.exit(2);
+    }
+  ' "$creds"
+}
+
+probe_session_is_usable() {
+  local api="$1" creds="$2" token status
+  token=$(probe_session_token "$creds" 2>/dev/null) || return 1
+
+  if ! status=$(curl -sS -o /dev/null -w '%{http_code}' \
+    "$api/users/profile" \
+    -H "authorization: Bearer $token"); then
+    echo "could not validate the cached probe session against $api/users/profile" >&2
+    return 2
+  fi
+
+  case "$status" in
+    200) return 0 ;;
+    401) return 1 ;;
+    *)
+      echo "cached probe session validation failed closed: HTTP $status" >&2
+      return 2
+      ;;
+  esac
+}
+
+probe_login_identity() {
+  local api="$1" creds="$2" email="$3" password="$4" tenant_id="$5"
+  local reuse_status=0 status tmp
+
+  if [ -f "$creds" ]; then
+    probe_session_is_usable "$api" "$creds" || reuse_status=$?
+    case "$reuse_status" in
+      0)
+        printf 'Reusing validated probe session (%s)\n' "$api"
+        return 0
+        ;;
+      1) ;;
+      *) return "$reuse_status" ;;
+    esac
+  fi
+
+  if [ -z "$email" ] || [ -z "$password" ] || [ -z "$tenant_id" ]; then
+    echo "probe login identity is incomplete" >&2
+    return 2
+  fi
+
+  mkdir -p "$(dirname "$creds")"
+  tmp="${creds}.tmp.$$"
+  rm -f "$tmp"
+  umask 077
+
+  if ! status=$(curl -sS -o "$tmp" -w '%{http_code}' -X POST "$api/auth/login" \
+    -H 'content-type: application/json' \
+    --data "{\"tenantId\":\"$tenant_id\",\"email\":\"$email\",\"password\":\"$password\"}"); then
+    rm -f "$tmp"
+    echo "probe login transport failed for $email" >&2
+    return 2
+  fi
+
+  if [ "$status" != "200" ] && [ "$status" != "201" ]; then
+    rm -f "$tmp"
+    echo "probe login failed for $email: HTTP $status" >&2
+    return 2
+  fi
+
+  if ! probe_session_token "$tmp" >/dev/null 2>&1; then
+    rm -f "$tmp"
+    echo "probe login response for $email contains no access token" >&2
+    return 2
+  fi
+
+  mv "$tmp" "$creds"
+  chmod 0600 "$creds"
+  printf 'Probe session authenticated (%s)\n' "$api"
+}
+
 probe_login() {
-  local api="$1" creds="$2" password status
+  local api="$1" creds="$2" password
   password=$(probe_uat_password)
   if [ -z "$password" ] || [[ "$password" == \(unknown* ]]; then
     # Refuse rather than sending an empty/placeholder password: a 401 here is indistinguishable
     # from a wrong tenant, and the failure would be diagnosed in the wrong place.
     echo "could not read a usable UAT admin password from .uat-credentials" >&2
-    exit 2
+    return 2
   fi
-  status=$(curl -s -o "$creds" -w '%{http_code}' -X POST "$api/auth/login" \
-    -H 'content-type: application/json' \
-    --data "{\"tenantId\":\"44444444-4444-4444-8444-444444444444\",\"email\":\"uat.admin@iot.local\",\"password\":\"$password\"}")
-  if [ "$status" != "200" ] && [ "$status" != "201" ]; then
-    echo "UAT login failed: HTTP $status" >&2
-    exit 2
-  fi
-  printf 'UAT session ok (%s)\n' "$api"
+
+  probe_login_identity \
+    "$api" \
+    "$creds" \
+    "uat.admin@iot.local" \
+    "$password" \
+    "44444444-4444-4444-8444-444444444444"
 }
 
 probe_export_uat_admin_env() {

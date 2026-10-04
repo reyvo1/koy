@@ -4,12 +4,15 @@ LANJUTKAN IOT PLATFORM DARI CHECKPOINT TERBARU. JANGAN AUDIT DARI NOL.
 
 Wave 13 remains IN PROGRESS, software deliverables only.
 
-- GitHub run `37178750101` checkout commit `07b4060b04124337e7e2e26cd5e5b5e7179781b6`; evidence `logs_100704960059.zip`.
+- GitHub run `37181327760` checkout commit `87996698f478d5c2c73cdc90645b1793fdeefd84`; evidence `logs_100711779249.zip`.
 - Wave 4 = GREEN (TLS 12/12).
 - Wave 5 = GREEN (webhook 24/24, SDK 14/14).
-- FIRST FAILING GATE = Wave 6 MQTT management recovery: broker sudah reachable tetapi platform publisher belum reconnect saat assertion lama berhenti terlalu cepat.
-- Batch aktif memperbaiki kelas masalah lintas-wave, bukan satu gejala: canonical Wave 4/6/7/9 runners, one-seed Wave 6 credentials tanpa secret stdout, shared UAT login Wave 5/7/8/9, bounded broker+publisher recovery, cleanup fail-closed, dan `live-probe:contracts:self-test`.
-- Jangan melemahkan UAT. Async recovery boleh polling dengan deadline; lewat deadline tetap FAIL.
+- Wave 6 = GREEN, termasuk MQTT outage/recovery 24/24 dengan broker + platform publisher bounded recovery.
+- Wave 7 mobile = GREEN (22/22 writer checks + 12/12 integration).
+- FIRST FAILING GATE = Wave 7 technician maintenance: harness melakukan login admin lagi dan terkena HTTP 429 sebelum feature assertions berjalan.
+- ROOT CAUSE = login storm lintas-wave, bukan rate limiter yang salah. Wave 5-9 harus reuse session yang sudah tervalidasi; Wave 6 platform/tenant login sekali per identity.
+- Jangan melemahkan UAT: guard/rate-limit tidak diubah, 429 tetap FAIL, 5xx session validation tetap FAIL, stale session hanya re-auth pada 401.
+- LOCAL QA = live-probe contract PASS, handoff PASS, Wave1/CI self-test PASS, enterprise status 10/10, rescue 496/496, seal 1380/1381.
 - Hardware fisik tidak memblokir software. Mandatory evidence = source-bound `SIMULATED_HARDWARE_LIVE_SERVICE`; PHYSICAL/HIL tetap label terpisah.
 - FIRST ACTION: verifikasi `git rev-parse HEAD` dan `git status --short`, baca `docs/SESSION-HANDOFF-PROTOCOL.md`, lalu lanjut dari first failing gate terbaru.
 - NEXT: `npm run live-probe:contracts:self-test` → `npm run session:handoff:self-test` → `npm run wave3:prepush:check` → satu commit/push → GitHub heavy UAT.

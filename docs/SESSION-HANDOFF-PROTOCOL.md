@@ -32,6 +32,7 @@ Rules:
 - Asynchronous service recovery must use bounded readiness polling for the actual required condition (for example broker **and** platform publisher), never a fixed sleep followed by a weaker proxy condition. Deadline expiry remains FAIL.
 - Cleanup must run without overwriting the original probe result. SQL cleanup that is acceptance-critical uses fail-closed execution (`ON_ERROR_STOP=1`); emergency cleanup may be best-effort only when it cannot turn a failed UAT into PASS.
 - Credential-bearing seed output must never be echoed on CI failure paths. Machine consumers use restricted credential files or another explicit source-controlled secret handoff.
+- Expensive live feature probes must reuse an already validated session/token for the same actor instead of repeatedly consuming `/auth/login` rate-limit budget. Cached sessions are validated through a non-sensitive authenticated endpoint; only an explicit 401 may trigger one re-authentication. Transport/5xx validation failures and HTTP 429 remain FAIL. Do not raise/disable the production limiter to make UAT green.
 
 ## Mandatory handoff update before ending a batch/session
 

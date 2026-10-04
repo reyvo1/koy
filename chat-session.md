@@ -1,4 +1,4 @@
-# Chat Session — Cross-wave live UAT orchestration root fix — 2026-10-04
+# Chat Session — Cross-wave authentication-session root fix — 2026-10-04
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
 
@@ -6,36 +6,33 @@ Wave 13 remains IN PROGRESS. `SIMULATED_HARDWARE_LIVE_SERVICE` remains mandatory
 
 ## Latest evidence
 
-GitHub Actions run `37178750101` checked out commit `07b4060b04124337e7e2e26cd5e5b5e7179781b6`; operator evidence bundle is `logs_100704960059.zip`. Wave 4 staging UAT/TLS is GREEN, including TLS **12/12 PASS**. Wave 5 public API + webhook + SDK is GREEN: webhook **24/24 PASS**, SDK **14/14 PASS**. The first failing gate moved to Wave 6 MQTT management recovery after the deliberate broker outage: the API correctly reported the broker unreachable, EMQX restarted, and the management surface became reachable again, but the probe failed immediately because the long-lived platform publisher had not yet reconnected.
+GitHub Actions run `37181327760` checked out commit `87996698f478d5c2c73cdc90645b1793fdeefd84`; operator evidence bundle is `logs_100711779249.zip`. Wave 4 is GREEN with TLS **12/12 PASS**. Wave 5 is GREEN with webhook **24/24 PASS** and SDK **14/14 PASS**. Wave 6 is now GREEN: capability **37/37**, saved reports **27/27**, MQTT management **24/24** including deliberate broker outage plus bounded platform-publisher recovery, and NOC **30/30**. Wave 7 mobile notification is GREEN: writer/runtime checks **22/22** and mobile integration **12/12**. The first failing gate is Wave 7 technician maintenance, which did not reach maintenance assertions because its second UAT-admin login was rejected with **HTTP 429**.
 
 ## Root-cause class and repair
 
-- Fix the recovery race at its boundary: Wave 6 now waits up to the existing bounded 60-second window for **both** broker reachability and the identified platform publisher (`platformPublisherCount`, prefix match, username and connectedAt). A broker that returns without the publisher still fails.
-- Replace per-probe demo-password regeneration/parsing with one Wave 6 credential source. `seed-demo-accounts.mjs` gains a quiet 0600 machine-readable credential-file mode; generated passwords are no longer echoed by error-path parsers.
-- Add canonical aggregate Wave 4, Wave 6, Wave 7 and Wave 9 runners. Independent probes continue after one sub-probe fails so the same expensive live runtime returns the whole wave diagnosis; final wave status remains fail-closed if any child fails.
-- Centralize UAT credential parsing/login across Wave 5, 7, 8 and 9 through `scripts/probe-common.sh`; duplicated `.uat-credentials` awk parsers are removed.
-- Maintenance and billing wrappers preserve a failed probe status while cleanup still runs. Capability-template and saved-report SQL cleanup use `ON_ERROR_STOP=1`.
-- Add `live-probe:contracts:self-test` to local pre-push and core CI. It guards canonical wave entrypoints, fresh-step credentials, secret-free demo credential exchange, cleanup semantics and the MQTT recovery predicate.
+- The production sensitive-auth limiter is keyed by auth path + runner IP. Feature probes from Wave 5 onward were independently calling `/auth/login`, so a healthy runner could consume the login budget before later feature probes started. This is a harness orchestration defect, not a reason to relax the limiter.
+- `probe-common.sh` now supports restricted, cached session files. A cached token is validated through authenticated `GET /users/profile`; a valid session is reused, explicit 401 may re-authenticate once, and transport/5xx validation errors remain fail-closed. Fresh session files are written atomically with mode 0600.
+- Wave 5 now authenticates the seeded UAT admin once and exports the token to webhook + SDK; the same session file is reused by Wave 7, Wave 8 and Wave 9 wrappers.
+- Wave 6 now authenticates its platform and tenant actors exactly once after one credential seed, exports both tokens, and the capability/report/MQTT/NOC probes prefer those tokens before any standalone fallback login. Authorization evidence remains two-actor and unchanged.
+- `live-probe:contracts:self-test` now proves cached-session reuse spends no login request, stale 401 causes exactly one re-auth, session files are 0600, 5xx validation cannot fall through to login, and a real 429 remains a hard failure.
 
 ## Continuity invariant
 
-Do not reopen Wave 4 or Wave 5 without newer failing evidence. Resume from the first failing gate in the newest GitHub run. Live UAT must not be weakened: bounded polling is allowed only for asynchronous readiness and must still fail on deadline; credentials must come from source-controlled seed contracts; cleanup must never overwrite a failed probe result.
+Do not reopen Wave 4-6 without newer failing evidence. Resume from Wave 7 technician maintenance. Live UAT must not be weakened: never raise the rate-limit threshold for a feature probe, never ignore/retry 429 into PASS, and never replace separate authorization actors with one privileged token. Prefer validated session/token reuse so feature tests exercise their feature rather than exhaust authentication controls.
 
 ## QA in repair workspace
 
-- `live-probe:contracts:self-test`: PASS, including broker-only recovery rejection, unrelated-client rejection, full publisher recovery acceptance, wrapper syntax, canonical Wave 4-9 wiring, and no demo-password output.
-- `session:handoff:self-test`: PASS with exact run/SHA agreement and durable cross-wave orchestration/cleanup/credential invariants.
-- `wave1:prepush:self-test`: PASS.
-- `rescue:github-ci:self-test`: PASS with canonical Wave 4/6/7/8/9 entrypoints.
-- `enterprise:wave-status:verify`: PASS, 10/10 synchronized current-state documents.
-- `validate-rescue-baseline.mjs`: PASS **494/494**.
-- `package.json`, changed Node scripts, `probe-mqtt-management.mts`, shell syntax and GitHub workflow YAML parse cleanly.
-- Final source seal: **1380/1380 source paths, 1381/1381 manifest entries**.
-- This extracted audit workspace has no `node_modules`, so full lint/Jest/secretlint/live Docker probes are deliberately not claimed here; the operator checkout must run the official local pre-push before commit, and GitHub remains authoritative for live Wave 6+ evidence.
+- `live-probe:contracts:self-test`: PASS, including session cache/re-auth/429 fail-closed regressions and existing cross-wave orchestration checks.
+- Shell syntax for changed wrappers: PASS.
+- Changed `.mts` sources pass Node strip-types syntax checks.
+- Documentation/handoff updated to run `37181327760`, commit `87996698f478d5c2c73cdc90645b1793fdeefd84`, first failing Wave 7 maintenance.
+- `wave1:prepush:self-test`, `rescue:github-ci:self-test`, enterprise status sync and rescue validator: PASS; rescue validation **496/496**.
+- Final source seal after all code/docs changes: **1380/1380 source paths, 1381/1381 manifest entries**.
+- Full dependency-backed lint/Jest/live Docker UAT are not claimed in this extracted workspace; the operator checkout must run the official local pre-push before commit, and GitHub remains authoritative for live Wave 7-9 evidence.
 
 ## Next action
 
-Run `npm run live-probe:contracts:self-test`, `npm run session:handoff:self-test`, then `npm run wave3:prepush:check`. If green, review one complete diff, commit once, push once, and let GitHub resume at Wave 6. If Wave 6 becomes green, continue to the next actual failing wave without reopening earlier green waves.
+Run `npm run live-probe:contracts:self-test`, `npm run session:handoff:self-test`, then `npm run wave3:prepush:check`. If green, review one complete diff, commit once, push once, and let GitHub resume from Wave 7.
 
 --- HISTORICAL CHAT SESSION CHRONOLOGY BELOW ---
 

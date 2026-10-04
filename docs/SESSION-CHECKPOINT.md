@@ -2,14 +2,18 @@
 
 Wave 13 remains IN PROGRESS, software deliverables only.
 
-# Current checkpoint — Cross-wave live UAT hardening — 2026-10-04
+# Current checkpoint — Cross-wave authentication-session hardening — 2026-10-04
 
-- GitHub Actions run `37178750101` / commit `07b4060b04124337e7e2e26cd5e5b5e7179781b6` / evidence `logs_100704960059.zip`.
+- GitHub Actions run `37181327760` / commit `87996698f478d5c2c73cdc90645b1793fdeefd84` / evidence `logs_100711779249.zip`.
 - Wave 4 GREEN: staging docs/login/TLS complete; TLS 12/12 PASS.
 - Wave 5 GREEN: webhook 24/24 PASS; SDK 14/14 PASS.
-- FIRST FAILING GATE: Wave 6 MQTT management recovery. Broker management returns before the platform publisher reconnect completes.
-- ROOT CAUSE CLASS: fragmented per-wave orchestration (credential duplication, single-shot async recovery, cleanup/error masking, first-red hiding later diagnostics).
-- REPAIR: canonical Wave 4/6/7/9 runners, one Wave 6 demo credential source, shared UAT login Wave 5/7/8/9, bounded broker+publisher recovery, fail-closed cleanup, cross-wave contract self-test.
+- Wave 6 GREEN: capability 37/37, saved reports 27/27, MQTT management 24/24 including bounded broker+publisher recovery, NOC 30/30.
+- Wave 7 mobile notification GREEN: writer checks 22/22 and mobile integration 12/12.
+- FIRST FAILING GATE: Wave 7 technician maintenance did not reach its feature assertions because a second admin login hit HTTP 429.
+- ROOT CAUSE CLASS: live-UAT login storm. The production sensitive-auth limiter is keyed by `/auth/login` + runner IP, while Wave 5-9 feature probes repeatedly re-authenticated identities instead of reusing already valid sessions.
+- REPAIR: Wave 5 mints one validated UAT session; Wave 7-9 reuse it through `probe-common.sh`. Wave 6 authenticates platform + tenant actors once and shares tokens across all four child probes. Cached sessions are validated through `/users/profile`; only an explicit 401 may re-authenticate. Transport/5xx validation errors and real 429 responses remain FAIL. Session files are mode 0600.
+- UAT IS NOT WEAKENED: rate-limit thresholds/guards are unchanged; no 429 is ignored/retried into PASS; authorization still uses separate platform and tenant tokens.
+- LOCAL QA: cross-wave live-probe contract PASS; session handoff PASS; Wave 1/CI contract self-tests PASS; enterprise status 10/10; rescue validator 496/496; final seal 1380 source / 1381 hashes.
 - EVIDENCE POLICY: `SIMULATED_HARDWARE_LIVE_SERVICE`; unavailable physical hardware does **not** block software progress and must never be relabelled PHYSICAL.
 - Next action: `npm run live-probe:contracts:self-test` → `npm run session:handoff:self-test` → `npm run wave3:prepush:check` → review diff → one commit/push → GitHub heavy UAT.
 - RESUME RULE: read `docs/SESSION-HANDOFF-PROTOCOL.md`, verify real `git rev-parse HEAD` + `git status --short`, then continue from the newest first failing gate. Do not audit from zero.

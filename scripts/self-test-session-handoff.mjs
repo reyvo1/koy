@@ -40,6 +40,7 @@ assert(protocol.includes('SIMULATED_HARDWARE_LIVE_SERVICE') && protocol.includes
 assert(protocol.includes('ambient shell variables') && protocol.includes('fresh-step isolation'), 'handoff protocol forbids cross-step ambient credential assumptions for live probes');
 assert(protocol.includes('canonical source-controlled entrypoints') && protocol.includes('bounded readiness polling'), 'handoff protocol preserves cross-wave orchestration and bounded async recovery');
 assert(protocol.includes('Cleanup must run without overwriting the original probe result') && protocol.includes('Credential-bearing seed output must never be echoed'), 'handoff protocol preserves fail-closed cleanup and secret-safe probe seeding');
+assert(protocol.includes('reuse an already validated session/token') && protocol.includes('HTTP 429 remain FAIL') && protocol.includes('Do not raise/disable the production limiter'), 'handoff protocol preserves auth-session reuse without weakening the production limiter');
 assert(agents.includes('SESSION-HANDOFF-PROTOCOL.md') && agents.includes('first failing gate'), 'AGENTS current override forces session-resume continuity before mutations');
 assert(['PASTE-KE-CHAT-BERIKUTNYA.txt', 'PROJECT-HANDOFF.md', 'docs/SESSION-CHECKPOINT.md', 'chat-session.md'].every((name) => protocol.includes(`\`${name}\``)), 'handoff protocol names every current continuation artifact');
 
