@@ -10,17 +10,9 @@
 # green while proving nothing.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
-set -a; source .env 2>/dev/null || true; set +a
-
-SEED_OUT=$(node scripts/seed-demo-accounts.mjs 2>&1)
-SUPER_PW=$(printf '%s\n' "$SEED_OUT" | grep -A 4 'PLATFORM ADMIN' | grep 'Password' | awk '{print $3}')
-TENANT_PW=$(printf '%s\n' "$SEED_OUT" | grep -A 5 'TENANT ADMIN' | grep 'Password' | awk '{print $3}')
-
-if [ -z "$SUPER_PW" ] || [ -z "$TENANT_PW" ]; then
-  printf '%s\n' "$SEED_OUT" | tail -20
-  echo "could not read both passwords from one seed run" >&2
-  exit 2
-fi
+# shellcheck source=scripts/probe-common.sh
+source scripts/probe-common.sh
+probe_export_demo_admin_env
 
 # Sweep before the fixture, so a previous run's rows cannot satisfy an assertion about a fresh
 # acknowledgement. The SQL raises rather than reporting its own DELETE count as clean.
@@ -40,11 +32,6 @@ UNACK_ID=$(printf '%s' "$FIXTURE" | sed -n 's/.*"unacknowledged":"\([^"]*\)".*/\
 ACK_ID=$(printf '%s' "$FIXTURE" | sed -n 's/.*"toAcknowledge":"\([^"]*\)".*/\1/p')
 
 PROBE_STATUS=0
-PROBE_API_BASE="${PROBE_API_BASE:-http://127.0.0.1:3000}" \
-PROBE_EMAIL=demo.superadmin@iot.local \
-PROBE_PASSWORD="$SUPER_PW" \
-PROBE_TENANT_ADMIN_EMAIL=demo.admin@iot.local \
-PROBE_TENANT_ADMIN_PASSWORD="$TENANT_PW" \
 PROBE_UNACKNOWLEDGED_ID="$UNACK_ID" \
 PROBE_ACK_ID="$ACK_ID" \
   node --experimental-strip-types scripts/probe-noc-operations.mts || PROBE_STATUS=$?

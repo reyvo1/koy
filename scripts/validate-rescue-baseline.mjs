@@ -2491,6 +2491,43 @@ check(
 );
 
 check(
+  'cross-wave live probes use canonical fail-closed orchestration before GitHub live acceptance',
+  tlsPackageJson.scripts?.['live-probe:contracts:self-test'] === 'node scripts/self-test-live-probe-contracts.mjs' &&
+    tlsPackageJson.scripts?.['wave1:prepush:check']?.includes('live-probe:contracts:self-test') &&
+    githubCiR30.includes('npm run live-probe:contracts:self-test') &&
+    githubCiR30.includes('npm run wave4:staging:probe') &&
+    githubCiR30.includes('npm run wave6:management:probe') &&
+    githubCiR30.includes('npm run wave7:operations:probe') &&
+    githubCiR30.includes('npm run wave8:billing:probe') &&
+    githubCiR30.includes('npm run wave9:simulated-hardware:probe'),
+);
+check(
+  'Wave 6 credential seeding is single-source and does not print generated passwords on the probe path',
+  read('scripts/probe-common.sh').includes('probe_export_demo_admin_env()') &&
+    read('scripts/probe-common.sh').includes('--credentials-file=$credential_file') &&
+    read('scripts/probe-common.sh').includes('--quiet >/dev/null') &&
+    read('scripts/seed-demo-accounts.mjs').includes('{ mode: 0o600 }') &&
+    !['run-capability-template-probe.sh','run-saved-reports-probe.sh','run-mqtt-management-probe.sh','run-noc-probe.sh']
+      .some((name) => read(`scripts/${name}`).includes('SEED_OUT=')),
+);
+check(
+  'Wave 6 MQTT recovery requires broker and platform publisher recovery inside a bounded polling window',
+  read('scripts/probe-mqtt-management.mts').includes('mqttPublisherRecoveryState') &&
+    read('scripts/probe-mqtt-management.mts').includes('state.brokerReachable && state.publisherReady') &&
+    read('scripts/probe-runtime-contract.mjs').includes('advertisedCount >= 1') &&
+    read('scripts/probe-runtime-contract.mjs').includes('connectedAt'),
+);
+check(
+  'Wave 7-9 UAT wrappers share one credential parser and preserve failures through cleanup',
+  ['run-mobile-notification-probe.sh','run-device-maintenance-probe.sh','run-billing-probe.sh','run-camera-probe.sh','run-device-location-probe.sh']
+    .every((name) => read(`scripts/${name}`).includes('probe-common.sh')) &&
+    ['run-mobile-notification-probe.sh','run-device-maintenance-probe.sh','run-billing-probe.sh','run-camera-probe.sh','run-device-location-probe.sh']
+    .every((name) => !read(`scripts/${name}`).includes("awk '/uat.admin@iot.local")) &&
+    read('scripts/run-device-maintenance-probe.sh').includes('|| PROBE_STATUS=$?') &&
+    read('scripts/run-billing-probe.sh').includes('|| PROBE_STATUS=$?'),
+);
+
+check(
   'camera and device-location probe wrappers fail closed while still cleaning residue',
   read('scripts/run-camera-probe.sh').includes('set -euo pipefail') &&
     read('scripts/run-camera-probe.sh').includes('trap cleanup_probe EXIT') &&

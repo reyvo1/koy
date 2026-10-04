@@ -1,22 +1,18 @@
-# PROJECT HANDOFF — ENTERPRISE WAVE 13
-
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
 
-## ACTIVE HANDOFF — GITHUB WAVE 5 UAT CREDENTIAL CONTRACT
+Wave 13 remains IN PROGRESS, software deliverables only.
 
-Master roadmap: `docs/ENTERPRISE-WAVE-ROADMAP.md`. Waves 1–12 are software-scope CLOSED/GREEN; Wave 13 is IN PROGRESS. Missing physical ESP32/camera hardware is not a software blocker. Mandatory automated certification uses source-bound `SIMULATED_HARDWARE_LIVE_SERVICE`; physical/site/HIL remains separately labelled field validation.
+# Current checkpoint — Cross-wave live UAT hardening — 2026-10-04
 
-GitHub Actions run `37177331993` on commit `9523a6f0b369e9f06faa10ae3f1a326b41a79fd0` (evidence bundle `logs_100701175302.zip`) proves the previous TLS repair: Core Full Jest **278/278 suites, 2412/2412 tests PASS**, both Wave 3 firmware/QEMU matrix targets PASS, rescue validation **488/488 PASS**, UAT docs **24/24 PASS**, UAT login/authorization **9/9 PASS**, and TLS **12/12 PASS** including TLS1.3 negotiation and TLS1.0 refusal.
-
-The first failing gate moved to Wave 5. `scripts/probe-webhook-event-vocabulary.sh` was launched as a naked low-level probe in a fresh GitHub step, but that script requires `PROBE_EMAIL`/`PROBE_PASSWORD`; the generated UAT password exists only in `.uat-credentials` from `uat:seed`. `set -u` therefore aborted on `PROBE_EMAIL: unbound variable`. The subsequent empty `/tmp/probe-login.json` parse error is secondary. `sdk:probe` carries the same ambient-env assumption and is repaired in the same root-cause batch.
-
-The repair standardizes Wave 5 on one source-controlled wrapper that loads the seeded UAT admin identity via `scripts/probe-common.sh`, exports the shared tenant/API/credential contract, then runs webhook and SDK sequentially. A dependency-free `wave5:public-api:self-test` verifies the credential loader, missing-credential fail-closed behavior, package wiring, shell syntax, and GitHub workflow wiring before any live Wave 5 run.
-
-Repair-workspace QA is green: Wave 5 credential self-test PASS, session handoff PASS, GitHub CI contract PASS, enterprise status 10/10 PASS, rescue validation **490/490 PASS**. Final sealed source is **1374/1374 paths and 1375/1375 hashes**.
-
-## Resume rule
-
-Follow `docs/SESSION-HANDOFF-PROTOCOL.md`: verify real HEAD/status and continue from the FIRST FAILING GATE rather than auditing from zero. For this batch run `npm run wave5:public-api:self-test`, then `npm run wave3:prepush:check`. Only after full green: review complete diff once, commit once, push once, then read GitHub heavy UAT. Do not reopen Wave 4 TLS, Full Jest, RBAC or ESP32/QEMU without new evidence.
+- GitHub Actions run `37178750101` / commit `07b4060b04124337e7e2e26cd5e5b5e7179781b6` / evidence `logs_100704960059.zip`.
+- Wave 4 GREEN: staging docs/login/TLS complete; TLS 12/12 PASS.
+- Wave 5 GREEN: webhook 24/24 PASS; SDK 14/14 PASS.
+- FIRST FAILING GATE: Wave 6 MQTT management recovery. Broker management returns before the platform publisher reconnect completes.
+- ROOT CAUSE CLASS: fragmented per-wave orchestration (credential duplication, single-shot async recovery, cleanup/error masking, first-red hiding later diagnostics).
+- REPAIR: canonical Wave 4/6/7/9 runners, one Wave 6 demo credential source, shared UAT login Wave 5/7/8/9, bounded broker+publisher recovery, fail-closed cleanup, cross-wave contract self-test.
+- EVIDENCE POLICY: `SIMULATED_HARDWARE_LIVE_SERVICE`; unavailable physical hardware does **not** block software progress and must never be relabelled PHYSICAL.
+- NEXT: `npm run live-probe:contracts:self-test` → `npm run session:handoff:self-test` → `npm run wave3:prepush:check` → review diff → one commit/push → GitHub heavy UAT.
+- RESUME RULE: read `docs/SESSION-HANDOFF-PROTOCOL.md`, verify real `git rev-parse HEAD` + `git status --short`, then continue from the newest first failing gate. Do not audit from zero.
 
 --- HISTORICAL WAVE 3 HANDOFF BELOW ---
 

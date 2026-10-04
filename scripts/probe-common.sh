@@ -70,3 +70,74 @@ probe_export_uat_admin_env() {
   export PROBE_BASE="${PROBE_BASE:-$(probe_resolve_api_base)}"
   export PROBE_API_BASE="${PROBE_API_BASE:-$PROBE_BASE}"
 }
+
+probe_source_env() {
+  if [ -f .env ]; then
+    set -a
+    # shellcheck disable=SC1091
+    source .env
+    set +a
+  fi
+}
+
+probe_export_demo_admin_env() {
+  if [ -n "${PROBE_EMAIL:-}" ] &&
+     [ -n "${PROBE_PASSWORD:-}" ] &&
+     [ -n "${PROBE_TENANT_EMAIL:-${PROBE_TENANT_ADMIN_EMAIL:-}}" ] &&
+     [ -n "${PROBE_TENANT_PASSWORD:-${PROBE_TENANT_ADMIN_PASSWORD:-}}" ]; then
+    export PROBE_TENANT_EMAIL="${PROBE_TENANT_EMAIL:-$PROBE_TENANT_ADMIN_EMAIL}"
+    export PROBE_TENANT_PASSWORD="${PROBE_TENANT_PASSWORD:-$PROBE_TENANT_ADMIN_PASSWORD}"
+    export PROBE_TENANT_ADMIN_EMAIL="${PROBE_TENANT_ADMIN_EMAIL:-$PROBE_TENANT_EMAIL}"
+    export PROBE_TENANT_ADMIN_PASSWORD="${PROBE_TENANT_ADMIN_PASSWORD:-$PROBE_TENANT_PASSWORD}"
+    export PROBE_TENANT_ID="${PROBE_TENANT_ID:-22222222-2222-4222-8222-222222222222}"
+    export PROBE_API_BASE="${PROBE_API_BASE:-$(probe_resolve_api_base)}"
+    return
+  fi
+
+  probe_source_env
+
+  local credential_file own_file parsed
+  credential_file="${PROBE_DEMO_CREDENTIAL_FILE:-reports/.wave6-demo-credentials-$$.json}"
+  own_file=0
+  mkdir -p "$(dirname "$credential_file")"
+
+  if [ ! -f "$credential_file" ]; then
+    own_file=1
+    if ! node scripts/seed-demo-accounts.mjs \
+      "--credentials-file=$credential_file" --quiet >/dev/null; then
+      rm -f "$credential_file"
+      echo "could not seed Wave 6 demo accounts" >&2
+      return 2
+    fi
+  fi
+
+  if ! parsed=$(node -e '
+    const fs = require("node:fs");
+    const file = process.argv[1];
+    const data = JSON.parse(fs.readFileSync(file, "utf8"));
+    const values = [
+      data.platformAdmin?.email,
+      data.platformAdmin?.password,
+      data.tenantAdmin?.email,
+      data.tenantAdmin?.password,
+      data.tenantAdmin?.tenantId,
+    ];
+    if (values.some((value) => typeof value !== "string" || value.length === 0)) process.exit(2);
+    process.stdout.write(values.join("\n"));
+  ' "$credential_file"); then
+    [ "$own_file" -eq 0 ] || rm -f "$credential_file"
+    echo "could not read Wave 6 demo credential file" >&2
+    return 2
+  fi
+
+  [ "$own_file" -eq 0 ] || rm -f "$credential_file"
+
+  export PROBE_EMAIL="$(printf '%s\n' "$parsed" | sed -n '1p')"
+  export PROBE_PASSWORD="$(printf '%s\n' "$parsed" | sed -n '2p')"
+  export PROBE_TENANT_EMAIL="$(printf '%s\n' "$parsed" | sed -n '3p')"
+  export PROBE_TENANT_PASSWORD="$(printf '%s\n' "$parsed" | sed -n '4p')"
+  export PROBE_TENANT_ADMIN_EMAIL="$PROBE_TENANT_EMAIL"
+  export PROBE_TENANT_ADMIN_PASSWORD="$PROBE_TENANT_PASSWORD"
+  export PROBE_TENANT_ID="$(printf '%s\n' "$parsed" | sed -n '5p')"
+  export PROBE_API_BASE="${PROBE_API_BASE:-$(probe_resolve_api_base)}"
+}

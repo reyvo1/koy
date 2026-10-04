@@ -19,54 +19,34 @@
 # UAT tenant session already written to the credentials file by scripts/seed-uat-baseline.mjs.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
+DIR="$(dirname "$0")"
+# shellcheck source=scripts/probe-common.sh
+source scripts/probe-common.sh
 
-PROBE_API_BASE="${PROBE_API_BASE:-http://127.0.0.1:3000}"
-# Session response, written by probe_login. It defaults to a repo-local path because this used to
-# point at a scratch directory that exists on exactly one machine, where curl could not write on
-# a runner -- and a probe whose session file cannot be created fails as a mystery, not as a config
-# error. `reports/` is git-ignored, so nothing is committed. PROBE_LOGIN_FILE still overrides it.
+API="${PROBE_API_BASE:-$(probe_resolve_api_base)}"
 CREDS="${PROBE_LOGIN_FILE:-reports/probe-session.json}"
 mkdir -p "$(dirname "$CREDS")"
 
-# Both halves start from "no rows of this probe's own", so a previous run's data cannot satisfy an
-# assertion about a freshly written notification.
 WRITER_STATUS=0
 PROBE_STATUS=0
 
-# ---------------------------------------------------------------- 0. a session for the UAT tenant
-# Read from the git-ignored credentials file, never from seed stdout: this environment redacts
-# credential-shaped output, so a stdout-parsed password is not the password and the 401 that follows
-# reads as an application fault rather than as a parsing artefact.
-if [ ! -f .uat-credentials ]; then
-  echo "run 'npm run uat:seed' first: .uat-credentials is missing" >&2
-  exit 2
-fi
-PW=$(awk '/uat.admin@iot.local/{f=1} f && /password/{sub(/^[^:]*: */,""); print; exit}' .uat-credentials)
-TENANT=44444444-4444-4444-8444-444444444444
-mkdir -p "$(dirname "$CREDS")"
-STATUS=$(curl -s -o "$CREDS" -w '%{http_code}' -X POST "$PROBE_API_BASE/auth/login" \
-  -H 'content-type: application/json' \
-  --data "{\"tenantId\":\"$TENANT\",\"email\":\"uat.admin@iot.local\",\"password\":\"$PW\"}")
-if [ "$STATUS" != "200" ] && [ "$STATUS" != "201" ]; then
-  echo "UAT tenant login failed: HTTP $STATUS" >&2
-  exit 2
-fi
-printf 'UAT session ok\n'
+probe_require_uat
+probe_login "$API" "$CREDS"
 
 # The sweep runs *before* the writers, for the same reason the NOC probe does it: a previous run's
 # rows would otherwise satisfy an assertion about a notification this run just wrote.
 docker exec -i iot-rescue-postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -q -v ON_ERROR_STOP=1' \
-  < "$(dirname "$0")/probe-notification-cleanup.sql" >/dev/null
+  < "$DIR/probe-notification-cleanup.sql" >/dev/null
 
 # ---------------------------------------------------------------- 1. the writers, then the operator log
 # `set -e` is deliberately suspended around this call so the second half still runs and its result
 # is reported alongside; a probe that stops at the first failure leaves the reader guessing whether
 # the later half was merely unreached.
-PROBE_LOGIN_FILE="$CREDS" PROBE_API_BASE="$PROBE_API_BASE" \
+PROBE_LOGIN_FILE="$CREDS" PROBE_API_BASE="$API" \
   python3 "$(dirname "$0")/probe-notification-writers.py" || WRITER_STATUS=$?
 
 # ---------------------------------------------------------------- 2. the mobile client against the wire
-PROBE_LOGIN_FILE="$CREDS" PROBE_API_BASE="$PROBE_API_BASE" \
+PROBE_LOGIN_FILE="$CREDS" PROBE_API_BASE="$API" \
   npx jest --config ./test/jest-mobile-notification-integration.json --runInBand || PROBE_STATUS=$?
 
 # ---------------------------------------------------------------- 3. sweep, and prove it swept
@@ -74,7 +54,7 @@ PROBE_LOGIN_FILE="$CREDS" PROBE_API_BASE="$PROBE_API_BASE" \
 # real operator's account produced. The SQL raises rather than reporting its own DELETE count as
 # clean, so a sweep failure fails the script through `set -e`.
 docker exec -i iot-rescue-postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -q -v ON_ERROR_STOP=1' \
-  < "$(dirname "$0")/probe-notification-cleanup.sql"
+  < "$DIR/probe-notification-cleanup.sql"
 
 printf '\n'
 if [ "$WRITER_STATUS" -eq 0 ] && [ "$PROBE_STATUS" -eq 0 ]; then

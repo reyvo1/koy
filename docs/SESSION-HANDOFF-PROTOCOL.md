@@ -28,6 +28,10 @@ Rules:
 - Missing physical ESP32/camera hardware does **not** block software progress. The mandatory automated evidence is source-bound `SIMULATED_HARDWARE_LIVE_SERVICE`; physical/site/HIL remains separately labelled field validation and simulation must never be renamed PHYSICAL.
 - Provider-owned behavior that cannot be truthfully simulated remains explicit external evidence; do not fabricate PASS.
 - Live probes must consume credentials from the source-controlled seed/credential contract for that run. Do not rely on ambient shell variables crossing GitHub steps; fresh-step isolation is part of the CI contract.
+- Wave-level live UAT must use canonical source-controlled entrypoints. Independent sub-probes should be aggregated when safe so the same expensive runtime reveals the complete wave diagnosis, but any failed child keeps the wave red.
+- Asynchronous service recovery must use bounded readiness polling for the actual required condition (for example broker **and** platform publisher), never a fixed sleep followed by a weaker proxy condition. Deadline expiry remains FAIL.
+- Cleanup must run without overwriting the original probe result. SQL cleanup that is acceptance-critical uses fail-closed execution (`ON_ERROR_STOP=1`); emergency cleanup may be best-effort only when it cannot turn a failed UAT into PASS.
+- Credential-bearing seed output must never be echoed on CI failure paths. Machine consumers use restricted credential files or another explicit source-controlled secret handoff.
 
 ## Mandatory handoff update before ending a batch/session
 

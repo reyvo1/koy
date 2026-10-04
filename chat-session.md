@@ -1,39 +1,41 @@
-# Chat Session — GitHub Wave 5 UAT credential root fix — 2026-10-04
+# Chat Session — Cross-wave live UAT orchestration root fix — 2026-10-04
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
 
-Wave 13 remains IN PROGRESS. `SIMULATED_HARDWARE_LIVE_SERVICE` remains the mandatory automated hardware-equivalent UAT class; unavailable physical ESP32/camera equipment is non-blocking for software progression and remains separately labelled field evidence.
+Wave 13 remains IN PROGRESS. `SIMULATED_HARDWARE_LIVE_SERVICE` remains mandatory automated hardware-equivalent evidence; physical ESP32/camera hardware is non-blocking for software delivery and stays separately labelled field/HIL evidence.
 
 ## Latest evidence
 
-GitHub Actions run `37177331993` checked out commit `9523a6f0b369e9f06faa10ae3f1a326b41a79fd0`; operator evidence bundle is `logs_100701175302.zip`. Core Full Jest completed **278/278 suites and 2412/2412 tests PASS**. Both Wave 3 firmware matrix targets completed their native ESP-IDF/QEMU paths. Rescue source validation is **488/488 PASS**. The rescue live-service job then proved UAT docs **24/24 PASS**, UAT login/authorization **9/9 PASS**, and TLS **12/12 PASS**.
+GitHub Actions run `37178750101` checked out commit `07b4060b04124337e7e2e26cd5e5b5e7179781b6`; operator evidence bundle is `logs_100704960059.zip`. Wave 4 staging UAT/TLS is GREEN, including TLS **12/12 PASS**. Wave 5 public API + webhook + SDK is GREEN: webhook **24/24 PASS**, SDK **14/14 PASS**. The first failing gate moved to Wave 6 MQTT management recovery after the deliberate broker outage: the API correctly reported the broker unreachable, EMQX restarted, and the management surface became reachable again, but the probe failed immediately because the long-lived platform publisher had not yet reconnected.
 
-The first new failure is Wave 5: `scripts/probe-webhook-event-vocabulary.sh` exited at `PROBE_EMAIL: unbound variable`. Because the GitHub Wave 5 step starts a fresh shell, it does not inherit any ad-hoc `PROBE_*` variables. The source-bound UAT password is already generated correctly by `uat:seed` and stored in `.uat-credentials`, but Wave 5 bypassed the existing UAT credential helper. The later `Unexpected end of JSON input` for `/tmp/probe-login.json` is an effect of the aborted login, not an independent backend failure. `probe-public-api-sdk.mts` consumes the same email/password env contract, so it is included in the same root-cause repair before it becomes the next red step.
+## Root-cause class and repair
 
-## Root-cause repair
+- Fix the recovery race at its boundary: Wave 6 now waits up to the existing bounded 60-second window for **both** broker reachability and the identified platform publisher (`platformPublisherCount`, prefix match, username and connectedAt). A broker that returns without the publisher still fails.
+- Replace per-probe demo-password regeneration/parsing with one Wave 6 credential source. `seed-demo-accounts.mjs` gains a quiet 0600 machine-readable credential-file mode; generated passwords are no longer echoed by error-path parsers.
+- Add canonical aggregate Wave 4, Wave 6, Wave 7 and Wave 9 runners. Independent probes continue after one sub-probe fails so the same expensive live runtime returns the whole wave diagnosis; final wave status remains fail-closed if any child fails.
+- Centralize UAT credential parsing/login across Wave 5, 7, 8 and 9 through `scripts/probe-common.sh`; duplicated `.uat-credentials` awk parsers are removed.
+- Maintenance and billing wrappers preserve a failed probe status while cleanup still runs. Capability-template and saved-report SQL cleanup use `ON_ERROR_STOP=1`.
+- Add `live-probe:contracts:self-test` to local pre-push and core CI. It guards canonical wave entrypoints, fresh-step credentials, secret-free demo credential exchange, cleanup semantics and the MQTT recovery predicate.
 
-- Added canonical `scripts/run-wave5-public-api-probes.sh`, which sources `scripts/probe-common.sh`, loads the UAT admin password from `.uat-credentials`, derives the rescue API port from `.env`, exports one tenant/email/password/API contract, and runs webhook then SDK sequentially.
-- Added `probe_export_uat_admin_env` to the shared probe helper; it fails closed if UAT credentials are missing/blank and avoids hardcoded or committed passwords.
-- Low-level webhook/SDK probes now report a named missing-credential cause instead of an unbound variable/ambiguous login failure.
-- GitHub Wave 5 calls only `npm run wave5:public-api:probe`, removing the ambient-shell dependency between UAT seed and the live probes.
-- Added `wave5:public-api:self-test` and wired it into local `wave1:prepush:check`, core CI verifier self-tests, rescue GitHub CI governance, and rescue baseline validation.
-- Corrected the stale UAT seed comment that still described API port 5000; runtime authority remains `.env`/3000.
-- Session handoff/current-state files are updated in the same batch, preserving `37177331993` + `9523a6f0b369e9f06faa10ae3f1a326b41a79fd0` as the resume checkpoint and keeping physical hardware non-blocking.
+## Continuity invariant
+
+Do not reopen Wave 4 or Wave 5 without newer failing evidence. Resume from the first failing gate in the newest GitHub run. Live UAT must not be weakened: bounded polling is allowed only for asynchronous readiness and must still fail on deadline; credentials must come from source-controlled seed contracts; cleanup must never overwrite a failed probe result.
 
 ## QA in repair workspace
 
-- `wave5:public-api:self-test`: PASS, including real fixture parsing, unknown-placeholder refusal, missing-file refusal, wrapper syntax and CI/package wiring.
-- `session:handoff:self-test`: PASS, including exact run/SHA agreement across current continuation files and the new fresh-step credential invariant.
-- `rescue:github-ci:self-test`: PASS with canonical Wave 5 wrapper enforcement.
-- `enterprise:wave-status:self-test` + `enterprise:wave-status:verify`: PASS, 10/10 synchronized current-state documents.
-- `validate-rescue-baseline.mjs`: PASS **490/490**.
-- Changed shell scripts pass `bash -n`; changed `.mjs` files pass Node syntax checks; `probe-public-api-sdk.mts` passes Node type-stripping syntax check.
-- Extracted repair workspace has no `node_modules`, so full lint/Jest/secretlint/live Wave 5 are deliberately not claimed here; the operator command runs the official local pre-push before commit and GitHub remains authoritative for live service evidence.
-- Final seal after documentation update: **1374/1374 source paths, 1375/1375 manifest entries**.
+- `live-probe:contracts:self-test`: PASS, including broker-only recovery rejection, unrelated-client rejection, full publisher recovery acceptance, wrapper syntax, canonical Wave 4-9 wiring, and no demo-password output.
+- `session:handoff:self-test`: PASS with exact run/SHA agreement and durable cross-wave orchestration/cleanup/credential invariants.
+- `wave1:prepush:self-test`: PASS.
+- `rescue:github-ci:self-test`: PASS with canonical Wave 4/6/7/8/9 entrypoints.
+- `enterprise:wave-status:verify`: PASS, 10/10 synchronized current-state documents.
+- `validate-rescue-baseline.mjs`: PASS **494/494**.
+- `package.json`, changed Node scripts, `probe-mqtt-management.mts`, shell syntax and GitHub workflow YAML parse cleanly.
+- Final source seal: **1380/1380 source paths, 1381/1381 manifest entries**.
+- This extracted audit workspace has no `node_modules`, so full lint/Jest/secretlint/live Docker probes are deliberately not claimed here; the operator checkout must run the official local pre-push before commit, and GitHub remains authoritative for live Wave 6+ evidence.
 
 ## Next action
 
-Run `npm run wave5:public-api:self-test`, then `npm run wave3:prepush:check`. If green, review the complete diff once, commit once, push once, and let GitHub continue from Wave 5. Do not reopen Wave 4 TLS, Full Jest, RBAC, or ESP32/QEMU unless newer evidence fails there.
+Run `npm run live-probe:contracts:self-test`, `npm run session:handoff:self-test`, then `npm run wave3:prepush:check`. If green, review one complete diff, commit once, push once, and let GitHub resume at Wave 6. If Wave 6 becomes green, continue to the next actual failing wave without reopening earlier green waves.
 
 --- HISTORICAL CHAT SESSION CHRONOLOGY BELOW ---
 

@@ -11,32 +11,21 @@
 # both passwords are read from that single run.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
-set -a; source .env 2>/dev/null || true; set +a
-
-SEED_OUT=$(node scripts/seed-demo-accounts.mjs 2>&1)
-SUPER_PW=$(printf '%s\n' "$SEED_OUT" | grep -A 4 'PLATFORM ADMIN' | grep 'Password' | awk '{print $3}')
-TENANT_PW=$(printf '%s\n' "$SEED_OUT" | grep -A 5 'TENANT ADMIN' | grep 'Password' | awk '{print $3}')
-
-if [ -z "$SUPER_PW" ] || [ -z "$TENANT_PW" ]; then
-  printf '%s\n' "$SEED_OUT" | tail -20
-  echo "could not read both passwords from one seed run" >&2
-  exit 2
-fi
+# shellcheck source=scripts/probe-common.sh
+source scripts/probe-common.sh
+probe_export_demo_admin_env
 
 # The API must reach the broker, and the probe talks to the API on the host. If the broker is
-# already stopped when this starts, the outage test would prove nothing -- the reachable case would
-# fail first, which is loud enough, so no pre-check is needed here.
-PROBE_STATUS=0
-PROBE_API_BASE="${PROBE_API_BASE:-http://127.0.0.1:3000}" \
-PROBE_EMAIL=demo.superadmin@iot.local \
-PROBE_PASSWORD="$SUPER_PW" \
-PROBE_TENANT_EMAIL=demo.admin@iot.local \
-PROBE_TENANT_PASSWORD="$TENANT_PW" \
-PROBE_TENANT_ID=22222222-2222-4222-8222-222222222222 \
-  node --experimental-strip-types scripts/probe-mqtt-management.mts || PROBE_STATUS=$?
+# already stopped when this starts, the reachable case fails before outage evidence is accepted.
+# An EXIT trap is only emergency cleanup: it never turns a failed UAT into PASS.
+restore_broker() {
+  if ! docker start iot-rescue-emqx >/dev/null 2>&1; then
+    echo 'WARN: emergency broker restore failed; live probe result remains authoritative' >&2
+  fi
+}
+trap restore_broker EXIT
 
-# Belt and braces: the probe restores the broker itself, but a hard kill between the stop and the
-# restore would leave it down. Start it unconditionally -- starting a running container is a no-op.
-docker start iot-rescue-emqx >/dev/null 2>&1 || true
+PROBE_STATUS=0
+node --experimental-strip-types scripts/probe-mqtt-management.mts || PROBE_STATUS=$?
 
 exit "$PROBE_STATUS"

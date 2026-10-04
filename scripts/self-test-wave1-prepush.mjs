@@ -26,6 +26,7 @@ const required = [
   'web:framework:contract:verify',
   'tls:protocol:self-test',
   'wave5:public-api:self-test',
+  'live-probe:contracts:self-test',
   'baseline:hygiene:self-test',
   'baseline:hygiene:clean',
   'baseline:manifest:generate',

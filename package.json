@@ -118,7 +118,7 @@
     "uat:verify": "npm run uat:seed && npm run uat:docs && npm run uat:login",
     "uat:simulated-hardware:self-test": "node scripts/self-test-simulated-hardware-uat.mjs",
     "uat:simulated-hardware:verify": "node scripts/verify-simulated-hardware-uat.mjs",
-    "wave1:prepush:check": "npm run security:stack:verify && npm run security:web-stack:verify && npm run security:audit:production && npm run lint:check && npm run session:handoff:self-test && npm run enterprise:wave-status:self-test && npm run enterprise:wave-status:verify && npm run user-web:navigation:self-test && npm run rescue:ci-env:self-test && npm run uat:simulated-hardware:self-test && npm run release:approval:self-test && npm run release:approval:gate:self-test && npm run gitignore:source-scope:self-test && npm run fastify:v5:compat:verify && npm run web:framework:contract:verify && npm run tls:protocol:self-test && npm run wave5:public-api:self-test && npm run baseline:hygiene:self-test && npm run baseline:hygiene:clean && npm run baseline:manifest:self-test && npm run baseline:manifest:generate && npm run baseline:manifest:verify && npm run rescue:validate && npm run rescue:broker:smoke:self-test && npm run rescue:github-ci:self-test",
+    "wave1:prepush:check": "npm run security:stack:verify && npm run security:web-stack:verify && npm run security:audit:production && npm run lint:check && npm run session:handoff:self-test && npm run enterprise:wave-status:self-test && npm run enterprise:wave-status:verify && npm run user-web:navigation:self-test && npm run rescue:ci-env:self-test && npm run uat:simulated-hardware:self-test && npm run release:approval:self-test && npm run release:approval:gate:self-test && npm run gitignore:source-scope:self-test && npm run fastify:v5:compat:verify && npm run web:framework:contract:verify && npm run tls:protocol:self-test && npm run wave5:public-api:self-test && npm run live-probe:contracts:self-test && npm run baseline:hygiene:self-test && npm run baseline:hygiene:clean && npm run baseline:manifest:self-test && npm run baseline:manifest:generate && npm run baseline:manifest:verify && npm run rescue:validate && npm run rescue:broker:smoke:self-test && npm run rescue:github-ci:self-test",
     "wave1:prepush:self-test": "node scripts/self-test-wave1-prepush.mjs",
     "wave2:core-runtime:self-test": "node scripts/self-test-wave2-core-runtime.mjs",
     "wave2:prepush:check": "npm run wave1:prepush:check && npm run wave2:core-runtime:self-test && npm run wave2:prisma:self-test && npm run wave2:prisma:check && npm run wave2:test:targeted",
@@ -164,7 +164,13 @@
     "session:handoff:self-test": "node scripts/self-test-session-handoff.mjs",
     "tls:protocol:self-test": "node scripts/verify-tls-terminator.mjs --self-test",
     "wave5:public-api:probe": "bash scripts/run-wave5-public-api-probes.sh",
-    "wave5:public-api:self-test": "node scripts/self-test-wave5-public-api-probes.mjs"
+    "wave5:public-api:self-test": "node scripts/self-test-wave5-public-api-probes.mjs",
+    "wave4:staging:probe": "bash scripts/run-wave4-staging-probes.sh",
+    "wave6:management:probe": "bash scripts/run-wave6-management-probes.sh",
+    "wave7:operations:probe": "bash scripts/run-wave7-operations-probes.sh",
+    "wave8:billing:probe": "bash scripts/run-billing-probe.sh",
+    "wave9:simulated-hardware:probe": "bash scripts/run-wave9-simulated-hardware-probes.sh",
+    "live-probe:contracts:self-test": "node scripts/self-test-live-probe-contracts.mjs"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

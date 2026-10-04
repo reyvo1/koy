@@ -6,33 +6,30 @@
 # without the pre-sweep the assertion tests residue from the previous run, not the product.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
+DIR="$(dirname "$0")"
+# shellcheck source=scripts/probe-common.sh
+source scripts/probe-common.sh
 
-API="${PROBE_API_BASE:-http://127.0.0.1:3000}"
+API="${PROBE_API_BASE:-$(probe_resolve_api_base)}"
 CREDS="${PROBE_LOGIN_FILE:-reports/probe-session.json}"
 mkdir -p "$(dirname "$CREDS")"
-TENANT=44444444-4444-4444-8444-444444444444
-DIR="$(dirname "$0")"
+probe_require_uat
+probe_login "$API" "$CREDS"
 
-if [ ! -f .uat-credentials ]; then
-  echo "run 'npm run uat:seed' first: .uat-credentials is missing" >&2
-  exit 2
-fi
-PW=$(awk '/uat.admin@iot.local/{f=1} f && /password/{sub(/^[^:]*: */,""); print; exit}' .uat-credentials)
-STATUS=$(curl -s -o "$CREDS" -w '%{http_code}' -X POST "$API/auth/login" \
-  -H 'content-type: application/json' \
-  --data "{\"tenantId\":\"$TENANT\",\"email\":\"uat.admin@iot.local\",\"password\":\"$PW\"}")
-if [ "$STATUS" != "200" ] && [ "$STATUS" != "201" ]; then
-  echo "UAT tenant login failed: HTTP $STATUS" >&2
-  exit 2
-fi
-printf 'UAT session ok\n'
+PROBE_STATUS=0
 
 docker exec -i iot-rescue-postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -q -v ON_ERROR_STOP=1' \
   < "$DIR/probe-billing-cleanup.sql" >/dev/null
 
-PROBE_LOGIN_FILE="$CREDS" PROBE_API_BASE="$API" python3 "$DIR/probe-billing-cycle.py"
+PROBE_LOGIN_FILE="$CREDS" PROBE_API_BASE="$API" python3 "$DIR/probe-billing-cycle.py" || PROBE_STATUS=$?
 
 docker exec -i iot-rescue-postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -q -v ON_ERROR_STOP=1' \
   < "$DIR/probe-billing-cleanup.sql" >/dev/null
 
-printf '\nWAVE 8 BILLING PROBE: PASS\n'
+printf '\n'
+if [ "$PROBE_STATUS" -eq 0 ]; then
+  echo 'WAVE 8 BILLING PROBE: PASS'
+  exit 0
+fi
+echo "WAVE 8 BILLING PROBE: FAIL (probe=${PROBE_STATUS})" >&2
+exit "$PROBE_STATUS"

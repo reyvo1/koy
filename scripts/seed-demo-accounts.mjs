@@ -23,12 +23,24 @@
  */
 
 import { randomUUID, randomBytes } from 'node:crypto';
+import { chmodSync, mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import argon2 from 'argon2';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 const PASSWORD_PREFIX = 'Demo';
+
+function optionValue(name) {
+  const prefix = `--${name}=`;
+  const arg = process.argv.find((value) => value.startsWith(prefix));
+  return arg ? arg.slice(prefix.length) : undefined;
+}
+
+const credentialsFileOption = optionValue('credentials-file');
+const quietCredentials = process.argv.includes('--quiet');
+
 
 function password() {
   return `${PASSWORD_PREFIX}-${randomBytes(9).toString('hex')}`;
@@ -327,35 +339,72 @@ async function main() {
     });
   }
 
-  process.stdout.write(
-    [
-      '',
-      'DEMO ACCOUNTS CREATED — copy these, they are not stored anywhere',
-      '',
-      `  PLATFORM ADMIN   (opens /super/*)`,
-      `    Tenant ID : ${platformTenantId}`,
-      `    Email     : ${email('superadmin')}`,
-      `    Password  : ${platformPassword}`,
-      '',
-      `  TENANT ADMIN     (opens /tenant/*)`,
-      `    Tenant ID : ${hotelTenantId}`,
-      `    Email     : ${email('admin')}`,
-      `    Password  : ${adminPassword}`,
-      '',
-      `  MEMBER           (NOT valid on Admin Web — Admin Web rejects non-admin roles)`,
-      `                     intended for the user-facing console, which is not wired to a`,
-      `                     local dev port yet`,
-      `    Tenant ID : ${hotelTenantId}`,
-      `    Email     : ${email('user')}`,
-      `    Password  : ${memberPassword}`,
-      '',
-      '  Seeded: tenant "Hotel Aurora", device "Lobby Sensor" (fresh heartbeat),',
-      '          capability "temperature", and a Site > Building > Floor > Room tree.',
-      '',
-      '  Sign in at http://127.0.0.1:5001/login',
-      '',
-    ].join('\n'),
-  );
+  if (credentialsFileOption) {
+    const credentialsFile = resolve(process.cwd(), credentialsFileOption);
+    mkdirSync(dirname(credentialsFile), { recursive: true });
+    writeFileSync(
+      credentialsFile,
+      `${JSON.stringify(
+        {
+          schemaVersion: 1,
+          generatedAt: new Date().toISOString(),
+          platformAdmin: {
+            tenantId: platformTenantId,
+            email: email('superadmin'),
+            password: platformPassword,
+          },
+          tenantAdmin: {
+            tenantId: hotelTenantId,
+            email: email('admin'),
+            password: adminPassword,
+          },
+          member: {
+            tenantId: hotelTenantId,
+            email: email('user'),
+            password: memberPassword,
+          },
+        },
+        null,
+        2,
+      )}\n`,
+      { mode: 0o600 },
+    );
+    chmodSync(credentialsFile, 0o600);
+  }
+
+  if (quietCredentials) {
+    process.stdout.write('DEMO ACCOUNTS SEEDED\n');
+  } else {
+    process.stdout.write(
+      [
+        '',
+        'DEMO ACCOUNTS CREATED — copy these, they are not stored anywhere',
+        '',
+        `  PLATFORM ADMIN   (opens /super/*)`,
+        `    Tenant ID : ${platformTenantId}`,
+        `    Email     : ${email('superadmin')}`,
+        `    Password  : ${platformPassword}`,
+        '',
+        `  TENANT ADMIN     (opens /tenant/*)`,
+        `    Tenant ID : ${hotelTenantId}`,
+        `    Email     : ${email('admin')}`,
+        `    Password  : ${adminPassword}`,
+        '',
+        `  MEMBER           (NOT valid on Admin Web — Admin Web rejects non-admin roles)`,
+        `                     intended for the user-facing console, which is not wired to a`,
+        `                     local dev port yet`,
+        `    Tenant ID : ${hotelTenantId}`,
+        `    Email     : ${email('user')}`,
+        `    Password  : ${memberPassword}`,
+        '',
+        '  Seeded: tenant "Hotel Aurora", device "Lobby Sensor" (fresh heartbeat),',
+        '          capability "temperature", and a Site > Building > Floor > Room tree.',
+        '',
+        '  Sign in at http://127.0.0.1:5001/login',
+        '',
+      ].join('\n'),
+    );
+  }
 }
 
 main()

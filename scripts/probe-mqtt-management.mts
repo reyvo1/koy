@@ -14,6 +14,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { mqttPublisherRecoveryState } from './probe-runtime-contract.mjs';
 
 type Json = Record<string, unknown>;
 
@@ -216,24 +217,35 @@ async function main(): Promise<void> {
     check('the broker was restarted', start.code === 0, start.out.trim().slice(0, 120));
   }
 
-  // Give EMQX time to accept connections again before confirming recovery.
-  let recovered = false;
+  // Recovery is two-stage: EMQX can answer its management API before the application's long-lived
+  // MQTT publisher has completed its own reconnect handshake. Treating the first reachable broker
+  // snapshot as full recovery created a race: the UAT failed while the publisher was correctly
+  // inside its configured reconnect window. Poll until BOTH facts are true, with the same hard
+  // 60-second deadline. This is stricter than a sleep: a publisher that never returns still fails.
+  let brokerRecovered = false;
+  let publisherRecovered = false;
+  let recoveryDetail = 'no recovery snapshot';
   for (let attempt = 0; attempt < 30; attempt += 1) {
     await new Promise((resolve) => setTimeout(resolve, 2_000));
     const after = await call('/admin/platform-mqtt/management', { token, tenant: SESSION_TENANT });
-    if (after.body.brokerReachable === true) {
-      recovered = true;
-      check('the surface recovers once the broker is back', true, `after ${(attempt + 1) * 2}s`);
-      check(
-        'the publisher is connected again after recovery',
-        ((after.body.clients as Array<Json> | undefined) ?? []).length > 0,
-      );
+    const state = mqttPublisherRecoveryState(after.body);
+    recoveryDetail = `${state.detail} after ${(attempt + 1) * 2}s`;
+    brokerRecovered ||= state.brokerReachable;
+    if (state.brokerReachable && state.publisherReady) {
+      publisherRecovered = true;
       break;
     }
   }
-  if (!recovered) {
-    check('the surface recovers once the broker is back', false, 'still unreachable after 60s');
-  }
+  check(
+    'the surface recovers once the broker is back',
+    brokerRecovered,
+    brokerRecovered ? recoveryDetail : `still unreachable after 60s; ${recoveryDetail}`,
+  );
+  check(
+    'the platform publisher reconnects within the bounded recovery window',
+    publisherRecovered,
+    recoveryDetail,
+  );
 
   console.log(`\n${passed} passed, ${failed} failed`);
   if (failed > 0) process.exit(1);

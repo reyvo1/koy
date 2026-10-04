@@ -1,22 +1,18 @@
-# SESSION CHECKPOINT — ENTERPRISE WAVE 13
-
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-12; active=13 -->
 
-## Current checkpoint — 2026-10-04
+Wave 13 remains IN PROGRESS, software deliverables only.
 
-- Wave 13 remains IN PROGRESS; Waves 1–12 remain software-scope CLOSED/GREEN.
-- Latest GitHub checkout: `9523a6f0b369e9f06faa10ae3f1a326b41a79fd0`, Actions run `37177331993`; evidence bundle `logs_100701175302.zip`.
-- Core evidence: Full Jest **278/278 suites, 2412/2412 tests PASS**; dual ESP32/QEMU PASS; rescue validation **488/488 PASS**.
-- Wave 4 is green on the live rescue runner: UAT docs **24/24 PASS**, UAT login **9/9 PASS**, TLS **12/12 PASS**.
-- FIRST FAILING GATE: `Wave 5 public API webhook and SDK live regression`. `webhook:probe` aborts on `PROBE_EMAIL: unbound variable` before login because the fresh GitHub step does not export the UAT credentials. `/tmp/probe-login.json` then parses empty only as a secondary failure. `sdk:probe` requires the same missing env contract and is repaired in the same batch.
-- Root repair: Wave 5 must consume `.uat-credentials` emitted by `uat:seed` through `probe-common.sh`; one wrapper exports `PROBE_EMAIL`, `PROBE_PASSWORD`, `PROBE_TENANT_ID`, `PROBE_BASE`/`PROBE_API_BASE` then executes webhook + SDK.
-- Cheap guard: `wave5:public-api:self-test` validates loader parsing, fresh-step env export, fail-closed missing credentials, wrapper syntax and CI/package wiring; it is required by local pre-push and core CI.
-- Repair QA PASS: Wave 5 credential self-test, session handoff self-test, GitHub CI contract, enterprise status 10/10, rescue validator 490/490; final seal 1374/1374 source and 1375/1375 hashes.
-- Hardware policy unchanged: `SIMULATED_HARDWARE_LIVE_SERVICE` closes automated software UAT; physical/HIL remains separately labelled non-blocking field evidence.
+# Current checkpoint — Cross-wave live UAT hardening — 2026-10-04
 
-### Next action
-
-`npm run wave5:public-api:self-test` → `npm run wave3:prepush:check` → diff review → one commit/push → inspect the next GitHub FIRST FAILING GATE. Do not reopen Wave 4 TLS without new evidence.
+- GitHub Actions run `37178750101` / commit `07b4060b04124337e7e2e26cd5e5b5e7179781b6` / evidence `logs_100704960059.zip`.
+- Wave 4 GREEN: staging docs/login/TLS complete; TLS 12/12 PASS.
+- Wave 5 GREEN: webhook 24/24 PASS; SDK 14/14 PASS.
+- FIRST FAILING GATE: Wave 6 MQTT management recovery. Broker management returns before the platform publisher reconnect completes.
+- ROOT CAUSE CLASS: fragmented per-wave orchestration (credential duplication, single-shot async recovery, cleanup/error masking, first-red hiding later diagnostics).
+- REPAIR: canonical Wave 4/6/7/9 runners, one Wave 6 demo credential source, shared UAT login Wave 5/7/8/9, bounded broker+publisher recovery, fail-closed cleanup, cross-wave contract self-test.
+- EVIDENCE POLICY: `SIMULATED_HARDWARE_LIVE_SERVICE`; unavailable physical hardware does **not** block software progress and must never be relabelled PHYSICAL.
+- Next action: `npm run live-probe:contracts:self-test` → `npm run session:handoff:self-test` → `npm run wave3:prepush:check` → review diff → one commit/push → GitHub heavy UAT.
+- RESUME RULE: read `docs/SESSION-HANDOFF-PROTOCOL.md`, verify real `git rev-parse HEAD` + `git status --short`, then continue from the newest first failing gate. Do not audit from zero.
 
 --- HISTORICAL CHECKPOINT CHRONOLOGY BELOW ---
 

@@ -682,6 +682,7 @@ scripts/probe-notification-cleanup.sql
 scripts/probe-notification-writers.py
 scripts/probe-public-api-sdk.mts
 scripts/probe-region-boundaries.ts
+scripts/probe-runtime-contract.mjs
 scripts/probe-saved-reports-cleanup.sql
 scripts/probe-saved-reports.mts
 scripts/probe-telemetry-retention.ts
@@ -709,7 +710,11 @@ scripts/run-saved-reports-probe.sh
 scripts/run-secret-scan.mjs
 scripts/run-wave3-esp32-simulation.mjs
 scripts/run-wave3-qemu-boot.mjs
+scripts/run-wave4-staging-probes.sh
 scripts/run-wave5-public-api-probes.sh
+scripts/run-wave6-management-probes.sh
+scripts/run-wave7-operations-probes.sh
+scripts/run-wave9-simulated-hardware-probes.sh
 scripts/seed-demo-accounts-for-browser.sh
 scripts/seed-demo-accounts.mjs
 scripts/seed-uat-baseline.mjs
@@ -720,6 +725,7 @@ scripts/self-test-emqx-webhooks.mjs
 scripts/self-test-enterprise-wave-status.mjs
 scripts/self-test-fastify-v5-compat.mjs
 scripts/self-test-gitignore-source-scope.mjs
+scripts/self-test-live-probe-contracts.mjs
 scripts/self-test-production-approval-gate.mjs
 scripts/self-test-production-approval-receipt.mjs
 scripts/self-test-rescue-acceptance-runner.mjs

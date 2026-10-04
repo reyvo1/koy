@@ -63,6 +63,8 @@ check('TLS protocol parser self-test command is exposed', pkg.scripts?.['tls:pro
 check('core CI executes the TLS protocol parser self-test before live Wave 4 TLS', workflow.includes('npm run tls:protocol:self-test') && workflow.indexOf('npm run tls:protocol:self-test') < workflow.indexOf('Wave 4 staging UAT and TLS regression'));
 check('Wave 5 UAT credential self-test command is exposed', pkg.scripts?.['wave5:public-api:self-test'] === 'node scripts/self-test-wave5-public-api-probes.mjs');
 check('core CI executes the Wave 5 UAT credential self-test before live Wave 5', workflow.includes('npm run wave5:public-api:self-test') && workflow.indexOf('npm run wave5:public-api:self-test') < workflow.indexOf('Wave 5 public API webhook and SDK live regression'));
+check('cross-wave live-probe contract self-test command is exposed', pkg.scripts?.['live-probe:contracts:self-test'] === 'node scripts/self-test-live-probe-contracts.mjs');
+check('core CI executes the cross-wave live-probe contract self-test before live acceptance', workflow.includes('npm run live-probe:contracts:self-test') && workflow.indexOf('npm run live-probe:contracts:self-test') < workflow.indexOf('Seed the UAT baseline'));
 check('enterprise wave status verifier command is exposed', pkg.scripts?.['enterprise:wave-status:verify'] === 'node scripts/verify-enterprise-wave-status.mjs');
 check('enterprise wave status self-test command is exposed', pkg.scripts?.['enterprise:wave-status:self-test'] === 'node scripts/self-test-enterprise-wave-status.mjs');
 check('User Web navigation self-test command is exposed', pkg.scripts?.['user-web:navigation:self-test'] === 'node scripts/self-test-user-web-navigation.mjs');
@@ -78,12 +80,13 @@ check(
     workflow.indexOf('npm run enterprise:wave-status:verify') < workflow.indexOf('Build backend'),
 );
 const uatSeedIndex = workflow.indexOf('Seed the UAT baseline');
-const wave9Index = workflow.indexOf('Wave 9 media runtime RTSP to WebRTC');
+const wave9Index = workflow.indexOf('Wave 9 simulated hardware media camera and location');
 check(
   'Wave 4 staging UAT and TLS regression is mandatory after UAT seed',
   uatSeedIndex >= 0 &&
     workflow.indexOf('Wave 4 staging UAT and TLS regression') > uatSeedIndex &&
-    ['npm run uat:docs', 'npm run uat:login', 'npm run tls:verify'].every((token) => workflow.includes(token)),
+    workflow.includes('npm run wave4:staging:probe') &&
+    pkg.scripts?.['wave4:staging:probe'] === 'bash scripts/run-wave4-staging-probes.sh',
 );
 check(
   'Wave 5 webhook and SDK live regressions are mandatory before Wave 9',
@@ -104,19 +107,21 @@ check(
   'Wave 6 management plane live regressions are mandatory before Wave 9',
   workflow.indexOf('Wave 6 management plane live regression') > uatSeedIndex &&
     workflow.indexOf('Wave 6 management plane live regression') < wave9Index &&
-    ['npm run capability-template:probe', 'npm run saved-reports:probe', 'npm run mqtt-management:probe', 'npm run noc:probe'].every((token) => workflow.includes(token)),
+    workflow.includes('npm run wave6:management:probe') &&
+    pkg.scripts?.['wave6:management:probe'] === 'bash scripts/run-wave6-management-probes.sh',
 );
 check(
   'Wave 7 mobile and technician live regressions are mandatory before Wave 9',
   workflow.indexOf('Wave 7 mobile and technician live regression') > uatSeedIndex &&
     workflow.indexOf('Wave 7 mobile and technician live regression') < wave9Index &&
-    ['npm run mobile:notification:probe', 'npm run maintenance:probe'].every((token) => workflow.includes(token)),
+    workflow.includes('npm run wave7:operations:probe') &&
+    pkg.scripts?.['wave7:operations:probe'] === 'bash scripts/run-wave7-operations-probes.sh',
 );
 check(
   'Wave 8 billing lifecycle regression is mandatory without fabricating provider evidence',
   workflow.indexOf('Wave 8 billing lifecycle live regression') > uatSeedIndex &&
     workflow.indexOf('Wave 8 billing lifecycle live regression') < wave9Index &&
-    workflow.includes('npm run billing:probe') &&
+    workflow.includes('npm run wave8:billing:probe') &&
     workflow.includes('positive provider-owned settlement/webhook still requires real provider credentials'),
 );
 check('Wave 3 ESP32 self-test package command is exposed', pkg.scripts?.['wave3:esp32:self-test'] === 'node scripts/self-test-wave3-esp32-simulation.mjs && node scripts/self-test-wave3-esp-idf-build-graph.mjs && node scripts/self-test-wave3-esp-idf-api-surface.mjs && node scripts/self-test-wave3-esp-idf-toolchain-lifecycle.mjs && node scripts/self-test-wave3-qemu-boot-runner.mjs && node scripts/self-test-wave3-esp32-source.mjs');
@@ -133,7 +138,7 @@ check('Wave 3 QEMU runner self-test executes before expensive ESP-IDF install', 
 check('Wave 3 QEMU setup exports only the newly installed QEMU binary directory', workflow.includes('QEMU_PATH="$(find "$IDF_TOOLS_PATH/tools/$QEMU_TOOL"') && workflow.includes('echo "$QEMU_DIR" >> "$GITHUB_PATH"'));
 check('Wave 3 firmware artifact is downloaded before live device simulation', workflow.indexOf('Download exact Wave 3 firmware artifact') < workflow.indexOf('Wave 3 simulated ESP32 provisioning reconnect command and OTA'));
 check('Wave 3 live simulation runs after real EMQX smoke', workflow.indexOf('Real EMQX auth ACL webhook and ACK smoke') < workflow.indexOf('Wave 3 simulated ESP32 provisioning reconnect command and OTA'));
-check('combined simulated hardware UAT is sealed after media and camera probes', workflow.includes('Seal simulated hardware UAT evidence') && workflow.indexOf('npm run media:probe') < workflow.indexOf('npm run uat:simulated-hardware:verify') && workflow.indexOf('npm run camera:probe') < workflow.indexOf('npm run uat:simulated-hardware:verify'));
+check('combined simulated hardware UAT is sealed after the canonical Wave 9 aggregate', workflow.includes('Seal simulated hardware UAT evidence') && workflow.indexOf('npm run wave9:simulated-hardware:probe') < workflow.indexOf('npm run uat:simulated-hardware:verify'));
 check(
   'rescue CI re-runs Wave 2 runtime invariant guard before live runtime',
   workflow.lastIndexOf('npm run wave2:core-runtime:self-test') >
