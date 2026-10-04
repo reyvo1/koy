@@ -170,10 +170,19 @@ const runtimeExtension = read('scripts/run-rescue-runtime-flow-extension.mjs');
 for (const proof of [
   'tenant-create-delete-billing-lifecycle',
   'capability-apply-full-shape',
+  'automation-non-reportable-trigger-rejected',
   'scheduled-scene-delete-refused',
 ]) {
   assert(runtimeExtension.includes(proof), `live runtime UAT covers ${proof}`);
 }
+
+assert(
+  runtimeExtension.includes("const automationTriggerCapabilityKey = 'signal'") &&
+    runtimeExtension.includes('capabilityKey: automationTriggerCapabilityKey') &&
+    runtimeExtension.includes('expected: [400]') &&
+    runtimeExtension.includes("includes('reportable')"),
+  'live runtime UAT separates the capability-shape fixture from a valid reportable automation trigger while retaining the negative guard',
+);
 
 const share = read('apps/admin-web/components/device-share-panel.tsx');
 assert(share.includes('membersError') && !share.includes(".catch(() => setMembers([]))"), 'device sharing surfaces member-directory failures');

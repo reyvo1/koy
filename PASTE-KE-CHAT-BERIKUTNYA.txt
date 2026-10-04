@@ -1,3 +1,21 @@
+LANJUTKAN PROJECT IOT DARI CHECKPOINT CANDIDATE TERBARU. JANGAN AUDIT WAVE 1-13 DARI NOL.
+
+Repo: reyvo1/iot-platform
+Branch: main
+Candidate commit: 7009e18803c82b67906f0d1d66ab626465cb7cd9
+Candidate GitHub run: 37209964468
+Evidence: logs_100788241456.zip
+Last all-green baseline: e4fdfe11dfd817086ecc93a95dd57cb0b48b8aa4 / run 37195822587 / logs_100750579910.zip
+
+FIRST FAILING GATE: rescue-live-emqx -> Deep product lifecycle live regression. Backend correctly rejected POST /automations with HTTP 400 because the UAT reused `power` after capability apply intentionally set `isReportable=false`. Root fix must NOT relax that rule: retain an explicit HTTP-400 negative probe for non-reportable `power`, then use a separate reportable `signal` capability for the valid Automation trigger.
+
+WAJIB:
+- Jalankan `git rev-parse HEAD` dan `git status --short` sebelum mutasi.
+- Jangan melemahkan UAT, auth/RBAC, TLS, rate limit, simulated-hardware evidence, atau error semantics demi hijau.
+- `SIMULATED_HARDWARE_LIVE_SERVICE` tetap label mandatory automated hardware-equivalent; PHYSICAL/HIL optional/non-blocking untuk software.
+- Pola: root cause -> complete batch -> targeted QA -> full local pre-push -> diff review -> one commit/push -> GitHub Heavy UAT -> handoff.
+- Kalau negative non-reportable probe atau valid reportable Automation path gagal, perbaiki penyebabnya; jangan ubah expected hanya agar PASS.
+
 # NEXT CHAT — IoT deep product hardening
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-13; active=none -->

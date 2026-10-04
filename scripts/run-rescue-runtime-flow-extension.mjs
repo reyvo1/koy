@@ -392,6 +392,32 @@ async function main() {
   );
   console.log('CHECK capability-apply-full-shape... PASS');
 
+  // Automation must not reuse the capability whose lifecycle test intentionally made
+  // non-reportable. Provision a dedicated reportable trigger after the template apply so
+  // the happy path proves a valid trigger, while a negative probe below proves the backend
+  // still rejects non-reportable trigger sources.
+  const automationTriggerCapabilityKey = 'signal';
+  const automationTriggerCapability = (
+    await apiRequest('POST', `/devices/${encodeURIComponent(deviceId)}/capabilities`, {
+      token: adminToken,
+      tenantId,
+      body: {
+        key: automationTriggerCapabilityKey,
+        semanticType: 'switch',
+        dataType: 'boolean',
+        isReadable: true,
+        isWritable: false,
+        isReportable: true,
+      },
+    })
+  ).body;
+  const automationTriggerCapabilityId =
+    automationTriggerCapability?.capability?.id ?? automationTriggerCapability?.id;
+  assert(
+    automationTriggerCapabilityId,
+    `Automation trigger capability creation returned no id: ${shortBody(automationTriggerCapability)}`,
+  );
+
   // ---------------------------------------------------------------- scene runtime
   const before = await deviceCommands(tenantId, deviceId, adminToken);
 
@@ -502,19 +528,55 @@ async function main() {
     'AUTOMATION_RUNTIME_ENABLED is off, so the automation runtime path cannot be proven',
   );
 
+  // The capability-template lifecycle probe intentionally changed `power` to
+  // isReportable=false. Prove that the domain guard remains fail-closed before exercising
+  // the valid automation path. This assertion must stay negative: accepting this request
+  // would be a product regression, not a UAT success.
+  const rejectedNonReportableAutomation = await apiRequest('POST', '/automations', {
+    token: adminToken,
+    tenantId,
+    body: {
+      definition: {
+        schemaVersion: '1.0.0',
+        name: `RFE Invalid Automation ${runId.slice(-8)}`,
+        trigger: { kind: 'CAPABILITY_REPORTED', deviceId, capabilityKey },
+        condition: { kind: 'ALWAYS' },
+        actions: [
+          {
+            actionId: 'command-b',
+            kind: 'DEVICE_COMMAND',
+            deviceId: deviceBId,
+            capabilityKey,
+            value: true,
+          },
+        ],
+      },
+    },
+    expected: [400],
+  });
+  assert(
+    rejectedNonReportableAutomation.body?.error?.code === 'BAD_REQUEST' &&
+      String(rejectedNonReportableAutomation.body?.error?.message ?? '').includes('reportable'),
+    `Non-reportable trigger was rejected for the wrong reason: ${shortBody(rejectedNonReportableAutomation.body)}`,
+  );
+  console.log('CHECK automation-non-reportable-trigger-rejected... PASS (HTTP 400)');
+
   const createdAutomation = (
     await apiRequest('POST', '/automations', {
       token: adminToken,
       tenantId,
       body: {
         // Exact key set enforced by assertExactKeys: schemaVersion, name, trigger,
-        // condition, actions. The trigger is a single object of kind
-        // CAPABILITY_REPORTED, and an action may not target its own trigger source, so
-        // the action commands device B.
+        // condition, actions. The valid trigger uses its own reportable capability, and an
+        // action may not target its own trigger source, so the action commands device B.
         definition: {
           schemaVersion: '1.0.0',
           name: `RFE Automation ${runId.slice(-8)}`,
-          trigger: { kind: 'CAPABILITY_REPORTED', deviceId, capabilityKey },
+          trigger: {
+            kind: 'CAPABILITY_REPORTED',
+            deviceId,
+            capabilityKey: automationTriggerCapabilityKey,
+          },
           condition: { kind: 'ALWAYS' },
           actions: [
             {
@@ -560,7 +622,9 @@ async function main() {
     automationId,
     triggerDeviceId: deviceId,
     actionDeviceId: deviceBId,
-    capabilityKey,
+    capabilityKey: automationTriggerCapabilityKey,
+    actionCapabilityKey: capabilityKey,
+    nonReportableTriggerRejected: true,
     runtimeFlagEnabled: true,
     persistedEnabledAfterActivate: enabled === true,
     triggerKind: 'CAPABILITY_REPORTED',

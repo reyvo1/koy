@@ -91,6 +91,11 @@ describe('deep product integrity regressions', () => {
     const runner = read('scripts/run-rescue-runtime-flow-extension.mjs');
     expect(runner).toContain('tenant-create-delete-billing-lifecycle');
     expect(runner).toContain('capability-apply-full-shape');
+    expect(runner).toContain('automation-non-reportable-trigger-rejected');
+    expect(runner).toContain("const automationTriggerCapabilityKey = 'signal'");
+    expect(runner).toContain('capabilityKey: automationTriggerCapabilityKey');
+    expect(runner).toContain("expected: [400]");
+    expect(runner).toContain("includes('reportable')");
     expect(runner).toContain('scheduled-scene-delete-refused');
     expect(runner).toContain("expected: [409]");
   });

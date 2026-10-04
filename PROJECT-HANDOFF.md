@@ -2,6 +2,29 @@
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-13; active=none -->
 
+## Latest candidate UAT — RED at additive deep-product live regression
+
+- GitHub run `37209964468` / commit `7009e18803c82b67906f0d1d66ab626465cb7cd9` / evidence `logs_100788241456.zip` is the newest candidate evidence and is **NOT GREEN**.
+- Core CI is healthy: **281/281 Jest suites and 2443/2443 tests PASS**; application E2E, PostgreSQL integration, MQTT integration, coverage, build/release checks and both Wave-3 ESP-IDF/QEMU jobs passed.
+- FIRST FAILING GATE: `rescue-live-emqx` → `Deep product lifecycle live regression` → `POST /automations` returned HTTP 400 `Automation trigger capability must be reportable`.
+- Root cause is the new live UAT fixture, not a reason to weaken backend policy: `capability-apply-full-shape` intentionally converges the shared `power` capability to `isReportable=false`, then the same mutated `power` capability was reused as the Automation trigger. The backend correctly rejected that invalid trigger.
+- Root fix keeps the negative domain rule and makes UAT stronger: a dedicated `signal` capability remains `isReportable=true` for the valid Automation path, while an explicit live negative probe first requires the mutated non-reportable `power` trigger to fail with HTTP 400 and a reportable-capability error.
+- No existing UAT/auth/RBAC/TLS/rate-limit/simulated-hardware gate is removed, skipped, downgraded, or made allow-failure.
+- Last authoritative all-green baseline remains run `37195822587` / commit `e4fdfe11dfd817086ecc93a95dd57cb0b48b8aa4` / evidence `logs_100750579910.zip`.
+- `SIMULATED_HARDWARE_LIVE_SERVICE` remains the mandatory automated hardware-equivalent label; PHYSICAL/HIL remains optional/non-blocking for software.
+
+## Current root-fix batch — isolate cross-feature UAT fixtures without weakening policy
+
+1. `scripts/run-rescue-runtime-flow-extension.mjs` creates a dedicated reportable `signal` capability after the full-shape `power` apply.
+2. The live UAT explicitly attempts an Automation with the now non-reportable `power` trigger and requires **HTTP 400** plus the reportable-capability error semantics.
+3. Only after that negative guard passes does the valid Automation use `signal` as its trigger; the action still commands Device B through writable `power`, preserving the no-self-trigger-source domain rule.
+4. `scripts/self-test-deep-product-contracts.mjs` and `test/deep-product-integrity.contract.spec.ts` now lock both halves of this contract so a future change cannot simply remove the negative check to obtain green.
+5. Validation in the exported workspace: Node syntax checks PASS; `deep-product:contracts:self-test` PASS; `wave2:prisma:self-test`, `rescue:github-ci:self-test`, enterprise wave-status self-test/verify, `wave1:prepush:self-test`, and `rescue:validate` **PASS 501/501**. Dependency-backed local Jest/live runtime after this fixture correction is not claimed in the export; the real-checkout V6 runner must execute targeted Jest + full `wave3:prepush:check` before commit/push.
+
+## Next action
+
+Apply the V6 root-fix only on clean `main@7009e18803c82b67906f0d1d66ab626465cb7cd9` for `reyvo1/iot-platform`. Run early diff/manifest hygiene, structural guards, Prisma checks, targeted Jest and the full strengthened local pre-push. Commit/push exactly once only if every local gate is green, then treat the next GitHub Heavy UAT as authoritative. If the live negative non-reportable probe or valid reportable Automation path fails, stop and repair the product/UAT cause; do not weaken the rule.
+
 ## Current candidate UAT — RED; root-cause repair in progress
 
 - GitHub run `37206734123` / commit `dd253ef6a67e77469934278b55806819fd292701` / evidence `logs_100779580158.zip` is the newest candidate evidence and is **NOT GREEN**.

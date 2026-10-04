@@ -12,7 +12,7 @@ b97c7e53de22fe5d478d45994b10f8c4e3a5238b7f369ff93e86e892d2810b9a  ./.prettierrc
 b88c144ac6fe52ba58e7b2ae89c25a4f169e9e1ea2701ebce9d178053de305a6  ./.secretlintrc.json
 0d430c6badd1c9262d718dc53de5f4e5cb991c9dfe3ed25d42b87545cd33ecc8  ./AGENTS.md
 b4a96052045fd666d63feb9d82fde8d3fbd3138e25beebff7822c45ade66234b  ./AI-Development-Kit/02-Project-Requirements.md
-1ff7516d7699aef41f689320db1f871459da05423c9f80b0037d0e48d4b7b962  ./AI-Development-Kit/03-Development-Roadmap.md
+18905d59643ec03ff1b0fc5fab8338db41c65d8e85ef16a97289b11a665f4090  ./AI-Development-Kit/03-Development-Roadmap.md
 0aab8ddb3d1aa43719157a019bff89f01ebd604820dad523b6f2c3937c85b170  ./AI-Development-Kit/README.md
 c0d44b94866022a3bfc15122bbe0894a05682ec334f9c68764b1a9cd90c12bb4  ./AI-Development-Kit/agent/GEMINI-SYSTEM-INSTRUCTIONS.md
 d6b4dbd2b07f775d33de5778b6aa04c59b8a6fc37a30b0078d50f06147bae444  ./AI-Development-Kit/agent/REPOSITORY-MEMORY.md
@@ -65,10 +65,10 @@ fa8e7a7fd1666ea56eedb4aad5a1b307d532b97962540234edc1b1fdc134d2e3  ./AI-Developme
 cab10a82cb5f2255ecdf99981067119041beb07ab6c1f1976e531d10db5fd724  ./AI-Development-Kit/templates/MODULE-STATUS-TEMPLATE.md
 68f8de30afc578e0ab20ac92ef560f3081a95d699d998621092f1f61c0d00791  ./AI-Development-Kit/workflows/AGENT-EXECUTION-LOOP.md
 78e5c067c68636d36a3289d001fd159176a7792b7e33af206463d7aaa93a0f7c  ./AI-Development-Kit/workflows/FAILURE-PROTOCOL.md
-938735a2fdda500d627d87c777b77e5585914b1a6ed5ab3736694ab93c836d79  ./CURRENT-STATE.md
+614b812142b5d69794603905997ed61a6056993e878cb15e7572c8d1c7514774  ./CURRENT-STATE.md
 bd29d21f37c224e1d6b4af71e0025d8f4019b3914381248356add4266724f1b0  ./GATE-1-STATUS.md
-2e6924e94cc1d7064074c384392e5bfc932f1bd63a0d7409b014c2b598cb4d71  ./PASTE-KE-CHAT-BERIKUTNYA.txt
-b038fd5b864ab238e2e1e454a3b0f4dd81d7bb45da04a2c79d145e6f93f9ca4b  ./PROJECT-HANDOFF.md
+6a336f8a79cb0567f59c7c870f02d4b4f3de240c9e9a85153659213c9b08df0f  ./PASTE-KE-CHAT-BERIKUTNYA.txt
+20151ad4edfb23614a446faf24dbc562070e16c9c7132e86fc4566a9634fd52d  ./PROJECT-HANDOFF.md
 818d1504f9c83a672557cc3c45452c033f04098ce52f609be506b3bbe7dfe7d6  ./UI-DESIGN-SYSTEM.md
 c2482384a4f53220f51123f4fd6ae19151c47cb1a15dc2d49f9a8228beaaa964  ./apps/admin-web/.env.example
 63f2c50380ed6303237cce215ce27af1d620d094c215e28d1b1538a3c070e3bb  ./apps/admin-web/AGENTS.md
@@ -402,7 +402,7 @@ bead9f184b27083639c20803cac92b239a55bcea908cf442f5eed777f6b59df9  ./apps/user-we
 ccd2a17f28b9205adc19fbf05b2a9389dc24115b8ce40b6d958777af90bea7a1  ./apps/user-web/postcss.config.mjs
 7794f4a44d2c31c1f33e91477a00025f4e62687a88946b7c17f58f26257ef2e8  ./apps/user-web/public/icon.png
 38ee09e8ee48c7e75cab63bd076513018ca07b655295664d07c107e408606495  ./apps/user-web/tsconfig.json
-5f5e4e7b8c8c147cfd0a0dc1cab23e0adaba34a13ab05fc3bad44957e39e7583  ./chat-session.md
+8a7e795d03b0234ffa0982564a376976266f1d4a5bddea2d3039af0437c1d540  ./chat-session.md
 08395048b09eab1f15b7264df8b76ae8b4e99634c0f516aa3ce775042bd1859e  ./config/performance-budget.json
 57e9cc3083ac5d0b99e00ed9afa5f740d958130437c0d6a1b52d7ed89ad04fb5  ./docker-compose.rescue.yml
 12b78207cb3ce4d59fefc85abb8fb5fe7412c497252d1b0bc61a189996b84f30  ./docker-compose.yml
@@ -418,7 +418,7 @@ e609750984b6a528a218c343a0e3614403e010751dd1529cdc17da3d9148d2cf  ./docs/RESCUE-
 2fd52fea04918f5e778492de8879f074e594fb72c449993eef7b4ef3e8e33921  ./docs/ROADMAP-COMPLETE.md
 b7c50d5ecd0ef5538e96d0c7c2b40311e951e764d53f6f16f27f516f3eb1c911  ./docs/ROADMAP-SMART-HOTEL.md
 6149db8093c4f5835d3ee5bf7a76ae1f90c6fad4f00cdf96d00ddb491a087574  ./docs/SECRET-SCAN-POLICY.md
-bd3a08865bcefebaa8c73679c5cf8b42f82e06c50bf2183127c6688461b08e45  ./docs/SESSION-CHECKPOINT.md
+8c8bcf5c5977ad8aa01b412e6bcab0c80c651a7ea933e364e93c5067d4ecb6b3  ./docs/SESSION-CHECKPOINT.md
 03d88ce7efa18d6b1381392e386db54b5f026a9e345f02e6299c07d6102d41bb  ./docs/SESSION-HANDOFF-PROTOCOL.md
 cc7efd6089313daacae59b9e676431d674b7b8e45702a812618728689fe7c16e  ./docs/STAGING-RUNBOOK.md
 1fc4adecc7abe855470936cef9ac09129d7b83a8926f1d8bddbfc244c1a5f2dd  ./docs/UAT-CHECKLIST.md
@@ -709,7 +709,7 @@ ace113cf03475b3e8f486701750255ee54405cac0f12d33eb885a8c786a26960  ./scripts/run-
 9328744d957312686c5b275740cb2c45f76227bbd552aee1f7530ebe3e66878d  ./scripts/run-rescue-auth-selfservice-flow.mjs
 72ab6c09486fa09ae2ddfdbf5cf4ff4884c25b77536575276e350ec1e02d7f75  ./scripts/run-rescue-gate1.mjs
 c69815631691a1a3552e3a4d62b942693b34878d4f95c70fe7e39d60db603334  ./scripts/run-rescue-live-broker-smoke.mjs
-bf9cd7ae5a595412c8241e2c04f24f529ecde758c9a24938ef435f9860ea27d3  ./scripts/run-rescue-runtime-flow-extension.mjs
+00eecb365a63725ed5b88b88575c291f027f49aef8d0bbf75719d521ac071f67  ./scripts/run-rescue-runtime-flow-extension.mjs
 38e122b2d436b2d095efbe893b64427e2ee617d484df2896dc8cf537a81ba000  ./scripts/run-saved-reports-probe.sh
 b7f7119f80d0a4e9341e4f295f3fd0d7554e8b0054cbf1ccb5f55959001ee336  ./scripts/run-secret-scan.mjs
 94b99abf0e9b5a5434ba6a3a5f64d72ccc88fa42eaab1bfda0a84ab2ba88136f  ./scripts/run-wave3-esp32-simulation.mjs
@@ -725,7 +725,7 @@ a11d340862aeab5ccd1a73b2971f2c8dec0be5d5d2a15b6e9c826499c3778800  ./scripts/seed
 43ebfe345db86e082e7151b82ea3c2f303ef5bba4b2e777c60804714c00d714a  ./scripts/self-test-baseline-hygiene.mjs
 3e91861ee92d8051d85e12fd24c991bb77c612e1974042f2dae4f6f937d54f27  ./scripts/self-test-baseline-manifest.mjs
 21e3f41e2ab47b2e86a9ca52361ac8d0daf48be2abcdc77cd7d16500e1f7b3c3  ./scripts/self-test-dashboard-widget-integration-access.mjs
-b9c1c1bf9996928b9af047feecd356c4514b0f7384611188698c500a2b8483b0  ./scripts/self-test-deep-product-contracts.mjs
+afba4a09e2c79b47fca10eb209fc6754ec9aa5d2c99867b7db234f45e0649723  ./scripts/self-test-deep-product-contracts.mjs
 54a770266b30dc979960944999afc30f77bcc6b4f6d497c9ad0c40db796a9cc9  ./scripts/self-test-emqx-webhooks.mjs
 d19bb31dee558031c6777b2e3c033e0fa4c912d4fdeb05b4e22cca2b023f2763  ./scripts/self-test-enterprise-wave-status.mjs
 6ee8de5ac0861ec695d4d1e59e71356cdeff62579a1fee77337b197c0d8b3c8a  ./scripts/self-test-fastify-v5-compat.mjs
@@ -1163,7 +1163,7 @@ d3178aed893dc29e72dba70fcf5ebb5868c75f7ac8b92e4156516b0047609575  ./test/console
 76d0df936d04327af8c3c9522c4b6b683bc49e648749ec9341d7a4c089330bb6  ./test/contract-surface-policy.json
 f89733d829433e0fdb0cd0bde0ba37d1392376bbd0b7292e6b36cb30fb50abb9  ./test/credential-column-exposure.contract.spec.ts
 ef693928a55b95aaf66fa09673f6cae0ea63f4214bd56d69eb5a6bc5193dd131  ./test/database-testing.contract.spec.ts
-f8d74132f3edf50ded5a1fd3724e451093a3c63b2c6fdeb1b6f4fff97a53a892  ./test/deep-product-integrity.contract.spec.ts
+64d9c5b303704330993ed8cf6cbe6dc25340362169beb11bfbc0d88e610af984  ./test/deep-product-integrity.contract.spec.ts
 c4c2d251b73610910aff95bc0cfb4954fb1f3934e96969b81136da5610f9f6a7  ./test/demo-seed-reentry.contract.spec.ts
 26ef7ea391185508135312fa91138b778b5f1e46425e1fb8b2fe1386d59fe94a  ./test/deployment-recovery.contract.spec.ts
 139c87bcdb7b69fec310db9fa52ba40f8d7a5af7cacf8eb86a59def7e78ef71f  ./test/fixtures/historical-contract-policy/advanced-indirection.fixture.ts
