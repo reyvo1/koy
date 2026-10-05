@@ -36,6 +36,7 @@ describe('tenant operator surface closure', () => {
     const route = read('apps/admin-web/app/api/tenant/notifications/[notificationId]/route.ts');
     const page = read('apps/admin-web/app/tenant/notifikasi/page.tsx');
     const detailBlock = service.slice(service.indexOf('async findForOperator'));
+    expect(detailBlock).toContain('tenantId: true');
     expect(detailBlock).toContain('destination: true');
     expect(detailBlock).not.toContain('body: true');
     expect(detailBlock).not.toContain('idempotencyKey: true');

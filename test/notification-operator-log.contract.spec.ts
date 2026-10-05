@@ -227,6 +227,7 @@ describe('notification detail is useful without exposing auth secrets', () => {
     const notification = {
       findFirst: jest.fn().mockResolvedValue({
         id: 'n1',
+        tenantId,
         channel: 'EMAIL',
         subject: 'Reset your IoT Platform password',
         destination: 'user@example.com',
@@ -244,6 +245,7 @@ describe('notification detail is useful without exposing auth secrets', () => {
     await service.findForOperator(tenantId, 'n1');
 
     const select = notification.findFirst.mock.calls[0][0].select as Record<string, boolean>;
+    expect(select.tenantId).toBe(true);
     expect(select.destination).toBe(true);
     expect(select.lastErrorCode).toBe(true);
     expect(select).not.toHaveProperty('body');

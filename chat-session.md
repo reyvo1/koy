@@ -1,5 +1,10 @@
 # SESSION TRANSFER — 2026-10-05 16:50 WITA
 
+- **Newest GitHub candidate (RED):** commit `5213a4bc11424198fa60cd34e759cd53bd4e93f5` / GitHub Actions run `37301239412` / evidence `logs_101030127673.zip`. Core CI is green with **283/283 suites and 2494/2494 tests**, both ESP32 targets build/boot in QEMU, and Deep Product live regression passes.
+- **FIRST FAILING GATE:** `Rescue live EMQX / acceptance` -> `Wave 7 mobile and technician live regression` -> notification detail tenant provenance. The live writer probe opens a real notification by id and receives `tenantId=None`; the mandatory assertion that the detail belongs to the active tenant fails. The UAT assertion is correct and remains unchanged.
+- **Root cause:** `NotificationService.findForOperator()` scopes the database lookup with `{ id: notificationId, tenantId }` but its explicit Prisma `select` omits `tenantId`, so the HTTP detail payload loses tenant provenance even though isolation itself is enforced. Root fix adds `tenantId` to the safe detail projection while continuing to exclude `body`, `idempotencyKey`, and `deliveryLeaseId`; regression coverage makes the field mandatory.
+- **Authoritative all-green software baseline remains:** commit `ea182d9f840b8f9a74c5957c386416084e9af216` / GitHub Actions run `37266021484` / evidence `logs_100935642537.zip`. Do not promote `5213a4bc...` until the repaired Heavy UAT is green.
+
 - **Authoritative all-green software baseline:** commit `ea182d9f840b8f9a74c5957c386416084e9af216` / GitHub Actions run `37266021484` / evidence `logs_100935642537.zip`.
 - **Active WIP:** Product Surface Census/Closure V2 root-hardening. Waves 1–13 remain software-scope closed/green and are not being reopened.
 - **Root-cause class closed in candidate source:** Integration Registry backend now canonicalizes display-name whitespace and rejects whitespace-only names; the original Module 22 migration was found to have created `integrations` and `integration_sync_state` without the foreign keys represented by Prisma and without the Prisma-declared `syncedAt` database default, so a new fail-closed migration restores that default and binds `integrations.tenantId -> tenants.id` and `(integration_sync_state.integrationId, tenantId) -> integrations(id, tenantId)`.
@@ -28,7 +33,7 @@
 
 ## Next action
 
-Verify the complete real checkout first (`git rev-parse HEAD`, `git status --short`, branch/upstream, and `/super/reports` source). Reconcile the bounded V2 integration hardening in an isolated worktree, run official structural/Prisma/targeted/PostgreSQL/full `wave3:prepush:check` gates, review the complete diff, then one commit/push and GitHub Heavy UAT only if everything is green. **FIRST FAILING GATE in this exported snapshot: `rescue:validate` missing `/super/reports/page.tsx`; no product/UAT gate is weakened to bypass it.**
+Repair only the Wave 7 notification-detail tenant-provenance defect on candidate `5213a4bc11424198fa60cd34e759cd53bd4e93f5`: keep the live UAT assertion unchanged, add `tenantId` to the operator-safe detail projection, retain tenant-scoped lookup and secret exclusions, run official structural/targeted/full local gates in an isolated worktree, then one commit/push only if all local gates are green. Treat the next GitHub Heavy UAT as authoritative. **FIRST FAILING GATE: Wave 7 mobile notification live probe -> detail `tenantId=None`; do not weaken or remove that assertion.**
 
 ## Superseded candidate evidence — historical RED at live Organization probe
 

@@ -612,6 +612,7 @@ export class NotificationService {
       where: { id: notificationId, tenantId },
       select: {
         id: true,
+        tenantId: true,
         channel: true,
         templateKey: true,
         subject: true,

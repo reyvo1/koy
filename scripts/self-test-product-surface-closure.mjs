@@ -62,6 +62,7 @@ assert(dbIntegration.includes('enforces Integration Registry tenant provenance')
 const notificationService = read('src/notification/notification.service.ts');
 const detailAt = notificationService.indexOf('async findForOperator');
 const detail = detailAt >= 0 ? notificationService.slice(detailAt) : '';
+assert(detail.includes('tenantId: true'), 'notification detail preserves tenant provenance');
 assert(detail.includes('destination: true'), 'notification detail exposes operator destination metadata');
 assert(!detail.includes('body: true'), 'notification detail does not expose message body/token material');
 assert(!detail.includes('idempotencyKey: true'), 'notification detail does not expose idempotency material');

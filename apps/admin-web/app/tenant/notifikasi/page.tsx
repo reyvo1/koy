@@ -33,6 +33,7 @@ interface NotificationRow {
 }
 
 interface NotificationDetail extends NotificationRow {
+  tenantId: string;
   destination: string;
   deliveryLeaseAt?: string | null;
 }

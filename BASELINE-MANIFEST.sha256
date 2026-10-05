@@ -65,10 +65,10 @@ a806666cbf85171af1027b36a496a750a0c20b253f48e82583a9f25a436622e1  ./AI-Developme
 cab10a82cb5f2255ecdf99981067119041beb07ab6c1f1976e531d10db5fd724  ./AI-Development-Kit/templates/MODULE-STATUS-TEMPLATE.md
 68f8de30afc578e0ab20ac92ef560f3081a95d699d998621092f1f61c0d00791  ./AI-Development-Kit/workflows/AGENT-EXECUTION-LOOP.md
 78e5c067c68636d36a3289d001fd159176a7792b7e33af206463d7aaa93a0f7c  ./AI-Development-Kit/workflows/FAILURE-PROTOCOL.md
-94ec970c2206ba17615174e8c509745dacd6db65702fa6e6a8734e628426b711  ./CURRENT-STATE.md
+bed2f16a2ee694ec19bceb6e7ad765ee8d5476f64b15ba9733c1e0a4c60cc2fd  ./CURRENT-STATE.md
 bd29d21f37c224e1d6b4af71e0025d8f4019b3914381248356add4266724f1b0  ./GATE-1-STATUS.md
-33b9e80ef3fa809a87e38e3c8d72b44db1b290c3567f9090bcd2a0c8bb6a16dc  ./PASTE-KE-CHAT-BERIKUTNYA.txt
-9c6684df76960655b025fcd3351aa27988ab32f027fd9315bf12409b1da597b8  ./PROJECT-HANDOFF.md
+a84afef5fc4fa53740be60cd0912a5e41600244b8f83ce832594196434f934b7  ./PASTE-KE-CHAT-BERIKUTNYA.txt
+746f9bdc958b58da9df83eb0fa8bcd956a59af4c20c35b23457bbe627cd6ca05  ./PROJECT-HANDOFF.md
 818d1504f9c83a672557cc3c45452c033f04098ce52f609be506b3bbe7dfe7d6  ./UI-DESIGN-SYSTEM.md
 c2482384a4f53220f51123f4fd6ae19151c47cb1a15dc2d49f9a8228beaaa964  ./apps/admin-web/.env.example
 63f2c50380ed6303237cce215ce27af1d620d094c215e28d1b1538a3c070e3bb  ./apps/admin-web/AGENTS.md
@@ -245,7 +245,7 @@ d41cf93c7b70c646e5c8991c79a1c1293bf0c5e4eabd64a2d12c14e0cc96558e  ./apps/admin-w
 93fce6adb73eb3afcc8125e80b47aacdf44c71b4f4346bcecf6dd5682e2cc15f  ./apps/admin-web/app/tenant/integrasi/page.tsx
 0911c5336b019ecd1a3d661f33aa96fc6482f8a629195ccd44ecaa6d44d788dc  ./apps/admin-web/app/tenant/laporan/page.tsx
 e45960d41dcf60d88803bc59ce4b3ab3b395c8fc6df77cced4a597f21870d8d1  ./apps/admin-web/app/tenant/lokasi/page.tsx
-6d797688fc57a663b09e70575d8948e75104f91717a79e5a8dc711e28d6e23f9  ./apps/admin-web/app/tenant/notifikasi/page.tsx
+9009ad7601c4e2bb49ffed90f9668cbc23b671187aed3fc3f25febf0581576b2  ./apps/admin-web/app/tenant/notifikasi/page.tsx
 41c86577c0c709958f0b070e42d8ce05271e131636e712048d472497047d0b13  ./apps/admin-web/app/tenant/organisasi/page.tsx
 2eb015b6b7bb12cb0d3a6df518684cc77beee423e03940774f91d40ffd3fee66  ./apps/admin-web/app/tenant/otomatisasi/page.tsx
 96f56cc3ffdc06cf653c6a47c1b90911fa7b651c8c08312000f0e64590eaa3f0  ./apps/admin-web/app/tenant/pengguna/page.tsx
@@ -420,7 +420,7 @@ bead9f184b27083639c20803cac92b239a55bcea908cf442f5eed777f6b59df9  ./apps/user-we
 ccd2a17f28b9205adc19fbf05b2a9389dc24115b8ce40b6d958777af90bea7a1  ./apps/user-web/postcss.config.mjs
 7794f4a44d2c31c1f33e91477a00025f4e62687a88946b7c17f58f26257ef2e8  ./apps/user-web/public/icon.png
 38ee09e8ee48c7e75cab63bd076513018ca07b655295664d07c107e408606495  ./apps/user-web/tsconfig.json
-ebf49a343b25ee1e73c0d6987bf6915d7c56c0592d8b9c50d60932a4bdd1aef4  ./chat-session.md
+28694227fe7f1af439227030036e71ebccd4eb63d00fc9fca73e2f6f1a9c7a7e  ./chat-session.md
 08395048b09eab1f15b7264df8b76ae8b4e99634c0f516aa3ce775042bd1859e  ./config/performance-budget.json
 57e9cc3083ac5d0b99e00ed9afa5f740d958130437c0d6a1b52d7ed89ad04fb5  ./docker-compose.rescue.yml
 12b78207cb3ce4d59fefc85abb8fb5fe7412c497252d1b0bc61a189996b84f30  ./docker-compose.yml
@@ -438,7 +438,7 @@ e609750984b6a528a218c343a0e3614403e010751dd1529cdc17da3d9148d2cf  ./docs/RESCUE-
 2fd52fea04918f5e778492de8879f074e594fb72c449993eef7b4ef3e8e33921  ./docs/ROADMAP-COMPLETE.md
 b7c50d5ecd0ef5538e96d0c7c2b40311e951e764d53f6f16f27f516f3eb1c911  ./docs/ROADMAP-SMART-HOTEL.md
 6149db8093c4f5835d3ee5bf7a76ae1f90c6fad4f00cdf96d00ddb491a087574  ./docs/SECRET-SCAN-POLICY.md
-3a9d44db3ffd7bbdac8e03f46c4777762cff516f48dee9f096fadad6d082ce94  ./docs/SESSION-CHECKPOINT.md
+8bd0a41f2f4089ca870ed4924f4e6ec4b752efa1f9fec2b329cc1ec6b81df890  ./docs/SESSION-CHECKPOINT.md
 03d88ce7efa18d6b1381392e386db54b5f026a9e345f02e6299c07d6102d41bb  ./docs/SESSION-HANDOFF-PROTOCOL.md
 cc7efd6089313daacae59b9e676431d674b7b8e45702a812618728689fe7c16e  ./docs/STAGING-RUNBOOK.md
 1fc4adecc7abe855470936cef9ac09129d7b83a8926f1d8bddbfc244c1a5f2dd  ./docs/UAT-CHECKLIST.md
@@ -759,7 +759,7 @@ aa863027bff16d136fbb331741127626c46278f54cf1442455a6cca8626f9e4c  ./scripts/self
 5daa33992c827de675b4b71b743e265a68ee017f1bbfd0944762857e8cd84b3a  ./scripts/self-test-gitignore-source-scope.mjs
 38de3bb26bd1f0652909987debb529939deb3669f252cd0372a22c497f38324f  ./scripts/self-test-live-probe-contracts.mjs
 994b2b5755cd87d4b4a8acb4f03ea81420babfbe1569bc12072cf3fb8e84f83d  ./scripts/self-test-migration-compatibility.mjs
-4a5e38c76063ceaee0f529c92b8613775c1aed42a2c702d485c54c128687633c  ./scripts/self-test-product-surface-closure.mjs
+56ecbc0bcd01dec2a06b257ce0bb261f2d870d6e572352089ff219645e3fe12c  ./scripts/self-test-product-surface-closure.mjs
 4810c032b177e372f917b2461794223554e8510aa86831375e321eff5f990277  ./scripts/self-test-production-approval-gate.mjs
 b6819b589f8587d67a3336a438cf686eeccdea7c998c3ad010d567e9bdc36cbb  ./scripts/self-test-production-approval-receipt.mjs
 06bd424271ef6b10dc5711124886b237d4d8c5b59ad94e20c18377c388552981  ./scripts/self-test-production-environment.mjs
@@ -1065,7 +1065,7 @@ f46f7c36bda7edd83dd09b058c6704d4f5244081f10c8ee88c2c483dc567049f  ./src/notifica
 b37aada8e751af7a71b6e0e1c348ff2e2ecc4ab674bffbf9031ca1277b2f434d  ./src/notification/notification.controller.ts
 c62e7460572bf252abe3aecd461bdfba82bc1c5579253901b5b3348d17c9ce59  ./src/notification/notification.module.ts
 1cdf13748643898c6f18054967bd4399a66cc9fb73e217f41e984aa05b78e518  ./src/notification/notification.service.spec.ts
-ca143fc91d7e66f24dadcbaf35a09881ba981b064156df02831725428d49b767  ./src/notification/notification.service.ts
+6867fc746b42c8e63d5dfc6a26e9b1c65e910a111fd0b18d0efa3cc2203efa13  ./src/notification/notification.service.ts
 5718193f7c7902524cd5ec2d4c356b55101029b479932d21a9e88d7713905c83  ./src/notification/webhook.transport.spec.ts
 b73eae8f56a3116a5d3218264062397262d79ebd2febc0cf75aacce5e843f5c5  ./src/notification/webhook.transport.ts
 2b94373f5d559e339225495008e39f01ab33f3c205e4829fd91a27125875aa1d  ./src/org/dto/organization.dto.ts
@@ -1309,7 +1309,7 @@ a87e74c8f11998a1ca7b4ba955bf1bce0a90a0dbed80840b33251b1529847698  ./test/mqtt-pr
 fe1ea1f3d54b56c973f0ef08581041d696d74f5b3470df87b75666c2a1c92b68  ./test/nginx-tls-terminator.contract.spec.ts
 7599906f87e1c66de62cc81ea22b28ead343c711b0246e456589080fe2ffa16a  ./test/noc-operations.contract.spec.ts
 4d672b1d31d39d9efb822141ca5c01d7b027ee913e529c3c866c1b6ef83a04ce  ./test/node-runtime.contract.spec.ts
-f06e67830979191abb86fe03bd629ec5cba0266ec7a93efee77745b7bc4fe4f2  ./test/notification-operator-log.contract.spec.ts
+ea463d3870dd5cbe792cab325de0930d166ed136447b7ee1f6fb916fa4e62892  ./test/notification-operator-log.contract.spec.ts
 ace7c6453532b6eb775622b16d8ecacb9dc5260e866b11b43d1b38bf78b13188  ./test/operator-launcher.contract.spec.ts
 b7579f09693ba335194eb3fffd73f7c400c2ee9a25ccf2975c3af33e2cead87f  ./test/ota-rollout-surface.contract.spec.ts
 998788a951de005d953624cb74191f701a43044de70b64d9b5dbbe566a3940d6  ./test/platform-tenant-identity.contract.spec.ts
@@ -1347,7 +1347,7 @@ fe9c813aa001ff118064dbad1c519e00be63215784eacbf4383aacf8dfe79701  ./test/telemet
 656d81a8249d9ed7af2f3bffa0e882cc0df00ac11e2f3f4864835203aa1145b2  ./test/tenant-command-drilldown.contract.spec.ts
 5c51d6308fe8831356b735315f1f7fab1c04923cb813ce3360945a3468e480fe  ./test/tenant-dashboard-editor.contract.spec.ts
 627470a7f9b2819836a89f503a27793bf642a4328bad0f89097d0a9064401025  ./test/tenant-isolation-at-query-layer.contract.spec.ts
-8e653b11f99f712bb1961b7805ca80bcb7bc967c77c6a1753cb72aec9216bb30  ./test/tenant-operator-surface-closure.contract.spec.ts
+42d41dd7f8284763428b306f29ea3f0c4d2df215694b520ace2ac309b67e3050  ./test/tenant-operator-surface-closure.contract.spec.ts
 2881deb7b7c2f5a24622655e5e85173bef274cb1da4096d396c2cf0f52b94402  ./test/tenant-workspace-widget-readings.contract.spec.ts
 03092111361921e91738158f250ac09e1c849902b114f312fc67b573391b7449  ./test/testing-strategy.contract.spec.ts
 67ea90b786dc829a8538f3734ae0ac3bb710f4b208c6d96a28797d15e6c6681e  ./test/wave-02-core-runtime-closure-invariants.contract.spec.ts
