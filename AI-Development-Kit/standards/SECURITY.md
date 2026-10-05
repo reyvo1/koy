@@ -20,3 +20,9 @@ rotation, OTA, API key, dan admin action penting.
 
 - Custom-role membership bindings are tenant-bound at both application and database layers. A role from tenant B must be impossible to persist on a tenant-A membership even through a future buggy writer or direct SQL.
 - Cross-tenant authorization corruption is a deployment blocker; migrations must fail closed and require explicit operator repair rather than guessing intended permissions.
+
+## Production environment evidence — current contract (2026-10-05)
+
+- Production secrets never enter Git or approval JSON. Environment evidence records only SHA-256 hashes and verified boolean/owner metadata.
+- Approval requires MQTT publish ACL + CA/hostname verification, DNS/TLS, off-host backup, monitoring access, and named rollback/backup/monitoring responsibility. Placeholder or reserved-example endpoints are rejected.
+- `production-environment-evidence.json` must be bound to the exact release manifest and re-bound by SHA-256 inside `production-approval.json`; any sidecar tampering or release mismatch blocks install.

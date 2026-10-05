@@ -4,13 +4,13 @@
 
 **Status: NOT READY FOR PRODUCTION DEPLOYMENT**
 
-**Repository software status: GREEN AT `2cecb7aa4020ffb6a566949f2e5a44794432d0a7` / RUN `37212540616`; CURRENT PRODUCT-SURFACE BATCH REQUIRES RE-CERTIFICATION.**
+**Repository software status: GREEN AT `43d20b1ef54142dde27f38cf7676fb8fbf05a46c` / RUN `37261297295` / EVIDENCE `logs_100923339374.zip`; FINAL PRODUCTION-READINESS HARDENING REQUIRES RE-CERTIFICATION.**
 
-**Completion review status: LOCAL GATES PASSED FOR THE AUTHORITATIVE GREEN CHECKPOINT — REMOTE CI GREEN AT `2cecb7aa4020ffb6a566949f2e5a44794432d0a7` / RUN `37212540616`; CURRENT PRODUCT-SURFACE BATCH REQUIRES RE-CERTIFICATION; EXPLICIT ENVIRONMENT DEPLOYMENT APPROVAL PENDING.**
+**Completion review status: LOCAL GATES PASSED — AUTHORITATIVE SOFTWARE/UAT GREEN AT `43d20b1ef54142dde27f38cf7676fb8fbf05a46c` / RUN `37261297295`; EXPLICIT ENVIRONMENT DEPLOYMENT APPROVAL PENDING.**
 
 All repository-level implementation blockers are resolved or controlled. The completion-review script validates the complete reliability, security, deployment, recovery, release, and MQTT transport gates before committing. Actual deployment remains an explicit environment-specific decision because production broker credentials, broker ACLs, trusted CA material, DNS/TLS, secret installation, off-host backup retention, and operator rollback readiness cannot be proven by repository code alone.
 
-This remains an operational safety decision, not an architecture redesign and not a regression of Module 08. Module 09 remains inactive until the completion-review commit has green remote CI and activation is explicitly approved.
+This remains an operational safety decision, not an architecture redesign and not a regression of Module 08. Module 09 lifecycle activation is already recorded in repository history; production deployment approval remains a separate environment-specific gate.
 
 ## Evidence Reviewed
 
@@ -78,6 +78,14 @@ Status: Controlled by Deployment and Recovery Foundation.
 
 CI includes non-mutating lint, a critical production dependency review policy, verified release manifests, production artifact startup smoke, recovery drill execution, shell syntax validation, and GitHub artifact upload with bounded retention. The former `@fastify/middie` critical exception is retired in Wave 1. The repository pins NestJS 11.2.3 / Fastify 5.10.0, verifies that dependency boundary directly from `package.json` and `package-lock.json`, and rejects any resolved `@fastify/middie` below 9.3.3 before the production audit runs.
 
+### PR-007 — Environment-bound deployment approval and rollback compatibility
+
+Severity: Critical
+
+Status: Root fix implemented in the active final production-readiness hardening batch; local + GitHub Heavy UAT re-certification required before it can replace the green authority.
+
+Repository/UAT green no longer suffices to mint deployment approval. `release:approve` requires separately validated `PRODUCTION_ENVIRONMENT` evidence bound to the exact release manifest. The production preflight verifies Node 22, protected runtime/backup env files, non-placeholder secrets, `vm.overcommit_memory=1`, enabled Scheduler/Automation/Notification runtimes, TLS/ACL/DNS/backup/monitoring/ownership attestations, and rejects reserved example endpoints. The installer rechecks env-file hashes/permissions and Redis host sysctl before dependency install or migration, so stale environment approval fails closed. A migration compatibility gate rejects future destructive/backward-incompatible SQL after the reviewed historical cutoff and requires expand-contract for safe application rollback.
+
 ## Accepted Non-Blockers
 
 - Local development does not require Docker or WSL.
@@ -104,13 +112,13 @@ CI includes non-mutating lint, a critical production dependency review policy, v
    - Fastify E2E, PostgreSQL integration, MQTT workflow integration, and MQTT publisher TLS integration pass
    - Recovery drill, release manifest verification, and production artifact startup smoke pass
    - Repository production configuration contracts are verified without committing secrets
-   - Latest authoritative remote CI is green at run `37212540616`; every subsequent source batch must obtain its own green Heavy UAT before becoming the next authority
+   - Latest authoritative remote CI is green at run `37261297295` / commit `43d20b1ef54142dde27f38cf7676fb8fbf05a46c`; every subsequent source batch must obtain its own green Heavy UAT before becoming the next authority
    - Production deployment approval remains explicit and environment-specific
 
 ## Exit Rule
 
-The repository-level Production Readiness Completion Review passes only when every committed local gate succeeds and the evidence is committed. Remote CI must then confirm the same commit before Module 09 may be activated.
+The repository-level Production Readiness Completion Review passes only when every committed local gate succeeds and the evidence is committed. Remote CI must then confirm the same commit before it can replace the authoritative software checkpoint; production deployment still requires independent environment approval.
 
 Actual production deployment remains a separate explicit approval after environment-specific broker credentials, ACLs, trusted CA material, DNS/TLS, secrets, backup retention, monitoring access, and rollback ownership are verified.
 
-Production Configuration and Process Lifecycle Foundation, Production Security Boundary Hardening, Deployment and Recovery Foundation, MQTT Production Transport Architecture Proposal, and MQTT Production Transport Implementation are completed. Local completion-review gates passed. This transition does not activate Module 09.
+Production Configuration and Process Lifecycle Foundation, Production Security Boundary Hardening, Deployment and Recovery Foundation, MQTT Production Transport Architecture Proposal, and MQTT Production Transport Implementation are completed. Module 09 lifecycle activation remains historical repository state and does not imply production deployment approval.

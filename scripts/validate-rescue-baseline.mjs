@@ -1833,6 +1833,8 @@ check(
     read('package.json').includes('release:approve') &&
     productionApprovalR2.includes('validate-rescue-02b-evidence.mjs') &&
     productionApprovalR2.includes('--simulated-hardware=') &&
+    productionApprovalR2.includes('--environment=') &&
+    productionApprovalR2.includes('Repository/UAT green is not environment approval') &&
     productionApprovalR2.includes('SIMULATED_HARDWARE_LIVE_SERVICE') &&
     productionApprovalR2.includes("ota?.status !== 'PASS'") &&
     productionApprovalR2.includes('Release source fingerprint matches the current sealed baseline'),
@@ -1861,6 +1863,8 @@ check(
   'production approval writes a manifest-bound receipt containing source-bound simulated hardware or legacy physical evidence',
   releaseApprovalReceiptR6.includes("'production-approval.json'") &&
     releaseApprovalReceiptR6.includes('releaseManifestSha256') &&
+    releaseApprovalReceiptR6.includes('environmentEvidenceSha256') &&
+    releaseApprovalReceiptR6.includes('environmentObservedAt') &&
     releaseApprovalReceiptR6.includes('evidenceSha256') &&
     releaseApprovalReceiptR6.includes('hardwareEvidence') &&
     releaseApprovalReceiptR6.includes('SIMULATED_HARDWARE_LIVE_SERVICE') &&
@@ -1872,9 +1876,11 @@ check(
   releaseVerifierReceiptR6.includes("const requireApproved = process.argv.slice(2).includes('--require-approved')") &&
     releaseVerifierReceiptR6.includes('Production approval receipt is required for installation') &&
     releaseVerifierReceiptR6.includes('Production approval receipt is not bound to this release manifest') &&
+    releaseVerifierReceiptR6.includes('Production approval requires production-environment-evidence.json sidecar') &&
+    releaseVerifierReceiptR6.includes('Production environment evidence sidecar digest does not match approval receipt') &&
     releaseVerifierReceiptR6.includes('Production approval simulated-hardware source fingerprint mismatch') &&
     releaseVerifierReceiptR6.includes('valid simulated-hardware evidence or legacy physical OTA digest proof') &&
-    releaseVerifierReceiptR6.includes("const reservedSidecars = new Set(['production-approval.json'])") &&
+    releaseVerifierReceiptR6.includes("const reservedSidecars = new Set(['production-approval.json', 'production-environment-evidence.json'])") &&
     releaseVerifierReceiptR6.includes('Untracked release file is not covered by manifest'),
 );
 check(
@@ -1884,6 +1890,41 @@ check(
     installReleaseReceiptR6.indexOf('--require-approved') < installReleaseReceiptR6.indexOf('run migrate:deploy') &&
     installReleaseReceiptR6.indexOf('--require-approved') < installReleaseReceiptR6.indexOf('ln -sfn \"$release_dir\" \"$current_link\"'),
 );
+check(
+  'production approval requires environment evidence and installer rejects environment drift before migration',
+  existsSync(join(root, 'scripts/create-production-environment-evidence.mjs')) &&
+    existsSync(join(root, 'scripts/verify-production-environment-evidence.mjs')) &&
+    existsSync(join(root, 'scripts/verify-production-environment-current.mjs')) &&
+    releaseApprovalReceiptR6.includes('--environment=') &&
+    releaseApprovalReceiptR6.includes('environmentEvidenceSha256') &&
+    releaseVerifierReceiptR6.includes('production-environment-evidence.json') &&
+    installReleaseReceiptR6.includes('verify-production-environment-current.mjs') &&
+    installReleaseReceiptR6.indexOf('verify-production-environment-current.mjs') < installReleaseReceiptR6.indexOf('npm --prefix "$release_dir" ci'),
+);
+check(
+  'production template enables business runtimes and Redis host prerequisite is source-controlled',
+  read('ops/env/iot-platform.env.example').includes('SCHEDULER_RUNTIME_ENABLED=true') &&
+    read('ops/env/iot-platform.env.example').includes('AUTOMATION_RUNTIME_ENABLED=true') &&
+    read('ops/env/iot-platform.env.example').includes('NOTIFICATION_RUNTIME_ENABLED=true') &&
+    read('ops/env/iot-platform.env.example').includes('EMAIL_RELAY_TOKEN=REPLACE_WITH_AT_LEAST_32_RANDOM_BYTES') &&
+    read('ops/sysctl/99-iot-platform.conf').includes('vm.overcommit_memory = 1'),
+);
+check(
+  'migration rollback compatibility gate is fail-closed for future destructive SQL',
+  read('package.json').includes('migration:compatibility:verify') &&
+    read('scripts/verify-migration-compatibility.mjs').includes('forbidden after historical cutoff') &&
+    read('scripts/self-test-migration-compatibility.mjs').includes('future destructive migration was bypassed'),
+);
+check(
+  'GitHub core actions use the reviewed Node 24 generation and are self-tested',
+  read('package.json').includes('github:actions-runtime:self-test') &&
+    read('.github/workflows/ci.yml').includes('actions/checkout@v7') &&
+    read('.github/workflows/ci.yml').includes('actions/setup-node@v7') &&
+    read('.github/workflows/ci.yml').includes('actions/cache@v5') &&
+    read('.github/workflows/ci.yml').includes('actions/upload-artifact@v7') &&
+    read('.github/workflows/ci.yml').includes('actions/download-artifact@v7'),
+);
+
 check(
   'production approval receipt self-test covers missing valid tampered and untracked release paths',
   existsSync(join(root, 'scripts/self-test-production-approval-receipt.mjs')) &&
@@ -2459,7 +2500,7 @@ check(
   'GitHub rescue CI captures failure evidence and tears down only ephemeral CI volumes',
   read('package.json').includes('rescue:github-ci:self-test') &&
     read('package.json').includes('rescue:broker:smoke') &&
-    githubCiR30.includes('actions/upload-artifact@v4') &&
+    githubCiR30.includes('actions/upload-artifact@v7') &&
     githubCiR30.includes('docker-compose.log') &&
     githubCiR30.includes('down --volumes --remove-orphans') &&
     githubCiSelfTestR30.includes('RESCUE GITHUB CI SELF-TEST PASS'),

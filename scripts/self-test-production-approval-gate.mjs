@@ -48,9 +48,11 @@ const brokerIds = [
 const releaseFiles = [
   'dist/main.js', 'package.json', 'package-lock.json', 'prisma/schema.prisma', 'prisma/migrations/migration_lock.toml',
   'ops/systemd/iot-platform.service', 'ops/systemd/iot-platform-backup.service', 'ops/systemd/iot-platform-backup.timer',
-  'ops/nginx/iot-platform.conf.template', 'ops/env/iot-platform.env.example', 'ops/env/iot-platform-backup.env.example',
+  'ops/nginx/iot-platform.conf.template', 'ops/sysctl/99-iot-platform.conf', 'ops/security/migration-compatibility-policy.json', 'ops/env/iot-platform.env.example', 'ops/env/iot-platform-backup.env.example',
   'ops/scripts/install-release.sh', 'ops/scripts/rollback-release.sh', 'ops/scripts/postgres-backup.sh',
-  'ops/scripts/postgres-restore.sh', 'scripts/verify-production-release.mjs', 'docs/deployment-recovery.md',
+  'ops/scripts/postgres-restore.sh', 'ops/production/environment-attestation.example.json',
+  'scripts/verify-production-release.mjs', 'scripts/verify-production-environment-evidence.mjs',
+  'scripts/create-production-environment-evidence.mjs', 'scripts/verify-production-environment-current.mjs', 'scripts/verify-migration-compatibility.mjs', 'docs/deployment-recovery.md',
 ];
 
 function sha256(value) { return createHash('sha256').update(value).digest('hex'); }
@@ -79,11 +81,12 @@ function expectRejected(label, args, expectedText) {
 
 try {
   expectRejected('missing evidence is refused', [], 'Production approval requires --evidence=');
-  expectRejected('a nonexistent evidence file is refused', [`--evidence=${path.join(temp, 'absent.json')}`], 'RESCUE-02B evidence');
+  expectRejected('missing environment evidence is refused', [`--evidence=${path.join(temp, 'absent.json')}`], 'Production approval requires --environment=');
+  expectRejected('a nonexistent evidence file is refused', [`--evidence=${path.join(temp, 'absent.json')}`, `--environment=${path.join(temp, 'absent-environment.json')}`], 'RESCUE-02B evidence');
 
   const malformed = path.join(temp, 'malformed.json');
   writeFileSync(malformed, '{ this is not the evidence schema }\n');
-  expectRejected('evidence that fails validation is refused', [`--evidence=${malformed}`], 'RESCUE-02B evidence');
+  expectRejected('evidence that fails validation is refused', [`--evidence=${malformed}`, `--environment=${path.join(temp, 'absent-environment.json')}`], 'RESCUE-02B evidence');
 
   const sourceFingerprint = {
     packageLockSha256: sha256File(path.join(root, 'package-lock.json')),
@@ -152,7 +155,9 @@ try {
   for (const relative of releaseFiles) {
     const target = path.join(releaseRoot, relative);
     mkdirSync(path.dirname(target), { recursive: true });
-    if (relative === 'package-lock.json') {
+    if (relative === 'scripts/verify-production-environment-evidence.mjs' || relative === 'scripts/verify-production-environment-current.mjs' || relative === 'scripts/verify-migration-compatibility.mjs') {
+      writeFileSync(target, readFileSync(path.join(root, relative)));
+    } else if (relative === 'package-lock.json') {
       writeFileSync(target, readFileSync(path.join(root, 'package-lock.json')));
     } else if (relative === 'package.json') {
       writeJson(target, { name: 'iot-platform', version: '0.0.1', engines: { node: '>=22 <23' }, scripts: { start: 'node dist/main.js', 'migrate:deploy': 'prisma migrate deploy' } });
@@ -177,29 +182,63 @@ try {
     files: manifestFiles,
   });
 
+  const releaseManifestPath = path.join(releaseRoot, 'release-manifest.json');
+  const environmentPath = path.join(evidenceDir, 'production-environment-evidence.json');
+  writeJson(environmentPath, {
+    schemaVersion: 1,
+    gate: 'PRODUCTION_ENVIRONMENT',
+    status: 'APPROVED',
+    observedAt: simTime,
+    releaseManifestSha256: sha256File(releaseManifestPath),
+    runtimeEnvSha256: '1'.repeat(64),
+    backupEnvSha256: '2'.repeat(64),
+    localChecks: {
+      nodeMajor: 22,
+      vmOvercommitMemory: 1,
+      runtimeFeaturesEnabled: true,
+      runtimeEnvironmentProtected: true,
+      backupEnvironmentProtected: true,
+      secretPlaceholdersAbsent: true,
+    },
+    externalChecks: {
+      publicOrigin: 'https://app.iot-fixture.test',
+      mqttAclVerified: true,
+      mqttCaHostnameVerified: true,
+      dnsTlsVerified: true,
+      offHostBackupVerified: true,
+      monitoringAccessVerified: true,
+      backupOwner: 'ops-backup',
+      monitoringOwner: 'ops-monitoring',
+      rollbackOwner: 'ops-release',
+      reviewedBy: 'operator-a',
+    },
+  });
+
   expectRejected(
     'DEFERRED physical OTA without simulated-hardware receipt is refused',
-    [`--evidence=${evidencePath}`, `--release=${releaseRoot}`],
+    [`--evidence=${evidencePath}`, `--environment=${environmentPath}`, `--release=${releaseRoot}`],
     'RESCUE-02B evidence',
   );
 
   const approved = runApproval([
     `--evidence=${evidencePath}`,
     `--simulated-hardware=${simulatedPath}`,
+    `--environment=${environmentPath}`,
     `--release=${releaseRoot}`,
   ]);
   expect(approved.status === 0 && approved.output.includes('PRODUCTION APPROVAL EVIDENCE PASS'), 'source-bound simulated-hardware approval path did not pass', approved.output);
   const receipt = JSON.parse(readFileSync(path.join(releaseRoot, 'production-approval.json'), 'utf8'));
   expect(receipt.hardwareEvidence?.classification === 'SIMULATED_HARDWARE_LIVE_SERVICE', 'approval receipt did not record simulated-hardware classification');
   expect(receipt.hardwareEvidence?.firmwareArtifactSha256 === 'a'.repeat(64), 'approval receipt did not bind the firmware SHA-256');
-  console.log('PASS  source-bound simulated-hardware UAT can close the software production-readiness hardware gate');
+  expect(receipt.environmentEvidenceSha256 === sha256File(path.join(releaseRoot, 'production-environment-evidence.json')), 'approval receipt did not bind the environment evidence SHA-256');
+  console.log('PASS  source-bound simulated-hardware UAT plus validated production environment can close the production approval gate');
 
   const tampered = JSON.parse(readFileSync(simulatedPath, 'utf8'));
   tampered.sourceFingerprint.repositoryTreeSha256 = '0'.repeat(64);
   writeJson(simulatedPath, tampered);
   expectRejected(
     'simulated-hardware receipt from another source baseline is refused',
-    [`--evidence=${evidencePath}`, `--simulated-hardware=${simulatedPath}`, `--release=${releaseRoot}`],
+    [`--evidence=${evidencePath}`, `--simulated-hardware=${simulatedPath}`, `--environment=${environmentPath}`, `--release=${releaseRoot}`],
     'RESCUE-02B evidence',
   );
 

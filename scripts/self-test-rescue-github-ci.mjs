@@ -46,7 +46,7 @@ check('CI generates ephemeral uncommitted rescue secrets', workflow.includes('re
 check('CI uses source rescue Docker Compose runtime', workflow.includes('rescue:local:up -- --env=.env') && workflow.includes('docker compose -f docker-compose.rescue.yml'));
 check('CI runs targeted DB stability before full acceptance', workflow.indexOf('Targeted PostgreSQL integration stability gate') < workflow.indexOf('Full automated acceptance once'));
 check('CI runs real broker smoke before Gate 1/full acceptance', workflow.indexOf('Real EMQX auth ACL webhook and ACK smoke') < workflow.indexOf('Gate 1 source-bound runtime receipt'));
-check('CI captures reports and container logs on failure', workflow.includes('if: always()') && workflow.includes('docker-compose.log') && workflow.includes('actions/upload-artifact@v4'));
+check('CI captures reports and container logs on failure', workflow.includes('if: always()') && workflow.includes('docker-compose.log') && workflow.includes('actions/upload-artifact@v7'));
 check('CI tears down only ephemeral runner volumes', workflow.includes('down --volumes --remove-orphans'));
 check(
   'CI self-tests bounded broker smoke operations before live EMQX smoke',
@@ -71,6 +71,10 @@ check('User Web navigation self-test command is exposed', pkg.scripts?.['user-we
 check('simulated hardware UAT verifier command is exposed', pkg.scripts?.['uat:simulated-hardware:verify'] === 'node scripts/verify-simulated-hardware-uat.mjs');
 check('simulated hardware UAT self-test command is exposed', pkg.scripts?.['uat:simulated-hardware:self-test'] === 'node scripts/self-test-simulated-hardware-uat.mjs');
 check('core CI self-tests the simulated hardware UAT verifier', workflow.includes('npm run uat:simulated-hardware:self-test'));
+check('core CI self-tests production environment approval evidence', workflow.includes('npm run production:environment:self-test'));
+check('core CI self-tests the migration rollback-compatibility verifier', workflow.includes('npm run migration:compatibility:self-test'));
+check('core CI self-tests Node 24 GitHub Action runtime pins', workflow.includes('npm run github:actions-runtime:self-test'));
+check('core CI verifies migration rollback compatibility before applying migrations', workflow.includes('npm run migration:compatibility:verify') && workflow.indexOf('npm run migration:compatibility:verify') < workflow.indexOf('migrate deploy'));
 check('core CI executes the User Web navigation completeness self-test', workflow.includes('npm run user-web:navigation:self-test'));
 check('rescue CI exports generated runtime configuration before live probes', workflow.includes('Export generated rescue runtime to subsequent probes') && workflow.includes('node scripts/export-rescue-ci-env.mjs --env=.env'));
 check(

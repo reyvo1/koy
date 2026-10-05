@@ -5,6 +5,7 @@ umask 027
 : "${RELEASE_SOURCE_DIR:?RELEASE_SOURCE_DIR is required}"
 : "${RELEASE_ID:?RELEASE_ID is required}"
 environment_file="${ENVIRONMENT_FILE:-/etc/iot-platform/iot-platform.env}"
+backup_environment_file="${BACKUP_ENVIRONMENT_FILE:-/etc/iot-platform/iot-platform-backup.env}"
 
 if [[ ! "$RELEASE_ID" =~ ^[A-Za-z0-9._-]+$ ]]; then
   echo "RELEASE_ID contains unsupported characters" >&2
@@ -15,10 +16,19 @@ if [[ ! -f "$RELEASE_SOURCE_DIR/release-manifest.json" || ! -f "$RELEASE_SOURCE_
   exit 1
 fi
 RELEASE_OUTPUT_DIR="$RELEASE_SOURCE_DIR" node "$RELEASE_SOURCE_DIR/scripts/verify-production-release.mjs" --require-approved
+node "$RELEASE_SOURCE_DIR/scripts/verify-migration-compatibility.mjs" --root="$RELEASE_SOURCE_DIR"
 if [[ ! -r "$environment_file" ]]; then
   echo "Runtime environment file is not readable: $environment_file" >&2
   exit 1
 fi
+if [[ ! -r "$backup_environment_file" ]]; then
+  echo "Backup environment file is not readable: $backup_environment_file" >&2
+  exit 1
+fi
+node "$RELEASE_SOURCE_DIR/scripts/verify-production-environment-current.mjs" \
+  --evidence="$RELEASE_SOURCE_DIR/production-environment-evidence.json" \
+  --env="$environment_file" \
+  --backup-env="$backup_environment_file"
 
 application_root="${APPLICATION_ROOT:-/opt/iot-platform}"
 release_dir="$application_root/releases/$RELEASE_ID"

@@ -25,3 +25,7 @@ Until an environment-specific production approval has actually been completed, `
 ## Live-probe response-shape contract
 
 Shared probe helpers must be consumed according to their actual return shape. `apiRequest()` in `scripts/run-rescue-runtime-flow-extension.mjs` returns `{ status, body }`; negative HTTP assertions must read `.status` directly and must not invent a nested `.response.status`. Structural and Jest contracts must lock this so a probe bug cannot fail before the intended backend policy assertion executes.
+
+## Production approval gate proof — current contract (2026-10-05)
+
+Production self-tests must prove: missing environment evidence is rejected; tampered environment sidecars are rejected; changed env files after approval are rejected at deployment time; environment evidence older than 24 hours is rejected; `vm.overcommit_memory=1` and all three business runtimes are mandatory; future destructive migrations cannot bypass expand-contract by editing a normal whitelist; and GitHub CI does not regress to deprecated Node 20 core-action pins. These checks are additive to Full Jest/UAT and may not replace or weaken them.

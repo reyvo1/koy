@@ -4,7 +4,7 @@
 
 Completed.
 
-This foundation defines a native Linux VPS deployment and recovery contract. It does not require Docker for local Windows development, does not configure the production MQTT publisher, and does not activate Module 09.
+This foundation defines the current native Linux VPS deployment and recovery contract. It does not require Docker for local Windows development. Repository lifecycle activation and production deployment approval remain separate concerns.
 
 ## Production Topology
 
@@ -19,7 +19,7 @@ Nginx
 IoT Platform systemd service
   -> PostgreSQL
   -> Redis
-  -> future approved MQTT production transport
+  -> approved MQTT production transport
 ```
 
 The NestJS application binds to `127.0.0.1`. Nginx is the only public HTTP listener. The application trusts forwarded addresses only from loopback, matching the same-host reverse-proxy contract.
@@ -75,26 +75,53 @@ The systemd unit runs as the non-root `iot-platform` user and applies `NoNewPriv
 
 Source files, tests, local environment files, Git metadata, coverage, `node_modules`, web application workspaces, and the shared design-system workspace are excluded. Workspace metadata is removed from the packaged backend manifest. The release manifest also records the sealed-source SHA-256 fingerprint (`package-lock.json`, baseline manifest, repository tree). `npm run release:verify` checks required files, rejects symlinks/unsupported entries, requires the packaged file set to match the manifest exactly, and verifies all manifest hashes before upload. The verifier is also packaged and is executed again by the VPS installer before any release files are activated.
 
-`release:verify` is deliberately **not** a production-approval claim. Before deployment, run `npm run release:approve -- --release=<release-dir> --evidence=<rescue-02b-evidence.json> --simulated-hardware=reports/simulated-hardware-uat/summary.json` from the same sealed source baseline. The normal automated path re-validates RESCUE-02B live evidence plus the `SIMULATED_HARDWARE_LIVE_SERVICE` summary, requires both to match the current sealed source and exact firmware SHA-256, then writes `production-approval.json`. The receipt binds the release-manifest SHA-256, source fingerprint, evidence SHA-256 and simulated-hardware summary/firmware digest. A legacy physical OTA/device-observed digest receipt remains accepted when genuinely available, but physical lab equipment is not required to close the automated software gate. `release:verify --require-approved` re-checks either receipt fail-closed.
+`release:verify` is deliberately **not** a production-approval claim. Repository/UAT green alone cannot create deployment approval. Production approval now has two independent evidence classes: software/live-service evidence and target-environment evidence.
+
+On the target environment, copy `ops/production/environment-attestation.example.json` to a private operator-owned attestation file, replace every placeholder, and mark each external check true only after it was actually verified. Set the Linux host requirement `vm.overcommit_memory=1`, install the runtime and backup environment files with the required owners/mode, then capture environment evidence against the exact release manifest:
+
+```bash
+node <release-dir>/scripts/create-production-environment-evidence.mjs \
+  --release=<release-dir> \
+  --env=/etc/iot-platform/iot-platform.env \
+  --backup-env=/etc/iot-platform/iot-platform-backup.env \
+  --attestation=/secure/path/environment-attestation.json \
+  --output=/secure/path/production-environment-evidence.json
+```
+
+The preflight requires Node.js 22, `vm.overcommit_memory=1`, protected environment-file ownership/mode, non-placeholder secrets, loopback credentialed PostgreSQL/Redis URLs, `mqtts://`, HTTPS CORS/email relay, and `SCHEDULER_RUNTIME_ENABLED=true`, `AUTOMATION_RUNTIME_ENABLED=true`, `NOTIFICATION_RUNTIME_ENABLED=true`. It also requires explicit operator attestations for broker ACL/CA-hostname validation, DNS/TLS, off-host backup, monitoring access, and named backup/monitoring/rollback owners. Reserved example domains are rejected. Environment evidence expires after 24 hours because broker ACL/TLS/DNS/monitoring facts can change without changing the env-file bytes; stale evidence must be recaptured before deployment.
+
+Bring only the generated evidence JSON back to the trusted sealed-source approval workspace; do not copy production secrets. Then run:
+
+```bash
+npm run release:approve -- \
+  --release=<release-dir> \
+  --evidence=<rescue-02b-evidence.json> \
+  --simulated-hardware=reports/simulated-hardware-uat/summary.json \
+  --environment=<production-environment-evidence.json>
+```
+
+The normal automated hardware path remains `SIMULATED_HARDWARE_LIVE_SERVICE`; a genuine physical OTA/device digest remains an optional field-validation path. `production-approval.json` binds the exact release manifest, sealed-source fingerprint, software/live evidence, hardware evidence, and environment-evidence SHA-256. `release:verify --require-approved` requires both approval and environment sidecars. At install time, `verify-production-environment-current.mjs` also compares the approved runtime/backup environment hashes, owners/modes, Node major, and Redis host sysctl to the current target, so environment drift after preflight blocks deployment.
 
 CI uploads the verified release directory with GitHub Actions artifact digest validation and a bounded retention period.
 
 ## Deployment Procedure
 
 1. Provision Node.js 22, PostgreSQL 16 client tools, Redis, Nginx, GnuPG, and systemd.
-2. Create the `iot-platform` system user and required directories.
-3. Install the reviewed environment file with mode `0640`.
-4. Replace all example hostnames, TLS paths, and secret markers.
-5. Validate Nginx with `nginx -t` before reload.
-6. Run `install-release.sh` with an immutable release identifier and the **approved** artifact directory.
-7. Before dependency installation or migration, the installer runs the packaged release verifier with `--require-approved`; an artifact without a valid `production-approval.json` receipt is rejected. Only then does it perform exact `npm ci`, extract only the unquoted `DATABASE_URL` entry from the reviewed runtime environment for Prisma migration deployment without executing the environment file, prune development dependencies, activate the release symlink atomically, restart systemd, and verify liveness.
-8. Verify logs with `journalctl -u iot-platform.service` and verify readiness. MQTT remains expected `not_ready` until its separately approved production transport exists.
+2. Install `ops/sysctl/99-iot-platform.conf` as `/etc/sysctl.d/99-iot-platform.conf`, run `sysctl --system`, and verify `vm.overcommit_memory=1`; production preflight and install-time verification reject any other value.
+3. Create the `iot-platform` system user and required directories.
+4. Install both reviewed environment files with mode `0640` and required owners; replace every example hostname and secret marker.
+5. Explicitly enable Scheduler, Automation, and Notification runtime flags in the reviewed production environment.
+6. Validate Nginx with `nginx -t`, broker TLS identity/ACLs, DNS/TLS, monitoring access, and backup/rollback ownership.
+7. Capture production-environment evidence and create `production-approval.json` only after the environment evidence and software/UAT evidence validate against the exact release manifest.
+8. Run `install-release.sh` with an immutable release identifier and the **approved** artifact directory.
+9. Before dependency installation or migration, the installer runs `release:verify --require-approved` and then verifies that the current environment files and host sysctl still match the approved preflight evidence. Only then does it perform exact `npm ci`, deploy Prisma migrations, prune development dependencies, activate the release symlink atomically, restart systemd, and verify liveness.
+10. Verify logs with `journalctl -u iot-platform.service`, `/health/ready`, MQTT publisher readiness, Scheduler/Automation/Notification execution, and monitoring access.
 
 Only ports 80 and 443 should be public. PostgreSQL, Redis, application port 3000, and `/metrics` remain private. The Nginx template restricts `/metrics` to loopback; its bearer token remains defense in depth.
 
 ## Database Migration and Rollback Rule
 
-Prisma migrations are deployed before the release symlink changes. Every migration shipped before production approval must be compatible with the immediately previous application release.
+Prisma migrations are deployed before the release symlink changes. Every migration shipped before production approval must be compatible with the immediately previous application release. `npm run migration:compatibility:verify` fail-closes new destructive/backward-incompatible SQL after the reviewed historical cutoff; future schema evolution must use expand-contract.
 
 Application rollback switches the `current` symlink to `previous` and restarts systemd. It does **not** reverse database migrations automatically. Destructive or backward-incompatible database changes require a separately reviewed expand-and-contract plan and a tested database restore decision.
 

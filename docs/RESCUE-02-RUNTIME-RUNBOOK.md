@@ -255,23 +255,26 @@ it is never relabelled PHYSICAL/HIL. Missing physical lab equipment is non-block
 for software production-readiness. A later physical/site run can still be attached
 as optional field evidence through the legacy physical checklist and OTA digest path.
 
-After `npm run release:build` and `npm run release:verify`, run the separate
-production approval gate from the same sealed source baseline. The normal automated
-path uses the combined UAT summary emitted by GitHub:
+After `npm run release:build` and `npm run release:verify`, production deployment still
+requires separately captured target-environment evidence. On the target host, use the
+packaged `create-production-environment-evidence.mjs` with the exact release manifest,
+reviewed runtime/backup env files, and operator attestation. Do not copy secrets back to
+the repository; copy only the resulting evidence JSON. Then run the separate approval
+gate from the same sealed source baseline:
 
 ```bash
 npm run release:approve -- \
   --release=artifacts/iot-platform-release \
   --evidence=reports/rescue-02b-evidence-<timestamp>.json \
-  --simulated-hardware=reports/simulated-hardware-uat/summary.json
+  --simulated-hardware=reports/simulated-hardware-uat/summary.json \
+  --environment=/secure/path/production-environment-evidence.json
 ```
 
 `release:approve` re-validates the full automated report, live runtime/broker evidence,
-source fingerprint, exact release manifest and simulated-hardware summary. The summary
+source fingerprint, exact release manifest, simulated-hardware summary, and manifest-bound production-environment evidence. The summary
 must be `PASS`, classification `SIMULATED_HARDWARE_LIVE_SERVICE`, match the current
 `package-lock.json`/baseline manifest/repository tree SHA-256 values, and carry the exact
-firmware artifact SHA-256. The generated `production-approval.json` binds all of those
-values and is re-verified before installation.
+firmware artifact SHA-256. The generated `production-approval.json` binds all of those values plus the environment-evidence SHA-256 and is re-verified before installation. The installer additionally verifies that the current production env files and `vm.overcommit_memory` still match the approved preflight evidence.
 
 The historical physical path remains backward-compatible: omit `--simulated-hardware`
 only when the physical ESP32 checklist and production OTA artifact/device-observed

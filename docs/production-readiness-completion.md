@@ -6,9 +6,9 @@
 
 Baseline: `eb3ecde` — MQTT Production Transport Implementation.
 
-## Current Authority — 2026-10-04
+## Current Authority — 2026-10-05
 
-The authoritative repository checkpoint is commit `2cecb7aa4020ffb6a566949f2e5a44794432d0a7`, GitHub Actions run `37212540616`, evidence `logs_100795117631.zip`: full automated acceptance green. The active product-surface completeness batch (Organization/Branch UI lifecycle, tenant Custom Role writer lifecycle, webhook secret rotation) must obtain its own local + GitHub Heavy UAT before replacing that authority. Production deployment approval remains separate and environment-specific.
+The authoritative repository checkpoint is commit `43d20b1ef54142dde27f38cf7676fb8fbf05a46c`, GitHub Actions run `37261297295`, evidence `logs_100923339374.zip`: full automated acceptance green, including the completed product-surface closure. The active final production-readiness hardening batch must obtain its own local + GitHub Heavy UAT before replacing that authority. Production deployment approval remains separate and now requires manifest-bound production-environment evidence; repository/UAT green alone cannot authorize deployment.
 
 
 This review closes the repository-level validation loop without claiming that an unknown production environment has been approved. The script commits only after every local gate below succeeds.
@@ -19,6 +19,7 @@ This review closes the repository-level validation loop without claiming that an
 - Production dependency audit policy
 - Deployment shell syntax
 - Prisma schema validation
+- Migration rollback-compatibility policy verification (future destructive SQL is fail-closed)
 - NestJS production build
 - Focused completion-review contracts
 - Full Jest suite
@@ -29,6 +30,7 @@ This review closes the repository-level validation loop without claiming that an
 - Verified-TLS MQTT production publisher integration
 - PostgreSQL backup and restore recovery drill
 - Production release build and SHA-256 manifest verification
+- Production-environment preflight verifier self-test and deployment-time environment-drift guard
 - Production artifact startup smoke
 - Git diff and staged diff checks
 
@@ -40,6 +42,7 @@ This review closes the repository-level validation loop without claiming that an
 - PR-004: Resolved by deployment and operational exposure controls.
 - PR-005: Resolved by backup, guarded restore, and automated recovery evidence.
 - PR-006: Controlled by committed release, artifact, lint, audit, and time-bounded dependency policy gates.
+- PR-007: Active hardening closes environment-bound approval, stale-environment rejection at install, production runtime/sysctl preflight, and migration rollback-compatibility; this batch must re-certify locally and in GitHub before replacing the green authority.
 
 ## Environment-Specific Approval Checklist
 
@@ -52,6 +55,9 @@ The repository intentionally does not contain production secrets. Before a real 
 - JWT, webhook, metrics, database, Redis, and backup secrets are non-placeholder values with restrictive file ownership.
 - Off-host backup retention and restore ownership are assigned.
 - Monitoring access and rollback responsibility are assigned.
+- Scheduler, Automation, and Notification runtimes are explicitly enabled in the reviewed production environment.
+- Redis host `vm.overcommit_memory=1` is active before approval and still active at install time.
+- The captured `production-environment-evidence.json` is bound to the exact release manifest and the installed runtime/backup environment file hashes, and is no older than 24 hours at deployment.
 
 ## Architecture Result
 

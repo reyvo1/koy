@@ -48,15 +48,15 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version-file: '.nvmrc'
 
       - name: Cache Prisma engines
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/prisma
           key: prisma-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}
@@ -100,6 +100,9 @@ jobs:
           npm run rescue:gate1-validator:self-test
           npm run release:approval:self-test
           npm run release:approval:gate:self-test
+          npm run production:environment:self-test
+          npm run migration:compatibility:self-test
+          npm run github:actions-runtime:self-test
 
       - name: Verify enterprise wave status synchronization
         run: npm run enterprise:wave-status:verify
@@ -130,6 +133,10 @@ jobs:
 
       - name: Validate Prisma schema
         run: node node_modules/prisma/build/index.js validate
+
+      - name: Verify migration rollback compatibility policy
+        run: npm run migration:compatibility:verify
+
       - name: Run Prisma migrations
         run: node node_modules/prisma/build/index.js migrate deploy
 
@@ -187,7 +194,7 @@ jobs:
         run: npm run test:startup:production
 
       - name: Upload production release artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: iot-platform-${{ github.sha }}
           path: artifacts/iot-platform-release
@@ -210,10 +217,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version-file: '.nvmrc'
 
@@ -292,7 +299,7 @@ jobs:
 
       - name: Upload Wave 3 firmware artifact
         if: matrix.target == 'esp32'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wave3-esp32-firmware
           path: artifacts/wave3-esp32/
@@ -317,15 +324,15 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version-file: '.nvmrc'
 
       - name: Cache Prisma engines
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/prisma
           key: rescue-prisma-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package-lock.json', 'prisma/schema.prisma') }}
@@ -346,7 +353,7 @@ jobs:
           npm run rescue:github-ci:self-test
 
       - name: Download exact Wave 3 firmware artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: wave3-esp32-firmware
           path: artifacts/wave3-esp32
@@ -547,7 +554,7 @@ jobs:
 
       - name: Upload rescue reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rescue-live-emqx-${{ github.sha }}-${{ github.run_attempt }}
           path: reports/

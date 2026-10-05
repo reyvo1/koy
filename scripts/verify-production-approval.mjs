@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
@@ -10,8 +10,10 @@ const argv = process.argv.slice(2);
 const evidenceArg = argv.find((value) => value.startsWith('--evidence='));
 const releaseArg = argv.find((value) => value.startsWith('--release='));
 const simulatedHardwareArg = argv.find((value) => value.startsWith('--simulated-hardware='));
+const environmentArg = argv.find((value) => value.startsWith('--environment='));
 const simulatedHardwarePath = simulatedHardwareArg ? path.resolve(simulatedHardwareArg.slice('--simulated-hardware='.length)) : null;
 const evidencePath = evidenceArg ? path.resolve(evidenceArg.slice('--evidence='.length)) : null;
+const environmentPath = environmentArg ? path.resolve(environmentArg.slice('--environment='.length)) : null;
 const releaseRoot = path.resolve(
   releaseArg ? releaseArg.slice('--release='.length) : process.env.RELEASE_OUTPUT_DIR ?? 'artifacts/iot-platform-release',
 );
@@ -38,6 +40,9 @@ function sha256File(file) {
 
 if (!evidencePath) {
   block('Production approval requires --evidence=<validated RESCUE-02B evidence.json>.');
+}
+if (!environmentPath) {
+  block('Production approval requires --environment=<validated production-environment-evidence.json>. Repository/UAT green is not environment approval.');
 }
 
 const evidenceValidation = spawnSync(
@@ -78,6 +83,25 @@ if (releaseValidation.status !== 0) {
 }
 const releaseManifest = loadJson(releaseManifestPath, 'Release manifest');
 
+const environmentValidation = spawnSync(
+  process.execPath,
+  ['scripts/verify-production-environment-evidence.mjs', `--file=${environmentPath}`],
+  { cwd: root, encoding: 'utf8', windowsHide: true },
+);
+if (environmentValidation.status !== 0) {
+  block(
+    'Production environment evidence is invalid.',
+    `${environmentValidation.stdout ?? ''}${environmentValidation.stderr ?? ''}`.trim(),
+  );
+}
+const environmentEvidence = loadJson(environmentPath, 'Production environment evidence');
+const releaseManifestSha256 = sha256File(releaseManifestPath);
+if (environmentEvidence.releaseManifestSha256 !== releaseManifestSha256) {
+  block('Production environment evidence is not bound to this exact release manifest.');
+}
+const packagedEnvironmentPath = path.resolve(releaseRoot, 'production-environment-evidence.json');
+if (environmentPath !== packagedEnvironmentPath) copyFileSync(environmentPath, packagedEnvironmentPath);
+
 const currentFingerprint = {
   packageLockSha256: sha256File(path.resolve(root, 'package-lock.json')),
   baselineManifestSha256: sha256File(path.resolve(root, 'BASELINE-MANIFEST.sha256')),
@@ -101,7 +125,9 @@ const approvalReceipt = {
   gate: 'PRODUCTION_RELEASE',
   status: 'APPROVED',
   approvedAt: new Date().toISOString(),
-  releaseManifestSha256: sha256File(releaseManifestPath),
+  releaseManifestSha256,
+  environmentEvidenceSha256: sha256File(packagedEnvironmentPath),
+  environmentObservedAt: environmentEvidence.observedAt,
   sourceFingerprint: { ...releaseManifest.sourceFingerprint },
   evidenceSha256: sha256File(evidencePath),
   evidenceGeneratedAt: evidence.generatedAt,
@@ -138,6 +164,7 @@ const approvedValidation = spawnSync(
 );
 if (approvedValidation.status !== 0) {
   try { unlinkSync(approvalPath); } catch {}
+  try { unlinkSync(packagedEnvironmentPath); } catch {}
   block(
     'Production approval receipt failed post-write verification.',
     `${approvedValidation.stdout ?? ''}${approvedValidation.stderr ?? ''}`.trim(),
@@ -147,6 +174,7 @@ if (approvedValidation.status !== 0) {
 console.log('PASS  RESCUE-02B evidence is valid and source-bound.');
 console.log(simulatedHardware ? 'PASS  Simulated-hardware UAT receipt is source-bound and firmware-SHA-bound.' : 'PASS  Legacy physical OTA artifact-byte/device digest evidence is validated.');
 console.log('PASS  Release artifact manifest covers the exact packaged file set.');
+console.log('PASS  Production environment evidence is valid and bound to the exact release manifest.');
 console.log('PASS  Release source fingerprint matches the current sealed baseline.');
 console.log(`PASS  Production approval receipt written and re-verified: ${approvalPath}`);
 console.log('Result: PRODUCTION APPROVAL EVIDENCE PASS');

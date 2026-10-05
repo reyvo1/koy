@@ -56,6 +56,11 @@ describe('Deployment and Recovery Foundation contract', () => {
     const nginx = read('ops/nginx/iot-platform.conf.template');
     const environment = read('ops/env/iot-platform.env.example');
     expect(environment).toContain('HOST=127.0.0.1');
+    expect(environment).toContain('SCHEDULER_RUNTIME_ENABLED=true');
+    expect(environment).toContain('AUTOMATION_RUNTIME_ENABLED=true');
+    expect(environment).toContain('NOTIFICATION_RUNTIME_ENABLED=true');
+    expect(environment).toContain('EMAIL_RELAY_URL=https://');
+    expect(environment).toContain('EMAIL_RELAY_TOKEN=REPLACE_WITH_AT_LEAST_32_RANDOM_BYTES');
     // Assert the *supported* HTTP/2 form, not just the presence of a 443 listener.
     // `listen 443 ssl http2` is deprecated in current nginx: it warns on every reload and
     // `nginx -t` still reports success, so pinning the old string here protected a defect.
@@ -77,6 +82,14 @@ describe('Deployment and Recovery Foundation contract', () => {
     const install = read('ops/scripts/install-release.sh');
     const rollback = read('ops/scripts/rollback-release.sh');
     expect(install).toContain('verify-production-release.mjs" --require-approved');
+    expect(install).toContain('verify-production-environment-current.mjs');
+    expect(install).toContain('verify-migration-compatibility.mjs');
+    expect(install.indexOf('verify-migration-compatibility.mjs')).toBeLessThan(
+      install.indexOf('run migrate:deploy'),
+    );
+    expect(install.indexOf('verify-production-environment-current.mjs')).toBeLessThan(
+      install.indexOf('npm --prefix "$release_dir" ci'),
+    );
     expect(install.indexOf('--require-approved')).toBeLessThan(
       install.indexOf('npm --prefix \"$release_dir\" ci'),
     );
@@ -163,9 +176,14 @@ describe('Deployment and Recovery Foundation contract', () => {
     expect(workflow).toContain('Non-mutating lint');
     expect(workflow).toContain('Production dependency audit policy');
     expect(workflow).toContain('PostgreSQL recovery drill');
+    expect(workflow).toContain('Verify migration rollback compatibility policy');
+    expect(workflow).toContain('npm run migration:compatibility:verify');
+    expect(workflow).toContain('actions/checkout@v7');
+    expect(workflow).toContain('actions/setup-node@v7');
+    expect(workflow).toContain('actions/cache@v5');
     expect(workflow).toContain('Build production release artifact');
     expect(workflow).toContain('Production artifact startup smoke');
-    expect(workflow).toContain('actions/upload-artifact@v4');
+    expect(workflow).toContain('actions/upload-artifact@v7');
     expect(workflow).toContain('retention-days: 14');
   });
 

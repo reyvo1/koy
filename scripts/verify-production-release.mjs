@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 
@@ -9,6 +10,7 @@ const releaseRoot = resolve(
 );
 const manifestPath = resolve(releaseRoot, 'release-manifest.json');
 const approvalPath = resolve(releaseRoot, 'production-approval.json');
+const environmentEvidencePath = resolve(releaseRoot, 'production-environment-evidence.json');
 const requireApproved = process.argv.slice(2).includes('--require-approved');
 const required = [
   'dist/main.js',
@@ -20,6 +22,8 @@ const required = [
   'ops/systemd/iot-platform-backup.service',
   'ops/systemd/iot-platform-backup.timer',
   'ops/nginx/iot-platform.conf.template',
+  'ops/sysctl/99-iot-platform.conf',
+  'ops/security/migration-compatibility-policy.json',
   'ops/env/iot-platform.env.example',
   'ops/env/iot-platform-backup.env.example',
   'ops/scripts/install-release.sh',
@@ -27,6 +31,11 @@ const required = [
   'ops/scripts/postgres-backup.sh',
   'ops/scripts/postgres-restore.sh',
   'scripts/verify-production-release.mjs',
+  'scripts/verify-production-environment-evidence.mjs',
+  'scripts/create-production-environment-evidence.mjs',
+  'scripts/verify-production-environment-current.mjs',
+  'scripts/verify-migration-compatibility.mjs',
+  'ops/production/environment-attestation.example.json',
   'docs/deployment-recovery.md',
   'release-manifest.json',
 ];
@@ -134,7 +143,7 @@ for (const file of manifest.files) {
   }
 }
 
-const reservedSidecars = new Set(['production-approval.json']);
+const reservedSidecars = new Set(['production-approval.json', 'production-environment-evidence.json']);
 const actualPayloadPaths = new Set(
   actualFiles.filter((filePath) => filePath !== 'release-manifest.json' && !reservedSidecars.has(filePath)),
 );
@@ -191,6 +200,40 @@ if (approvalExists) {
   }
   if (approval.releaseManifestSha256 !== digest(manifestPath)) {
     throw new Error('Production approval receipt is not bound to this release manifest');
+  }
+  if (!existsSync(environmentEvidencePath) || !statSync(environmentEvidencePath).isFile()) {
+    throw new Error('Production approval requires production-environment-evidence.json sidecar');
+  }
+  if (!sha256Pattern.test(approval.environmentEvidenceSha256 ?? '')) {
+    throw new Error('Production approval receipt environmentEvidenceSha256 is missing or invalid');
+  }
+  if (approval.environmentEvidenceSha256 !== digest(environmentEvidencePath)) {
+    throw new Error('Production environment evidence sidecar digest does not match approval receipt');
+  }
+  if (!validTimestamp(approval.environmentObservedAt)) {
+    throw new Error('Production approval receipt environmentObservedAt is missing, invalid, or future-dated');
+  }
+  let environmentEvidence;
+  try {
+    environmentEvidence = JSON.parse(readFileSync(environmentEvidencePath, 'utf8'));
+  } catch (error) {
+    throw new Error(`Production environment evidence sidecar is not valid JSON: ${error.message}`);
+  }
+  if (environmentEvidence.releaseManifestSha256 !== digest(manifestPath)) {
+    throw new Error('Production environment evidence is not bound to this release manifest');
+  }
+  if (environmentEvidence.observedAt !== approval.environmentObservedAt) {
+    throw new Error('Production environment evidence observedAt does not match approval receipt');
+  }
+  const environmentVerification = spawnSync(
+    process.execPath,
+    [resolve(releaseRoot, 'scripts/verify-production-environment-evidence.mjs'), `--file=${environmentEvidencePath}`],
+    { cwd: releaseRoot, encoding: 'utf8', windowsHide: true },
+  );
+  if (environmentVerification.status !== 0) {
+    throw new Error(
+      `Production environment evidence sidecar failed verification: ${`${environmentVerification.stdout ?? ''}${environmentVerification.stderr ?? ''}`.trim()}`,
+    );
   }
   for (const field of ['packageLockSha256', 'baselineManifestSha256', 'repositoryTreeSha256']) {
     if (approval.sourceFingerprint?.[field] !== manifest.sourceFingerprint?.[field]) {

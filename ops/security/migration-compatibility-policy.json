@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "mode": "expand-contract-required-for-new-destructive-migrations",
+  "approvedHistoricalMigrations": [
+    {
+      "name": "20260713000001_auth_foundation_update",
+      "sha256": "4333563ed5d00d658de239447ac8f1bc1b2192618001087188288e9eb5c620ce",
+      "reason": "Historical pre-production auth token column replacement."
+    },
+    {
+      "name": "20260713000002_auth_comprehensive_update",
+      "sha256": "d3687db60a157c9d85d80cae39a7df72c224360a8574917ac683c77d91eb4657",
+      "reason": "Historical pre-production auth token schema consolidation."
+    },
+    {
+      "name": "20260713000003_auth_family_session",
+      "sha256": "f2e2858abcd9b257d68af90bf42956ddd1a293f9072d11669e54ec4b1ce39b76",
+      "reason": "Historical pre-production family-session NOT NULL transition."
+    },
+    {
+      "name": "20260715005905_reconcile_command_idempotency",
+      "sha256": "7db53c42001c9d37f5742ede7f93bb4c836c593db3cb30761be1613ee169e6c2",
+      "reason": "Historical pre-production command status enum reconciliation."
+    },
+    {
+      "name": "20260822200000_module_13_scheduler_persistence_foundation",
+      "sha256": "d5ec9d767cfd8d00473a896e811db41e18178a7702e8455f029e4b98aa658fc0",
+      "reason": "Historical pre-production scheduler schema replacement."
+    },
+    {
+      "name": "20260823040000_module_17_smart_space_hierarchy_foundation",
+      "sha256": "3503a1212b57586cd4cae51fe4c40c82ef356442afa3bf17f509ba393a300bea",
+      "reason": "Historical pre-production SpaceKind enum conversion."
+    },
+    {
+      "name": "20261001140000_device_location_tenant_history",
+      "sha256": "ac34654007d215064552d355df6a0c0da65515f71d41339a9227224993763c56",
+      "reason": "Reviewed pre-production tenant-history cleanup before NOT NULL enforcement."
+    },
+    {
+      "name": "20261005011500_tenant_role_override_tenant_integrity",
+      "sha256": "08b9791a35b755e4f7fa255d497b42db0dec0006cb47c1d6c18fea248ebb8d4c",
+      "reason": "Reviewed FK replacement in one migration; old role FK is dropped only to install the stronger tenant-composite FK."
+    }
+  ],
+  "historicalCutoffMigration": "20261005011500_tenant_role_override_tenant_integrity"
+}

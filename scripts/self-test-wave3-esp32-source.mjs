@@ -30,7 +30,7 @@ assert(ci.includes('Wave 3 ESP-IDF ${{ matrix.target }} build and QEMU boot'), '
 assert(ci.includes('node scripts/run-wave3-qemu-boot.mjs') && !ci.includes('pytest-embedded'), 'mandatory QEMU boot uses the ESP-IDF-compatible repository-native runner without pytest-embedded version drift');
 assert(ci.includes('espressif/install-esp-idf-action@v1') && ci.includes('v5.5.5'), 'GitHub CI pins a supported ESP-IDF 5.5.5 toolchain');
 assert(ci.includes('wave3:esp32:simulate'), 'live rescue job runs the Wave 3 device digital-twin simulation');
-assert(ci.includes('actions/download-artifact@v4') && ci.includes('wave3-esp32-firmware'), 'live simulation consumes the exact firmware artifact built by the ESP-IDF job');
+assert(ci.includes('actions/download-artifact@v7') && ci.includes('wave3-esp32-firmware'), 'live simulation consumes the exact firmware artifact built by the ESP-IDF job');
 assert(ci.includes('wokwi/wokwi-ci-action@v1'), 'optional Wokwi hardware simulation is wired when a repository token is configured');
 assert(simulator.includes("classification: 'SIMULATED_HARDWARE_LIVE_SERVICE'") && simulator.includes('does not block software wave progression'), 'simulation evidence is explicitly classified as source-bound simulated-hardware/live-service and cannot impersonate physical HIL proof');
 assert(simulator.includes('wrong OTA digest was not rejected') && simulator.includes('interrupted OTA stream was not rejected'), 'live simulator fails closed on corrupt and interrupted OTA artifacts');

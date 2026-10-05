@@ -25,7 +25,7 @@ metadata. Never place passwords, tokens, webhook secrets, private keys, or
 credential values in an evidence file.
 
 
-Release artifact integrity is separate from production approval: `release:verify` only proves the package/manifest, while `release:approve` requires the live RESCUE evidence plus either the source-bound simulated-hardware UAT summary or genuine legacy physical OTA evidence.
+Release artifact integrity is separate from production approval: `release:verify` only proves the package/manifest, while `release:approve` requires the live RESCUE evidence, separately validated target `PRODUCTION_ENVIRONMENT` evidence bound to that exact manifest, and either the source-bound simulated-hardware UAT summary or genuine legacy physical OTA evidence.
 
 ## Gate order
 

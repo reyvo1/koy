@@ -1,7 +1,21 @@
 # Session Checkpoint — Production Product-Surface Completeness
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-13; active=none -->
-## Latest candidate evidence — RED at live Organization probe
+
+## Current authority — 2026-10-05 final production-readiness hardening
+
+- GitHub Actions run `37261297295` / commit `43d20b1ef54142dde27f38cf7676fb8fbf05a46c` / evidence `logs_100923339374.zip` is the authoritative **ALL-GREEN** software checkpoint.
+- Evidence confirms 281/281 Jest suites, 2476/2476 tests, E2E, PostgreSQL integration (15 suites / 63 tests), MQTT integration, ESP32 + ESP32-C3 real ESP-IDF/QEMU, deep-product live regression, and full automated acceptance are green.
+- `SIMULATED_HARDWARE_LIVE_SERVICE` remains the automated hardware-equivalent evidence label. PHYSICAL/HIL remains optional/non-blocking for software certification and must never be relabelled as simulated evidence.
+- Production deployment is still **NOT APPROVED** until the real target environment produces validated environment evidence bound to the exact release manifest. Repository/UAT green alone cannot write deployment approval.
+- Active batch hardens production approval/environment evidence, deployment-time environment drift detection, migration rollback compatibility, production runtime template defaults, Redis host preflight, and GitHub Actions Node 24 runtime pins. Existing Wave 1–13/UAT gates remain mandatory and are not weakened.
+- Exported hardening candidate structural validation is **PASS**: production environment/approval/migration/action-runtime self-tests, handoff/deep-product/Prisma/GitHub-CI/wave-status/pre-push self-tests, `rescue:validate` 505/505, syntax/JSON/shell checks, and sealed source manifest. Dependency-backed targeted/full pre-push and GitHub Heavy UAT remain pending on the real checkout and must not be inferred from snapshot checks.
+
+## Next action
+
+Complete the production-readiness hardening batch, run dependency-free structural/self-tests, then run targeted QA + the existing full local pre-push/full Jest gate in the real clean `main@43d20b1ef54142dde27f38cf7676fb8fbf05a46c` checkout. Only after a clean diff review may one commit/push trigger GitHub Heavy UAT. Production approval remains separate and requires real environment evidence. **FIRST FAILING GATE: none for the authoritative checkpoint; the active hardening batch is not yet certified.**
+
+## Superseded candidate evidence — historical RED at live Organization probe
 
 - GitHub Actions run `37222382814` / commit `99d912da9d36f5354f50198ca036883670c84445` / evidence `logs_100821663855.zip` is the newest candidate and is **NOT GREEN**.
 - Core CI, build, Prisma migration, full Jest, database/MQTT/recovery coverage, and both ESP32/ESP32-C3 ESP-IDF/QEMU jobs completed without a failing step in the uploaded bundle.
@@ -11,7 +25,7 @@
 - The authoritative all-green baseline remains run `37212540616` / commit `2cecb7aa4020ffb6a566949f2e5a44794432d0a7`.
 
 
-## Current authority — latest all-green checkpoint
+## Superseded authority — historical all-green checkpoint
 
 - GitHub Actions run `37212540616` / commit `2cecb7aa4020ffb6a566949f2e5a44794432d0a7` / evidence `logs_100795117631.zip` is the authoritative **ALL-GREEN** software checkpoint.
 - Evidence confirms 281/281 Jest suites, 2443/2443 tests, E2E, PostgreSQL integration, MQTT integration, ESP32 + ESP32-C3 ESP-IDF/QEMU, and the heavy live acceptance chain are green.

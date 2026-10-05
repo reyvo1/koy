@@ -351,7 +351,7 @@ Deployment and Recovery Foundation adds repository-owned operational gates:
 - `npm run baseline:manifest:generate` writes the canonical source tree/hash manifest while excluding only runtime/build artifacts; `npm run baseline:manifest:verify` fails if source-set coverage or hashes drift;
 - `npm run release:build` creates a source-free, secret-free production release directory and SHA-256 manifest;
 - `npm run release:verify` verifies required files, exact manifest file-set coverage, symlink rejection, checksums, and packaged lockfile provenance;
-- `npm run release:approve -- --release=<dir> --evidence=<file>` is the separate final approval evidence gate: current-source RESCUE-02B evidence must validate, production OTA must be PASS with matching artifact/device SHA-256, and the release source fingerprint must match the sealed baseline;
+- `npm run release:approve -- --release=<dir> --evidence=<file> --environment=<production-environment-evidence.json>` is the separate final approval evidence gate: current-source RESCUE-02B evidence must validate, simulated-hardware or genuine physical evidence must remain source-bound, the environment receipt must validate and match the exact release manifest, and the release source fingerprint must match the sealed baseline;
 - `npm run release:verify` verifies required files and every manifest checksum;
 - `npm run test:startup:production` starts the compiled release under production configuration, proves liveness, and confirms MQTT readiness remains honestly unavailable;
 - CI validates deployment shell syntax and uploads the verified artifact with bounded retention.

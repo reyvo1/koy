@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "environment": "production",
+  "publicOrigin": "https://app.example.com",
+  "mqttAclVerified": false,
+  "mqttCaHostnameVerified": false,
+  "dnsTlsVerified": false,
+  "offHostBackupVerified": false,
+  "monitoringAccessVerified": false,
+  "backupOwner": "REPLACE_WITH_OWNER",
+  "monitoringOwner": "REPLACE_WITH_OWNER",
+  "rollbackOwner": "REPLACE_WITH_OWNER",
+  "reviewedBy": "REPLACE_WITH_OPERATOR"
+}

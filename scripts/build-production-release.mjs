@@ -27,6 +27,10 @@ const requiredSources = [
   '.nvmrc',
   'ops',
   'scripts/verify-production-release.mjs',
+  'scripts/verify-production-environment-evidence.mjs',
+  'scripts/create-production-environment-evidence.mjs',
+  'scripts/verify-production-environment-current.mjs',
+  'scripts/verify-migration-compatibility.mjs',
   'docs/deployment-recovery.md',
 ];
 const provenanceSources = [
@@ -65,6 +69,11 @@ function listFiles(directory) {
 function sha256(path) {
   return createHash('sha256').update(readFileSync(path)).digest('hex');
 }
+
+execFileSync(process.execPath, ['scripts/verify-migration-compatibility.mjs'], {
+  cwd: root,
+  stdio: 'inherit',
+});
 
 for (const path of requiredSources) {
   requirePath(path);
