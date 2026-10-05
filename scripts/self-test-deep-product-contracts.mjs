@@ -246,6 +246,11 @@ assert(
     !runtimeExtension.includes('prisma.organizationBranch.deleteMany'),
   'organization live UAT proves primary protection and performs cleanup through product APIs instead of direct Prisma mutation',
 );
+assert(
+  runtimeExtension.includes('primaryDetachRejected.status === 409') &&
+    !runtimeExtension.includes('primaryDetachRejected.response.status'),
+  'organization live UAT reads the apiRequest status contract directly while preserving the mandatory HTTP 409 assertion',
+);
 
 const roleController = read('src/rbac/tenant-role.controller.ts');
 const roleUi = read('apps/admin-web/components/tenant-role-management-content.tsx');

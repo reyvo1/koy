@@ -60,15 +60,15 @@ c79732ae798cc94b95d47badcd696744e4e2ce91709320ad5e7a3cf3ab369437  ./AI-Developme
 be2560b7bcfe6b3d9a669d40520eba8942bf5a999321451270d9244496c12d3e  ./AI-Development-Kit/standards/DATABASE.md
 4a5f89ee34342b3d96898275e1f851d8db3caf997ee8e43153a638c72b3c21cb  ./AI-Development-Kit/standards/DEVOPS.md
 dcba0eed20ddd949357b9e72c7bdd8fcf0163596e9aba7c6672d61e2a3618111  ./AI-Development-Kit/standards/SECURITY.md
-70e1a082438403337bd4ff30a1138e3d168be3092707d8a4162845c1d2ee88de  ./AI-Development-Kit/standards/TESTING.md
+8394d5daca900e7747d0d0776c69451057501cee6d8cf46386735950e67bbcc2  ./AI-Development-Kit/standards/TESTING.md
 7acdf9ad12f53de9b1204e671a93996119e7b8ea8cfb6c95da6b6d53175fb9c2  ./AI-Development-Kit/templates/ADR-TEMPLATE.md
 cab10a82cb5f2255ecdf99981067119041beb07ab6c1f1976e531d10db5fd724  ./AI-Development-Kit/templates/MODULE-STATUS-TEMPLATE.md
 68f8de30afc578e0ab20ac92ef560f3081a95d699d998621092f1f61c0d00791  ./AI-Development-Kit/workflows/AGENT-EXECUTION-LOOP.md
 78e5c067c68636d36a3289d001fd159176a7792b7e33af206463d7aaa93a0f7c  ./AI-Development-Kit/workflows/FAILURE-PROTOCOL.md
-6b9e74f4af5d5ce399627757b4c55007ba375b717103984b1e3085b037439bca  ./CURRENT-STATE.md
+73e8a5a6441f4351381bd4f57db52916e2babc47bed32883545014714c0e7dc3  ./CURRENT-STATE.md
 bd29d21f37c224e1d6b4af71e0025d8f4019b3914381248356add4266724f1b0  ./GATE-1-STATUS.md
-501ee7e0064c922962f03258aea0955d5c78dfa507518d17a5859a2487c32e6f  ./PASTE-KE-CHAT-BERIKUTNYA.txt
-9b02ac4bc74e97c88bc551c010c2265062bafca4d3811559079c8ec48e8bd7f2  ./PROJECT-HANDOFF.md
+ae856bbfa5f59bf9692e8fe3f82839a019a2ebcf664a76866799db19bce56f2d  ./PASTE-KE-CHAT-BERIKUTNYA.txt
+494131fe4714ef4ef525a9ccb1f4fc6186cbae6ba9c4e33d108c1b57e17e7afc  ./PROJECT-HANDOFF.md
 818d1504f9c83a672557cc3c45452c033f04098ce52f609be506b3bbe7dfe7d6  ./UI-DESIGN-SYSTEM.md
 c2482384a4f53220f51123f4fd6ae19151c47cb1a15dc2d49f9a8228beaaa964  ./apps/admin-web/.env.example
 63f2c50380ed6303237cce215ce27af1d620d094c215e28d1b1538a3c070e3bb  ./apps/admin-web/AGENTS.md
@@ -414,7 +414,7 @@ bead9f184b27083639c20803cac92b239a55bcea908cf442f5eed777f6b59df9  ./apps/user-we
 ccd2a17f28b9205adc19fbf05b2a9389dc24115b8ce40b6d958777af90bea7a1  ./apps/user-web/postcss.config.mjs
 7794f4a44d2c31c1f33e91477a00025f4e62687a88946b7c17f58f26257ef2e8  ./apps/user-web/public/icon.png
 38ee09e8ee48c7e75cab63bd076513018ca07b655295664d07c107e408606495  ./apps/user-web/tsconfig.json
-d35bee1136da052d4a1ea92191e798bcdfeafa7ff6103a13730b92fbadca19c1  ./chat-session.md
+1b3187e56db6b803975dfc53e581c4088d56405042546e0465c081f5fb18ede1  ./chat-session.md
 08395048b09eab1f15b7264df8b76ae8b4e99634c0f516aa3ce775042bd1859e  ./config/performance-budget.json
 57e9cc3083ac5d0b99e00ed9afa5f740d958130437c0d6a1b52d7ed89ad04fb5  ./docker-compose.rescue.yml
 12b78207cb3ce4d59fefc85abb8fb5fe7412c497252d1b0bc61a189996b84f30  ./docker-compose.yml
@@ -431,7 +431,7 @@ e609750984b6a528a218c343a0e3614403e010751dd1529cdc17da3d9148d2cf  ./docs/RESCUE-
 2fd52fea04918f5e778492de8879f074e594fb72c449993eef7b4ef3e8e33921  ./docs/ROADMAP-COMPLETE.md
 b7c50d5ecd0ef5538e96d0c7c2b40311e951e764d53f6f16f27f516f3eb1c911  ./docs/ROADMAP-SMART-HOTEL.md
 6149db8093c4f5835d3ee5bf7a76ae1f90c6fad4f00cdf96d00ddb491a087574  ./docs/SECRET-SCAN-POLICY.md
-cfe286ebac7d467907bc91fe3498b011c780f58b29443c9f81bf0e437a08f519  ./docs/SESSION-CHECKPOINT.md
+9c862be683760a713669e7dad8d27d58d248984b30b7fb865315b560f8a22259  ./docs/SESSION-CHECKPOINT.md
 03d88ce7efa18d6b1381392e386db54b5f026a9e345f02e6299c07d6102d41bb  ./docs/SESSION-HANDOFF-PROTOCOL.md
 cc7efd6089313daacae59b9e676431d674b7b8e45702a812618728689fe7c16e  ./docs/STAGING-RUNBOOK.md
 1fc4adecc7abe855470936cef9ac09129d7b83a8926f1d8bddbfc244c1a5f2dd  ./docs/UAT-CHECKLIST.md
@@ -723,7 +723,7 @@ ace113cf03475b3e8f486701750255ee54405cac0f12d33eb885a8c786a26960  ./scripts/run-
 9328744d957312686c5b275740cb2c45f76227bbd552aee1f7530ebe3e66878d  ./scripts/run-rescue-auth-selfservice-flow.mjs
 72ab6c09486fa09ae2ddfdbf5cf4ff4884c25b77536575276e350ec1e02d7f75  ./scripts/run-rescue-gate1.mjs
 c69815631691a1a3552e3a4d62b942693b34878d4f95c70fe7e39d60db603334  ./scripts/run-rescue-live-broker-smoke.mjs
-1fbe349f6d06bc2312717971b2e2eb9149d296648297e78fb0f373c83d066351  ./scripts/run-rescue-runtime-flow-extension.mjs
+e632e42126bf99256971c3793c66b360cfa6bcf5d384b6b5bb5ac3c4971691e8  ./scripts/run-rescue-runtime-flow-extension.mjs
 38e122b2d436b2d095efbe893b64427e2ee617d484df2896dc8cf537a81ba000  ./scripts/run-saved-reports-probe.sh
 b7f7119f80d0a4e9341e4f295f3fd0d7554e8b0054cbf1ccb5f55959001ee336  ./scripts/run-secret-scan.mjs
 94b99abf0e9b5a5434ba6a3a5f64d72ccc88fa42eaab1bfda0a84ab2ba88136f  ./scripts/run-wave3-esp32-simulation.mjs
@@ -739,7 +739,7 @@ a11d340862aeab5ccd1a73b2971f2c8dec0be5d5d2a15b6e9c826499c3778800  ./scripts/seed
 43ebfe345db86e082e7151b82ea3c2f303ef5bba4b2e777c60804714c00d714a  ./scripts/self-test-baseline-hygiene.mjs
 3e91861ee92d8051d85e12fd24c991bb77c612e1974042f2dae4f6f937d54f27  ./scripts/self-test-baseline-manifest.mjs
 21e3f41e2ab47b2e86a9ca52361ac8d0daf48be2abcdc77cd7d16500e1f7b3c3  ./scripts/self-test-dashboard-widget-integration-access.mjs
-8bf17115af3960710db7f0891959351dccf20b35f7e73de6a84bd8c0a06d0673  ./scripts/self-test-deep-product-contracts.mjs
+6d40645ba4ec727963d36507432f5e266a753b712f96b1cc706a68a5e1dc462e  ./scripts/self-test-deep-product-contracts.mjs
 54a770266b30dc979960944999afc30f77bcc6b4f6d497c9ad0c40db796a9cc9  ./scripts/self-test-emqx-webhooks.mjs
 d19bb31dee558031c6777b2e3c033e0fa4c912d4fdeb05b4e22cca2b023f2763  ./scripts/self-test-enterprise-wave-status.mjs
 6ee8de5ac0861ec695d4d1e59e71356cdeff62579a1fee77337b197c0d8b3c8a  ./scripts/self-test-fastify-v5-compat.mjs
@@ -1177,7 +1177,7 @@ d3178aed893dc29e72dba70fcf5ebb5868c75f7ac8b92e4156516b0047609575  ./test/console
 76d0df936d04327af8c3c9522c4b6b683bc49e648749ec9341d7a4c089330bb6  ./test/contract-surface-policy.json
 f89733d829433e0fdb0cd0bde0ba37d1392376bbd0b7292e6b36cb30fb50abb9  ./test/credential-column-exposure.contract.spec.ts
 ef693928a55b95aaf66fa09673f6cae0ea63f4214bd56d69eb5a6bc5193dd131  ./test/database-testing.contract.spec.ts
-b40d857c40561ec52bf70cfa18827751c9971073f821f9cf0a7f8a262eed26f0  ./test/deep-product-integrity.contract.spec.ts
+181d88ac7e25910b729b06030265d2f0e9d4dd538aa03048919f0f01df484099  ./test/deep-product-integrity.contract.spec.ts
 c4c2d251b73610910aff95bc0cfb4954fb1f3934e96969b81136da5610f9f6a7  ./test/demo-seed-reentry.contract.spec.ts
 26ef7ea391185508135312fa91138b778b5f1e46425e1fb8b2fe1386d59fe94a  ./test/deployment-recovery.contract.spec.ts
 139c87bcdb7b69fec310db9fa52ba40f8d7a5af7cacf8eb86a59def7e78ef71f  ./test/fixtures/historical-contract-policy/advanced-indirection.fixture.ts

@@ -21,3 +21,7 @@ For tenant-composite authorization foreign keys, static schema checks are not su
 ## Production-deployment status contract
 
 Until an environment-specific production approval has actually been completed, `docs/production-readiness.md` must retain the canonical machine-checked marker `Status: NOT READY FOR PRODUCTION DEPLOYMENT`. Repository software may be green and remote CI may be authoritative, but those facts must be recorded separately and must never replace the deployment-approval boundary. Existing contract tests asserting this marker are safety gates and must not be weakened to accommodate documentation drift.
+
+## Live-probe response-shape contract
+
+Shared probe helpers must be consumed according to their actual return shape. `apiRequest()` in `scripts/run-rescue-runtime-flow-extension.mjs` returns `{ status, body }`; negative HTTP assertions must read `.status` directly and must not invent a nested `.response.status`. Structural and Jest contracts must lock this so a probe bug cannot fail before the intended backend policy assertion executes.

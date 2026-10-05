@@ -151,6 +151,8 @@ describe('deep product integrity regressions', () => {
     expect(runner).toContain('scheduled-scene-delete-refused');
     expect(runner).toContain('organization-product-lifecycle');
     expect(runner).toContain('primaryDetachRejectedHttpStatus: 409');
+    expect(runner).toContain('primaryDetachRejected.status === 409');
+    expect(runner).not.toContain('primaryDetachRejected.response.status');
     expect(runner).toContain('secondaryBranchRemovedViaApi: true');
     expect(runner).toContain('organizationDeleted: true');
     expect(runner).toContain('tenantMembershipCleared: true');

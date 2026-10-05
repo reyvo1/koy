@@ -329,7 +329,7 @@ async function provisionFixture() {
     { token: platformToken, tenantId: platformTenantId, expected: [409] },
   );
   assert(
-    primaryDetachRejected.response.status === 409,
+    primaryDetachRejected.status === 409,
     'Primary organization branch detach must remain fail-closed with HTTP 409',
   );
 

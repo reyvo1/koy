@@ -1,6 +1,15 @@
 # Project Handoff — Production Surface Closure Recovery
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-13; active=none -->
+## Latest candidate evidence — RED at live Organization probe
+
+- GitHub Actions run `37222382814` / commit `99d912da9d36f5354f50198ca036883670c84445` / evidence `logs_100821663855.zip` is the newest candidate and is **NOT GREEN**.
+- Core CI, build, Prisma migration, full Jest, database/MQTT/recovery coverage, and both ESP32/ESP32-C3 ESP-IDF/QEMU jobs completed without a failing step in the uploaded bundle.
+- FIRST FAILING GATE: `Rescue live EMQX / acceptance` → `Deep product lifecycle live regression`, after `tenant-create-delete-billing-lifecycle... PASS`.
+- Root cause is a UAT script contract bug: `apiRequest()` returns `{ status, body }`, but the primary-branch detach assertion read `primaryDetachRejected.response.status`, so `response` was undefined before the mandatory 409 assertion could execute.
+- Root fix keeps the backend policy and the negative assertion unchanged: read `primaryDetachRejected.status === 409`, and add dependency-free + Jest guards that forbid the stale `.response.status` access. No UAT/auth/RBAC/TLS/rate-limit/simulated-hardware gate is removed, skipped, downgraded, or made allow-failure.
+- The authoritative all-green baseline remains run `37212540616` / commit `2cecb7aa4020ffb6a566949f2e5a44794432d0a7`.
+
 
 ## Current recovery authority — Production Surface Closure V3
 
