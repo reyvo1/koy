@@ -55,13 +55,15 @@ Status meanings:
 | `/tenant/schedules` | KEEP | Schedules |
 | `/tenant/workspace` | KEEP | Dashboards/workspaces |
 | `/tenant/temuan` | KEEP | Canonical Module 16 analytics findings surface; not notification delivery |
-| `/tenant/notifikasi` | KEEP | Real notification delivery log (queue, worker attempts, failure codes) from `GET /notifications` + `/notifications/summary`. Distinct from `/tenant/temuan`, which is analytics findings, not delivery history. |
+| `/tenant/notifikasi` | KEEP | Real notification delivery log + operator-safe detail from `GET /notifications`, `/notifications/summary`, and `/notifications/:id`. Detail exposes destination/status/error metadata but deliberately omits the persisted message body because auth notifications can contain verification/reset tokens. Distinct from `/tenant/temuan`, which is analytics findings, not delivery history. |
 | `/tenant/laporan` | KEEP | Real aggregate export |
 | `/tenant/pengguna` | KEEP | Tenant user management plus custom-role create/assign/revoke/delete from the backend permission catalog |
 | `/tenant/grup-perangkat` | KEEP | Real tenant-scoped device groups; create/list/member/remove backed by `/device-groups` |
 | `/tenant/api-keys` | KEEP | Tenant API-key create/list/revoke lifecycle; raw key is one-time output only |
 | `/tenant/webhooks` | KEEP | Tenant webhook endpoint lifecycle, delivery failures, and two-step signing-secret rotation with one-time replacement secret |
 | `/tenant/organisasi` | KEEP | Read-only tenant-visible Organization/Branch membership; organization create/add/detach/delete lifecycle is platform-owned from `/super/tenants` |
+| `/tenant/audit-log` | KEEP | Tenant-scoped immutable RBAC mutation trail from `GET /audit-logs`, with opaque keyset cursor pagination and server-side action/resource filters. |
+| `/tenant/integrasi` | KEEP | Tenant integration registry from `GET/POST/DELETE /admin/integrations`; accepts only `secret://...` references, never raw credentials. `REGISTERED` is registry state, not proof a provider adapter is connected. |
 
 ## Menu ownership rule (enforced)
 

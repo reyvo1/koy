@@ -105,6 +105,63 @@ describe('PostgreSQL database integration foundation', () => {
     ).resolves.toBe(0);
   });
 
+  it('enforces Integration Registry tenant provenance and cascades owned sync state', async () => {
+    const tenantA = await prisma.tenant.create({
+      data: { name: `integration-integrity-a-${randomUUID()}` },
+    });
+    const tenantB = await prisma.tenant.create({
+      data: { name: `integration-integrity-b-${randomUUID()}` },
+    });
+
+    await expect(
+      prisma.integration.create({
+        data: {
+          tenantId: randomUUID(),
+          provider: 'ALEXA',
+          displayName: 'Orphan Integration',
+          credentialRef: 'secret://integration-integrity/orphan',
+        },
+      }),
+    ).rejects.toMatchObject({ code: 'P2003' });
+
+    const integrationB = await prisma.integration.create({
+      data: {
+        tenantId: tenantB.id,
+        provider: 'HOME_ASSISTANT',
+        displayName: 'Tenant B Integration',
+        credentialRef: 'secret://integration-integrity/tenant-b',
+      },
+    });
+
+    await expect(
+      prisma.integrationSyncState.create({
+        data: {
+          tenantId: tenantA.id,
+          integrationId: integrationB.id,
+          entityType: 'DEVICE',
+          externalEntityId: `cross-${randomUUID()}`,
+          internalEntityId: `device-${randomUUID()}`,
+        },
+      }),
+    ).rejects.toMatchObject({ code: 'P2003' });
+
+    const validSync = await prisma.integrationSyncState.create({
+      data: {
+        tenantId: tenantB.id,
+        integrationId: integrationB.id,
+        entityType: 'DEVICE',
+        externalEntityId: `valid-${randomUUID()}`,
+        internalEntityId: `device-${randomUUID()}`,
+      },
+    });
+
+    await prisma.integration.delete({ where: { id: integrationB.id } });
+
+    await expect(
+      prisma.integrationSyncState.findUnique({ where: { id: validSync.id } }),
+    ).resolves.toBeNull();
+  });
+
   it('preserves transaction rollback semantics', async () => {
     const key = `${keyPrefix}rollback`;
 

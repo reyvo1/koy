@@ -67,6 +67,32 @@ describe('IntegrationRegistryService', () => {
     );
   });
 
+  it('normalizes display-name whitespace and rejects whitespace-only names', async () => {
+    await service.register({
+      tenantId,
+      provider: 'HOME_ASSISTANT',
+      displayName: '  Home Assistant Bridge  ',
+      credentialRef: 'secret://integrations/ha-1',
+    });
+
+    expect(integrationCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ displayName: 'Home Assistant Bridge' }),
+      }),
+    );
+
+    integrationCreate.mockClear();
+    await expect(
+      service.register({
+        tenantId,
+        provider: 'ALEXA',
+        displayName: '   ',
+        credentialRef: 'secret://integrations/alexa-1',
+      }),
+    ).rejects.toMatchObject({ code: 'INTEGRATION_NAME_INVALID' });
+    expect(integrationCreate).not.toHaveBeenCalled();
+  });
+
   it('never stores raw credentials (credentialRef only)', async () => {
     await service.register({
       tenantId,
@@ -77,6 +103,18 @@ describe('IntegrationRegistryService', () => {
     });
     const arg = integrationCreate.mock.calls[0][0].data;
     expect(arg.credentialRef.startsWith('secret://')).toBe(true);
+  });
+
+  it('rejects a raw credential instead of storing it as a reference', async () => {
+    await expect(
+      service.register({
+        tenantId,
+        provider: 'ALEXA',
+        displayName: 'Alexa',
+        credentialRef: 'sk-live-this-is-a-raw-secret',
+      }),
+    ).rejects.toMatchObject({ code: 'INTEGRATION_CREDENTIAL_REF_INVALID' });
+    expect(integrationCreate).not.toHaveBeenCalled();
   });
 
   it('rejects missing display name or credential reference', async () => {

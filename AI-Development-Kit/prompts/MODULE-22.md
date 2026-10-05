@@ -30,3 +30,12 @@ nyata hanya jika specification/credential context tersedia.
 Gunakan output contract System Instructions. Jika blocker nyata tidak
 dapat diselesaikan setelah failure protocol, jangan berpura-pura
 selesai.
+
+## Current operator-surface contract
+
+The tenant console exposes registry lifecycle at `/tenant/integrasi`, backed by
+`GET/POST/DELETE /admin/integrations`. `credentialRef` is a secret-store reference and must match
+the repository's canonical `secret://...` shape; raw tokens/passwords must be rejected rather than
+stored. `REGISTERED` means only that the registry row exists. The UI must not claim an external
+provider is connected unless an adapter/runtime has actually moved status to `CONNECTED`.
+Provider connect/sync controls remain adapter-owned rather than fabricated as operator buttons.

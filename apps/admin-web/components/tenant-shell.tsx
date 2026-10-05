@@ -21,6 +21,8 @@ import {
   KeyRound,
   Webhook,
   Send,
+  ShieldCheck,
+  Cable,
 } from 'lucide-react';
 import { AppShell, RoleGate, type AppShellNavGroup } from '@/components/app-shell';
 import { useAdminSessionRole } from '@/components/use-admin-session-role';
@@ -69,6 +71,8 @@ const NAV_GROUPS: AppShellNavGroup[] = [
       { href: '/tenant/workspace', label: 'Workspace', icon: LayoutDashboard },
       { href: '/tenant/temuan', label: 'Temuan Analitik', icon: Bell },
       { href: '/tenant/notifikasi', label: 'Notifikasi', icon: Send },
+      { href: '/tenant/audit-log', label: 'Audit', icon: ShieldCheck },
+      { href: '/tenant/integrasi', label: 'Integrasi', icon: Cable },
       { href: '/tenant/api-keys', label: 'API Key', icon: KeyRound },
       { href: '/tenant/webhooks', label: 'Webhook', icon: Webhook },
       { href: '/tenant/organisasi', label: 'Organisasi', icon: Building2 },

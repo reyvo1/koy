@@ -222,3 +222,44 @@ describe('the delivery log stays scoped and bounded', () => {
     expect(notification.groupBy.mock.calls[0][0].where).toEqual({ tenantId });
   });
 });
+describe('notification detail is useful without exposing auth secrets', () => {
+  it('keeps body, idempotency key, and lease id out of the operator detail query', async () => {
+    const notification = {
+      findFirst: jest.fn().mockResolvedValue({
+        id: 'n1',
+        channel: 'EMAIL',
+        subject: 'Reset your IoT Platform password',
+        destination: 'user@example.com',
+        status: NotificationStatus.PENDING,
+        attemptCount: 0,
+        nextRetryAt: null,
+        lastErrorCode: null,
+        deliveryLeaseAt: null,
+        sentAt: null,
+        createdAt: new Date('2026-10-05T00:00:00.000Z'),
+      }),
+    };
+    const service = new NotificationService({ notification } as unknown as PrismaService);
+
+    await service.findForOperator(tenantId, 'n1');
+
+    const select = notification.findFirst.mock.calls[0][0].select as Record<string, boolean>;
+    expect(select.destination).toBe(true);
+    expect(select.lastErrorCode).toBe(true);
+    expect(select).not.toHaveProperty('body');
+    expect(select).not.toHaveProperty('idempotencyKey');
+    expect(select).not.toHaveProperty('deliveryLeaseId');
+  });
+
+  it('scopes detail lookup to tenant and id together', async () => {
+    const notification = {
+      findFirst: jest.fn().mockResolvedValue(null),
+    };
+    const service = new NotificationService({ notification } as unknown as PrismaService);
+
+    await expect(service.findForOperator(tenantId, 'foreign')).rejects.toMatchObject({ status: 404 });
+    expect(notification.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'foreign', tenantId } }),
+    );
+  });
+});

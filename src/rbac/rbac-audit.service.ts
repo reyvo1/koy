@@ -79,7 +79,7 @@ export class RbacAuditService {
       detail: string | null;
       createdAt: string;
     }>;
-    nextCursor: { createdAt: string; id: string } | null;
+    nextCursor: string | null;
   }> {
     const MAX_TAKE = 200;
     const take = Math.min(Math.max(input.limit ?? 50, 1), MAX_TAKE);
@@ -121,7 +121,9 @@ export class RbacAuditService {
       // follow a cursor into an empty result and read it as the end of the data.
       nextCursor:
         hasMore && last
-          ? { createdAt: last.createdAt.toISOString(), id: last.id }
+          ? Buffer.from(
+              JSON.stringify({ createdAt: last.createdAt.toISOString(), id: last.id }),
+            ).toString('base64url')
           : null,
     };
   }

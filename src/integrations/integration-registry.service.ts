@@ -10,6 +10,8 @@ export const INTEGRATION_LIMITS = {
   maxCredentialRefLength: 256,
 } as const;
 
+export const INTEGRATION_CREDENTIAL_REF_PREFIX = 'secret://';
+
 /**
  * Module 22 Slice 22.1 — integration registry framework.
  * Registers external ecosystems with a *credential reference* (a key into the
@@ -29,9 +31,10 @@ export class IntegrationRegistryService {
     displayName: string;
     credentialRef: string;
   }): Promise<{ id: string }> {
+    const displayName = input.displayName.trim();
     if (
-      !input.displayName ||
-      input.displayName.length > INTEGRATION_LIMITS.maxDisplayNameLength
+      !displayName ||
+      displayName.length > INTEGRATION_LIMITS.maxDisplayNameLength
     ) {
       throw Object.assign(new Error('invalid display name'), {
         code: 'INTEGRATION_NAME_INVALID',
@@ -39,7 +42,10 @@ export class IntegrationRegistryService {
     }
     if (
       !input.credentialRef ||
-      input.credentialRef.length > INTEGRATION_LIMITS.maxCredentialRefLength
+      input.credentialRef.trim() !== input.credentialRef ||
+      input.credentialRef.length > INTEGRATION_LIMITS.maxCredentialRefLength ||
+      !input.credentialRef.startsWith(INTEGRATION_CREDENTIAL_REF_PREFIX) ||
+      input.credentialRef.length <= INTEGRATION_CREDENTIAL_REF_PREFIX.length
     ) {
       throw Object.assign(new Error('invalid credential reference'), {
         code: 'INTEGRATION_CREDENTIAL_REF_INVALID',
@@ -50,7 +56,7 @@ export class IntegrationRegistryService {
       data: {
         tenantId: input.tenantId,
         provider: input.provider,
-        displayName: input.displayName,
+        displayName,
         credentialRef: input.credentialRef,
         status: 'REGISTERED',
       },

@@ -41,3 +41,66 @@ describe('RbacAuditService', () => {
     await expect(service.recordMutation(input)).resolves.toBeUndefined();
   });
 });
+
+describe('RbacAuditService query cursor contract', () => {
+  it('returns the same opaque base64url cursor shape the controller accepts', async () => {
+    const rows = [
+      {
+        id: 'audit-2',
+        tenantId: 't1',
+        action: 'UPDATE',
+        resourceType: 'scene',
+        resourceId: 's2',
+        actorMembershipId: 'm1',
+        allowed: true,
+        detail: 'CONTROL',
+        createdAt: new Date('2026-10-05T01:02:03.000Z'),
+      },
+      {
+        id: 'audit-1',
+        tenantId: 't1',
+        action: 'CREATE',
+        resourceType: 'scene',
+        resourceId: 's1',
+        actorMembershipId: 'm1',
+        allowed: true,
+        detail: 'CONTROL',
+        createdAt: new Date('2026-10-05T01:00:00.000Z'),
+      },
+    ];
+    const findMany = jest.fn().mockResolvedValue(rows);
+    const service = new RbacAuditService({ rbacAuditLog: { findMany } } as never);
+
+    const result = await service.queryAuditLog({ tenantId: 't1', limit: 1 });
+
+    expect(result.items).toHaveLength(1);
+    expect(typeof result.nextCursor).toBe('string');
+    const decoded = JSON.parse(
+      Buffer.from(result.nextCursor as string, 'base64url').toString('utf8'),
+    );
+    expect(decoded).toEqual({
+      createdAt: '2026-10-05T01:02:03.000Z',
+      id: 'audit-2',
+    });
+  });
+
+  it('uses a decoded cursor as a stable createdAt/id keyset predicate', async () => {
+    const findMany = jest.fn().mockResolvedValue([]);
+    const service = new RbacAuditService({ rbacAuditLog: { findMany } } as never);
+    const cursor = { createdAt: new Date('2026-10-05T01:02:03.000Z'), id: 'audit-2' };
+
+    await service.queryAuditLog({ tenantId: 't1', cursor, limit: 50 });
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          tenantId: 't1',
+          OR: [
+            { createdAt: { lt: cursor.createdAt } },
+            { createdAt: cursor.createdAt, id: { lt: 'audit-2' } },
+          ],
+        }),
+      }),
+    );
+  });
+});

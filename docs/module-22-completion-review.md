@@ -2,11 +2,7 @@
 
 ## Status
 
-Module 22 framework foundation-complete and locally green at commit `288c21b`.
-Provider-neutral integration registry with credential references and an
-idempotent sync-state ledger delivered. Per the module prompt, real provider
-adapters are implemented only when specification/credential context exists —
-none is present in this environment, so no provider adapter was written.
+Module 22 framework is foundation-complete. The provider-neutral registry, credential-reference boundary, and idempotent sync-state ledger remain the common contract. A real `MQTT_BRIDGE` adapter now exists and is exercised against the repository's EMQX runtime; ALEXA, GOOGLE_HOME, and HOME_ASSISTANT remain unimplemented because no provider-specific specification/credential evidence is available.
 
 ## Slice inventory
 
@@ -23,7 +19,13 @@ none is present in this environment, so no provider adapter was written.
 - DB integration: 11 suites / 45 tests green on real PostgreSQL 16.
 - Lint clean; build green.
 
+## Current product surface
+
+- Tenant operators can create/list/delete registry rows from `/tenant/integrasi`.
+- `credentialRef` must use the canonical `secret://...` reference shape; raw credentials are rejected.
+- `REGISTERED` is registry state only. The UI does not fabricate a generic provider-connect button.
+- MQTT_BRIDGE has a real EMQX-backed adapter, but connection/sync invocation remains adapter/runtime-owned.
+
 ## Deferred
 
-Concrete provider adapters (require external specs/credentials), sync worker,
-production deployment approval.
+ALEXA, GOOGLE_HOME, and HOME_ASSISTANT adapters (require external provider specs/credentials), a generic sync worker/orchestrator, and provider-specific operator connection flows where they can be proven end to end.

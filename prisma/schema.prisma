@@ -1532,6 +1532,9 @@ model Integration {
   syncStates    IntegrationSyncState[]
   createdAt     DateTime           @default(now())
 
+  // `id` remains globally unique, while the composite identity lets child rows
+  // prove that their tenantId belongs to the same integration at the database boundary.
+  @@unique([id, tenantId])
   @@unique([tenantId, provider])
   @@index([tenantId, status])
   @@map("integrations")
@@ -1541,7 +1544,7 @@ model IntegrationSyncState {
   id               String     @id @default(uuid())
   tenantId         String
   integrationId    String
-  integration      Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  integration      Integration @relation(fields: [integrationId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
   entityType       String
   externalEntityId String
   internalEntityId String

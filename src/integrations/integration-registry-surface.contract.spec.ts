@@ -16,11 +16,10 @@ const request = { user: { tenantContext: { tenantId: tenantA } } } as never;
  * `integrations` and `integration_sync_state` held zero rows. So a tenant could not register
  * an external ecosystem at all, and the registry could only be populated by a test.
  *
- * Scope, stated honestly: only the user-facing part is missing. `setStatus` and `recordSync`
- * have no callers because they are *adapter-facing* — the service's own comment says
- * "Provider adapters implement connect/sync against this registry in later slices", and those
- * adapters are Wave 8. Leaving them idle is correct; wiring them to a route would invent an
- * operator surface for something no adapter performs.
+ * Scope, stated honestly: registry create/list/delete is the shared operator surface.
+ * `setStatus` and `recordSync` stay adapter-facing. MQTT_BRIDGE has a real EMQX-backed adapter,
+ * while the other provider values do not; a universal operator connect route would therefore
+ * invent one lifecycle across providers that do not actually share it.
  *
  * What this suite pins: the registry is reachable, it is tenant-scoped, and a duplicate
  * provider/display-name is a conflict rather than a 500.
@@ -84,6 +83,20 @@ describe('Integration registry — a tenant can register and remove an external 
     await expect(controller.register(request, { ...dto, displayName: '' } as never)).rejects.toMatchObject({
       status: 400,
     });
+  });
+
+  it('refuses a whitespace-only display name through the backend route', async () => {
+    await expect(
+      controller.register(request, { ...dto, displayName: '   ' } as never),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(prisma.integration.create).not.toHaveBeenCalled();
+  });
+
+  it('refuses a raw credential with 400 instead of persisting it as a reference', async () => {
+    await expect(
+      controller.register(request, { ...dto, credentialRef: 'raw-provider-token' } as never),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(prisma.integration.create).not.toHaveBeenCalled();
   });
 
   it('refuses an empty credential reference with 400', async () => {

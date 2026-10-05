@@ -30,3 +30,11 @@ audit query dan cross-tenant negative tests.
 Gunakan output contract System Instructions. Jika blocker nyata tidak
 dapat diselesaikan setelah failure protocol, jangan berpura-pura
 selesai.
+
+## Current operator-surface contract
+
+The tenant ADMIN console exposes the tenant-scoped immutable mutation trail at
+`/tenant/audit-log`, backed by `GET /audit-logs`. Pagination is keyset-based and the response
+`nextCursor` is an opaque base64url value that the same controller accepts on the next request;
+do not expose a raw `{createdAt,id}` object while requiring an encoded request cursor. Filters are
+server-side and invalid action/cursor/limit inputs fail closed with 400.

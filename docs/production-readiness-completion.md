@@ -8,7 +8,7 @@ Baseline: `eb3ecde` — MQTT Production Transport Implementation.
 
 ## Current Authority — 2026-10-05
 
-The authoritative repository checkpoint is commit `43d20b1ef54142dde27f38cf7676fb8fbf05a46c`, GitHub Actions run `37261297295`, evidence `logs_100923339374.zip`: full automated acceptance green, including the completed product-surface closure. The active final production-readiness hardening batch must obtain its own local + GitHub Heavy UAT before replacing that authority. Production deployment approval remains separate and now requires manifest-bound production-environment evidence; repository/UAT green alone cannot authorize deployment.
+The authoritative repository checkpoint is commit `ea182d9f840b8f9a74c5957c386416084e9af216`, GitHub Actions run `37266021484`, evidence `logs_100935642537.zip`: full automated acceptance green, including the completed product-surface closure. The production-readiness hardening batch is certified at this authority; the active Product Surface Census/Closure batch must obtain its own local + GitHub Heavy UAT before replacing it. Production deployment approval remains separate and now requires manifest-bound production-environment evidence; repository/UAT green alone cannot authorize deployment.
 
 
 This review closes the repository-level validation loop without claiming that an unknown production environment has been approved. The script commits only after every local gate below succeeds.

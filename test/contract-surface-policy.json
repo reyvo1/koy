@@ -178,7 +178,9 @@
     "test/wave9-camera-onboarding.contract.spec.ts": "current-state",
     "test/wave9-device-location.contract.spec.ts": "current-state",
     "test/wave9-onvif-media.contract.spec.ts": "current-state",
-    "test/webhook-surface.contract.spec.ts": "stable-contract"
+    "test/webhook-surface.contract.spec.ts": "stable-contract",
+    "test/tenant-operator-surface-closure.contract.spec.ts": "stable-contract",
+    "test/backend-frontend-surface-census.contract.spec.ts": "stable-contract"
   },
   "historicalStableDocumentOwners": {
     "test/module-10-activation.contract.spec.ts": [

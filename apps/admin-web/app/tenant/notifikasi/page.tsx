@@ -29,6 +29,12 @@ interface NotificationRow {
   sentAt?: string | null;
   createdAt: string;
   templateKey?: string | null;
+  nextRetryAt?: string | null;
+}
+
+interface NotificationDetail extends NotificationRow {
+  destination: string;
+  deliveryLeaseAt?: string | null;
 }
 
 const STATUS_META: Record<
@@ -36,10 +42,10 @@ const STATUS_META: Record<
   { label: string; tone: 'online' | 'warn' | 'offline' | 'neutral' }
 > = {
   SENT: { label: 'Terkirim', tone: 'online' },
-  DELIVERING: { label: 'Dikirim worker', tone: 'neutral' },
-  PENDING: { label: 'Menunggu', tone: 'warn' },
+  DELIVERING: { label: 'Sedang dikirim', tone: 'neutral' },
+  PENDING: { label: 'Menunggu / retry', tone: 'warn' },
   FAILED: { label: 'Gagal', tone: 'offline' },
-  RETRY_SCHEDULED: { label: 'Jadwal ulang', tone: 'warn' },
+  EXHAUSTED: { label: 'Gagal permanen', tone: 'offline' },
 };
 
 function tone(status: string) {
@@ -60,6 +66,8 @@ export default function NotificationsPage() {
   const [summary, setSummary] = useState<Record<string, number> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [detail, setDetail] = useState<NotificationDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -89,7 +97,25 @@ export default function NotificationsPage() {
     void load();
   }, [load]);
 
-  const failed = summary?.FAILED ?? null;
+  const loadDetail = useCallback(async (notificationId: string) => {
+    setDetailLoading(notificationId);
+    setError(null);
+    try {
+      const response = await fetch(
+        `/api/tenant/notifications/${encodeURIComponent(notificationId)}`,
+        { cache: 'no-store' },
+      );
+      if (!response.ok) throw new Error(`detail backend ${response.status}`);
+      setDetail((await response.json()) as NotificationDetail);
+    } catch (cause) {
+      setDetail(null);
+      setError(cause instanceof Error ? cause.message : 'gagal memuat detail notifikasi');
+    } finally {
+      setDetailLoading(null);
+    }
+  }, []);
+
+  const failed = (summary?.FAILED ?? 0) + (summary?.EXHAUSTED ?? 0);
   const sent = summary?.SENT ?? null;
 
   return (
@@ -149,7 +175,7 @@ export default function NotificationsPage() {
                 Menunggu
               </div>
               <div className="mt-1.5 text-[24px] font-extrabold tabular-nums text-white">
-                {(summary.PENDING ?? 0) + (summary.RETRY_SCHEDULED ?? 0)}
+                {summary.PENDING ?? 0}
               </div>
             </div>
             <div className="rounded-2xl border border-slate-800/80 bg-[#111c2e] p-4">
@@ -213,6 +239,9 @@ export default function NotificationsPage() {
                 <th className="px-3 py-2.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
                   Waktu
                 </th>
+                <th className="px-3 py-2.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  Detail
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -249,6 +278,16 @@ export default function NotificationsPage() {
                   <td className="px-3 py-2.5 text-slate-400">
                     {row.sentAt ? `Dikirim ${when(row.sentAt)}` : when(row.createdAt)}
                   </td>
+                  <td className="px-3 py-2.5">
+                    <button
+                      type="button"
+                      onClick={() => void loadDetail(row.id)}
+                      disabled={detailLoading === row.id}
+                      className="rounded-lg border border-slate-700 px-2.5 py-1.5 text-[11.5px] font-semibold text-slate-300 hover:border-teal-500/50 hover:text-teal-300 disabled:opacity-50"
+                    >
+                      {detailLoading === row.id ? 'Memuat…' : 'Lihat'}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -256,9 +295,37 @@ export default function NotificationsPage() {
         </div>
       )}
 
+      {detail ? (
+        <section className="mt-5 rounded-2xl border border-slate-800/80 bg-[#111c2e] p-5" aria-label="Detail notifikasi">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Detail pengiriman</div>
+              <h2 className="mb-0 mt-1 text-[16px] font-bold text-slate-100">
+                {detail.subject ?? detail.templateKey ?? detail.id}
+              </h2>
+            </div>
+            <button type="button" onClick={() => setDetail(null)} className="text-[12px] font-semibold text-slate-400 hover:text-slate-200">Tutup</button>
+          </div>
+          <dl className="mt-4 grid gap-3 text-[12.5px] sm:grid-cols-2 lg:grid-cols-3">
+            <div><dt className="text-slate-500">Status</dt><dd className="mt-0.5 text-slate-200">{label(detail.status)}</dd></div>
+            <div><dt className="text-slate-500">Kanal</dt><dd className="mt-0.5 text-slate-200">{detail.channel ?? '—'}</dd></div>
+            <div><dt className="text-slate-500">Tujuan</dt><dd className="mt-0.5 break-all text-slate-200">{detail.destination}</dd></div>
+            <div><dt className="text-slate-500">Percobaan</dt><dd className="mt-0.5 text-slate-200">{detail.attemptCount ?? 0}</dd></div>
+            <div><dt className="text-slate-500">Retry berikutnya</dt><dd className="mt-0.5 text-slate-200">{when(detail.nextRetryAt)}</dd></div>
+            <div><dt className="text-slate-500">Error terakhir</dt><dd className="mt-0.5 font-mono text-[11.5px] text-red-300/80">{detail.lastErrorCode ?? '—'}</dd></div>
+            <div><dt className="text-slate-500">Dibuat</dt><dd className="mt-0.5 text-slate-200">{when(detail.createdAt)}</dd></div>
+            <div><dt className="text-slate-500">Terkirim</dt><dd className="mt-0.5 text-slate-200">{when(detail.sentAt)}</dd></div>
+            <div><dt className="text-slate-500">Template</dt><dd className="mt-0.5 text-slate-200">{detail.templateKey ?? '—'}</dd></div>
+          </dl>
+          <p className="mb-0 mt-4 rounded-xl border border-amber-500/20 bg-amber-500/[.06] px-3 py-2.5 text-[11.5px] leading-relaxed text-amber-200/90">
+            Isi pesan tidak ditampilkan di permukaan operator karena notifikasi autentikasi dapat memuat token verifikasi atau reset password.
+          </p>
+        </section>
+      ) : null}
+
       <p className="mt-4 text-[11.5px] leading-relaxed text-slate-500">
         Pengiriman ulang dilakukan otomatis oleh worker dengan backoff. Notifikasi gagal
-        sementara (timeout, 429, 5xx) dijadwalkan ulang; kegagalan permanen ditandai FAILED
+        sementara (timeout, 429, 5xx) dijadwalkan ulang; kegagalan permanen ditandai EXHAUSTED
         dan tidak diulang.
       </p>
     </TenantShell>

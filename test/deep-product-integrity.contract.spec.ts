@@ -73,6 +73,43 @@ describe('deep product integrity regressions', () => {
     );
   });
 
+  it('anchors Integration Registry tenant provenance in Prisma, SQL, and PostgreSQL regression coverage', () => {
+    const schema = read('prisma/schema.prisma');
+    const integration = schema.slice(
+      schema.indexOf('model Integration {'),
+      schema.indexOf('model IntegrationSyncState {'),
+    );
+    const syncState = schema.slice(
+      schema.indexOf('model IntegrationSyncState {'),
+      schema.indexOf('// ---------------------------------------------------------------------------', schema.indexOf('model IntegrationSyncState {')),
+    );
+
+    expect(integration).toContain('@@unique([id, tenantId])');
+    expect(syncState).toMatch(
+      /integration\s+Integration\s+@relation\(fields:\s*\[integrationId,\s*tenantId\],\s*references:\s*\[id,\s*tenantId\]/,
+    );
+
+    const migration = read(
+      'prisma/migrations/20261005165000_integration_registry_tenant_integrity/migration.sql',
+    );
+    expect(migration).toContain('orphan integrations rows exist');
+    expect(migration).toContain('orphan or cross-tenant integration_sync_state rows exist');
+    expect(migration).toContain('ALTER COLUMN "syncedAt" SET DEFAULT CURRENT_TIMESTAMP');
+    expect(migration).toMatch(
+      /FOREIGN KEY \("tenantId"\)[\s\S]*REFERENCES "tenants"\("id"\)[\s\S]*ON DELETE CASCADE/,
+    );
+    expect(migration).toMatch(
+      /FOREIGN KEY \("integrationId", "tenantId"\)[\s\S]*REFERENCES "integrations"\("id", "tenantId"\)[\s\S]*ON DELETE CASCADE/,
+    );
+
+    const dbRegression = read('test/integration/database.integration-spec.ts');
+    expect(dbRegression).toContain('enforces Integration Registry tenant provenance');
+    expect(dbRegression).toContain("provider: 'ALEXA'");
+    expect(dbRegression).toContain("provider: 'HOME_ASSISTANT'");
+    expect(dbRegression).toContain("rejects.toMatchObject({ code: 'P2003' })");
+    expect(dbRegression).toContain('integrationSyncState.findUnique');
+  });
+
   it('refuses deleting a scene while a schedule still references it', () => {
     const repo = read('src/scene/scene.repository.ts');
     expect(repo).toContain("SceneInUse: 'SCENE_IN_USE'");

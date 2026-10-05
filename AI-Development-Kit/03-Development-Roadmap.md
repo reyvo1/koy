@@ -1,3 +1,13 @@
+# SESSION TRANSFER — 2026-10-05
+
+- **Authoritative all-green software baseline:** commit `ea182d9f840b8f9a74c5957c386416084e9af216` / GitHub Actions run `37266021484` / evidence `logs_100935642537.zip`.
+- **Active WIP:** Product Surface Census/Closure V1. This snapshot is **NOT a certified green checkpoint** and must not be pushed or deployed until targeted QA + full local pre-push/full Jest + GitHub Heavy UAT pass.
+- **Waves 1–13:** remain software-scope closed/green; do **not** restart them from zero without new failing evidence.
+- **Production deployment:** remains **NOT APPROVED** until real environment evidence is captured and verified. Software/UAT green is not deployment approval.
+- **Hardware evidence:** `SIMULATED_HARDWARE_LIVE_SERVICE` remains the automated label; PHYSICAL/HIL stays optional/non-blocking for software.
+- **Current WIP scope:** Tenant Audit UI, Integration Registry UI, Notification Detail, and backend↔frontend surface census. During review, a real audit-pagination contract defect was found and fixed: `nextCursor` is now opaque base64url, matching the controller parser; regression coverage was added.
+- **Next session must:** review current WIP diff/package, rerun structural guards, then run targeted Jest + existing full `wave3:prepush:check` on clean `main@ea182d9f...`; only one commit/push after all local gates are green, then treat the next GitHub Heavy UAT as authoritative.
+
 # Post-foundation enterprise execution — authoritative addendum
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-13; active=none -->

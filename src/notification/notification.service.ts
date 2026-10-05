@@ -555,6 +555,7 @@ export class NotificationService {
           subject: true,
           status: true,
           attemptCount: true,
+          nextRetryAt: true,
           lastErrorCode: true,
           sentAt: true,
           createdAt: true,
@@ -594,13 +595,35 @@ export class NotificationService {
     return (Object.values(NotificationStatus) as string[]).includes(value);
   }
 
-  /** One delivery record, tenant-scoped. Includes the destination. */
+  /**
+   * One delivery record, tenant-scoped and operator-safe.
+   *
+   * The durable row also contains `body`, `idempotencyKey` and lease identifiers. Those are
+   * worker/auth internals, not operator data. In particular auth notification bodies carry the
+   * one-time verification/reset token, so returning the Prisma row verbatim would turn the admin
+   * log endpoint into a credential disclosure surface. The detail view therefore exposes the
+   * destination and delivery metadata only.
+   */
   async findForOperator(
     tenantId: string,
     notificationId: string,
   ): Promise<Record<string, unknown>> {
     const record = await this.prisma.notification.findFirst({
       where: { id: notificationId, tenantId },
+      select: {
+        id: true,
+        channel: true,
+        templateKey: true,
+        subject: true,
+        destination: true,
+        status: true,
+        attemptCount: true,
+        nextRetryAt: true,
+        lastErrorCode: true,
+        deliveryLeaseAt: true,
+        sentAt: true,
+        createdAt: true,
+      },
     });
     if (!record) {
       throw new DomainNotFoundException(

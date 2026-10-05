@@ -29,3 +29,12 @@ webhook-ready abstraction, retry dan delivery status.
 Gunakan output contract System Instructions. Jika blocker nyata tidak
 dapat diselesaikan setelah failure protocol, jangan berpura-pura
 selesai.
+
+## Current operator-surface contract
+
+The production-candidate tenant console exposes the durable notification delivery log through
+`GET /notifications`, `/notifications/summary`, and an operator-safe `GET /notifications/:id`.
+The detail endpoint must never return the persisted notification `body`, idempotency key, or
+worker lease id: authentication notification bodies contain verification/reset tokens. UI status
+labels must track the Prisma `NotificationStatus` enum (`PENDING`, `DELIVERING`, `SENT`, `FAILED`,
+`EXHAUSTED`) and must not invent a `RETRY_SCHEDULED` state.

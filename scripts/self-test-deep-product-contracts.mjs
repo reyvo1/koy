@@ -152,6 +152,25 @@ assert(
   'database integration proves cross-tenant custom-role overrides are rejected by PostgreSQL',
 );
 
+const integrationTenantFkMigration = read(
+  'prisma/migrations/20261005165000_integration_registry_tenant_integrity/migration.sql',
+);
+assert(
+  prismaSchema.includes(
+    '@relation(fields: [integrationId, tenantId], references: [id, tenantId], onDelete: Cascade',
+  ) &&
+    integrationTenantFkMigration.includes('orphan integrations rows exist') &&
+    integrationTenantFkMigration.includes('orphan or cross-tenant integration_sync_state rows exist') &&
+    integrationTenantFkMigration.includes('ALTER COLUMN "syncedAt" SET DEFAULT CURRENT_TIMESTAMP') &&
+    integrationTenantFkMigration.includes('integration_sync_state_integration_tenant_fkey'),
+  'database enforces IntegrationSyncState -> Integration tenant-scoped provenance fail-closed',
+);
+assert(
+  databaseIntegration.includes('enforces Integration Registry tenant provenance') &&
+    databaseIntegration.includes('integrationSyncState.findUnique'),
+  'database integration proves cross-tenant Integration Registry writes fail and owned sync rows cascade',
+);
+
 const capabilityLifecycle = read('src/admin-operations/capability-template.service.ts');
 for (const required of [
   'schemaVersion: target.version',
@@ -301,8 +320,8 @@ const productionReadiness = read('docs/production-readiness.md');
 assert(
   productionReadiness.includes('Status: NOT READY FOR PRODUCTION DEPLOYMENT') &&
     productionReadiness.includes('Completion review status: LOCAL GATES PASSED') &&
-    productionReadiness.includes('43d20b1ef54142dde27f38cf7676fb8fbf05a46c') &&
-    productionReadiness.includes('37261297295') &&
+    productionReadiness.includes('ea182d9f840b8f9a74c5957c386416084e9af216') &&
+    productionReadiness.includes('37266021484') &&
     productionReadiness.includes('Repository software status: GREEN AT'),
   'production readiness keeps canonical fail-closed deployment status while recording repository-green authority separately',
 );
@@ -312,7 +331,7 @@ assert(/Waves 1[–-]13: \*\*SOFTWARE SCOPE CLOSED \/ GREEN\*\*/.test(roadmap), 
 for (const rel of ['CURRENT-STATE.md','PROJECT-HANDOFF.md','docs/SESSION-CHECKPOINT.md','chat-session.md']) {
   const text = read(rel).split(/--- HISTORICAL/)[0];
   assert(text.includes('software-closed=1-13; active=none'), `${rel} uses terminal enterprise-wave marker`);
-  assert(text.includes('37261297295') && text.includes('43d20b1ef54142dde27f38cf7676fb8fbf05a46c'), `${rel} points to the latest all-green evidence baseline`);
+  assert(text.includes('37266021484') && text.includes('ea182d9f840b8f9a74c5957c386416084e9af216'), `${rel} points to the latest all-green evidence baseline`);
 }
 
 console.log('DEEP PRODUCT CONTRACT SELF-TEST PASS');

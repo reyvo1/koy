@@ -162,6 +162,7 @@ apps/admin-web/app/api/super/tenants/[tenantId]/route.ts
 apps/admin-web/app/api/super/tenants/route.ts
 apps/admin-web/app/api/tenant/api-keys/[keyId]/route.ts
 apps/admin-web/app/api/tenant/api-keys/route.ts
+apps/admin-web/app/api/tenant/audit-logs/route.ts
 apps/admin-web/app/api/tenant/automations/[automationId]/activate/route.ts
 apps/admin-web/app/api/tenant/automations/[automationId]/deactivate/route.ts
 apps/admin-web/app/api/tenant/automations/[automationId]/route.ts
@@ -176,6 +177,9 @@ apps/admin-web/app/api/tenant/device-groups/[groupId]/members/[deviceId]/route.t
 apps/admin-web/app/api/tenant/device-groups/[groupId]/members/route.ts
 apps/admin-web/app/api/tenant/device-groups/[groupId]/route.ts
 apps/admin-web/app/api/tenant/device-groups/route.ts
+apps/admin-web/app/api/tenant/integrations/[integrationId]/route.ts
+apps/admin-web/app/api/tenant/integrations/route.ts
+apps/admin-web/app/api/tenant/notifications/[notificationId]/route.ts
 apps/admin-web/app/api/tenant/notifications/route.ts
 apps/admin-web/app/api/tenant/notifications/summary/route.ts
 apps/admin-web/app/api/tenant/scenes/[sceneId]/executions/route.ts
@@ -232,11 +236,13 @@ apps/admin-web/app/super/tenants/page.tsx
 apps/admin-web/app/super/users/page.tsx
 apps/admin-web/app/technician/page.tsx
 apps/admin-web/app/tenant/api-keys/page.tsx
+apps/admin-web/app/tenant/audit-log/page.tsx
 apps/admin-web/app/tenant/dashboard/page.tsx
 apps/admin-web/app/tenant/gedung/page.tsx
 apps/admin-web/app/tenant/grafik/page.tsx
 apps/admin-web/app/tenant/grup-perangkat/page.tsx
 apps/admin-web/app/tenant/historis/page.tsx
+apps/admin-web/app/tenant/integrasi/page.tsx
 apps/admin-web/app/tenant/laporan/page.tsx
 apps/admin-web/app/tenant/lokasi/page.tsx
 apps/admin-web/app/tenant/notifikasi/page.tsx
@@ -418,6 +424,7 @@ chat-session.md
 config/performance-budget.json
 docker-compose.rescue.yml
 docker-compose.yml
+docs/BACKEND-FRONTEND-SURFACE-CENSUS.md
 docs/DEEP-PRODUCT-AUDIT-2026-10-04.md
 docs/ENTERPRISE-ACCEPTANCE-EVIDENCE.md
 docs/ENTERPRISE-WAVE-ROADMAP.md
@@ -647,6 +654,7 @@ prisma/migrations/20261002210000_wave12_edge_gateways/migration.sql
 prisma/migrations/20261002220000_wave12_device_twin/migration.sql
 prisma/migrations/20261004213000_schedule_scene_referential_integrity/migration.sql
 prisma/migrations/20261005011500_tenant_role_override_tenant_integrity/migration.sql
+prisma/migrations/20261005165000_integration_registry_tenant_integrity/migration.sql
 prisma/migrations/migration_lock.toml
 prisma/schema.prisma
 prisma/seed.ts
@@ -751,6 +759,7 @@ scripts/self-test-github-actions-runtime.mjs
 scripts/self-test-gitignore-source-scope.mjs
 scripts/self-test-live-probe-contracts.mjs
 scripts/self-test-migration-compatibility.mjs
+scripts/self-test-product-surface-closure.mjs
 scripts/self-test-production-approval-gate.mjs
 scripts/self-test-production-approval-receipt.mjs
 scripts/self-test-production-environment.mjs
@@ -1180,6 +1189,7 @@ test/admin-web-bff-content-type.contract.spec.ts
 test/admin-web-proxy-session.contract.spec.ts
 test/admin-web-session-lifecycle.contract.spec.ts
 test/application.smoke.e2e-spec.ts
+test/backend-frontend-surface-census.contract.spec.ts
 test/capability-template-lifecycle.contract.spec.ts
 test/ci-dependency-bootstrap.contract.spec.ts
 test/client-fetch-mount-safety.contract.spec.ts
@@ -1337,6 +1347,7 @@ test/telemetry-automation-wiring.contract.spec.ts
 test/tenant-command-drilldown.contract.spec.ts
 test/tenant-dashboard-editor.contract.spec.ts
 test/tenant-isolation-at-query-layer.contract.spec.ts
+test/tenant-operator-surface-closure.contract.spec.ts
 test/tenant-workspace-widget-readings.contract.spec.ts
 test/testing-strategy.contract.spec.ts
 test/wave-02-core-runtime-closure-invariants.contract.spec.ts

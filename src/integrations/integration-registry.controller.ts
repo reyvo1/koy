@@ -15,7 +15,11 @@ import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantContextGuard } from '../users/guards/tenant-context.guard';
 import { AdminRoleGuard } from '../admin-operations/admin-role.guard';
-import { IntegrationRegistryService, INTEGRATION_LIMITS } from './integration-registry.service';
+import {
+  IntegrationRegistryService,
+  INTEGRATION_CREDENTIAL_REF_PREFIX,
+  INTEGRATION_LIMITS,
+} from './integration-registry.service';
 import {
   DomainBadRequestException,
   DomainConflictException,
@@ -54,10 +58,11 @@ const invalid = (message: string) => new DomainBadRequestException(ERROR_CODES.V
  * `integrations` and `integration_sync_state` held zero rows — the registry could only be
  * populated by a test.
  *
- * Deliberately narrow. `setStatus` and `recordSync` are adapter-facing: the service comment
- * states that provider adapters call them in a later slice, and no adapter exists yet. Wiring
- * them to an operator route would publish a control for an action nothing performs, so they
- * stay unexposed until Wave 8 has real adapters to drive them.
+ * Deliberately narrow. `setStatus` and `recordSync` are adapter-facing. MQTT_BRIDGE now has a
+ * real EMQX-backed adapter, while ALEXA/GOOGLE_HOME/HOME_ASSISTANT remain unimplemented. There is
+ * still no generic operator `connect` command because connection needs provider-specific runtime
+ * configuration and secret resolution; exposing a universal button would claim a lifecycle the
+ * adapters do not share. Registry create/list/delete is the truthful common surface.
  */
 @ApiTags('integrations')
 @ApiBearerAuth()
@@ -114,7 +119,7 @@ export class IntegrationRegistryController {
       return {
         id,
         status: IntegrationStatus.REGISTERED,
-        note: 'Integrasi terdaftar. Koneksi ke provider dijalankan oleh adapter, belum ada adapter aktif.',
+        note: 'Integrasi terdaftar. Status REGISTERED hanya membuktikan registry; koneksi provider memerlukan adapter dan konfigurasi runtime yang sesuai.',
       };
     } catch (error) {
       // The service signals invalid input with `Object.assign(new Error(...), { code })`. A
@@ -126,7 +131,7 @@ export class IntegrationRegistryController {
       }
       if (code === 'INTEGRATION_CREDENTIAL_REF_INVALID') {
         throw invalid(
-          `credentialRef wajib diisi dan maksimal ${INTEGRATION_LIMITS.maxCredentialRefLength} karakter.`,
+          `credentialRef wajib berupa referensi ${INTEGRATION_CREDENTIAL_REF_PREFIX}... dan maksimal ${INTEGRATION_LIMITS.maxCredentialRefLength} karakter.`,
         );
       }
       if (code === 'P2002') {
