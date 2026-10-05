@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { RefreshCw, LogOut, ChevronRight } from 'lucide-react';
+import { RefreshCw, LogOut, ChevronRight, RadioTower } from 'lucide-react';
 import { StateNotice } from '@iot-platform/design-system';
 import type {
   AdminOperationalSummary,

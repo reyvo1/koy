@@ -271,7 +271,7 @@ c17ba74e0efc81d6abca6f5cf5aebc28fa96efb9306639c9565fe4185298b643  ./apps/admin-w
 007755f722b86ba4cb369e90d7d3de229eb03f496aad7ae64c524983407e166b  ./apps/admin-web/components/enterprise-table.tsx
 e8a96f4b98799fdcb69335163119eb815544eb1f71658be513e891ef16a446c5  ./apps/admin-web/components/noc-content.tsx
 8f620857030812fd332fe274f3ce3f9a62bf5544795fa35709a5afe365b69a43  ./apps/admin-web/components/operational-summary-dashboard.tsx
-454a57e6e9e7010daebd8de7ced8a0e07d95b49730fd2ce1a7b19f9a121eeb87  ./apps/admin-web/components/operational-summary-experience.tsx
+ef50bf911e53fb898b8b631bcbd682429d526c3bcd9f17526b662ac8904c4c51  ./apps/admin-web/components/operational-summary-experience.tsx
 409847f8f141f90d6064a09761325eef932ddc70ca30ebebabdeb21b5e996121  ./apps/admin-web/components/quarantine-banner.tsx
 8bcd92302ad2e21b11920b6e3187627cc868c71dab817f877ff79a95b591c8cc  ./apps/admin-web/components/super-admin-shell.tsx
 ae40472cc8dced95b31ff33d6967dcfb8bf58064b3b24367ecf401bbc846b855  ./apps/admin-web/components/super-alerts-content.tsx
