@@ -193,4 +193,99 @@ describe('AdminUserProvisioningService', () => {
     expect(result.total).toBe(1);
     expect(result.items[0].tenantName).toBe('Demo Hotel');
   });
+  it('preserves revoked membership state in tenant and platform directories', async () => {
+    const revokedMembership = {
+      id: 'm-revoked',
+      tenantId,
+      role: 'ADMIN',
+      status: 'REVOKED',
+    };
+    const row = {
+      id: 'user-revoked',
+      email: 'revoked@demo.id',
+      name: 'Revoked User',
+      isVerified: true,
+      tenantId,
+      createdAt: new Date('2026-08-29T00:00:00Z'),
+      tenant: { name: 'Demo Tenant' },
+      memberships: [revokedMembership],
+    };
+    const prisma = {
+      user: {
+        findMany: jest.fn().mockResolvedValue([row]),
+        count: jest.fn().mockResolvedValue(1),
+      },
+    };
+    const service = new AdminUserProvisioningService(prisma as never);
+
+    const platform = await service.listAllUsers();
+    const tenant = await service.listTenantUsers(tenantId);
+
+    expect(platform.items[0]).toMatchObject({ role: 'ADMIN', status: 'REVOKED' });
+    expect(tenant.items[0]).toMatchObject({
+      membershipId: 'm-revoked',
+      role: 'ADMIN',
+      status: 'REVOKED',
+    });
+  });
+
+  it('does not report ACTIVE when a name-only update targets a revoked membership', async () => {
+    const membershipUpdate = jest.fn().mockResolvedValue({});
+    const userUpdate = jest.fn().mockResolvedValue({});
+    const prisma = {
+      membership: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'm-revoked',
+          role: 'MEMBER',
+          status: 'REVOKED',
+          user: { name: 'Old Name' },
+        }),
+        update: membershipUpdate,
+      },
+      user: { update: userUpdate },
+    };
+    const service = new AdminUserProvisioningService(prisma as never);
+
+    const result = await service.updateUser(
+      { userId: 'user-revoked', tenantId },
+      { name: 'New Name' },
+      'actor-1',
+    );
+
+    expect(result).toMatchObject({ name: 'New Name', role: 'MEMBER', status: 'REVOKED' });
+    expect(membershipUpdate).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when a user directory row has no membership for its owning tenant', async () => {
+    const row = {
+      id: 'user-broken',
+      email: 'broken@demo.id',
+      name: 'Broken Membership',
+      isVerified: true,
+      tenantId,
+      createdAt: new Date('2026-08-29T00:00:00Z'),
+      tenant: { name: 'Demo Tenant' },
+      memberships: [
+        {
+          id: 'm-other',
+          tenantId: '22222222-2222-4222-8222-222222222222',
+          role: 'ADMIN',
+          status: 'ACTIVE',
+        },
+      ],
+    };
+    const prisma = {
+      user: {
+        findMany: jest.fn().mockResolvedValue([row]),
+        count: jest.fn().mockResolvedValue(1),
+      },
+    };
+    const service = new AdminUserProvisioningService(prisma as never);
+
+    await expect(service.listAllUsers()).rejects.toBeInstanceOf(DomainConflictException);
+    await expect(service.listTenantUsers(tenantId)).rejects.toBeInstanceOf(
+      DomainConflictException,
+    );
+  });
+
 });

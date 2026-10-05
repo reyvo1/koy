@@ -26,7 +26,7 @@ describe('G1.3 Commands screen (blueprint §2)', () => {
   });
 
   it('nav exposes the commands entry', () => {
-    const shell = read('apps/admin-web/components/tenant-shell.tsx');
+    const shell = read('apps/admin-web/lib/tenant-navigation.ts');
     expect(shell).toContain('/tenant/perintah');
   });
 });

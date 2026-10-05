@@ -6,7 +6,7 @@
  * surfaces instead of being simulated in the browser.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AdminShellV3 } from '@/components/admin-shell-v3';
 import { QuarantineBanner } from '@/components/quarantine-banner';
@@ -80,6 +80,10 @@ export default function TechnicianAppPage() {
   const [logError, setLogError] = useState<string | null>(null);
   const [logDeviceId, setLogDeviceId] = useState<string | null>(null);
   const [maintenanceError, setMaintenanceError] = useState<string | null>(null);
+  const [maintenanceActionError, setMaintenanceActionError] = useState<string | null>(null);
+  const [maintenanceDeviceId, setMaintenanceDeviceId] = useState('');
+  const [maintenanceReason, setMaintenanceReason] = useState('');
+  const [openingMaintenance, setOpeningMaintenance] = useState(false);
   const [resolving, setResolving] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -119,6 +123,43 @@ export default function TechnicianAppPage() {
     }
   }, []);
 
+  const openWindow = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const deviceId = maintenanceDeviceId.trim();
+      const reason = maintenanceReason.trim();
+      if (!deviceId || !reason) return;
+
+      setOpeningMaintenance(true);
+      setMaintenanceActionError(null);
+      try {
+        const response = await fetch('/api/admin/device-maintenance', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ deviceId, reason }),
+        });
+        const body = (await response.json().catch(() => null)) as
+          | { error?: { message?: string }; message?: string }
+          | null;
+        if (!response.ok) {
+          throw new Error(
+            body?.error?.message ?? body?.message ?? `HTTP ${response.status}`,
+          );
+        }
+        setMaintenanceDeviceId('');
+        setMaintenanceReason('');
+        await loadMaintenance();
+      } catch (cause) {
+        setMaintenanceActionError(
+          cause instanceof Error ? cause.message : 'gagal membuka maintenance',
+        );
+      } finally {
+        setOpeningMaintenance(false);
+      }
+    },
+    [loadMaintenance, maintenanceDeviceId, maintenanceReason],
+  );
+
   const resolveWindow = useCallback(
     async (maintenanceId: string) => {
       setResolving(maintenanceId);
@@ -132,9 +173,10 @@ export default function TechnicianAppPage() {
           },
         );
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        setMaintenanceActionError(null);
         await loadMaintenance();
       } catch (cause) {
-        setMaintenanceError(
+        setMaintenanceActionError(
           cause instanceof Error ? cause.message : 'gagal menutup maintenance',
         );
       } finally {
@@ -314,6 +356,56 @@ export default function TechnicianAppPage() {
             <code> updateHeartbeat</code> menulis <code>ACTIVE</code> pada setiap heartbeat, jadi
             state maintenance di kolom itu akan menutup dirinya sendiri.
           </p>
+
+          <form
+            onSubmit={openWindow}
+            className="mb-5 grid gap-3 rounded-xl border border-slate-800/80 bg-slate-900/40 p-4 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto]"
+          >
+            <label className="block">
+              <span className="mb-1 block text-[11.5px] font-semibold text-slate-400">Perangkat</span>
+              <select
+                required
+                value={maintenanceDeviceId}
+                onChange={(event) => setMaintenanceDeviceId(event.target.value)}
+                disabled={openingMaintenance || devices.length === 0}
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-[12.5px] text-slate-200 outline-none focus:border-teal-500 disabled:opacity-50"
+              >
+                <option value="">Pilih perangkat…</option>
+                {devices.map((device) => (
+                  <option key={device.id} value={device.id}>
+                    {device.name} · {device.status}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-[11.5px] font-semibold text-slate-400">Alasan maintenance</span>
+              <input
+                required
+                maxLength={500}
+                value={maintenanceReason}
+                onChange={(event) => setMaintenanceReason(event.target.value)}
+                disabled={openingMaintenance}
+                placeholder="Contoh: inspeksi aktuator setelah heartbeat tidak stabil"
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-[12.5px] text-slate-200 outline-none placeholder:text-slate-600 focus:border-teal-500 disabled:opacity-50"
+              />
+            </label>
+            <div className="flex items-end">
+              <button
+                type="submit"
+                disabled={openingMaintenance || !maintenanceDeviceId || !maintenanceReason.trim()}
+                className="w-full rounded-lg bg-amber-500/20 px-4 py-2 text-[12.5px] font-bold text-amber-300 hover:bg-amber-500/30 disabled:opacity-50 md:w-auto"
+              >
+                {openingMaintenance ? 'Membuka…' : 'Buka Maintenance'}
+              </button>
+            </div>
+          </form>
+
+          {maintenanceActionError ? (
+            <p className="rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-[13px] text-red-300">
+              Operasi maintenance gagal ({maintenanceActionError}).
+            </p>
+          ) : null}
 
           {maintenanceError ? (
             <p className="rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-[13px] text-red-300">

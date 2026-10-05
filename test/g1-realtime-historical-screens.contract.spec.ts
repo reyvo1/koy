@@ -38,7 +38,7 @@ describe('G1.2 Realtime Monitoring + Historical Data screens (blueprint §2)', (
   });
 
   it('nav exposes realtime + charts + historical entries', () => {
-    const shell = read('apps/admin-web/components/tenant-shell.tsx');
+    const shell = read('apps/admin-web/lib/tenant-navigation.ts');
     expect(shell).toContain('/tenant/historis');
   });
 });

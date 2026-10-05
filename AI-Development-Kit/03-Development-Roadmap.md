@@ -1,18 +1,18 @@
 # SESSION TRANSFER — 2026-10-05
 
-- **Authoritative all-green software baseline:** commit `ea182d9f840b8f9a74c5957c386416084e9af216` / GitHub Actions run `37266021484` / evidence `logs_100935642537.zip`.
-- **Active WIP:** Product Surface Census/Closure V1. This snapshot is **NOT a certified green checkpoint** and must not be pushed or deployed until targeted QA + full local pre-push/full Jest + GitHub Heavy UAT pass.
+- **Authoritative all-green software baseline:** commit `8b2a76b69bb84e12324baee5ca031c7540d3b5d3` / GitHub Actions run `37307702951` / evidence `logs_101047777120.zip`.
+- **Active WIP:** final backend↔frontend/menu/action integrity audit; not a certified checkpoint until official local gates + a new GitHub Heavy UAT pass.
 - **Waves 1–13:** remain software-scope closed/green; do **not** restart them from zero without new failing evidence.
 - **Production deployment:** remains **NOT APPROVED** until real environment evidence is captured and verified. Software/UAT green is not deployment approval.
 - **Hardware evidence:** `SIMULATED_HARDWARE_LIVE_SERVICE` remains the automated label; PHYSICAL/HIL stays optional/non-blocking for software.
-- **Current WIP scope:** Tenant Audit UI, Integration Registry UI, Notification Detail, and backend↔frontend surface census. During review, a real audit-pagination contract defect was found and fixed: `nextCursor` is now opaque base64url, matching the controller parser; regression coverage was added.
-- **Next session must:** review current WIP diff/package, rerun structural guards, then run targeted Jest + existing full `wave3:prepush:check` on clean `main@ea182d9f...`; only one commit/push after all local gates are green, then treat the next GitHub Heavy UAT as authoritative.
+- **Current audit scope:** canonical tenant navigation, truthful user membership state/edit semantics, Technician maintenance action reachability, and permanent cross-surface regression guards.
+- **Next session must:** resume from the exact checkpoint, verify `git rev-parse HEAD` + `git status --short`, use an isolated worktree, run official structural/Prisma/targeted/PostgreSQL/full pre-push gates, review the full diff, then one commit/push and GitHub Heavy UAT only if every local gate is green.
 
 # Post-foundation enterprise execution — authoritative addendum
 
 <!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-13; active=none -->
 
-The numbered Module 1–30 list below is the completed **foundation roadmap**. It is no longer the active execution queue. The active post-foundation queue is `docs/ENTERPRISE-WAVE-ROADMAP.md` with Wave 1–13. Acceptance evidence strength is governed by `docs/ENTERPRISE-ACCEPTANCE-EVIDENCE.md`; STATIC/CONTRACT checks cannot substitute for INTEGRATION or LIVE-SERVICE evidence. Waves 1–13 are **SOFTWARE SCOPE CLOSED / GREEN**; no software wave is active after GitHub run `37212540616` on commit `2cecb7aa4020ffb6a566949f2e5a44794432d0a7`. Automated production-readiness must use source-bound `SIMULATED_HARDWARE_LIVE_SERVICE` evidence for unavailable ESP32/camera hardware; later PHYSICAL/HIL observation is separate and non-blocking, while genuinely provider-owned evidence remains external. Future hardening remains one large batch before one GitHub push; no return to micro-RR progression.
+The numbered Module 1–30 list below is the completed **foundation roadmap**. It is no longer the active execution queue. The active post-foundation queue is `docs/ENTERPRISE-WAVE-ROADMAP.md` with Wave 1–13. Acceptance evidence strength is governed by `docs/ENTERPRISE-ACCEPTANCE-EVIDENCE.md`; STATIC/CONTRACT checks cannot substitute for INTEGRATION or LIVE-SERVICE evidence. Waves 1–13 are **SOFTWARE SCOPE CLOSED / GREEN**; no software wave is active; the latest authoritative software checkpoint is GitHub run `37307702951` on commit `8b2a76b69bb84e12324baee5ca031c7540d3b5d3`. Automated production-readiness must use source-bound `SIMULATED_HARDWARE_LIVE_SERVICE` evidence for unavailable ESP32/camera hardware; later PHYSICAL/HIL observation is separate and non-blocking, while genuinely provider-owned evidence remains external. Future hardening remains one large batch before one GitHub push; no return to micro-RR progression.
 
 ---
 

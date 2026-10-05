@@ -47,17 +47,29 @@ describe('Module 10 Slice 10.6 web workspace and design-system foundation contra
     expect(app.scripts.build).toBe('next build');
   });
 
-  it.each([
-    'apps/admin-web/components/super-admin-shell.tsx',
-    'apps/admin-web/components/tenant-shell.tsx',
-    'apps/admin-web/components/admin-shell-v3.tsx',
-  ])('gives every navigation group in %s a unique label', (path) => {
+  it('gives every navigation group a unique label from its authoritative navigation source', () => {
     // AppShell keys each rendered group by its label, so a repeated label is a React
     // duplicate-key error: one of the two groups is dropped from the reconciliation tree and
-    // the sidebar silently loses a section. It is only visible in a real browser console.
-    const labels = [...read(path).matchAll(/^\s{4}label: '([^']+)',$/gm)].map((m) => m[1]);
-    expect(labels.length).toBeGreaterThan(0);
-    expect(new Set(labels).size).toBe(labels.length);
+    // the sidebar silently loses a section. Tenant navigation now has one canonical source
+    // shared by TenantShell/AdminShellV3, so this contract must follow that architecture
+    // instead of requiring the labels to remain duplicated inline in every consumer.
+    const sources = [
+      'apps/admin-web/components/super-admin-shell.tsx',
+      'apps/admin-web/lib/tenant-navigation.ts',
+    ];
+
+    for (const path of sources) {
+      const labels = [...read(path).matchAll(/^\s{4}label: '([^']+)',$/gm)].map(
+        (match) => match[1],
+      );
+      expect(labels.length).toBeGreaterThan(0);
+      expect(new Set(labels).size).toBe(labels.length);
+    }
+
+    const tenantShell = read('apps/admin-web/components/tenant-shell.tsx');
+    const fieldShell = read('apps/admin-web/components/admin-shell-v3.tsx');
+    expect(tenantShell).toContain('TENANT_NAV_GROUPS');
+    expect(fieldShell).toContain('TENANT_NAV_GROUPS');
   });
 
   it('keys the shared shell groups by something stable rather than their display text', () => {

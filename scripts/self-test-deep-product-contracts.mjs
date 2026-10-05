@@ -320,8 +320,8 @@ const productionReadiness = read('docs/production-readiness.md');
 assert(
   productionReadiness.includes('Status: NOT READY FOR PRODUCTION DEPLOYMENT') &&
     productionReadiness.includes('Completion review status: LOCAL GATES PASSED') &&
-    productionReadiness.includes('ea182d9f840b8f9a74c5957c386416084e9af216') &&
-    productionReadiness.includes('37266021484') &&
+    productionReadiness.includes('8b2a76b69bb84e12324baee5ca031c7540d3b5d3') &&
+    productionReadiness.includes('37307702951') &&
     productionReadiness.includes('Repository software status: GREEN AT'),
   'production readiness keeps canonical fail-closed deployment status while recording repository-green authority separately',
 );
@@ -331,7 +331,7 @@ assert(/Waves 1[–-]13: \*\*SOFTWARE SCOPE CLOSED \/ GREEN\*\*/.test(roadmap), 
 for (const rel of ['CURRENT-STATE.md','PROJECT-HANDOFF.md','docs/SESSION-CHECKPOINT.md','chat-session.md']) {
   const text = read(rel).split(/--- HISTORICAL/)[0];
   assert(text.includes('software-closed=1-13; active=none'), `${rel} uses terminal enterprise-wave marker`);
-  assert(text.includes('37266021484') && text.includes('ea182d9f840b8f9a74c5957c386416084e9af216'), `${rel} points to the latest all-green evidence baseline`);
+  assert(text.includes('37307702951') && text.includes('8b2a76b69bb84e12324baee5ca031c7540d3b5d3'), `${rel} points to the latest all-green evidence baseline`);
 }
 
 console.log('DEEP PRODUCT CONTRACT SELF-TEST PASS');

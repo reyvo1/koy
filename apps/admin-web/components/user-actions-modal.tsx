@@ -15,6 +15,7 @@ export interface ManagedUser {
   role?: string;
   isVerified?: boolean;
   tenantId?: string;
+  status?: string;
 }
 
 interface Props {
@@ -48,7 +49,7 @@ export default function UserActionsModal({
     if (user) {
       setName(user.name ?? '');
       setRole(user.role ?? 'MEMBER');
-      setStatus('ACTIVE');
+      setStatus(user.status ?? 'ACTIVE');
       setPassword('');
       setConfirmDelete(false);
       setMessage(null);
@@ -92,10 +93,31 @@ export default function UserActionsModal({
   };
 
   const saveProfile = () => {
-    const payload =
-      scope === 'platform'
-        ? { tenantId, name: name.trim() || undefined, role, status }
-        : { name: name.trim() || undefined, role, status };
+    const originalName = user.name ?? '';
+    const originalRole = user.role ?? 'MEMBER';
+    const originalStatus = user.status ?? 'ACTIVE';
+    const nextName = name.trim();
+    const payload: {
+      tenantId?: string;
+      name?: string;
+      role?: string;
+      status?: string;
+    } = scope === 'platform' ? { tenantId } : {};
+
+    // Send only fields the operator actually changed. Sending unchanged role/status used to make a
+    // harmless name edit a status mutation, which could reactivate a revoked account and also made
+    // self-name edits fail because the backend correctly forbids self role/status mutation.
+    if (nextName !== originalName) payload.name = nextName;
+    if (!isPlatformAdmin && role !== originalRole) payload.role = role;
+    if (!isPlatformAdmin && status !== originalStatus) payload.status = status;
+
+    const changedKeys = Object.keys(payload).filter((key) => key !== 'tenantId');
+    if (changedKeys.length === 0) {
+      setError(null);
+      setMessage('Tidak ada perubahan.');
+      return;
+    }
+
     void call(
       `${base}/${user.id}`,
       {
@@ -205,6 +227,9 @@ export default function UserActionsModal({
                   disabled={isPlatformAdmin}
                   className={inputClass}
                 >
+                  {status === 'PENDING' ? (
+                    <option value="PENDING" disabled>MENUNGGU VERIFIKASI</option>
+                  ) : null}
                   <option value="ACTIVE">AKTIF</option>
                   <option value="REVOKED">DINONAKTIFKAN</option>
                 </select>

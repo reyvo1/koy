@@ -118,9 +118,10 @@ for (const path of [
 }
 
 const tenantShell = read('apps/admin-web/components/tenant-shell.tsx');
+const tenantNavigation = read('apps/admin-web/lib/tenant-navigation.ts');
 check(
   'tenant device groups are a canonical real-data navigation surface',
-  tenantShell.includes("href: '/tenant/grup-perangkat'") &&
+  tenantNavigation.includes("href: '/tenant/grup-perangkat'") &&
     existsSync(join(root, 'apps/admin-web/components/tenant-device-groups-content.tsx')),
 );
 const superShell = read('apps/admin-web/components/super-admin-shell.tsx');
@@ -1526,8 +1527,8 @@ const userRootFoundation = read('apps/user-web/app/page.tsx');
 check(
   'tenant analytics findings has a truthful canonical surface and notification compatibility redirect',
   tenantFindingsPageFoundation.includes('title="Temuan Analitik"') &&
-    tenantShell.includes("href: '/tenant/temuan'") &&
-    tenantShell.includes("label: 'Temuan Analitik'") &&
+    tenantNavigation.includes("href: '/tenant/temuan'") &&
+    tenantNavigation.includes("label: 'Temuan Analitik'") &&
     notificationsUi.includes("fetch('/api/admin/analytics-findings?limit=50')") &&
     notificationsUi.includes('bukan riwayat delivery notifikasi') &&
     legacyNotificationsPageFoundation.includes("redirect('/tenant/temuan')") &&
@@ -1535,7 +1536,7 @@ check(
     // notification-delivery log (queue, worker attempts, failure codes), verified by reading
     // the page, and docs/UI-ROUTE-MAP.md classifies it KEEP rather than MERGE. The old check
     // asserted its absence, which is the opposite of the verified decision.
-    tenantShell.includes("href: '/tenant/notifikasi'"),
+    tenantNavigation.includes("href: '/tenant/notifikasi'"),
 );
 check(
   'firmware UI distinguishes stored digest/rollout state from byte verification and physical OTA proof',
@@ -3333,9 +3334,24 @@ const NON_PRODUCTION_LABEL = /belum produksi|beta|laboratorium|quarantine|experi
 
 /** Shell component -> the app route tree it owns. */
 const ADMIN_SHELLS = [
-  { file: 'apps/admin-web/components/admin-shell-v3.tsx', app: 'apps/admin-web/app' },
-  { file: 'apps/admin-web/components/super-admin-shell.tsx', app: 'apps/admin-web/app' },
-  { file: 'apps/admin-web/components/tenant-shell.tsx', app: 'apps/admin-web/app' },
+  {
+    file: 'apps/admin-web/components/admin-shell-v3.tsx',
+    app: 'apps/admin-web/app',
+    navSources: [
+      'apps/admin-web/lib/tenant-navigation.ts',
+      'apps/admin-web/components/admin-shell-v3.tsx',
+    ],
+  },
+  {
+    file: 'apps/admin-web/components/super-admin-shell.tsx',
+    app: 'apps/admin-web/app',
+    navSources: ['apps/admin-web/components/super-admin-shell.tsx'],
+  },
+  {
+    file: 'apps/admin-web/components/tenant-shell.tsx',
+    app: 'apps/admin-web/app',
+    navSources: ['apps/admin-web/lib/tenant-navigation.ts'],
+  },
 ];
 const SHELL_ROUTE_PREFIX = {
   'admin-shell-v3.tsx': /^\/field/,
@@ -3353,6 +3369,10 @@ function parseNavGroups(source) {
     groups.push({ label: match[1], hrefs });
   }
   return groups;
+}
+
+function shellNavGroups(shell) {
+  return shell.navSources.flatMap((path) => parseNavGroups(read(path)));
 }
 
 function pageRoutes(appRoot) {
@@ -3392,7 +3412,7 @@ function staticRoute(route) {
 const allNavHrefs = new Set();
 for (const shell of ADMIN_SHELLS) {
   if (!existsSync(join(root, shell.file))) continue;
-  for (const group of parseNavGroups(read(shell.file))) {
+  for (const group of shellNavGroups(shell)) {
     for (const href of group.hrefs) allNavHrefs.add(href);
   }
 }
@@ -3430,7 +3450,7 @@ check(
 const DEAD_MENU_ENTRIES = [];
 for (const shell of ADMIN_SHELLS) {
   if (!existsSync(join(root, shell.file))) continue;
-  for (const group of parseNavGroups(read(shell.file))) {
+  for (const group of shellNavGroups(shell)) {
     for (const href of group.hrefs) {
       const target = href.split('?')[0].split('#')[0].replace(/\/$/, '') || '/';
       if (target.startsWith('/api')) continue;
@@ -3454,7 +3474,7 @@ for (const route of QUARANTINE_ROUTES) {
   let owner = null;
   for (const shell of ADMIN_SHELLS) {
     if (!existsSync(join(root, shell.file))) continue;
-    const group = parseNavGroups(read(shell.file)).find((candidate) =>
+    const group = shellNavGroups(shell).find((candidate) =>
       candidate.hrefs.includes(route),
     );
     if (group) {
@@ -3474,7 +3494,7 @@ for (const route of QUARANTINE_ROUTES) {
 const QUARANTINE_IN_PRODUCT_GROUP = [];
 for (const shell of ADMIN_SHELLS) {
   if (!existsSync(join(root, shell.file))) continue;
-  for (const group of parseNavGroups(read(shell.file))) {
+  for (const group of shellNavGroups(shell)) {
     if (NON_PRODUCTION_LABEL.test(group.label)) continue;
     for (const href of group.hrefs) {
       if (QUARANTINE_ROUTES.includes(href)) QUARANTINE_IN_PRODUCT_GROUP.push(href);

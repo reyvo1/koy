@@ -2,27 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import {
-  RefreshCw,
-  LogOut,
-  LayoutDashboard,
-  RadioTower,
-  Sofa,
-  Building2,
-  MapPin,
-  Activity,
-  LineChart,
-  History,
-  Zap,
-  Bot,
-  Bell,
-  FileText,
-  Users,
-  Clapperboard,
-  Clock,
-  ChevronRight,
-} from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { RefreshCw, LogOut, ChevronRight } from 'lucide-react';
 import { StateNotice } from '@iot-platform/design-system';
 import type {
   AdminOperationalSummary,
@@ -33,6 +13,7 @@ import {
   isOperationalSummaryStale,
 } from '../lib/operational-summary-state';
 import { AdminLoginForm } from './admin-login-form';
+import { TENANT_NAV_GROUPS } from '@/lib/tenant-navigation';
 import {
   formatTimestamp,
   OperationalSummaryDashboard,
@@ -45,58 +26,14 @@ type ViewState =
   | { kind: 'error'; message: string; requestId: string | null }
   | { kind: 'ready'; summary: AdminOperationalSummary };
 
-/** Full blueprint navigation (UAT fix) — every destination one click away. */
-const NAV_SECTIONS: {
-  label: string;
-  items: { href: string; label: string; icon: LucideIcon }[];
-}[] = [
-  {
-    label: 'Ikhtisar',
-    items: [
-      { href: '/tenant/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-      { href: '/tenant/perangkat', label: 'Perangkat', icon: RadioTower },
-      { href: '/tenant/ruangan', label: 'Ruangan', icon: Sofa },
-    ],
-  },
-  {
-    label: 'Lokasi',
-    items: [
-      { href: '/tenant/gedung', label: 'Gedung', icon: Building2 },
-      { href: '/tenant/lokasi', label: 'Lokasi', icon: MapPin },
-    ],
-  },
-  {
-    label: 'Data',
-    items: [
-      { href: '/tenant/realtime', label: 'Realtime', icon: Activity },
-      { href: '/tenant/grafik', label: 'Grafik', icon: LineChart },
-      { href: '/tenant/historis', label: 'Historis', icon: History },
-    ],
-  },
-  {
-    label: 'Kendali',
-    items: [
-      { href: '/tenant/perintah', label: 'Perintah', icon: Zap },
-      { href: '/tenant/scenes', label: 'Scene', icon: Clapperboard },
-      { href: '/tenant/otomatisasi', label: 'Otomatisasi', icon: Bot },
-      { href: '/tenant/schedules', label: 'Jadwal', icon: Clock },
-    ],
-  },
-  {
-    label: 'Lainnya',
-    items: [
-      { href: '/tenant/temuan', label: 'Temuan Analitik', icon: Bell },
-      { href: '/tenant/laporan', label: 'Laporan', icon: FileText },
-      { href: '/tenant/pengguna', label: 'Pengguna', icon: Users },
-    ],
-  },
-];
+/** Full product navigation — derived from the same canonical model as TenantShell. */
+const NAV_SECTIONS = TENANT_NAV_GROUPS;
 
 function NavigationSidebar() {
   return (
     <nav
       aria-label="Navigasi utama"
-      className="iot-nav-grid mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5"
+      className="iot-nav-grid mb-8 grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4"
     >
       {NAV_SECTIONS.map((section) => (
         <div

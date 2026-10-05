@@ -4,9 +4,9 @@
 
 **Status: NOT READY FOR PRODUCTION DEPLOYMENT**
 
-**Repository software status: GREEN AT `ea182d9f840b8f9a74c5957c386416084e9af216` / RUN `37266021484` / EVIDENCE `logs_100935642537.zip`; FINAL PRODUCTION-READINESS HARDENING CERTIFIED; PRODUCT-SURFACE CLOSURE REQUIRES RE-CERTIFICATION.**
+**Repository software status: GREEN AT `8b2a76b69bb84e12324baee5ca031c7540d3b5d3` / RUN `37307702951` / EVIDENCE `logs_101047777120.zip`; FINAL PRODUCTION-READINESS HARDENING CERTIFIED; PRODUCT-SURFACE CLOSURE CERTIFIED; FINAL CROSS-SURFACE AUDIT REQUIRES RE-CERTIFICATION.**
 
-**Completion review status: LOCAL GATES PASSED — AUTHORITATIVE SOFTWARE/UAT GREEN AT `ea182d9f840b8f9a74c5957c386416084e9af216` / RUN `37266021484`; EXPLICIT ENVIRONMENT DEPLOYMENT APPROVAL PENDING.**
+**Completion review status: LOCAL GATES PASSED — AUTHORITATIVE SOFTWARE/UAT GREEN AT `8b2a76b69bb84e12324baee5ca031c7540d3b5d3` / RUN `37307702951`; EXPLICIT ENVIRONMENT DEPLOYMENT APPROVAL PENDING.**
 
 All repository-level implementation blockers are resolved or controlled. The completion-review script validates the complete reliability, security, deployment, recovery, release, and MQTT transport gates before committing. Actual deployment remains an explicit environment-specific decision because production broker credentials, broker ACLs, trusted CA material, DNS/TLS, secret installation, off-host backup retention, and operator rollback readiness cannot be proven by repository code alone.
 
@@ -112,7 +112,7 @@ Repository/UAT green no longer suffices to mint deployment approval. `release:ap
    - Fastify E2E, PostgreSQL integration, MQTT workflow integration, and MQTT publisher TLS integration pass
    - Recovery drill, release manifest verification, and production artifact startup smoke pass
    - Repository production configuration contracts are verified without committing secrets
-   - Latest authoritative remote CI is green at run `37266021484` / commit `ea182d9f840b8f9a74c5957c386416084e9af216`; every subsequent source batch must obtain its own green Heavy UAT before becoming the next authority
+   - Latest authoritative remote CI is green at run `37307702951` / commit `8b2a76b69bb84e12324baee5ca031c7540d3b5d3`; every subsequent source batch must obtain its own green Heavy UAT before becoming the next authority
    - Production deployment approval remains explicit and environment-specific
 
 ## Exit Rule

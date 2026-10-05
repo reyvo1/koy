@@ -89,7 +89,7 @@ produksi` (`AdminShellV3`) and `Beta · belum produksi` (`SuperAdminShell`).
 | `/perangkat` | MERGE | Redirects to `/tenant/perangkat` |
 | `/automation` | MERGE | Redirects to `/tenant/otomatisasi` |
 | `/perangkat/[deviceId]` | MERGE | Redirects to `/tenant/perangkat/[deviceId]` |
-| `/technician` | QUARANTINE | Diagnostics only; no synthetic claim/log data |
+| `/technician` | QUARANTINE | Live diagnostics + backend DeviceStatus commissioning view + manual maintenance open/resolve + real command log; remains quarantine because automatic maintenance scheduling and broader field workflow are not production-complete. |
 | `/mobile-preview` | QUARANTINE | Visual preview; operational values must not be simulated |
 | `/cctv` | QUARANTINE | Streaming contract incomplete |
 

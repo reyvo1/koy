@@ -2,28 +2,9 @@
 
 import type { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
-import {
-  LayoutDashboard,
-  RadioTower,
-  Boxes,
-  Sofa,
-  Building2,
-  MapPin,
-  Activity,
-  LineChart,
-  History,
-  Zap,
-  Bot,
-  Clapperboard,
-  Clock,
-  Bell,
-  FileText,
-  Users,
-  Wrench,
-  Cctv,
-  Smartphone,
-} from 'lucide-react';
+import { Wrench, Cctv, Smartphone } from 'lucide-react';
 import { AppShell, RoleGate, type AppShellNavGroup } from '@/components/app-shell';
+import { TENANT_NAV_GROUPS } from '@/lib/tenant-navigation';
 import { useAdminSessionRole } from '@/components/use-admin-session-role';
 
 /**
@@ -39,49 +20,10 @@ import { useAdminSessionRole } from '@/components/use-admin-session-role';
  */
 
 const FIELD_NAV: AppShellNavGroup[] = [
+  ...TENANT_NAV_GROUPS,
   {
-    label: 'Operasional',
-    items: [
-      { href: '/tenant/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-      { href: '/tenant/perangkat', label: 'Perangkat', icon: RadioTower },
-      { href: '/tenant/grup-perangkat', label: 'Grup Perangkat', icon: Boxes },
-      { href: '/tenant/ruangan', label: 'Ruangan', icon: Sofa },
-      { href: '/tenant/gedung', label: 'Gedung', icon: Building2 },
-      { href: '/tenant/lokasi', label: 'Lokasi', icon: MapPin },
-    ],
-  },
-  {
-    label: 'Monitoring',
-    items: [
-      { href: '/tenant/realtime', label: 'Realtime', icon: Activity },
-      { href: '/tenant/grafik', label: 'Grafik', icon: LineChart },
-      { href: '/tenant/historis', label: 'Historis', icon: History },
-    ],
-  },
-  {
-    label: 'Otomasi',
-    items: [
-      { href: '/tenant/perintah', label: 'Perintah', icon: Zap },
-      { href: '/tenant/otomatisasi', label: 'Otomatisasi', icon: Bot },
-      { href: '/tenant/scenes', label: 'Scene', icon: Clapperboard },
-      { href: '/tenant/schedules', label: 'Jadwal', icon: Clock },
-    ],
-  },
-  {
-    label: 'Administrasi',
-    items: [
-      { href: '/tenant/temuan', label: 'Temuan Analitik', icon: Bell },
-      { href: '/tenant/laporan', label: 'Laporan', icon: FileText },
-      { href: '/tenant/pengguna', label: 'Pengguna', icon: Users },
-    ],
-  },
-  {
-    // docs/UI-ROUTE-MAP.md marks these three QUARANTINE: real source, but their product
-    // contract is incomplete (no device-log endpoint, no RTSP/ONVIF streaming, no real
-    // telemetry feed in the preview). They are deliberately NOT in the tenant console
-    // above — canonical product navigation only carries KEEP routes. They live here in the
-    // field/lab shell, under one group that says out loud they are not production, so a
-    // built page is never both unreachable and indistinguishable from a finished feature.
+    // docs/UI-ROUTE-MAP.md marks these three QUARANTINE. They remain visibly separated from
+    // production routes while inheriting the complete canonical Tenant navigation above.
     label: 'Laboratorium · belum produksi',
     items: [
       { href: '/technician', label: 'Teknisi', icon: Wrench },

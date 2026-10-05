@@ -184,8 +184,21 @@ export default function TenantUsersContent() {
                     <td style={{ color: 'var(--iot-color-muted)' }}>{m.email ?? ''}</td>
                     <td><span className="iot2-badge iot2-badge--online">{(m.role ?? 'MEMBER').toUpperCase()}</span></td>
                     <td>
-                      <span className="iot2-badge" style={m.status === 'REVOKED' ? { color: '#f87171' } : m.isVerified ? undefined : { color: '#fbbf24' }}>
-                        {m.status === 'REVOKED' ? 'NONAKTIF' : m.isVerified ? 'AKTIF' : 'PENDING'}
+                      <span
+                        className="iot2-badge"
+                        style={
+                          m.status === 'REVOKED'
+                            ? { color: '#f87171' }
+                            : m.status === 'PENDING' || !m.isVerified
+                              ? { color: '#fbbf24' }
+                              : undefined
+                        }
+                      >
+                        {m.status === 'REVOKED'
+                          ? 'NONAKTIF'
+                          : m.status === 'PENDING' || !m.isVerified
+                            ? 'PENDING'
+                            : 'AKTIF'}
                       </span>
                     </td>
                     <td>

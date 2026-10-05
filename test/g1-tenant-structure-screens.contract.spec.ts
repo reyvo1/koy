@@ -61,7 +61,7 @@ describe('G1.1 Tenant Admin Devices/Groups/Rooms/Buildings/Locations screens', (
   });
 
   it('nav exposes all blueprint §2 structure entries', () => {
-    const shell = read('apps/admin-web/components/tenant-shell.tsx');
+    const shell = read('apps/admin-web/lib/tenant-navigation.ts');
     for (const href of [
       '/tenant/perangkat',
       '/tenant/grup-perangkat',

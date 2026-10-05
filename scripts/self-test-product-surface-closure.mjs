@@ -11,6 +11,7 @@ const fail = (message) => {
 const assert = (condition, message) => (condition ? pass(message) : fail(message));
 
 const required = [
+  'apps/admin-web/lib/tenant-navigation.ts',
   'apps/admin-web/app/tenant/audit-log/page.tsx',
   'apps/admin-web/app/tenant/integrasi/page.tsx',
   'apps/admin-web/app/api/tenant/audit-logs/route.ts',
@@ -23,9 +24,53 @@ const required = [
 ];
 for (const path of required) assert(existsSync(join(root, path)), `product surface source exists: ${path}`);
 
+const tenantNavigation = read('apps/admin-web/lib/tenant-navigation.ts');
 const shell = read('apps/admin-web/components/tenant-shell.tsx');
-assert(shell.includes("href: '/tenant/audit-log'"), 'tenant Audit route is navigable');
-assert(shell.includes("href: '/tenant/integrasi'"), 'tenant Integration route is navigable');
+const fieldShell = read('apps/admin-web/components/admin-shell-v3.tsx');
+const operationalSummary = read('apps/admin-web/components/operational-summary-experience.tsx');
+assert(tenantNavigation.includes("href: '/tenant/audit-log'"), 'tenant Audit route is navigable');
+assert(tenantNavigation.includes("href: '/tenant/integrasi'"), 'tenant Integration route is navigable');
+assert(shell.includes('const NAV_GROUPS = TENANT_NAV_GROUPS'), 'TenantShell consumes canonical tenant navigation');
+assert(fieldShell.includes('...TENANT_NAV_GROUPS'), 'field/lab shell preserves every canonical tenant menu entry');
+assert(operationalSummary.includes('const NAV_SECTIONS = TENANT_NAV_GROUPS'), 'dashboard quick access consumes canonical tenant navigation');
+
+const expectedTenantNav = [
+  '/tenant/dashboard',
+  '/tenant/perangkat',
+  '/tenant/grup-perangkat',
+  '/tenant/ruangan',
+  '/tenant/gedung',
+  '/tenant/lokasi',
+  '/tenant/realtime',
+  '/tenant/grafik',
+  '/tenant/historis',
+  '/tenant/perintah',
+  '/tenant/otomatisasi',
+  '/tenant/scenes',
+  '/tenant/schedules',
+  '/tenant/workspace',
+  '/tenant/temuan',
+  '/tenant/notifikasi',
+  '/tenant/audit-log',
+  '/tenant/integrasi',
+  '/tenant/api-keys',
+  '/tenant/webhooks',
+  '/tenant/organisasi',
+  '/tenant/laporan',
+  '/tenant/pengguna',
+];
+const tenantNavHrefs = [...tenantNavigation.matchAll(/href:\s*'([^']+)'/g)].map((match) => match[1]);
+assert(
+  tenantNavHrefs.length === expectedTenantNav.length &&
+    expectedTenantNav.every((href) => tenantNavHrefs.includes(href)),
+  `canonical tenant navigation is exact (${tenantNavHrefs.length}/${expectedTenantNav.length})`,
+);
+for (const href of expectedTenantNav) {
+  assert(
+    existsSync(join(root, 'apps/admin-web/app', href.replace(/^\//, ''), 'page.tsx')),
+    `canonical tenant menu target exists: ${href}`,
+  );
+}
 
 const auditService = read('src/rbac/rbac-audit.service.ts');
 const auditController = read('src/rbac/rbac-audit.controller.ts');
@@ -73,6 +118,26 @@ assert(notificationPage.includes('EXHAUSTED'), 'notification UI renders real EXH
 assert(!notificationPage.includes('RETRY_SCHEDULED'), 'notification UI does not invent RETRY_SCHEDULED');
 assert(notificationPage.includes('/api/tenant/notifications/${encodeURIComponent(notificationId)}'), 'notification UI can open safe detail');
 
+
+const userProvisioningService = read('src/admin-operations/admin-user-provisioning.service.ts');
+const userActionsModal = read('apps/admin-web/components/user-actions-modal.tsx');
+const tenantUsersContent = read('apps/admin-web/components/tenant-users-content.tsx');
+const superUsersContent = read('apps/admin-web/components/super-users-content.tsx');
+assert(userProvisioningService.includes('private directoryMembership'), 'user directories share a fail-closed tenant membership resolver');
+assert(userProvisioningService.includes('item.tenantId === tenantId'), 'user directory resolver requires the exact tenant membership');
+assert(userProvisioningService.includes('User directory membership is inconsistent with tenant ownership'), 'user directory fails closed on membership/tenant integrity drift');
+assert(userProvisioningService.includes('status: patch.status ?? membership.status'), 'name-only user updates preserve existing membership status');
+assert(userActionsModal.includes("setStatus(user.status ?? 'ACTIVE')"), 'user management modal initializes from actual membership status');
+assert(userActionsModal.includes("status === 'PENDING'"), 'user management modal renders pending membership truthfully instead of coercing it to active');
+assert(tenantUsersContent.includes("m.status === 'PENDING' || !m.isVerified"), 'tenant user table uses membership PENDING before verification state');
+assert(superUsersContent.includes("user.status === 'PENDING' || !user.isVerified"), 'platform user table uses membership PENDING before verification state');
+assert(userActionsModal.includes('status !== originalStatus'), 'user management modal sends status only when the operator changes it');
+
+const technicianPage = read('apps/admin-web/app/technician/page.tsx');
+assert(technicianPage.includes("fetch('/api/admin/device-maintenance'"), 'technician UI calls the maintenance collection BFF');
+assert(technicianPage.includes("method: 'POST'"), 'technician UI can open a maintenance window');
+assert(technicianPage.includes('Buka Maintenance'), 'technician UI exposes the manual maintenance action');
+
 function walk(dir) {
   const out = [];
   for (const name of readdirSync(dir)) {
@@ -100,6 +165,7 @@ const targeted = packageJson.scripts?.['wave2:test:targeted'] ?? '';
 for (const spec of [
   'src/rbac/rbac-audit.service.spec.ts',
   'src/integrations/integration-registry.service.spec.ts',
+  'src/admin-operations/admin-user-provisioning.service.spec.ts',
   'test/notification-operator-log.contract.spec.ts',
   'test/tenant-operator-surface-closure.contract.spec.ts',
   'test/backend-frontend-surface-census.contract.spec.ts',

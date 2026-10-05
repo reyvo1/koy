@@ -251,15 +251,13 @@ export default function SuperUsersContent() {
                   <span className="hidden rounded-full bg-red-500/10 px-3 py-1 text-[11px] font-bold text-red-400 sm:inline">
                     NONAKTIF
                   </span>
+                ) : user.status === 'PENDING' || !user.isVerified ? (
+                  <span className="hidden rounded-full bg-amber-500/10 px-3 py-1 text-[11px] font-bold text-amber-400 sm:inline">
+                    PENDING
+                  </span>
                 ) : (
-                  <span
-                    className={`hidden rounded-full px-3 py-1 text-[11px] font-bold sm:inline ${
-                      user.isVerified
-                        ? 'bg-emerald-500/10 text-emerald-400'
-                        : 'bg-amber-500/10 text-amber-400'
-                    }`}
-                  >
-                    {user.isVerified ? 'VERIFIED' : 'PENDING'}
+                  <span className="hidden rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] font-bold text-emerald-400 sm:inline">
+                    AKTIF
                   </span>
                 )}
                 <button

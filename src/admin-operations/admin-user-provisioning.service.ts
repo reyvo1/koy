@@ -23,6 +23,20 @@ interface CreateUserInput {
 export class AdminUserProvisioningService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private directoryMembership<T extends { tenantId: string; role: string; status: string }>(
+    memberships: T[],
+    tenantId: string,
+  ): T {
+    const membership = memberships.find((item) => item.tenantId === tenantId);
+    if (!membership) {
+      throw new DomainConflictException(
+        ERROR_CODES.Conflict,
+        'User directory membership is inconsistent with tenant ownership',
+      );
+    }
+    return membership;
+  }
+
   async createUser(input: CreateUserInput) {
     const tenant = await this.prisma.tenant.findUnique({
       where: { id: input.tenantId },
@@ -94,7 +108,7 @@ export class AdminUserProvisioningService {
           tenantId: true,
           createdAt: true,
           tenant: { select: { name: true } },
-          memberships: { select: { role: true, status: true } },
+          memberships: { select: { tenantId: true, role: true, status: true } },
         },
       }),
       this.prisma.user.count(),
@@ -102,18 +116,23 @@ export class AdminUserProvisioningService {
 
     return {
       total,
-      items: users.map((user) => ({
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        isVerified: user.isVerified,
-        tenantId: user.tenantId,
-        tenantName: user.tenant.name,
-        role:
-          user.memberships.find((m) => m.status === 'ACTIVE')?.role ?? 'MEMBER',
-        status: user.memberships.find((m) => m.status === 'ACTIVE')?.status ?? 'ACTIVE',
-        createdAt: user.createdAt.toISOString(),
-      })),
+      items: users.map((user) => {
+        const membership = this.directoryMembership(
+          user.memberships,
+          user.tenantId,
+        );
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          isVerified: user.isVerified,
+          tenantId: user.tenantId,
+          tenantName: user.tenant.name,
+          role: membership.role,
+          status: membership.status,
+          createdAt: user.createdAt.toISOString(),
+        };
+      }),
     };
   }
 
@@ -163,7 +182,7 @@ export class AdminUserProvisioningService {
   private async requireMembership(userId: string, tenantId: string) {
     const membership = await this.prisma.membership.findUnique({
       where: { userId_tenantId: { userId, tenantId } },
-      select: { id: true, role: true, user: { select: { name: true } } },
+      select: { id: true, role: true, status: true, user: { select: { name: true } } },
     });
     if (!membership) {
       throw new DomainNotFoundException(
@@ -220,7 +239,7 @@ export class AdminUserProvisioningService {
       id: target.userId,
       name: patch.name !== undefined ? patch.name.trim() || null : membership.user.name,
       role: patch.role ?? membership.role,
-      status: patch.status ?? 'ACTIVE',
+      status: patch.status ?? membership.status,
     };
   }
 
@@ -300,7 +319,7 @@ export class AdminUserProvisioningService {
           name: true,
           isVerified: true,
           createdAt: true,
-          memberships: { select: { id: true, role: true, status: true } },
+          memberships: { select: { id: true, tenantId: true, role: true, status: true } },
         },
       }),
       this.prisma.user.count({ where: { tenantId } }),
@@ -308,20 +327,24 @@ export class AdminUserProvisioningService {
 
     return {
       total,
-      items: users.map((user) => ({
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        isVerified: user.isVerified,
-        // Exposed because device sharing grants are addressed to a membership, not a user:
-        // without the membership id an operator cannot build a share request at all.
-        membershipId:
-          user.memberships.find((m) => m.status === 'ACTIVE')?.id ?? null,
-        role:
-          user.memberships.find((m) => m.status === 'ACTIVE')?.role ?? 'MEMBER',
-        status: user.memberships.find((m) => m.status === 'ACTIVE')?.status ?? 'ACTIVE',
-        createdAt: user.createdAt.toISOString(),
-      })),
+      items: users.map((user) => {
+        const membership = this.directoryMembership(
+          user.memberships,
+          tenantId,
+        );
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          isVerified: user.isVerified,
+          // Exposed because device sharing grants are addressed to a membership, not a user:
+          // without the membership id an operator cannot build a share request at all.
+          membershipId: membership.id,
+          role: membership.role,
+          status: membership.status,
+          createdAt: user.createdAt.toISOString(),
+        };
+      }),
     };
   }
 }

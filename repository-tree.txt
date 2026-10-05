@@ -325,6 +325,7 @@ apps/admin-web/lib/operational-summary-state.ts
 apps/admin-web/lib/proxy.ts
 apps/admin-web/lib/safe-fetch.ts
 apps/admin-web/lib/session.ts
+apps/admin-web/lib/tenant-navigation.ts
 apps/admin-web/lib/tenant-resolver.ts
 apps/admin-web/lib/use-telemetry-stream.ts
 apps/admin-web/next.config.mjs
