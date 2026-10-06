@@ -200,6 +200,9 @@ jobs:
           path: artifacts/iot-platform-release
           if-no-files-found: error
           retention-days: 14
+          # The verified release manifest intentionally contains .node-version and .nvmrc.
+          # Hidden-file exclusion would silently strip those runtime pins after release:verify.
+          include-hidden-files: true
 
 
   esp32-firmware-simulation:

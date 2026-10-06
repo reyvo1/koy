@@ -102,7 +102,7 @@ npm run release:approve -- \
 
 The normal automated hardware path remains `SIMULATED_HARDWARE_LIVE_SERVICE`; a genuine physical OTA/device digest remains an optional field-validation path. `production-approval.json` binds the exact release manifest, sealed-source fingerprint, software/live evidence, hardware evidence, and environment-evidence SHA-256. `release:verify --require-approved` requires both approval and environment sidecars. At install time, `verify-production-environment-current.mjs` also compares the approved runtime/backup environment hashes, owners/modes, Node major, and Redis host sysctl to the current target, so environment drift after preflight blocks deployment.
 
-CI uploads the verified release directory with GitHub Actions artifact digest validation and a bounded retention period.
+CI uploads the verified release directory with GitHub Actions artifact digest validation and a bounded retention period. The production-release upload explicitly includes hidden files because `.node-version` and `.nvmrc` are manifest-covered runtime pins. This is safe only after `release:verify`: the release builder admits a bounded source set, environment secret files are excluded, and the verifier requires the on-disk file set to match `release-manifest.json` exactly before upload.
 
 ## Deployment Procedure
 

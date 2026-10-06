@@ -20,6 +20,16 @@ const smoke = read(smokePath);
 const brokerSmokeSelfTest = read('scripts/self-test-rescue-live-broker-smoke.mjs');
 const pkg = JSON.parse(read('package.json'));
 
+function workflowStepBlock(name) {
+  const marker = `      - name: ${name}`;
+  const start = workflow.indexOf(marker);
+  if (start < 0) return '';
+  const next = workflow.indexOf('\n      - name: ', start + marker.length);
+  return workflow.slice(start, next < 0 ? workflow.length : next);
+}
+
+const productionReleaseUpload = workflowStepBlock('Upload production release artifact');
+
 check('CI remains runnable manually', workflow.includes('workflow_dispatch:'));
 check('CI verifies secure NestJS/Fastify dependency boundary before production audit', workflow.includes('Verify secure NestJS/Fastify dependency boundary') && workflow.indexOf('security:stack:verify') < workflow.indexOf('security:audit:production'));
 check('CI verifies secure Next.js dependency boundary before production audit', workflow.includes('Verify secure Next.js dependency boundary') && workflow.indexOf('security:web-stack:verify') < workflow.indexOf('security:audit:production'));
@@ -47,6 +57,17 @@ check('CI uses source rescue Docker Compose runtime', workflow.includes('rescue:
 check('CI runs targeted DB stability before full acceptance', workflow.indexOf('Targeted PostgreSQL integration stability gate') < workflow.indexOf('Full automated acceptance once'));
 check('CI runs real broker smoke before Gate 1/full acceptance', workflow.indexOf('Real EMQX auth ACL webhook and ACK smoke') < workflow.indexOf('Gate 1 source-bound runtime receipt'));
 check('CI captures reports and container logs on failure', workflow.includes('if: always()') && workflow.includes('docker-compose.log') && workflow.includes('actions/upload-artifact@v7'));
+check(
+  'production release upload preserves manifest-covered hidden runtime pins',
+  productionReleaseUpload.includes('path: artifacts/iot-platform-release') &&
+    productionReleaseUpload.includes('if-no-files-found: error') &&
+    productionReleaseUpload.includes('include-hidden-files: true'),
+);
+check(
+  'production release is verified before the upload that preserves hidden pins',
+  workflow.indexOf('Verify production release artifact') >= 0 &&
+    workflow.indexOf('Verify production release artifact') < workflow.indexOf('Upload production release artifact'),
+);
 check('CI tears down only ephemeral runner volumes', workflow.includes('down --volumes --remove-orphans'));
 check(
   'CI self-tests bounded broker smoke operations before live EMQX smoke',

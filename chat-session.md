@@ -936,3 +936,10 @@ V8 fixes the evidence harness class without changing Notification business logic
 - Seal after revert: 1054 source paths / 1055 manifest entries, matching V5's count exactly, since the reverted eFuse module was the only added file.
 - Also noted, and not a code problem: the account has exhausted its GitHub Actions artifact storage quota ("Usage is recalculated every 6-12 hours"). That alone fails the `test` job and the ESP32 artifact upload, and it will keep failing until the quota resets or retention is trimmed. It must not be misread as a Wave 3 defect.
 - Method lesson, recorded so this is not repeated: before pushing any change to a toolchain-integrated gate, check the previous run's actual conclusion. `gh run list` is one command and would have shown V5 green. A source-level audit can find real divergences and still be a net regression, because "differs from upstream" is not "broken".
+
+
+## 2026-10-06 — Production release artifact completeness root fix [V11-RELEASE-ARTIFACT-HIDDEN-PINS]
+- Post-green production-boundary audit corrected an authority-reading mistake: `f88ec808...` in the job setup log is the GitHub hosted-runner image provisioner commit, not the repository checkout. The source actually checked out, tested, and named in both uploaded artifacts is `3892bf6f0b922fc5130cf5dce4ed337a484993b7` from GitHub run `37326742206`.
+- Root defect: `release:build` intentionally packages `.node-version` and `.nvmrc`, but the `Upload production release artifact` step used the action default `include-hidden-files: false`. A green pre-upload `release:verify` therefore did not prove the downloaded GitHub artifact still contained both runtime pins.
+- Root fix: the production release upload now sets `include-hidden-files: true` only for the already manifest-verified bounded release directory. `rescue:github-ci:self-test` pins this requirement and the ordering `release:verify` -> upload.
+- Production remains NOT APPROVED. Next: certify this CI-boundary change locally and in GitHub; only then resume RESCUE-02B final evidence and target-environment evidence/approval.
