@@ -331,7 +331,7 @@ assert(/Waves 1[–-]13: \*\*SOFTWARE SCOPE CLOSED \/ GREEN\*\*/.test(roadmap), 
 for (const rel of ['CURRENT-STATE.md','PROJECT-HANDOFF.md','docs/SESSION-CHECKPOINT.md','chat-session.md']) {
   const text = read(rel).split(/--- HISTORICAL/)[0];
   assert(text.includes('software-closed=1-13; active=none'), `${rel} uses terminal enterprise-wave marker`);
-  assert(text.includes('37307702951') && text.includes('8b2a76b69bb84e12324baee5ca031c7540d3b5d3'), `${rel} points to the latest all-green evidence baseline`);
+  assert(text.includes('37449896281') && text.includes('4907ea5822e07188394ebee3c72e860e79a793cc'), `${rel} points to the latest all-green evidence baseline`);
 }
 
 console.log('DEEP PRODUCT CONTRACT SELF-TEST PASS');

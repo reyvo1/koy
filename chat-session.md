@@ -1,3 +1,23 @@
+# CURRENT PRODUCT HARDENING CHECKPOINT — 2026-10-07
+
+<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-13; active=none -->
+
+- **Verified committed baseline:** commit `4907ea5822e07188394ebee3c72e860e79a793cc`, branch `main`, origin `reyvo1/iot-platform`; GitHub Actions run `37449896281` completed/success on that exact source. This run does not certify the new local changes.
+- **Owner instruction:** complete the Development Kit product gaps without making physical hardware a blocker. The owner subsequently explicitly authorized continuing the npm audit and **PUSH** in this same session; the earlier no-push instruction is superseded. No production deploy or existing-runtime restart is authorized.
+- **Implemented batch:** shared typed commands and project confirmation modals; canonical 23+23 admin route sweep; User Web/mobile scene and schedule actions; web camera playback with tenant/VIEW-guarded, credential-free SDP; stored-coordinate maps and admin operator coordinate entry; durable, authority-revalidated recurring maintenance; MQTT/HA connection-check/sync/history/disable; authenticated device firmware/protocol reports. Additive migration strengthens database tenant provenance and prevents duplicate OPEN windows. Details: `docs/PRODUCT-OPERATIONAL-COMPLETION-2026-10-07.md`.
+- **Candidate:** known dirty tree produced by this session from the initially clean verified checkout. Preserve it; no commit/push/deploy yet. Waves 1–13 remain software-scope closed/green; no active numbered wave/module is invented.
+- **FIRST FAILING GATE:** none after repaired local gates. Full local prepush was resumed from its failing classes: critical shell-quote was upgraded to 1.12.0; historical markers were labelled historical; schema relations were confined to their intended tables; mobile discriminant typing and obsolete map/ONVIF source contracts were corrected without weakening safety. New source-bound GitHub full acceptance is the next required gate after the authorized push.
+- **Final local QA:** targeted Jest 55/55 suites, 558/558 tests; one complete full Jest run 291/291 suites, 2584/2584 tests; real migrated PostgreSQL 8/8 integration tests; focused Chrome actions and real decoded synthetic video; backend/SDK/Admin/User Web/mobile/design-system typechecks; Admin and User Web webpack production builds; lint, zero-critical production audit, staged secret scan and required source/schema/ESP-IDF/QEMU-runner contracts PASS. The standard Turbopack build could not bind a sandbox worker port locally; the unchanged default build remains mandatory in GitHub. No full GitHub acceptance is claimed for this candidate yet.
+- **Surface:** 46 controllers / 197 endpoints; 23 tenant and 23 super canonical menus, 7 User Web targets and existing 5 mobile tabs. API-only protocols do not gain artificial menus. CCTV/NOC/Technician keep QUARANTINE until a new full acceptance approves promotion.
+- **Evidence boundary:** `SIMULATED_HARDWARE_LIVE_SERVICE` remains the automated hardware-equivalent class. Focused browser evidence is `BROWSER_FIXTURE + SYNTHETIC_MEDIA_TRANSPORT`; domain responses/device lookup are explicit fixtures while Chrome decodes real go2rtc/FFmpeg test-pattern frames. PHYSICAL/HIL and provider-owned observations remain separate and non-blocking; they are not fabricated. Native mobile camera transport, Alexa/Google authorization and continuous provider health remain explicit scope boundaries.
+- **Production deployment:** NOT APPROVED. Server-owned connection configuration and maintenance-worker enablement require operator setup after migration. No production credentials/configuration were changed.
+
+## Next action
+
+Regenerate/verify the final repository tree and manifest, run handoff/authority/structural checks, stage the whole known batch, verify remote `main` still matches the recorded base, then commit and perform the now-owner-authorized push without force. Monitor the exact resulting SHA in GitHub through core CI, dual ESP32/ESP32-C3 firmware/QEMU and live acceptance; repair any first failing gate by root-cause class. On resume verify `git rev-parse HEAD` / `git status --short` and the newest exact-SHA CI before acting; preserve a known candidate and do not audit from zero or apply historical overlays. Stop only this session's disposable local fixtures. No production deploy is authorized; Waves 1–13 remain closed and physical equipment remains non-blocking.
+
+--- HISTORICAL CHECKPOINTS BELOW — superseded by the block above ---
+
 # SESSION TRANSFER — 2026-10-05 FINAL PRODUCT-SURFACE INTEGRITY AUDIT
 
 - **Authoritative all-green software baseline:** commit `8b2a76b69bb84e12324baee5ca031c7540d3b5d3` / GitHub Actions run `37307702951` / evidence `logs_101047777120.zip`. Evidence confirms 283/283 Jest suites, 2494/2494 tests, PostgreSQL integration 15/15 suites / 64/64 tests, dual ESP32/ESP32-C3 QEMU, Deep Product live regression, Wave 7, and full automated acceptance are green.
@@ -13,7 +33,7 @@
 
 # Chat Session — Final Cross-Surface Integrity Audit
 
-<!-- ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-13; active=none -->
+<!-- HISTORICAL-ENTERPRISE-WAVE-SYNC: authority=docs/ENTERPRISE-WAVE-ROADMAP.md; software-closed=1-13; active=none -->
 
 ## Current authority — 2026-10-05
 

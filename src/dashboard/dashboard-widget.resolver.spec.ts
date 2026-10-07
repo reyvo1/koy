@@ -206,6 +206,15 @@ describe('DashboardWidgetResolver', () => {
     expect(result[0]).toMatchObject({ state: 'READY' });
   });
 
+  it('opts MAP into tenant-owned device location semantics explicitly', () => {
+    const location = binding({ mode: DashboardBindingMode.DEVICE_STATUS, capabilityId: null, capability: null });
+    const [ready] = resolver.resolveWidgets([widget(DashboardWidgetKind.MAP, [location], { coordinateSource: 'DEVICE_LOCATION_V1' })]);
+    expect(ready.state).toBe('READY');
+    const [bad] = resolver.resolveWidgets([widget(DashboardWidgetKind.MAP, [binding()], { coordinateSource: 'DEVICE_LOCATION_V1' })]);
+    expect(bad.state).toBe('INVALID');
+    expect(bad.reasonCode).toBe('MAP_BINDING_INVALID');
+  });
+
   it('marks MAP unsupported until coordinate semantics are approved', () => {
     const mapWidget = widget(DashboardWidgetKind.MAP, []);
     const result = resolver.resolveWidgets([mapWidget]);

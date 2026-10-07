@@ -51,6 +51,16 @@ describe('ESP32 Device SDK contract', () => {
     expect(header).toContain('capability payload <= 1KB');
     expect(header).toContain('primitive values only');
   });
+  it('reports only a bounded running-app version over the authenticated heartbeat', () => {
+    const heartbeat = source.slice(source.indexOf('static bool send_heartbeat(void)'), source.indexOf('static void heartbeat_task'));
+    expect(heartbeat).toContain('esp_ota_get_running_partition()');
+    expect(heartbeat).toContain('esp_ota_get_partition_description(running, &app_desc)');
+    expect(heartbeat).toContain('version_len < sizeof(app_desc.version)');
+    expect(heartbeat).toContain('MQTT_HTTPS_V1');
+    expect(heartbeat).toContain('esp_http_client_set_post_field(client, report, report_len)');
+    expect(heartbeat).not.toContain('IOT_SDK_VERSION');
+    expect(heartbeat).not.toContain('esp_ota_get_boot_partition');
+  });
   it('implements fail-closed streamed OTA verification before boot selection', () => {
     expect(source).toContain('esp_ota_get_next_update_partition(NULL)');
     expect(source).toContain('mbedtls_sha256_update');

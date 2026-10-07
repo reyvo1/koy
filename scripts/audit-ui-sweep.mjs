@@ -11,9 +11,15 @@
  */
 
 import { spawn } from 'node:child_process';
-import { writeFileSync, mkdtempSync } from 'node:fs';
+import {
+  writeFileSync,
+  mkdtempSync,
+  readFileSync,
+  mkdirSync,
+  rmSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 
 const ROLE = process.argv.includes('--role')
   ? process.argv[process.argv.indexOf('--role') + 1]
@@ -21,7 +27,7 @@ const ROLE = process.argv.includes('--role')
 const OUT = process.argv.includes('--out')
   ? process.argv[process.argv.indexOf('--out') + 1]
   : `reports/ui-sweep-${ROLE}.json`;
-const BASE = process.env.SWEEP_BASE ?? 'http://127.0.0.1:5001';
+const BASE = process.env.SWEEP_BASE ?? 'http://127.0.0.1:3100';
 const PORT = 9222 + Math.floor(Math.random() * 300);
 
 const CREDENTIALS = {
@@ -35,45 +41,70 @@ const CREDENTIALS = {
   },
 };
 
+function navigationRoutes(file, prefix) {
+  return [
+    ...readFileSync(new URL(file, import.meta.url), 'utf8').matchAll(
+      /href:\s*'([^']+)'/g,
+    ),
+  ]
+    .map((match) => match[1])
+    .filter((route) => route.startsWith(prefix));
+}
 const ROUTES = {
-  tenant: [
-    '/tenant/dashboard', '/tenant/perangkat', '/tenant/grup-perangkat', '/tenant/ruangan',
-    '/tenant/gedung', '/tenant/lokasi', '/tenant/realtime', '/tenant/grafik',
-    '/tenant/historis', '/tenant/perintah', '/tenant/otomatisasi', '/tenant/scenes',
-    '/tenant/schedules', '/tenant/workspace', '/tenant/temuan', '/tenant/laporan',
-    '/tenant/pengguna', '/tenant/notifikasi',
-  ],
-  super: [
-    '/super/dashboard', '/super/tenants', '/super/subscriptions', '/super/quotas',
-    '/super/billing', '/super/users', '/super/roles', '/super/api-keys', '/super/devices',
-    '/super/device-groups', '/super/provisioning', '/super/credentials', '/super/firmware',
-    '/super/capabilities', '/super/telemetry', '/super/commands', '/super/mqtt',
-    '/super/monitoring', '/super/alerts', '/super/ai', '/super/reports', '/super/settings',
-    '/super/security',
-  ],
+  tenant: navigationRoutes(
+    '../apps/admin-web/lib/tenant-navigation.ts',
+    '/tenant/',
+  ),
+  super: navigationRoutes(
+    '../apps/admin-web/components/super-admin-shell.tsx',
+    '/super/',
+  ),
 };
+if (!ROUTES[ROLE]) throw new Error('role must be tenant or super');
+if (process.argv.includes('--inventory')) {
+  console.log(JSON.stringify(ROUTES, null, 2));
+  process.exit(0);
+}
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function launch() {
   const dir = mkdtempSync(join(tmpdir(), 'sweep-chrome-'));
-  const child = spawn('google-chrome', [
-    '--headless=new', `--remote-debugging-port=${PORT}`, `--user-data-dir=${dir}`,
-    '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
-    '--window-size=1600,1000', 'about:blank',
-  ], { stdio: 'ignore' });
+  const child = spawn(
+    process.env.SWEEP_CHROME ?? 'google-chrome',
+    [
+      '--headless=new',
+      `--remote-debugging-port=${PORT}`,
+      `--user-data-dir=${dir}`,
+      '--no-sandbox',
+      '--disable-gpu',
+      '--disable-dev-shm-usage',
+      '--window-size=1600,1000',
+      'about:blank',
+    ],
+    { stdio: 'ignore' },
+  );
   for (let i = 0; i < 60; i++) {
     try {
       const res = await fetch(`http://127.0.0.1:${PORT}/json/version`);
-      if (res.ok) return { child, info: await res.json() };
-    } catch { /* not up yet */ }
+      if (res.ok) return { child, dir, info: await res.json() };
+    } catch {
+      /* not up yet */
+    }
     await sleep(250);
   }
+  child.kill();
+  rmSync(dir, { recursive: true, force: true });
   throw new Error('chrome tidak siap');
 }
 
 class Cdp {
-  constructor(ws) { this.ws = ws; this.id = 0; this.pending = new Map(); this.events = []; }
+  constructor(ws) {
+    this.ws = ws;
+    this.id = 0;
+    this.pending = new Map();
+    this.events = [];
+  }
 
   static async attach(wsUrl) {
     const ws = new WebSocket(wsUrl);
@@ -87,7 +118,9 @@ class Cdp {
       if (msg.id && cdp.pending.has(msg.id)) {
         const { resolve, reject } = cdp.pending.get(msg.id);
         cdp.pending.delete(msg.id);
-        msg.error ? reject(new Error(JSON.stringify(msg.error))) : resolve(msg.result);
+        msg.error
+          ? reject(new Error(JSON.stringify(msg.error)))
+          : resolve(msg.result);
       } else if (msg.method) {
         cdp.events.push(msg);
       }
@@ -101,12 +134,19 @@ class Cdp {
       this.pending.set(id, { resolve, reject });
       this.ws.send(JSON.stringify({ id, method, params }));
       setTimeout(() => {
-        if (this.pending.has(id)) { this.pending.delete(id); reject(new Error(`timeout ${method}`)); }
+        if (this.pending.has(id)) {
+          this.pending.delete(id);
+          reject(new Error(`timeout ${method}`));
+        }
       }, 45000);
     });
   }
 
-  drain() { const e = this.events; this.events = []; return e; }
+  drain() {
+    const e = this.events;
+    this.events = [];
+    return e;
+  }
 }
 
 const MEASURE = `(() => {
@@ -157,76 +197,122 @@ const MEASURE = `(() => {
 })()`;
 
 async function main() {
-  const { child } = await launch();
-  const targets = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json();
-  const page = targets.find((t) => t.type === 'page');
-  const cdp = await Cdp.attach(page.webSocketDebuggerUrl);
+  const { child, dir } = await launch();
+  try {
+    const targets = await (
+      await fetch(`http://127.0.0.1:${PORT}/json/list`)
+    ).json();
+    const page = targets.find((t) => t.type === 'page');
+    const cdp = await Cdp.attach(page.webSocketDebuggerUrl);
 
-  await cdp.send('Page.enable');
-  await cdp.send('Runtime.enable');
-  await cdp.send('Log.enable');
-  await cdp.send('Network.enable');
+    await cdp.send('Page.enable');
+    await cdp.send('Runtime.enable');
+    await cdp.send('Log.enable');
+    await cdp.send('Network.enable');
 
-  // Log in through the same form an operator uses.
-  const cred = CREDENTIALS[ROLE];
-  const pw = process.env.SWEEP_PASSWORD;
-  if (!pw) throw new Error('SWEEP_PASSWORD wajib diisi (dari seed demo)');
+    // Log in through the same form an operator uses.
+    const cred = CREDENTIALS[ROLE];
+    const pw = process.env.SWEEP_PASSWORD;
+    if (!pw) throw new Error('SWEEP_PASSWORD wajib diisi (dari seed demo)');
 
-  const login = await fetch(`${BASE}/api/session/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tenantId: cred.tenantId, email: cred.email, password: pw }),
-  });
-  if (!login.ok) throw new Error(`login gagal: ${login.status} ${await login.text()}`);
-  const token = (await login.json()).accessToken;
-  const cookies = login.headers.getSetCookie?.() ?? [];
-  if (cookies.length === 0) throw new Error('login tidak mengembalikan cookie sesi');
-  await cdp.send('Network.setCookies', {
-    cookies: cookies.map((c) => {
-      const [pair] = c.split(';');
-      const idx = pair.indexOf('=');
-      return {
-        name: pair.slice(0, idx).trim(),
-        value: pair.slice(idx + 1).trim(),
-        domain: '127.0.0.1', path: '/',
-      };
-    }),
-  });
-  await cdp.send('Runtime.evaluate', {
-    expression: `sessionStorage.setItem('iot.accessToken', ${JSON.stringify(token)})`,
-  });
-
-  const results = [];
-  for (const route of ROUTES[ROLE]) {
-    cdp.drain();
-    const status = await cdp.send('Page.navigate', { url: BASE + route });
-    // Settle: first compile plus the page's own fetches.
-    await sleep(4500);
-    const { result } = await cdp.send('Runtime.evaluate', { expression: MEASURE, returnByValue: true });
-    const events = cdp.drain();
-    const consoleErrors = events
-      .filter((e) => e.method === 'Runtime.consoleAPICalled' && e.params.type === 'error')
-      .map((e) => e.params.args.map((a) => a.value ?? a.description ?? '').join(' ').slice(0, 300));
-    const exceptions = events
-      .filter((e) => e.method === 'Runtime.exceptionThrown')
-      .map((e) => e.params.exceptionDetails.text + ' ' + (e.params.exceptionDetails.exception?.description ?? '').slice(0, 300));
-    const failedRequests = events
-      .filter((e) => e.method === 'Network.loadingFailed')
-      .map((e) => e.params.errorText);
-
-    results.push({
-      route, httpError: status?.errorText ?? null, ...result.value,
-      consoleErrors, exceptions, failedRequests,
+    const login = await fetch(`${BASE}/api/session/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tenantId: cred.tenantId,
+        email: cred.email,
+        password: pw,
+      }),
     });
-    process.stdout.write(
-      `${route.padEnd(30)} chars=${String(result.value.textChars).padStart(5)} btn=${String(result.value.buttonCount).padStart(3)}/${String(result.value.distinctLabels).padStart(2)} tbl=${result.value.tableCount}/${String(result.value.tableRows).padStart(3)} err=${consoleErrors.length + exceptions.length}\n`,
-    );
-  }
+    if (!login.ok)
+      throw new Error(`login gagal: ${login.status} ${await login.text()}`);
+    await login.json();
+    const cookies = login.headers.getSetCookie?.() ?? [];
+    if (cookies.length === 0)
+      throw new Error('login tidak mengembalikan cookie sesi');
+    await cdp.send('Network.setCookies', {
+      cookies: cookies.map((c) => {
+        const [pair] = c.split(';');
+        const idx = pair.indexOf('=');
+        return {
+          name: pair.slice(0, idx).trim(),
+          value: pair.slice(idx + 1).trim(),
+          url: BASE,
+          path: '/',
+        };
+      }),
+    });
 
-  writeFileSync(OUT, JSON.stringify({ role: ROLE, at: new Date().toISOString(), results }, null, 2));
-  cdp.ws.close();
-  child.kill();
+    const results = [];
+    for (const route of ROUTES[ROLE]) {
+      cdp.drain();
+      const status = await cdp.send('Page.navigate', { url: BASE + route });
+      // Settle: first compile plus the page's own fetches.
+      await sleep(4500);
+      const { result } = await cdp.send('Runtime.evaluate', {
+        expression: MEASURE,
+        returnByValue: true,
+      });
+      const events = cdp.drain();
+      const consoleErrors = events
+        .filter(
+          (e) =>
+            e.method === 'Runtime.consoleAPICalled' &&
+            e.params.type === 'error',
+        )
+        .map((e) =>
+          e.params.args
+            .map((a) => a.value ?? a.description ?? '')
+            .join(' ')
+            .slice(0, 300),
+        );
+      const exceptions = events
+        .filter((e) => e.method === 'Runtime.exceptionThrown')
+        .map(
+          (e) =>
+            e.params.exceptionDetails.text +
+            ' ' +
+            (e.params.exceptionDetails.exception?.description ?? '').slice(
+              0,
+              300,
+            ),
+        );
+      const failedRequests = events
+        .filter((e) => e.method === 'Network.loadingFailed')
+        .map((e) => e.params.errorText);
+
+      results.push({
+        route,
+        httpError: status?.errorText ?? null,
+        ...result.value,
+        consoleErrors,
+        exceptions,
+        failedRequests,
+      });
+      process.stdout.write(
+        `${route.padEnd(30)} chars=${String(result.value.textChars).padStart(5)} btn=${String(result.value.buttonCount).padStart(3)}/${String(result.value.distinctLabels).padStart(2)} tbl=${result.value.tableCount}/${String(result.value.tableRows).padStart(3)} err=${consoleErrors.length + exceptions.length}\n`,
+      );
+    }
+
+    mkdirSync(dirname(OUT), { recursive: true });
+    writeFileSync(
+      OUT,
+      JSON.stringify(
+        { role: ROLE, at: new Date().toISOString(), results },
+        null,
+        2,
+      ),
+    );
+    cdp.ws.close();
+  } finally {
+    child.kill();
+    await sleep(300);
+    rmSync(dir, { recursive: true, force: true });
+  }
   process.stdout.write(`\nDitulis: ${OUT}\n`);
 }
 
-main().catch((e) => { process.stderr.write(`SWEEP GAGAL: ${e.message}\n`); process.exit(1); });
+main().catch((e) => {
+  process.stderr.write(`SWEEP GAGAL: ${e.message}\n`);
+  process.exit(1);
+});

@@ -1,3 +1,9 @@
+# Current product-hardening addendum — 2026-10-07
+
+Owner authorized closing the audited product gaps without waiting for physical equipment; **push remains forbidden until explicit instruction**. Implementation/evidence/operator boundaries are in `docs/PRODUCT-OPERATIONAL-COMPLETION-2026-10-07.md`. Typed controls, end-user Scenes/Schedules, web camera signaling, explicit persisted-location MAP semantics, durable maintenance recurrence, MQTT/HA operations and device-reported identity are now implemented. Machine-only routes, Profile & Session settings and static Mobile Preview retain their explicit scope. Quarantine promotions and full new-source certification await GitHub acceptance; no new numbered wave/module is opened.
+
+Latest verified committed baseline: `4907ea5822e07188394ebee3c72e860e79a793cc` / run `37449896281`. New local source is not certified by that old run. Historical status below is preserved as history where superseded.
+
 # Enterprise completion addendum — 2026-09-15
 
 The product requirement now distinguishes **foundation completeness** from **enterprise completion**. Modules 1–30 establish the universal IoT architecture and safe contracts; post-foundation delivery is governed by `docs/ENTERPRISE-WAVE-ROADMAP.md` Wave 1–13. Enterprise completion requires real runtime/provider/hardware/recovery evidence and cannot be declared from UI placeholders or foundation contracts alone.

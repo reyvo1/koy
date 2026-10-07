@@ -75,7 +75,7 @@ describe('Tenant workspace widget readings', () => {
 
     it('renders the backend state when a resolved widget has no reading', () => {
       expect(workspace).toMatch(
-        /reading\.state !== 'READY'\)[\s\S]{0,400}reading\.message/,
+        /reading\.state !== 'READY' && !\(widget\.kind === 'MAP' && reading\.state === 'STALE'\)\)[\s\S]{0,400}reading\.message/,
       );
     });
 

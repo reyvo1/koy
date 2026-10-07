@@ -13,10 +13,8 @@ export type DeviceUpdateEvidenceState =
 /**
  * Blueprint Device Detail technical evidence read model.
  *
- * The current schema has no per-device current firmware assignment/version and
- * no per-device protocol identity. Those fields therefore remain explicitly
- * unavailable. OTA history is derived only from persisted rollout metadata and
- * never treated as proof that physical hardware installed the artifact.
+ * Firmware and protocol come only from authenticated device heartbeat reports.
+ * Missing reports remain unavailable; rollout metadata never proves installation.
  */
 @Injectable()
 export class DeviceTechnicalHistoryService {
@@ -26,7 +24,7 @@ export class DeviceTechnicalHistoryService {
     const [device, rolloutRows, findings] = await Promise.all([
       this.prisma.device.findFirst({
         where: { id: deviceId, tenantId },
-        select: { id: true, type: true },
+        select: { id: true, type: true, reportedFirmwareVersion: true, reportedProtocol: true, runtimeReportedAt: true },
       }),
       this.prisma.otaRollout.findMany({
         where: { tenantId },
@@ -77,16 +75,18 @@ export class DeviceTechnicalHistoryService {
       deviceId,
       deviceType: device.type,
       firmware: {
-        currentVersion: null,
-        availability: 'UNAVAILABLE_BY_CONTRACT' as const,
+        currentVersion: device.reportedFirmwareVersion ?? null,
+        reportedAt: device.runtimeReportedAt ?? null,
+        availability: device.reportedFirmwareVersion ? 'DEVICE_REPORTED' : 'UNAVAILABLE_BY_CONTRACT',
         reason:
-          'Skema saat ini belum menyimpan firmware aktif per-device. Versi rollout tidak boleh dianggap sebagai firmware yang terpasang.',
+          'Versi hanya berasal dari laporan heartbeat terautentikasi; bukan bukti instalasi fisik atau metadata rollout.',
       },
       protocol: {
-        name: null,
-        availability: 'UNAVAILABLE_BY_CONTRACT' as const,
+        name: device.reportedProtocol ?? null,
+        reportedAt: device.runtimeReportedAt ?? null,
+        availability: device.reportedProtocol ? 'DEVICE_REPORTED' : 'UNAVAILABLE_BY_CONTRACT',
         reason:
-          'Skema Device saat ini belum menyimpan protocol/adapter identity per-device.',
+          'Protocol hanya berasal dari laporan heartbeat terautentikasi; tidak ditebak dari tipe perangkat.',
       },
       updateHistory: matchingRollouts.map((rollout) => {
         const completed = includesDeviceId(rollout.completedDeviceIds, deviceId);

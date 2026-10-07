@@ -14,7 +14,7 @@ import {
 import type { MobileLoginCredentials } from './src/session';
 import {
   reconcileMobileCommand,
-  sendBooleanCapabilityCommand,
+  sendCapabilityCommand,
 } from './src/device-control/mobile-device-client';
 import { mobileSessionClient } from './src/session';
 import {
@@ -177,9 +177,9 @@ export default function App() {
   async function sendDashboardCommand(
     deviceId: string,
     capabilityKey: string,
-    value: boolean,
+    value: unknown,
   ) {
-    const accepted = await sendBooleanCapabilityCommand(
+    const accepted = await sendCapabilityCommand(
       mobileSessionClient,
       deviceId,
       capabilityKey,

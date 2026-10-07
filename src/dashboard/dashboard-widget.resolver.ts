@@ -112,6 +112,11 @@ export class DashboardWidgetResolver {
           this.validateChart(widget, bindings);
           break;
         case DashboardWidgetKind.MAP:
+          if (presentation.coordinateSource === 'DEVICE_LOCATION_V1') {
+            this.requireBindingCount(widget, 1, 16);
+            for (const binding of bindings) if (binding.mode !== DashboardBindingMode.DEVICE_STATUS || binding.intent !== DashboardBindingIntent.READ) this.invalid('MAP_BINDING_INVALID', 'Map requires READ device location bindings.');
+            break;
+          }
           this.unsupported(
             'MAP_SEMANTICS_NOT_APPROVED',
             'Map widget resolution is disabled until a coordinate semantic contract is approved',
@@ -552,7 +557,7 @@ export class DashboardWidgetResolver {
         allowed = [...common, 'unit', 'precision'];
         break;
       case DashboardWidgetKind.MAP:
-        allowed = [];
+        allowed = [...common, 'coordinateSource'];
         break;
       case DashboardWidgetKind.TABLE:
         allowed = [

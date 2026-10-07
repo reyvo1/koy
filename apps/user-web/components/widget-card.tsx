@@ -1,5 +1,6 @@
 'use client';
 
+import { GeoMap, type MapLocation } from '@iot-platform/design-system';
 import { TERMINAL_COMMAND_STATUSES } from '../lib/contracts';
 import { useState } from 'react';
 import type {
@@ -46,12 +47,6 @@ function renderWidget(
     );
   }
 
-  if (resolution.kind === 'MAP') {
-    return (
-      <WidgetMessage text="Semantik lokasi belum disetujui. Widget peta tetap fail-closed." />
-    );
-  }
-
   if (data.state === 'ERROR' || data.state === 'INVALID') {
     return <WidgetMessage text={data.message ?? 'Data widget tidak valid.'} />;
   }
@@ -62,6 +57,12 @@ function renderWidget(
 
   if (data.state === 'EMPTY') {
     return <WidgetMessage text="Belum ada data untuk widget ini." />;
+  }
+
+  if (resolution.kind === 'MAP') {
+    return (
+      <GeoMap locations={data.bindings.filter((binding) => (binding.state === 'READY' || binding.state === 'STALE') && binding.data).map((binding) => binding.data as unknown as MapLocation)} />
+    );
   }
 
   switch (resolution.kind) {

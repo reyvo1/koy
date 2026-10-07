@@ -1,4 +1,5 @@
 'use client';
+import { GeoMap, type MapLocation } from '@iot-platform/design-system';
 
 /**
  * Workspace (Modul 18) — dashboard list + detail (resolution) + widget readings + delete.
@@ -579,7 +580,7 @@ function WidgetReadings({
     return <p className="m-0 text-[12px] text-amber-300">{reading.failed}</p>;
   }
 
-  if (reading.state !== 'READY') {
+  if (reading.state !== 'READY' && !(widget.kind === 'MAP' && reading.state === 'STALE')) {
     return (
       <p className="m-0 text-[12px] text-slate-400">
         {reading.message ?? STATE_LABEL[reading.state] ?? reading.state}
@@ -590,6 +591,8 @@ function WidgetReadings({
   if (reading.bindings.length === 0) {
     return <p className="m-0 text-[12px] text-slate-400">Widget tanpa binding.</p>;
   }
+
+  if (widget.kind === 'MAP') return <GeoMap locations={reading.bindings.filter((entry) => entry.data && (entry.state === 'READY' || entry.state === 'STALE')).map((entry) => entry.data as unknown as MapLocation)} />;
 
   const unit = widget.bindings?.[0]?.capability?.unit ?? null;
   const precision = widget.bindings?.[0]?.capability?.constraints?.precision;

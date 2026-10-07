@@ -24,10 +24,10 @@ function endpointCount(source: string): number {
 
 describe('backend ↔ frontend surface census', () => {
   it('accounts for every backend controller and every current HTTP/SSE endpoint', () => {
-    expect(controllers).toHaveLength(45);
+    expect(controllers).toHaveLength(46);
     const total = controllers.reduce((sum, path) => sum + endpointCount(readFileSync(path, 'utf8')), 0);
-    expect(total).toBe(187);
-    expect(census).toContain('45 controller files / 187 HTTP-or-SSE endpoints');
+    expect(total).toBe(197);
+    expect(census).toContain('46 controller files / 197 HTTP-or-SSE endpoints');
 
     for (const path of controllers) {
       const name = relative(join(root, 'src'), path).split('/').pop() as string;

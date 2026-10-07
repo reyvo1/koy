@@ -95,7 +95,17 @@ describe('Module 10 Slice 10.7 User Web Dynamic Dashboard contract', () => {
       expect(widget).toContain(`'${kind}'`);
     }
     expect(widget).toContain('Tidak ada command yang dikirim');
-    expect(widget).toContain('Widget peta tetap fail-closed');
+    // Maps now render an explicitly approved stored-coordinate binding. Unsupported/error/empty
+    // data still returns before map rendering; legacy bindings must not fabricate coordinates.
+    expect(widget).toContain('<GeoMap locations=');
+    const mapRender = widget.indexOf("if (resolution.kind === 'MAP')");
+    for (const state of ['UNSUPPORTED', 'EMPTY', 'ERROR']) {
+      const stateGuard = widget.indexOf(`data.state === '${state}'`);
+      expect(stateGuard).toBeGreaterThanOrEqual(0);
+      expect(stateGuard).toBeLessThan(mapRender);
+    }
+    const resolver = read('src/dashboard/dashboard-widget.resolver.ts');
+    expect(resolver).toContain("presentation.coordinateSource === 'DEVICE_LOCATION_V1'");
   });
 
   it('provides responsive and accessible Indonesian states', () => {

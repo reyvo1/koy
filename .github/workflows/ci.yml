@@ -170,6 +170,12 @@ jobs:
       - name: Database integration test (includes Wave 2 runtime evidence)
         run: npm run test:integration:db
 
+      - name: Product controls and synthetic camera browser regression
+        timeout-minutes: 5
+        # Actual product components and decoded frames; isolated domain HTTP fixtures.
+        # This strengthens CI without replacing authenticated live-service/HIL evidence.
+        run: bash ops/scripts/test-product-browser-ci.sh
+
       - name: MQTT workflow integration test
         run: npm run test:integration:mqtt
 

@@ -8,16 +8,11 @@ import { ERROR_CODES } from '../../common/errors/error-code';
 import { IntegrationRegistryService } from '../integration-registry.service';
 
 /**
- * MQTT_BRIDGE — the one provider adapter in this repository that talks to something real.
+ * MQTT_BRIDGE — authenticated, tenant-scoped MQTT connection and entity export.
  *
- * ## Why this provider and not ALEXA or GOOGLE_HOME
- *
- * This repo runs an EMQX broker, so an adapter over MQTT can be proven end to end against a stack
- * that exists. A Google Home adapter written here would be an unverifiable claim about someone
- * else's OAuth consent screen, and a Alexa one about a certification process neither of us controls.
- * The registry admits all four provider values; only this one has anything behind it, and the
- * contract that says so is `wave8-integration-adapter.contract.spec.ts` — so adding another adapter
- * means changing a claim on the record, not quietly widening it.
+ * The runtime service also supports Home Assistant REST checks and status-sensor exports.
+ * Alexa/Google Home retain registry-only scope until provider-owned authorization can be proved.
+ * MQTT transport ACKs establish the last operation result, not continuous provider health.
  *
  * ## Credentials
  *
@@ -91,26 +86,32 @@ export class MqttBridgeAdapter {
         integrationId: input.integrationId,
         tenantId: input.tenantId,
         status: 'ERROR',
-        lastError: cause instanceof Error ? cause.message : String(cause),
+        lastError:
+          cause instanceof Error
+            ? (cause.message.match(
+                /\b(ECONNREFUSED|ETIMEDOUT|ECONNRESET|ENOTFOUND)\b/,
+              )?.[1] ?? 'MQTT_CONNECTION_FAILED')
+            : 'MQTT_CONNECTION_FAILED',
       });
       throw cause;
     }
 
-    await this.registry.setStatus({
-      integrationId: input.integrationId,
-      tenantId: input.tenantId,
-      status: 'CONNECTED',
-    });
-
-    this.logger.log({
-      event: 'integration.mqtt.connected',
-      outcome: 'connected',
-      integrationId: input.integrationId,
-      provider: integration.provider,
-      credentialRef: integration.credentialRef,
-    });
-
-    return { connected: true, clientId: client.options.clientId ?? '' };
+    try {
+      await this.registry.setStatus({
+        integrationId: input.integrationId,
+        tenantId: input.tenantId,
+        status: 'CONNECTED',
+      });
+      this.logger.log({
+        event: 'integration.mqtt.connected',
+        outcome: 'connected',
+        integrationId: input.integrationId,
+        provider: integration.provider,
+      });
+      return { connected: true, clientId: client.options.clientId ?? '' };
+    } finally {
+      await this.disconnect(client);
+    }
   }
 
   /**
@@ -127,9 +128,22 @@ export class MqttBridgeAdapter {
     entity: SyncedEntity;
     payload: Record<string, unknown>;
   }): Promise<{ published: true; topic: string }> {
+    const integration = await this.registry.verifyIntegration({
+      tenantId: input.tenantId,
+      integrationId: input.integrationId,
+    });
+    if (integration.provider !== IntegrationProvider.MQTT_BRIDGE)
+      throw new DomainConflictException(
+        ERROR_CODES.IntegrationNotFound,
+        'Integration is not MQTT_BRIDGE.',
+      );
     const client = await this.openClient(input.config, input.tenantId);
     try {
-      const topic = this.topicFor(input.config.topicPrefix, input.entity.entityType, input.entity.externalEntityId);
+      const topic = this.topicFor(
+        input.config.topicPrefix,
+        input.entity.entityType,
+        input.entity.externalEntityId,
+      );
       await this.publish(client, topic, input.payload);
       // Routed through the registry so the idempotency key stays in one place, and so a repeated
       // sync of the same entity updates the existing mapping instead of creating a second one.
@@ -146,10 +160,14 @@ export class MqttBridgeAdapter {
     }
   }
 
-  private topicFor(prefix: string, entityType: string, externalEntityId: string): string {
+  private topicFor(
+    prefix: string,
+    entityType: string,
+    externalEntityId: string,
+  ): string {
     // The external id goes into the topic, so it is encoded: a raw `/` or `+` would change the
     // meaning of the topic and could subscribe the bridge to more than it was granted.
-    return `${prefix}/${entityType}/${encodeURIComponent(externalEntityId)}`;
+    return `${prefix.replace(/\/+$/, '')}/${entityType}/${encodeURIComponent(externalEntityId)}`;
   }
 
   private openClient(
@@ -168,9 +186,15 @@ export class MqttBridgeAdapter {
       // One guard for both failure modes. Without the `once`, a client that errors and is then
       // cleaned up would also fire `close` and call reject a second time, after the promise had
       // already settled.
+      const timeout = setTimeout(
+        () => settle(new Error('ETIMEDOUT')),
+        MQTT_BRIDGE_TIMEOUT_MS,
+      );
       const settle = (error?: Error): void => {
+        clearTimeout(timeout);
         client.removeListener('connect', onConnect);
         client.removeListener('error', onError);
+        client.on('error', () => {}); // callbacks/timeouts own later operation failures
         if (error) {
           client.end(true);
           reject(error);
@@ -189,10 +213,19 @@ export class MqttBridgeAdapter {
 
   private subscribe(client: mqtt.MqttClient, prefix: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      client.subscribe(`${prefix}/#`, { qos: MQTT_BRIDGE_QOS }, (error) => {
-        if (error) reject(new Error(`mqtt subscribe failed: ${error.message}`));
-        else resolve();
-      });
+      const timer = setTimeout(
+        () => reject(new Error('mqtt subscribe timeout')),
+        MQTT_BRIDGE_TIMEOUT_MS,
+      );
+      client.subscribe(
+        `${prefix.replace(/\/+$/, '')}/#`,
+        { qos: MQTT_BRIDGE_QOS },
+        (error) => {
+          clearTimeout(timer);
+          if (error) reject(error);
+          else resolve();
+        },
+      );
     });
   }
 
@@ -202,12 +235,17 @@ export class MqttBridgeAdapter {
     payload: Record<string, unknown>,
   ): Promise<void> {
     return new Promise((resolve, reject) => {
+      const timer = setTimeout(
+        () => reject(new Error('mqtt publish timeout')),
+        MQTT_BRIDGE_TIMEOUT_MS,
+      );
       client.publish(
         topic,
         JSON.stringify(payload),
         { qos: MQTT_BRIDGE_QOS },
         (error) => {
-          if (error) reject(new Error(`mqtt publish failed: ${error.message}`));
+          clearTimeout(timer);
+          if (error) reject(error);
           else resolve();
         },
       );
@@ -216,7 +254,11 @@ export class MqttBridgeAdapter {
 
   private disconnect(client: mqtt.MqttClient): Promise<void> {
     return new Promise((resolve) => {
-      client.end(true, {}, () => resolve());
+      const timeout = setTimeout(resolve, 2000);
+      client.end(true, {}, () => {
+        clearTimeout(timeout);
+        resolve();
+      });
     });
   }
 }

@@ -234,13 +234,13 @@ export class DeviceService {
    * are swallowed and logged because an unhandled rejection from an outbound HTTP call would
    * otherwise take down the process that was merely reporting a device's liveness.
    */
-  async updateHeartbeat(tenantId: string, deviceId: string) {
+  async updateHeartbeat(tenantId: string, deviceId: string, report?: { firmwareVersion?: string; protocol?: string }) {
     const device = await this.prisma.device.update({
       where: {
         id: deviceId,
         tenantId,
       },
-      data: { lastHeartbeatAt: new Date(), status: DeviceStatus.ACTIVE },
+      data: { lastHeartbeatAt: new Date(), status: DeviceStatus.ACTIVE, ...(report?.firmwareVersion !== undefined ? { reportedFirmwareVersion: report.firmwareVersion } : {}), ...(report?.protocol !== undefined ? { reportedProtocol: report.protocol } : {}), ...(report?.firmwareVersion || report?.protocol ? { runtimeReportedAt: new Date() } : {}) },
     });
 
     // `emitStateChanged` no longer returns a promise: the dispatch is fired and its failure

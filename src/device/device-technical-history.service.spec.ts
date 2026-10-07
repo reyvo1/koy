@@ -35,6 +35,15 @@ describe('DeviceTechnicalHistoryService', () => {
     });
   });
 
+  it('exposes authenticated device reports with provenance rather than inferred rollout versions', async () => {
+    const reportedAt = new Date('2026-10-07T00:00:00Z');
+    const prisma: any = { device: { findFirst: jest.fn().mockResolvedValue({ id: 'd1', type: 'ACTUATOR', reportedFirmwareVersion: '2.3.4', reportedProtocol: 'MQTT_TLS', runtimeReportedAt: reportedAt }) }, otaRollout: { findMany: jest.fn().mockResolvedValue([]) }, analyticsFinding: { findMany: jest.fn().mockResolvedValue([]) } };
+    const result = await new DeviceTechnicalHistoryService(prisma).read('t1', 'd1');
+    expect(result?.firmware).toMatchObject({ currentVersion: '2.3.4', availability: 'DEVICE_REPORTED', reportedAt });
+    expect(result?.protocol).toMatchObject({ name: 'MQTT_TLS', availability: 'DEVICE_REPORTED', reportedAt });
+    expect(result?.updateHistory).toEqual([]);
+  });
+
   it('returns null if the tenant-scoped device is absent', async () => {
     const prisma: any = {
       device: { findFirst: jest.fn().mockResolvedValue(null) },

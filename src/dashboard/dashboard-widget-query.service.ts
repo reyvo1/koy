@@ -1,5 +1,6 @@
 import { Injectable, Optional } from '@nestjs/common';
 import { DashboardBindingMode } from '@prisma/client';
+import { DeviceLocationService } from '../device/device-location.service';
 import { TelemetryAggregationService } from '../telemetry/telemetry-aggregation.service';
 import { TelemetryService } from '../telemetry/telemetry.service';
 import {
@@ -27,6 +28,7 @@ export class DashboardWidgetQueryService {
     private readonly telemetryService: TelemetryService,
     private readonly aggregationService: TelemetryAggregationService,
     @Optional() private readonly clock?: DashboardWidgetQueryClock,
+    @Optional() private readonly locations?: DeviceLocationService,
   ) {}
 
   async queryWidget(
@@ -66,6 +68,7 @@ export class DashboardWidgetQueryService {
     try {
       switch (binding.mode) {
         case DashboardBindingMode.DEVICE_STATUS:
+          if (widget.kind === 'MAP') return await this.location(tenantId, widget, binding, generatedAt);
           return this.deviceStatus(binding);
         case DashboardBindingMode.LATEST:
           return await this.latest(tenantId, widget, binding, generatedAt);
@@ -96,6 +99,14 @@ export class DashboardWidgetQueryService {
         'Telemetry query failed',
       );
     }
+  }
+
+  private async location(tenantId: string, widget: DashboardResolvedWidget, binding: DashboardResolvedBinding, generatedAt: Date): Promise<DashboardWidgetBindingDataResult> {
+    if (!this.locations || !binding.device) return this.unavailableBinding(binding, 'ERROR', 'LOCATION_QUERY_FAILED', 'Location source unavailable.');
+    const history = await this.locations.historyFor({ tenantId, deviceId: binding.device.id, limit: 1 });
+    if (!history.latest) return this.unavailableBinding(binding, 'EMPTY', 'NO_DEVICE_LOCATION', 'Device has not reported location.');
+    const stale = this.isStale(history.latest.recordedAt, widget.presentation.staleAfterSeconds, generatedAt);
+    return { ...this.bindingIdentity(binding), state: stale ? 'STALE' : 'READY', reasonCode: stale ? 'DEVICE_LOCATION_STALE' : null, message: stale ? 'Location report is stale.' : null, observedAt: history.latest.recordedAt.toISOString(), data: { ...history.latest, recordedAt: history.latest.recordedAt.toISOString() } };
   }
 
   private deviceStatus(

@@ -3,6 +3,7 @@
  * canonical /spaces/accessible read model; detail data remains device-scoped
  * and guarded by backend VIEW/CONTROL policy.
  */
+import { parseCapabilityValue, type CapabilityValueContract } from '../../../../packages/sdk/src/capability-value';
 import { MobileApiError } from '../session/mobile-session-client';
 import { TERMINAL_COMMAND_STATUSES } from '../contracts';
 
@@ -28,6 +29,7 @@ export interface MobileDeviceCapability {
   key: string;
   semanticType: string;
   dataType: string;
+  constraints?: unknown;
   unit: string | null;
   isReadable: boolean;
   isWritable: boolean;
@@ -207,11 +209,21 @@ export async function loadMobileAlerts(
   }
 }
 
-export async function sendBooleanCapabilityCommand(
+export async function sendTypedCapabilityCommand(gateway: MobileDeviceGateway, deviceId: string, capability: CapabilityValueContract & { key: string }, raw: string) {
+  const result = parseCapabilityValue(raw, capability);
+  if (result.ok === false) throw new MobileApiError(400, 'DEVICE_VALUE_INVALID', result.error, null);
+  return sendCapabilityCommand(gateway, deviceId, capability.key, result.value);
+}
+
+export async function sendBooleanCapabilityCommand(gateway: MobileDeviceGateway, deviceId: string, capabilityKey: string, value: boolean) {
+  return sendCapabilityCommand(gateway, deviceId, capabilityKey, value);
+}
+
+export async function sendCapabilityCommand(
   gateway: MobileDeviceGateway,
   deviceId: string,
   capabilityKey: string,
-  value: boolean,
+  value: unknown,
 ): Promise<{ commandId: string; status: string }> {
   if (!/^[a-zA-Z0-9._:-]{1,128}$/.test(capabilityKey)) {
     throw new MobileApiError(
@@ -377,6 +389,7 @@ function parseCapability(raw: unknown): MobileDeviceCapability | null {
     key: row.key,
     semanticType: row.semanticType,
     dataType: row.dataType,
+    constraints: row.constraints,
     unit: typeof row.unit === 'string' ? row.unit : null,
     isReadable: row.isReadable === true,
     isWritable: row.isWritable === true,

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import * as dgram from 'dgram';
 
 /**
@@ -73,6 +73,8 @@ export class OnvifDiscoveryService {
     const socket = dgram.createSocket({ type: 'udp4', reuseAddr: true });
     const found = new Map<string, DiscoveredDevice>();
 
+    let rejectPending: ((cause: Error) => void) | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       socket.on('error', (cause) => {
         // The socket can fail on a host with no multicast route. That is a real answer too.
@@ -81,9 +83,11 @@ export class OnvifDiscoveryService {
           outcome: 'unreachable',
           error: cause.message,
         });
+        rejectPending?.(new ServiceUnavailableException('Jaringan discovery tidak tersedia.'));
       });
 
       socket.on('message', (message, remote) => {
+        if (found.size >= ONVIF_MAX_DISCOVERED || message.length > 65536) return;
         const text = message.toString('utf8');
         // A UDP port bound to 3702 receives whatever anyone sends it. Only a ProbeMatch or a
         // ProbeResponse is a device answering our probe; anything else is noise that happens to be
@@ -103,22 +107,25 @@ export class OnvifDiscoveryService {
         }
       });
 
-      await new Promise<void>((resolve) => {
+      await new Promise<void>((resolve, reject) => {
+        rejectPending = reject;
+        timer = setTimeout(resolve, Math.min(Math.max(timeoutMs, 1), ONVIF_DISCOVERY_TIMEOUT_MS));
         socket.bind(() => {
           try {
-            // Errors here are not fatal: the timeout below still returns a real answer.
             socket.setBroadcast(true);
             socket.setMulticastTTL(2);
             socket.addMembership(MULTICAST_ADDRESS);
-            socket.send(WS_DISCOVERY_PROBE, MULTICAST_PORT, MULTICAST_ADDRESS);
+            socket.send(WS_DISCOVERY_PROBE, MULTICAST_PORT, MULTICAST_ADDRESS, (error) => {
+              if (error) reject(new ServiceUnavailableException('Jaringan discovery tidak tersedia.'));
+            });
           } catch {
-            // No multicast route on this host. Fall through to the timeout.
+            reject(new ServiceUnavailableException('Jaringan discovery tidak tersedia.'));
           }
-          // The bound that matters: this resolves regardless of who answered.
-          setTimeout(resolve, timeoutMs);
         });
       });
     } finally {
+      if (timer) clearTimeout(timer);
+      rejectPending = undefined;
       // Always torn down. A discovery socket left bound keeps the multicast membership and the port
       // open, and the next call then silently finds nothing because it is talking to itself.
       try {

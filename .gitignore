@@ -45,3 +45,6 @@ backups/
 # needs a credential the owner can type, which is exactly why it must not live in the
 # repository or in a document.
 .uat-credentials
+
+# Mounted runtime connection secrets
+runtime-connections.json

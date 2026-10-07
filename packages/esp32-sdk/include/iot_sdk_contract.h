@@ -28,6 +28,8 @@
 //   PATCH /devices/<deviceId>/heartbeat every 60s with headers
 //     X-Device-Id: <deviceId>
 //     X-Device-Secret: <deviceSecret>
+//   JSON: protocol MQTT_HTTPS_V1 and, when valid, firmwareVersion from the running app partition.
+//   Missing/invalid app version is omitted; SDK version and pending OTA version are never substituted.
 //
 // TELEMETRY RULES:
 //   - capability payload <= 1KB in this SDK

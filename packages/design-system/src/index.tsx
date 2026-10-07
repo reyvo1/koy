@@ -93,3 +93,9 @@ export function StateNotice({
     </section>
   );
 }
+
+export { CameraPlayer } from './camera-player';
+export { GeoMap, type MapLocation } from './geo-map';
+
+export { ConfirmationDialog } from './confirmation-dialog';
+export { CapabilityValueInput } from './capability-value-input';

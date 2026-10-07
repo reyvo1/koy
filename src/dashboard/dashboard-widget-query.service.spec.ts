@@ -66,6 +66,28 @@ function widget(
   };
 }
 
+describe('location query semantics', () => {
+  it('preserves genuine zero coordinates and applies persisted timestamp freshness', async () => {
+    const latest = { deviceId: 'device-1', latitude: 0, longitude: 0, recordedAt: new Date(NOW.getTime() - 1000) };
+    const locations = { historyFor: jest.fn().mockResolvedValue({ latest }) };
+    const service = new DashboardWidgetQueryService({} as any, {} as any, () => NOW, locations as any);
+    const map = { ...widget(DashboardBindingMode.DEVICE_STATUS), kind: DashboardWidgetKind.MAP };
+    const ready = await service.queryWidget('tenant-1', map);
+    expect(ready.bindings[0]).toMatchObject({ state: 'READY', data: { latitude: 0, longitude: 0 } });
+    expect(locations.historyFor).toHaveBeenCalledWith({ tenantId: 'tenant-1', deviceId: 'device-1', limit: 1 });
+    locations.historyFor.mockResolvedValue({ latest: { ...latest, recordedAt: new Date(NOW.getTime() - 600000) } });
+    expect((await service.queryWidget('tenant-1', map)).bindings[0]).toMatchObject({ state: 'STALE', reasonCode: 'DEVICE_LOCATION_STALE' });
+  });
+  it('separates never-reported location from backend outage', async () => {
+    const locations = { historyFor: jest.fn().mockResolvedValue({ latest: null }) };
+    const service = new DashboardWidgetQueryService({} as any, {} as any, () => NOW, locations as any);
+    const map = { ...widget(DashboardBindingMode.DEVICE_STATUS), kind: DashboardWidgetKind.MAP };
+    expect((await service.queryWidget('tenant-1', map)).bindings[0]).toMatchObject({ state: 'EMPTY', reasonCode: 'NO_DEVICE_LOCATION' });
+    locations.historyFor.mockRejectedValue(new Error('db down'));
+    expect((await service.queryWidget('tenant-1', map)).bindings[0].state).toBe('ERROR');
+  });
+});
+
 describe('DashboardWidgetQueryService', () => {
   let telemetry: {
     getLatest: jest.Mock;

@@ -17,6 +17,7 @@ import {
   Timer,
   Bell,
 } from 'lucide-react';
+import { NocLocationMap } from './noc-location-map';
 import { CountUp, shadow } from '@/components/ui-polish';
 import { QuarantineBanner } from '@/components/quarantine-banner';
 
@@ -328,10 +329,11 @@ export default function NocContent() {
           'Satu stream telemetri SSE untuk perangkat berkemampuan numerik pertama.',
         ]}
         doesNotWork={[
-          'Tidak ada peta dunia maupun geolokasi perangkat — judul "Global" hanyalah label, bukan tampilan lokasi.',
-          'Tidak ada korelasi lokasi antar tenant, karena tidak ada data lokasi sama sekali.',
+          'Peta koordinat memakai GPS tersimpan dan tidak menebak lokasi dari tipe perangkat.',
+          'Lokasi lintas tenant hanya dapat dibaca oleh PLATFORM_ADMIN; perangkat tanpa GPS tidak diberi marker.',
         ]}
       />
+      <NocLocationMap />
       {/* Global tiles */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {tiles.map(([label, value, Icon]) => (

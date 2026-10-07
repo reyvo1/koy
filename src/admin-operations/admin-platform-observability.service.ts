@@ -32,6 +32,18 @@ export interface PlatformTelemetryQuery {
 export class AdminPlatformObservabilityService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async deviceLocations() {
+    // Deduplicate in SQL before applying the cap, avoiding Prisma's in-memory distinct.
+    const rows = await this.prisma.$queryRaw<Array<{ id: string; deviceId: string; latitude: number; longitude: number; label: string | null; recordedAt: Date; deviceName: string; tenantName: string }>>`
+      SELECT l.id, l."deviceId", l.latitude, l.longitude, l.label, l."recordedAt", d.name AS "deviceName", t.name AS "tenantName"
+      FROM (SELECT DISTINCT ON ("deviceId") * FROM device_locations ORDER BY "deviceId", "recordedAt" DESC, id DESC) l
+      JOIN devices d ON d.id = l."deviceId" AND d."tenantId" = l."tenantId"
+      JOIN tenants t ON t.id = d."tenantId"
+      ORDER BY l."deviceId" LIMIT 201
+    `;
+    return { truncated: rows.length > 200, limit: 200, items: rows.slice(0, 200) };
+  }
+
   async listDeviceGroups(tenantId?: string) {
     const groups = await this.prisma.deviceGroup.findMany({
       where: tenantId ? { tenantId } : undefined,

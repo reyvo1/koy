@@ -9,7 +9,7 @@ import {
 interface CommandBody {
   deviceId: string;
   capabilityKey: string;
-  value: boolean;
+  value: unknown;
 }
 
 interface CommandResult {
@@ -149,6 +149,10 @@ function isCommandBody(value: unknown): value is CommandBody {
     body.deviceId.length <= 128 &&
     typeof body.capabilityKey === 'string' &&
     /^[a-zA-Z0-9._:-]{1,128}$/.test(body.capabilityKey) &&
-    typeof body.value === 'boolean'
+    body.value !== null && body.value !== undefined &&
+    ['boolean', 'number', 'string', 'object'].includes(typeof body.value) &&
+    !Array.isArray(body.value) &&
+    (typeof body.value !== 'number' || Number.isFinite(body.value)) &&
+    JSON.stringify(body.value).length <= 16384
   );
 }

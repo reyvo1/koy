@@ -153,8 +153,8 @@ const endpointCount = controllers.reduce((sum, path) => {
   return sum + [...source.matchAll(/@(Get|Post|Put|Patch|Delete|Sse)\((?:'[^']*'|"[^"]*")?\)/g)].length;
 }, 0);
 const census = read('docs/BACKEND-FRONTEND-SURFACE-CENSUS.md');
-assert(controllers.length === 45, `surface census controller count is current (${controllers.length}/45)`);
-assert(endpointCount === 187, `surface census endpoint count is current (${endpointCount}/187)`);
+assert(controllers.length === 46, `surface census controller count is current (${controllers.length}/46)`);
+assert(endpointCount === 197, `surface census endpoint count is current (${endpointCount}/197)`);
 for (const path of controllers) {
   const name = relative(join(root, 'src'), path).split('/').pop();
   assert(census.includes(`\`${name}\``), `surface census accounts for ${name}`);

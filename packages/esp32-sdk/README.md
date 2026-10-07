@@ -13,7 +13,7 @@ Firmware SDK for ESP32 / ESP32-S3 / ESP32-C3 boards connecting to the IoT Platfo
 5. **Telemetry** — publish `{"eventId":"<uuid>","payload":{...}}` to `tenants/<tenantId>/devices/<deviceId>/telemetry`.
 6. **Commands** — subscribe to `.../commands`; command envelope is `{"commandId":"...","payload":{...}}`.
 7. **ACK** — publish acknowledgements to `.../commands/ack`.
-8. **Heartbeat** — every 60 seconds the SDK calls `PATCH /devices/<deviceId>/heartbeat` with `X-Device-Id` and `X-Device-Secret` headers.
+8. **Heartbeat** — every 60 seconds the SDK calls `PATCH /devices/<deviceId>/heartbeat` with `X-Device-Id` and `X-Device-Secret` headers. The authenticated JSON reports `protocol: MQTT_HTTPS_V1` and a valid `firmwareVersion` read from the running application partition; unavailable versions are omitted, never replaced with SDK or pending-OTA metadata.
 9. **OTA** — stream the artifact over trusted HTTPS into the inactive OTA partition, verify the complete SHA-256 before selecting it for boot, and confirm the new image only after live MQTT reconnect; unconfirmed first boot remains rollback-safe.
 
 ## Integration (ESP-IDF v5.5)

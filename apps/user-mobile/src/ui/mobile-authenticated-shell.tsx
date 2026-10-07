@@ -52,7 +52,7 @@ interface MobileAuthenticatedShellProps {
   onSendCommand(
     deviceId: string,
     capabilityKey: string,
-    value: boolean,
+    value: unknown,
   ): Promise<{ commandId: string; status: string }>;
 }
 

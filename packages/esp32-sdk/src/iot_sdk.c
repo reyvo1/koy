@@ -712,6 +712,32 @@ static bool send_heartbeat(void) {
     if (!client) return false;
     esp_http_client_set_header(client, "X-Device-Id", s_ctx.device_id);
     esp_http_client_set_header(client, "X-Device-Secret", s_ctx.mqtt_password);
+    esp_http_client_set_header(client, "Content-Type", "application/json");
+    // Report the running application's version, never the SDK version or a pending OTA image.
+    // Only the server's bounded identifier alphabet is accepted; otherwise omit the version.
+    esp_app_desc_t app_desc = {0};
+    const esp_partition_t* running = esp_ota_get_running_partition();
+    bool version_safe = running &&
+        esp_ota_get_partition_description(running, &app_desc) == ESP_OK;
+    size_t version_len = strnlen(app_desc.version, sizeof(app_desc.version));
+    version_safe = version_safe && version_len > 0 && version_len < sizeof(app_desc.version);
+    const unsigned char first = (unsigned char)app_desc.version[0];
+    version_safe = version_safe && ((first >= 'a' && first <= 'z') ||
+        (first >= 'A' && first <= 'Z') || (first >= '0' && first <= '9'));
+    for (size_t i = 0; version_safe && i < version_len; i++) {
+        const unsigned char c = (unsigned char)app_desc.version[i];
+        version_safe = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+                       (c >= '0' && c <= '9') || c == '.' || c == '_' || c == ':' || c == '+' || c == '-';
+    }
+    char report[160];
+    int report_len = version_safe
+        ? snprintf(report, sizeof(report), "{\"protocol\":\"MQTT_HTTPS_V1\",\"firmwareVersion\":\"%s\"}", app_desc.version)
+        : snprintf(report, sizeof(report), "{\"protocol\":\"MQTT_HTTPS_V1\"}");
+    if (report_len <= 0 || report_len >= (int)sizeof(report) ||
+        esp_http_client_set_post_field(client, report, report_len) != ESP_OK) {
+        esp_http_client_cleanup(client);
+        return false;
+    }
     const esp_err_t err = esp_http_client_perform(client);
     const int status = esp_http_client_get_status_code(client);
     esp_http_client_cleanup(client);

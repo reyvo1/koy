@@ -8,6 +8,7 @@
 
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { MaintenancePlansContent } from '@/components/maintenance-plans-content';
 import { AdminShellV3 } from '@/components/admin-shell-v3';
 import { QuarantineBanner } from '@/components/quarantine-banner';
 
@@ -236,9 +237,10 @@ export default function TechnicianAppPage() {
           'Diagnostik perangkat dari direktori perangkat nyata, dengan kriteria status dan heartbeat yang disebut di tab Diagnostik.',
           'Corong commissioning dibaca dari DeviceStatus backend, bukan dibuat acak di browser.',
           'Jendela maintenance dibaca dari tabel device_maintenance, dengan pembuka dan penutup yang tercatat.',
+          'Jadwal otomatis membuka jendela saat jatuh tempo; actor admin diverifikasi ulang oleh worker.',
         ]}
         doesNotWork={[
-          'Belum ada jadwal maintenance yang dihitung otomatis; jendela dibuka manual oleh teknisi.',
+          'Pemeriksaan dan penyelesaian maintenance tetap dicatat teknisi; scheduler tidak mengklaim perangkat sudah diperbaiki.',
           'Log perangkat membaca device_commands: apa yang dikirim platform dan apa yang kembali.',
           'Telemetry tetap dibaca dari Realtime; tab Log sengaja tidak mencampurkannya dengan command.',
         ]}
@@ -348,6 +350,7 @@ export default function TechnicianAppPage() {
 
       {tab === 'maintenance' ? (
         <div className="rounded-2xl border border-slate-800/80 bg-[#111c2e] p-6">
+          <MaintenancePlansContent devices={devices} />
           <h3 className="m-0 mb-1 text-[15px] font-bold text-white">
             Jendela Maintenance
           </h3>

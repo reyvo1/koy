@@ -2,8 +2,12 @@
 
 import { TERMINAL_COMMAND_STATUSES } from '../lib/contracts';
 import { useCallback, useEffect, useState } from 'react';
+import { CameraPlayer } from '@iot-platform/design-system';
+import { DeviceRoutinesPanel } from './device-routines-panel';
+import { DeviceLocationPanel } from './device-location-panel';
 import { StateNotice } from '@iot-platform/design-system';
 import type { UserDeviceDetailPayload } from '../lib/contracts';
+import { CapabilityControl } from './capability-control';
 import { LoginForm } from './login-form';
 
 type State =
@@ -52,13 +56,14 @@ export function DeviceDetailExperience({ deviceId }: { deviceId: string }) {
   }
 
   const { payload } = state;
-  const booleanWritable = payload.capabilities.filter(
-    (capability) => capability.isWritable && capability.dataType.toLowerCase() === 'boolean',
-  );
+  const writableCapabilities = payload.capabilities.filter((capability) => capability.isWritable);
   const telemetryEntries = Object.entries(payload.latestTelemetry?.payload ?? {});
 
   return (
     <div className="space-y-6">
+      {payload.device.type === 'CAMERA' ? <CameraPlayer deviceId={deviceId} /> : null}
+      <DeviceLocationPanel key={`location-${deviceId}`} deviceId={deviceId} />
+      <DeviceRoutinesPanel key={`routines-${deviceId}`} deviceId={deviceId} capabilities={payload.capabilities} canControl={payload.device.canControl} />
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -124,8 +129,8 @@ export function DeviceDetailExperience({ deviceId }: { deviceId: string }) {
         <h3 className="m-0 text-base font-extrabold text-slate-900">Firmware, Protocol & Update Evidence</h3>
         <p className="mb-4 mt-1 text-sm text-slate-500">Hanya bukti yang benar-benar tersimpan di backend yang ditampilkan. Current firmware/protocol tidak ditebak dari rollout atau tipe perangkat.</p>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Info label="Current Firmware" value={payload.technicalHistory.firmware.currentVersion ?? 'Belum ada kontrak per-device'} />
-          <Info label="Protocol / Adapter" value={payload.technicalHistory.protocol.name ?? 'Belum ada kontrak per-device'} />
+          <Info label="Current Firmware" value={payload.technicalHistory.firmware.currentVersion ?? 'Belum dilaporkan perangkat'} />
+          <Info label="Protocol / Adapter" value={payload.technicalHistory.protocol.name ?? 'Belum dilaporkan perangkat'} />
         </div>
         <div className="mt-4 space-y-2">
           {payload.technicalHistory.updateHistory.length === 0 ? (
@@ -147,23 +152,15 @@ export function DeviceDetailExperience({ deviceId }: { deviceId: string }) {
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <h3 className="m-0 text-base font-extrabold text-slate-900">Kontrol</h3>
         <p className="mb-4 mt-1 text-sm text-slate-500">
-          Hanya capability boolean writable yang ditawarkan pada User Web saat ini. Nilai lain tetap fail-closed sampai typed control surface user disatukan.
+          Nilai mengikuti tipe dan batas capability. Hasil perangkat tetap menunggu ACK dan telemetry.
         </p>
         {!payload.device.canControl ? (
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Akses Anda VIEW saja. Backend juga akan menolak command tanpa CONTROL.</div>
-        ) : booleanWritable.length === 0 ? (
-          <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">Tidak ada capability boolean writable pada perangkat ini.</div>
+        ) : writableCapabilities.length === 0 ? (
+          <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">Tidak ada capability writable pada perangkat ini.</div>
         ) : (
           <div className="space-y-3">
-            {booleanWritable.map((capability) => (
-              <div key={capability.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3">
-                <div><div className="font-bold text-slate-800">{capability.semanticType || capability.key}</div><code className="text-[11px] text-slate-400">{capability.key}</code></div>
-                <div className="flex gap-2">
-                  <button disabled={commandBusy !== null} type="button" className="rounded-lg bg-emerald-600 px-3 py-2 text-[12px] font-bold text-white disabled:opacity-50" onClick={() => void sendBooleanCommand(capability.key, true)}>ON</button>
-                  <button disabled={commandBusy !== null} type="button" className="rounded-lg bg-slate-700 px-3 py-2 text-[12px] font-bold text-white disabled:opacity-50" onClick={() => void sendBooleanCommand(capability.key, false)}>OFF</button>
-                </div>
-              </div>
-            ))}
+            {writableCapabilities.map((capability) => <CapabilityControl key={capability.id} capability={capability} busy={commandBusy !== null} onSend={(value) => sendBooleanCommand(capability.key, value)} />)}
           </div>
         )}
         {commandMessage ? <p className="mb-0 mt-3 text-[12.5px] text-slate-600">{commandMessage}</p> : null}
@@ -210,7 +207,7 @@ export function DeviceDetailExperience({ deviceId }: { deviceId: string }) {
     </div>
   );
 
-  async function sendBooleanCommand(capabilityKey: string, value: boolean) {
+  async function sendBooleanCommand(capabilityKey: string, value: unknown) {
     setCommandBusy(capabilityKey);
     setCommandMessage('Mengirim command; state akhir menunggu ACK/telemetry perangkat…');
     try {

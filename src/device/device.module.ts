@@ -38,6 +38,6 @@ import { BillingModule } from '../billing/billing.module';
   ],
   controllers: [DeviceController, DevicePublicController, CommandController, CapabilityController, DeviceGroupController, DeviceTechnicalHistoryController],
   providers: [DeviceService, CommandService, CapabilityService, CapabilityValidator, CommandTimeoutScheduler, DeviceAccessService, DeviceAccessGuard, DeviceTechnicalHistoryService, DeviceCommandLogService, DeviceLocationService],
-  exports: [DeviceService, CommandService, CapabilityService, CapabilityValidator, DeviceAccessService, DeviceAccessGuard, DeviceTechnicalHistoryService],
+  exports: [DeviceLocationService, DeviceService, CommandService, CapabilityService, CapabilityValidator, DeviceAccessService, DeviceAccessGuard, DeviceTechnicalHistoryService],
 })
 export class DeviceModule {}

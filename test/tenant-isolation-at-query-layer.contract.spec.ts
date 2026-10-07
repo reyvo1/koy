@@ -56,6 +56,15 @@ const ALLOWED_CROSS_TENANT: Array<{
   scopingCall?: RegExp;
 }> = [
   {
+    file: 'src/device-maintenance/maintenance-plan.service.ts',
+    method: 'tick',
+    reason: 'enforcedBySiblingQuery',
+    // Internal bounded queue scan, never an HTTP read. Every occurrence must prove an ACTIVE
+    // tenant admin actor inside the same transaction before scoped claim/device/window writes.
+    // Removing tenant, active status or the admin-role check invalidates this exemption.
+    scopingCall: /tx\.membership\.findFirst\(\{\s*where:\s*\{\s*id: plan\.actorMembershipId,\s*tenantId: plan\.tenantId,\s*status: 'ACTIVE',\s*role: \{ in: \['ADMIN', 'PLATFORM_ADMIN'\] \}/,
+  },
+  {
     file: 'src/admin-operations/admin-billing-directory.controller.ts',
     method: 'listSubscriptions',
     reason: 'platformScope',

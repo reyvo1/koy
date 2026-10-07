@@ -1,3 +1,4 @@
+import { MaintenancePlanService } from './maintenance-plan.service';
 import {
   Body,
   Controller,
@@ -5,6 +6,7 @@ import {
   Get,
   Param,
   Post,
+  Patch,
   Query,
   Request,
   UseGuards,
@@ -71,7 +73,14 @@ export interface MaintenanceRequest {
 @Controller('device-maintenance')
 @UseGuards(JwtAuthGuard, TenantContextGuard, AdminRoleGuard)
 export class DeviceMaintenanceController {
-  constructor(private readonly maintenance: DeviceMaintenanceService) {}
+  constructor(private readonly maintenance: DeviceMaintenanceService, private readonly plans: MaintenancePlanService) {}
+
+  @Get('plans')
+  async listPlans(@Request() req: MaintenanceRequest) { return this.plans.list(this.tenantId(req)); }
+  @Post('plans')
+  async createPlan(@Request() req: MaintenanceRequest, @Body() body: unknown) { return this.plans.create(req, body); }
+  @Patch('plans/:planId')
+  async updatePlan(@Request() req: MaintenanceRequest, @Param('planId') id: string, @Body() body: { enabled?: unknown }) { return this.plans.setEnabled(req, id, body?.enabled); }
 
   @Get()
   @ApiOperation({ summary: 'List this tenant’s maintenance windows' })

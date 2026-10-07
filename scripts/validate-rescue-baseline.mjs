@@ -1166,7 +1166,7 @@ check(
 );
 check(
   'mobile canonical SWITCH control uses resolver entitlement and dynamic capability key',
-  mobileCanonicalAppR4.includes('sendBooleanCapabilityCommand') &&
+  mobileCanonicalAppR4.includes('sendCapabilityCommand') &&
     mobileWidgetR4.includes("capability?.dataType === 'boolean'") &&
     mobileWidgetR4.includes('capability.access.writable') &&
     mobileWidgetR4.includes('const result = await onSendCommand(') &&
@@ -1393,8 +1393,10 @@ check(
 
 
 // RESCUE-03 R8 typed capability semantics guardrails.
-const capabilityValueR8 = read('apps/admin-web/lib/capability-value.ts');
-const capabilityValueInputR8 = read('apps/admin-web/components/capability-value-input.tsx');
+const capabilityValueR8 = read('packages/sdk/src/capability-value.ts');
+check('Admin typed controls consume the shared capability parser', read('apps/admin-web/lib/capability-value.ts').includes("export * from '../../../packages/sdk/src/capability-value'"));
+const capabilityValueInputR8 = read('packages/design-system/src/capability-value-input.tsx');
+check('Admin delegates to shared typed input', read('apps/admin-web/components/capability-value-input.tsx').includes('CapabilityValueInput') && read('apps/user-web/components/capability-control.tsx').includes('CapabilityValueInput'));
 const deviceControlProxyR8 = read('apps/admin-web/app/api/devices/[deviceId]/commands/route.ts');
 check(
   'capability value parser preserves declared data types instead of generic string coercion',
@@ -1587,7 +1589,7 @@ check(
     userDeviceDetailProxyFoundation.includes('client.request(`/devices/${encoded}/telemetry/latest`)') &&
     userDeviceDetailProxyFoundation.includes('client.request(`/devices/${encoded}/commands?limit=20&offset=0`)') &&
     userDeviceDetailProxyFoundation.includes('workspaceDevice.canControl') &&
-    userDeviceDetailFoundation.includes("capability.isWritable && capability.dataType.toLowerCase() === 'boolean'") &&
+    userDeviceDetailFoundation.includes('capability.isWritable') && userDeviceDetailFoundation.includes('<CapabilityControl') && read('apps/user-web/components/capability-control.tsx').includes('parseCapabilityValue') &&
     userDeviceDetailFoundation.includes('Akses Anda VIEW saja. Backend juga akan menolak command tanpa CONTROL.') &&
     userDeviceDetailFoundation.includes('state akhir menunggu ACK/telemetry perangkat') &&
     // Was pinned to the local `TERMINAL_COMMAND_STATES` list. The behaviour it protects — the
@@ -1609,7 +1611,7 @@ check(
   'Device Detail technical history is VIEW-authorized bounded and never invents current firmware/protocol',
   deviceTechnicalControllerFoundation.includes("@Controller('devices/:deviceId/technical-history')") &&
     deviceTechnicalControllerFoundation.includes("@RequireDeviceAccess('VIEW')") &&
-    deviceTechnicalServiceFoundation.includes("availability: 'UNAVAILABLE_BY_CONTRACT'") &&
+    deviceTechnicalServiceFoundation.includes("'DEVICE_REPORTED' : 'UNAVAILABLE_BY_CONTRACT'") && deviceTechnicalServiceFoundation.includes('device.reportedFirmwareVersion ?? null') && deviceTechnicalServiceFoundation.includes('device.reportedProtocol ?? null') &&
     deviceTechnicalServiceFoundation.includes('artifactBytesVerifiedByPlatform: false') &&
     deviceTechnicalServiceFoundation.includes('physicalInstallProven: false') &&
     deviceTechnicalServiceFoundation.includes('where: { tenantId, deviceId }'),
@@ -2715,9 +2717,7 @@ if (existsSync(join(root, 'apps/admin-web/components/quarantine-banner.tsx'))) {
 // an RTCPeerConnection, a stream-URL fetch. Prose cannot satisfy those, and adding any of them
 // genuinely does mean the banner needs rewriting.
 const cctvBannerSource = read('apps/admin-web/app/cctv/page.tsx');
-const cctvHasTransport = /<video\b|MediaSource|RTCPeerConnection|\.m3u8|['"`]rtsp:\/\//.test(
-  cctvBannerSource,
-);
+const cctvHasTransport = cctvBannerSource.includes('<CameraPlayer') && read('packages/design-system/src/camera-player.tsx').includes('RTCPeerConnection');
 const cctvClaimsNoStreaming = /tidak ada streaming/i.test(cctvBannerSource);
 check(
   'cctv banner agrees with the cctv implementation about streaming',
@@ -2727,7 +2727,7 @@ check(
     : 'no streaming construct exists, so the banner must say so rather than imply a viewer',
 );
 const nocBannerSource = read('apps/admin-web/components/noc-content.tsx');
-const nocHasMap = /from ['"]leaflet['"]|<MapContainer|navigator\.geolocation/.test(nocBannerSource);
+const nocHasMap = nocBannerSource.includes('<NocLocationMap') && read('apps/admin-web/components/noc-location-map.tsx').includes('<GeoMap') && read('packages/design-system/src/geo-map.tsx').includes('<svg');
 const nocClaimsNoMap = /tidak ada peta dunia/i.test(nocBannerSource);
 check(
   'noc banner agrees with the noc implementation about maps and location',

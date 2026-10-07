@@ -169,3 +169,5 @@ export class PublicApiClient {
     return payload as T;
   }
 }
+
+export * from './capability-value';

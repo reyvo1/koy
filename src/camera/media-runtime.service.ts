@@ -130,11 +130,11 @@ export class MediaRuntimeService {
       throw new Error(`stream "${input.name}" has an RTSP URL with no host`);
     }
 
-    // `api/streams?name=<name>&src=<url>` adds a source at runtime. `encodeURIComponent` on the src
+    // PATCH adds a source in memory; PUT persists it via PatchConfig and must not carry secrets. `encodeURIComponent` on the src
     // matters: an RTSP URL is full of `&` and `?`, and an unencoded one silently truncates the path.
     const query = `name=${encodeURIComponent(input.name)}&src=${encodeURIComponent(input.rtspUrl)}`;
     const response = await fetch(`${this.baseUrl}/api/streams?${query}`, {
-      method: 'PUT',
+      method: 'PATCH', signal: AbortSignal.timeout(10000),
     });
     if (!response.ok) {
       throw new Error(`media runtime refused stream "${input.name}": HTTP ${response.status}`);
@@ -152,9 +152,16 @@ export class MediaRuntimeService {
     try {
       const response = await fetch(
         `${this.baseUrl}/api/streams?src=${encodeURIComponent(name)}`,
-        { method: 'DELETE' },
+        { method: 'DELETE', signal: AbortSignal.timeout(4000) },
       );
-      return response.ok;
+      if (response.ok) return true;
+      // Inline/read-only go2rtc configuration can reject persistence after removing
+      // the runtime alias. Prove absence explicitly rather than treating 400 as success.
+      if (response.status === 400) {
+        const verified = await fetch(`${this.baseUrl}/api/streams?src=${encodeURIComponent(name)}`, { signal: AbortSignal.timeout(4000) });
+        return verified.status === 404;
+      }
+      return false;
     } catch (cause) {
       this.logger.warn({
         event: 'media.stream.remove_failed',

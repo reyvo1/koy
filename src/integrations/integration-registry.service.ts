@@ -104,10 +104,10 @@ export class IntegrationRegistryService {
   async verifyIntegration(input: {
     integrationId: string;
     tenantId: string;
-  }): Promise<{ id: string; provider: IntegrationProvider; credentialRef: string }> {
+  }): Promise<{ id: string; provider: IntegrationProvider; credentialRef: string; status: IntegrationStatus }> {
     const integration = await this.prisma.integration.findFirst({
       where: { id: input.integrationId, tenantId: input.tenantId },
-      select: { id: true, provider: true, credentialRef: true },
+      select: { id: true, provider: true, credentialRef: true, status: true },
     });
     if (!integration) {
       throw new DomainNotFoundException(

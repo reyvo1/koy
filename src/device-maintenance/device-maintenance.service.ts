@@ -26,10 +26,9 @@ import { RbacAuditService } from '../rbac/rbac-audit.service';
  *
  * ## One open window per device
  *
- * Enforced by a conditional insert, not a unique index. Two open windows would mean two technicians
+ * Enforced by a preflight check plus a partial unique index for concurrent writers. Two open windows would mean two technicians
  * each believing they own the same device, and the first closure would silently end the second's
- * work. A unique index would turn the second attempt into a raw database error; a conditional write
- * turns it into a conflict the API can describe in words the technician can act on.
+ * work. The unique violation is mapped to a conflict the API can describe in words the technician can act on.
  *
  * ## Race between open and resolve
  *

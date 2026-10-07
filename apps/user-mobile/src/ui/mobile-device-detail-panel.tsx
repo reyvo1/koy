@@ -1,6 +1,8 @@
+import { MobileDeviceRoutines } from './mobile-device-routines';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import type { MobileDeviceDetail } from '../device-control/mobile-device-client';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { parseCapabilityValue, readCapabilityConstraints } from '../../../../packages/sdk/src/capability-value';
+import type { MobileDeviceDetail, MobileDeviceCapability } from '../device-control/mobile-device-client';
 
 interface Props {
   detail: MobileDeviceDetail | null;
@@ -12,7 +14,7 @@ interface Props {
   onSendCommand(
     deviceId: string,
     capabilityKey: string,
-    value: boolean,
+    value: unknown,
   ): Promise<{ commandId: string; status: string }>;
 }
 
@@ -42,9 +44,7 @@ export function MobileDeviceDetailPanel({
   if (!detail) return null;
 
   const deviceId = detail.device.id;
-  const booleanWritable = detail.capabilities.filter(
-    (capability) => capability.isWritable && capability.dataType.toLowerCase() === 'boolean',
-  );
+  const booleanWritable = detail.capabilities.filter((capability) => capability.isWritable);
 
   return (
     <View style={styles.gap}>
@@ -59,6 +59,7 @@ export function MobileDeviceDetailPanel({
         <Text style={[styles.meta, isDark && styles.textMutedDark]}>Status: {detail.device.status} · Heartbeat: {detail.device.lastHeartbeatAt ?? 'belum tersedia'}</Text>
       </View>
 
+      <MobileDeviceRoutines key={detail.device.id} detail={detail} isDark={isDark} />
       <PanelCard
         isDark={isDark}
         title="Settings / Technical Identity"
@@ -82,17 +83,18 @@ export function MobileDeviceDetailPanel({
         {!detail.device.canControl ? (
           <Text style={[styles.meta, isDark && styles.textMutedDark]}>Akses VIEW-only. Backend tidak mengizinkan command.</Text>
         ) : booleanWritable.length === 0 ? (
-          <Text style={[styles.meta, isDark && styles.textMutedDark]}>Tidak ada capability boolean writable. Tipe lain tetap read-only pada Mobile saat ini.</Text>
+          <Text style={[styles.meta, isDark && styles.textMutedDark]}>Tidak ada capability writable.</Text>
         ) : booleanWritable.map((capability) => (
           <View key={capability.id} style={[styles.commandRow, isDark && styles.commandRowDark]}>
             <View style={styles.flexOne}>
               <Text style={[styles.cardTitle, isDark && styles.textDark]}>{capability.semanticType || capability.key}</Text>
               <Text style={[styles.meta, isDark && styles.textMutedDark]}>{capability.key}</Text>
             </View>
-            <View style={styles.actionRow}>
+            {capability.dataType.toLowerCase() === 'boolean' ? <View style={styles.actionRow}>
               <SmallButton label="ON" disabled={busyCapability !== null} onPress={() => send(capability.key, true)} />
               <SmallButton label="OFF" disabled={busyCapability !== null} onPress={() => send(capability.key, false)} />
-            </View>
+            </View> : <MobileTypedValue capability={capability} busy={busyCapability !== null} onSend={(value) => send(capability.key, value)} />}
+
           </View>
         ))}
         {commandNotice ? <Text style={[styles.meta, isDark && styles.textMutedDark]}>{commandNotice}</Text> : null}
@@ -132,7 +134,7 @@ export function MobileDeviceDetailPanel({
     </View>
   );
 
-  async function send(capabilityKey: string, value: boolean) {
+  async function send(capabilityKey: string, value: unknown) {
     setBusyCapability(capabilityKey);
     setCommandNotice('Command dikirim; state fisik tetap menunggu ACK/telemetry.');
     try {
@@ -190,3 +192,15 @@ const styles = StyleSheet.create({
   textDark: { color: '#f8fafc' },
   textMutedDark: { color: '#cbd5e1' },
 });
+
+function MobileTypedValue({ capability, busy, onSend }: { capability: MobileDeviceCapability; busy: boolean; onSend(value: unknown): Promise<void> }) {
+  const [raw, setRaw] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const options = readCapabilityConstraints(capability.constraints).enumValues ?? [];
+  return <View style={{ gap: 8, flex: 1 }}>
+    {capability.dataType === 'enum' ? <View style={styles.actionRow}>{options.map((value, index) => <Pressable key={index} disabled={busy} accessibilityRole="button" onPress={() => setRaw(String(value))}><Text style={{ color: '#0d9488', padding: 8 }}>{raw === String(value) ? '● ' : ''}{String(value)}</Text></Pressable>)}</View> :
+      <TextInput accessibilityLabel={`Nilai ${capability.key}`} editable={!busy} value={raw} onChangeText={setRaw} placeholder={`Nilai ${capability.unit ?? capability.dataType}`} style={{ borderWidth: 1, borderColor: '#64748b', borderRadius: 8, padding: 10, color: '#0d9488' }} />}
+    <SmallButton label="Kirim" disabled={busy} onPress={async () => { const parsed = parseCapabilityValue(raw, capability); if (!parsed.ok) { setError(parsed.error); return; } setError(null); await onSend(parsed.value); }} />
+    {error ? <Text accessibilityRole="alert" style={{ color: '#ef4444' }}>{error}</Text> : null}
+  </View>;
+}

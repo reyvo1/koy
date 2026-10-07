@@ -1,0 +1,13 @@
+# Optional local/operator overlay; never mount a credential file into a web app.
+# Usage: docker compose --env-file <local-env> -f docker-compose.rescue.yml \
+#        -f ops/media/runtime-connections.compose.example.yml up -d api
+services:
+  api:
+    environment:
+      IOT_RUNTIME_CONNECTIONS_FILE: /run/secrets/iot-runtime-connections.json
+      MAINTENANCE_SCHEDULER_ENABLED: "true"
+    volumes:
+      - type: bind
+        source: ${IOT_RUNTIME_CONNECTIONS_HOST_FILE:?Set the absolute operator secret-file path}
+        target: /run/secrets/iot-runtime-connections.json
+        read_only: true

@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { MobileLocationMap, type MobileMapLocation } from './mobile-location-map';
 import { useState } from 'react';
 
 import { mobileMessages, type MobileLocale } from '../localization/messages';
@@ -97,25 +98,21 @@ function renderWidget(
     );
   }
 
-  if (resolution.kind === 'MAP') {
-    return (
-      <WidgetMessage isDark={isDark} text={dashboardCopy.mapUnsupported} />
-    );
-  }
-
   if (data.state === 'ERROR' || data.state === 'INVALID') {
     return <WidgetMessage isDark={isDark} text={dashboardCopy.invalidData} />;
   }
 
   if (data.state === 'UNSUPPORTED') {
     return (
-      <WidgetMessage isDark={isDark} text={dashboardCopy.unsupportedData} />
+      <WidgetMessage isDark={isDark} text={resolution.kind === 'MAP' ? dashboardCopy.mapUnsupported : dashboardCopy.unsupportedData} />
     );
   }
 
   if (data.state === 'EMPTY') {
     return <WidgetMessage isDark={isDark} text={dashboardCopy.emptyData} />;
   }
+
+  if (resolution.kind === 'MAP') return <MobileLocationMap isDark={isDark} locations={data.bindings.filter((row) => row.data && (row.state === 'READY' || row.state === 'STALE')).map((row) => row.data as unknown as MobileMapLocation)} />;
 
   if (resolution.kind === 'GAUGE') {
     return (

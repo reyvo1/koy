@@ -83,6 +83,8 @@ apps/admin-web/app/api/admin/device-detail/route.ts
 apps/admin-web/app/api/admin/device-health/route.ts
 apps/admin-web/app/api/admin/device-log/route.ts
 apps/admin-web/app/api/admin/device-maintenance/[maintenanceId]/route.ts
+apps/admin-web/app/api/admin/device-maintenance/plans/[planId]/route.ts
+apps/admin-web/app/api/admin/device-maintenance/plans/route.ts
 apps/admin-web/app/api/admin/device-maintenance/route.ts
 apps/admin-web/app/api/admin/devices/route.ts
 apps/admin-web/app/api/admin/operational-summary/route.ts
@@ -108,8 +110,10 @@ apps/admin-web/app/api/auth/forgot-password/route.ts
 apps/admin-web/app/api/auth/register/route.ts
 apps/admin-web/app/api/auth/reset-password/route.ts
 apps/admin-web/app/api/auth/verify-email/route.ts
+apps/admin-web/app/api/camera-playback/[deviceId]/route.ts
 apps/admin-web/app/api/cameras/route.ts
 apps/admin-web/app/api/devices/[deviceId]/commands/route.ts
+apps/admin-web/app/api/devices/[deviceId]/location/route.ts
 apps/admin-web/app/api/devices/[deviceId]/revoke/route.ts
 apps/admin-web/app/api/devices/[deviceId]/shares/[grantId]/route.ts
 apps/admin-web/app/api/devices/[deviceId]/shares/route.ts
@@ -132,6 +136,7 @@ apps/admin-web/app/api/super/commands/dispatch/route.ts
 apps/admin-web/app/api/super/commands/route.ts
 apps/admin-web/app/api/super/device-credentials/route.ts
 apps/admin-web/app/api/super/device-groups/route.ts
+apps/admin-web/app/api/super/device-locations/route.ts
 apps/admin-web/app/api/super/findings/route.ts
 apps/admin-web/app/api/super/firmware/route.ts
 apps/admin-web/app/api/super/health/route.ts
@@ -177,7 +182,11 @@ apps/admin-web/app/api/tenant/device-groups/[groupId]/members/[deviceId]/route.t
 apps/admin-web/app/api/tenant/device-groups/[groupId]/members/route.ts
 apps/admin-web/app/api/tenant/device-groups/[groupId]/route.ts
 apps/admin-web/app/api/tenant/device-groups/route.ts
+apps/admin-web/app/api/tenant/integrations/[integrationId]/connect/route.ts
+apps/admin-web/app/api/tenant/integrations/[integrationId]/disconnect/route.ts
 apps/admin-web/app/api/tenant/integrations/[integrationId]/route.ts
+apps/admin-web/app/api/tenant/integrations/[integrationId]/runtime/route.ts
+apps/admin-web/app/api/tenant/integrations/[integrationId]/sync/route.ts
 apps/admin-web/app/api/tenant/integrations/route.ts
 apps/admin-web/app/api/tenant/notifications/[notificationId]/route.ts
 apps/admin-web/app/api/tenant/notifications/route.ts
@@ -266,10 +275,14 @@ apps/admin-web/components/app-shell.tsx
 apps/admin-web/components/auth-shell.tsx
 apps/admin-web/components/auto-forward.tsx
 apps/admin-web/components/capability-value-input.tsx
+apps/admin-web/components/confirmation-dialog.tsx
 apps/admin-web/components/device-detail-content.tsx
+apps/admin-web/components/device-location-editor.tsx
 apps/admin-web/components/device-share-panel.tsx
 apps/admin-web/components/enterprise-table.tsx
+apps/admin-web/components/maintenance-plans-content.tsx
 apps/admin-web/components/noc-content.tsx
+apps/admin-web/components/noc-location-map.tsx
 apps/admin-web/components/operational-summary-dashboard.tsx
 apps/admin-web/components/operational-summary-experience.tsx
 apps/admin-web/components/quarantine-banner.tsx
@@ -370,6 +383,8 @@ apps/user-mobile/src/ui/mobile-blocked-screen.tsx
 apps/user-mobile/src/ui/mobile-dashboard-screen.tsx
 apps/user-mobile/src/ui/mobile-dashboard-widget.tsx
 apps/user-mobile/src/ui/mobile-device-detail-panel.tsx
+apps/user-mobile/src/ui/mobile-device-routines.tsx
+apps/user-mobile/src/ui/mobile-location-map.tsx
 apps/user-mobile/src/ui/mobile-login-screen.tsx
 apps/user-mobile/src/ui/mobile-notification-delivery-panel.tsx
 apps/user-mobile/src/ui/mobile-settings-panel.tsx
@@ -380,8 +395,11 @@ apps/user-web/AGENTS.md
 apps/user-web/CLAUDE.md
 apps/user-web/app/alerts/page.tsx
 apps/user-web/app/api/alerts/route.ts
+apps/user-web/app/api/camera-playback/[deviceId]/route.ts
 apps/user-web/app/api/dashboard/route.ts
 apps/user-web/app/api/device-command/route.ts
+apps/user-web/app/api/device-routines/[[...segments]]/route.ts
+apps/user-web/app/api/devices/[deviceId]/location/route.ts
 apps/user-web/app/api/devices/[deviceId]/route.ts
 apps/user-web/app/api/profile/route.ts
 apps/user-web/app/api/realtime/[deviceId]/route.ts
@@ -403,9 +421,12 @@ apps/user-web/app/profil/page.tsx
 apps/user-web/app/realtime/page.tsx
 apps/user-web/app/ruangan/page.tsx
 apps/user-web/components/alerts-experience.tsx
+apps/user-web/components/capability-control.tsx
 apps/user-web/components/dashboard-experience.tsx
 apps/user-web/components/dashboard-grid.tsx
 apps/user-web/components/device-detail-experience.tsx
+apps/user-web/components/device-location-panel.tsx
+apps/user-web/components/device-routines-panel.tsx
 apps/user-web/components/login-form.tsx
 apps/user-web/components/profile-experience.tsx
 apps/user-web/components/realtime-experience.tsx
@@ -432,6 +453,8 @@ docs/ENTERPRISE-WAVE-ROADMAP.md
 docs/KOMERCIAL-RINGKAS.md
 docs/NIGHT-CHECKPOINT-20260822.md
 docs/PANDUAN-UI.md
+docs/PRODUCT-OPERATIONAL-COMPLETION-2026-10-07.md
+docs/PRODUCT-SURFACE-AUDIT-2026-10-07.md
 docs/PRODUCTION-PRODUCT-SURFACE-CLOSURE-2026-10-04.md
 docs/README.md
 docs/RESCUE-02-RUNTIME-RUNBOOK.md
@@ -566,6 +589,7 @@ ops/emqx/http-authenticator.rescue-02.example.hocon
 ops/env/iot-platform-backup.env.example
 ops/env/iot-platform.env.example
 ops/env/rescue-local.env.example
+ops/media/runtime-connections.compose.example.yml
 ops/nginx/iot-platform.conf.template
 ops/production/environment-attestation.example.json
 ops/scripts/ci-bootstrap-dependencies.sh
@@ -573,6 +597,7 @@ ops/scripts/install-release.sh
 ops/scripts/postgres-backup.sh
 ops/scripts/postgres-restore.sh
 ops/scripts/rollback-release.sh
+ops/scripts/test-product-browser-ci.sh
 ops/security/migration-compatibility-policy.json
 ops/security/production-audit-policy.json
 ops/security/secret-scan-allowlist.json
@@ -583,7 +608,11 @@ ops/systemd/iot-platform.service
 package-lock.json
 package.json
 packages/design-system/package.json
+packages/design-system/src/camera-player.tsx
+packages/design-system/src/capability-value-input.tsx
+packages/design-system/src/confirmation-dialog.tsx
 packages/design-system/src/design-system-v2.css
+packages/design-system/src/geo-map.tsx
 packages/design-system/src/index.tsx
 packages/design-system/src/styles.css
 packages/design-system/tsconfig.json
@@ -601,6 +630,7 @@ packages/esp32-sdk/test-app/sdkconfig.defaults
 packages/esp32-sdk/test-app/wokwi-scenario.yaml
 packages/esp32-sdk/test-app/wokwi.toml
 packages/sdk/package.json
+packages/sdk/src/capability-value.ts
 packages/sdk/src/index.ts
 packages/sdk/tsconfig.json
 prisma/DATABASE-CONVENTIONS.md
@@ -656,6 +686,7 @@ prisma/migrations/20261002220000_wave12_device_twin/migration.sql
 prisma/migrations/20261004213000_schedule_scene_referential_integrity/migration.sql
 prisma/migrations/20261005011500_tenant_role_override_tenant_integrity/migration.sql
 prisma/migrations/20261005165000_integration_registry_tenant_integrity/migration.sql
+prisma/migrations/20261007090000_product_operational_completion/migration.sql
 prisma/migrations/migration_lock.toml
 prisma/schema.prisma
 prisma/seed.ts
@@ -792,6 +823,7 @@ scripts/self-test-wave3-esp32-source.mjs
 scripts/self-test-wave3-qemu-boot-runner.mjs
 scripts/self-test-wave5-public-api-probes.mjs
 scripts/self-test-web-framework-contract-sync.mjs
+scripts/test-product-browser.mjs
 scripts/validate-rescue-02b-evidence.mjs
 scripts/validate-rescue-baseline.mjs
 scripts/validate-rescue-gate1-receipt.mjs
@@ -926,11 +958,15 @@ src/bootstrap/production-application.ts
 src/bootstrap/production-fastify-adapter.ts
 src/bootstrap/production-runtime.spec.ts
 src/bootstrap/production-runtime.ts
+src/camera/camera-playback.service.spec.ts
+src/camera/camera-playback.service.ts
 src/camera/camera.controller.ts
 src/camera/camera.module.ts
+src/camera/media-runtime.service.spec.ts
 src/camera/media-runtime.service.ts
 src/camera/onvif-discovery.service.spec.ts
 src/camera/onvif-discovery.service.ts
+src/common/capability-value.spec.ts
 src/common/errors/billing-denial-translation.contract.spec.ts
 src/common/errors/domain-error-code.contract.spec.ts
 src/common/errors/domain-exceptions.spec.ts
@@ -976,6 +1012,8 @@ src/device-maintenance/device-maintenance.controller.ts
 src/device-maintenance/device-maintenance.dto.ts
 src/device-maintenance/device-maintenance.module.ts
 src/device-maintenance/device-maintenance.service.ts
+src/device-maintenance/maintenance-plan.service.spec.ts
+src/device-maintenance/maintenance-plan.service.ts
 src/device/camera-onboarding.controller.ts
 src/device/camera-onboarding.module.ts
 src/device/camera-onboarding.service.spec.ts
@@ -998,9 +1036,11 @@ src/device/device-command-log.service.ts
 src/device/device-group.controller.spec.ts
 src/device/device-group.controller.ts
 src/device/device-http-projection.spec.ts
+src/device/device-location-input.spec.ts
 src/device/device-location.service.spec.ts
 src/device/device-location.service.ts
 src/device/device-public.controller.ts
+src/device/device-runtime-report.spec.ts
 src/device/device-technical-history.controller.ts
 src/device/device-technical-history.service.spec.ts
 src/device/device-technical-history.service.ts
@@ -1031,6 +1071,9 @@ src/integrations/integration-registry-surface.contract.spec.ts
 src/integrations/integration-registry.controller.ts
 src/integrations/integration-registry.service.spec.ts
 src/integrations/integration-registry.service.ts
+src/integrations/integration-runtime.controller.ts
+src/integrations/integration-runtime.service.spec.ts
+src/integrations/integration-runtime.service.ts
 src/integrations/integrations.module.ts
 src/main.ts
 src/metrics/metrics-access.guard.spec.ts
@@ -1120,6 +1163,8 @@ src/redis/redis.module.ts
 src/region/region-assignment.service.spec.ts
 src/region/region-assignment.service.ts
 src/region/region.module.ts
+src/runtime-connections/runtime-connections.service.spec.ts
+src/runtime-connections/runtime-connections.service.ts
 src/scene/scene-access.service.spec.ts
 src/scene/scene-access.service.ts
 src/scene/scene-domain.validator.spec.ts
@@ -1244,6 +1289,7 @@ test/integration/database.integration-spec.ts
 test/integration/e2e-device-flow.integration-spec.ts
 test/integration/mqtt.workflow.mqtt-integration-spec.ts
 test/integration/notification-runtime.integration-spec.ts
+test/integration/product-operational.integration-spec.ts
 test/integration/sim-30-devices.integration-spec.ts
 test/integration/telemetry-aggregation.integration-spec.ts
 test/ios-final-release-proof-policy.contract.spec.ts
@@ -1322,6 +1368,7 @@ test/public-api-sdk-contract.spec.ts
 test/saved-report.contract.spec.ts
 test/scripts/postgres-version-compatibility.spec.ts
 test/scripts/postgres-version-compatibility.ts
+test/scripts/product-browser-entry.tsx
 test/scripts/run-database-integration.ts
 test/scripts/run-historical-contract-transition-matrix.mjs
 test/scripts/run-mqtt-integration.ts

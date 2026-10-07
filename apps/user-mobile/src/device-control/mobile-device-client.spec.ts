@@ -8,10 +8,29 @@ import {
   reconcileMobileCommand,
   MobileDeviceSummary,
   sendBooleanCapabilityCommand,
+  sendTypedCapabilityCommand,
   sendPowerToggle,
 } from './mobile-device-client';
 
 describe('mobile device control client', () => {
+  it.each([
+    ['boolean', 'true', true],
+    ['integer', '2', 2],
+    ['number', '2.5', 2.5],
+    ['string', 'mode', 'mode'],
+    ['enum', 'eco', 'eco'],
+    ['object', '{"threshold":0}', { threshold: 0 }],
+  ])('preserves %s values across the JSON command boundary', async (dataType, raw, value) => {
+    const requestJson = jest.fn().mockResolvedValue({ correlationId: 'typed-command', status: 'SENT' });
+    await expect(sendTypedCapabilityCommand({ requestJson }, 'device', { key: 'target', dataType: String(dataType), constraints: { enumValues: ['eco'] } }, String(raw))).resolves.toEqual({ commandId: 'typed-command', status: 'SENT' });
+    const [, init] = requestJson.mock.calls[0];
+    expect(JSON.parse(init.body).payload).toEqual({ target: value });
+  });
+  it('rejects an invalid typed value before any transport request', async () => {
+    const requestJson = jest.fn();
+    await expect(sendTypedCapabilityCommand({ requestJson }, 'device', { key: 'target', dataType: 'number', constraints: { max: 10 } }, '100')).rejects.toMatchObject({ code: 'DEVICE_VALUE_INVALID' });
+    expect(requestJson).not.toHaveBeenCalled();
+  });
   it('loads devices from the gateway', async () => {
     let capturedPath = '';
     const devices: MobileDeviceSummary[] = await loadMobileDevices({

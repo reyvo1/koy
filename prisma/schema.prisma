@@ -8,6 +8,7 @@ datasource db {
 }
 
 model Tenant {
+  maintenancePlans MaintenancePlan[]
   id          String          @id @default(uuid())
   name        String
   createdAt   DateTime        @default(now())
@@ -77,6 +78,7 @@ model User {
 }
 
 model Membership {
+  maintenancePlans MaintenancePlan[]
   id              String      @id @default(uuid())
   userId          String
   user            User        @relation(fields: [userId], references: [id])
@@ -144,16 +146,17 @@ model RefreshToken {
 
 /// One open maintenance window per device, addressed by tenant.
 ///
-/// The unique index below is `id`-based, so it constrains nothing about how many windows may be
-/// open at once -- the "one open window per device" rule is enforced in the service by a conditional
-/// write, and this index exists so a record can be addressed by `(id, tenantId)` the way every other
-/// tenant-scoped table in this schema is.
+/// The migration also installs a partial unique index for OPEN windows.
+/// Service preflight and P2002 mapping keep concurrent attempts actionable.
 model DeviceMaintenance {
   id              String           @id @default(uuid())
   tenantId        String
   deviceId        String
-  device          Device           @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  device          Device           @relation(fields: [deviceId, tenantId], references: [id, tenantId], onDelete: Cascade)
   status          MaintenanceStatus @default(OPEN)
+  planId          String?
+  scheduledFor    DateTime?
+  plan            MaintenancePlan? @relation(fields: [planId, tenantId], references: [id, tenantId], onDelete: NoAction, onUpdate: NoAction)
   reason          String
   openedByUserId  String
   openedBy        User             @relation("MaintenanceOpenedBy", fields: [openedByUserId], references: [id])
@@ -163,6 +166,7 @@ model DeviceMaintenance {
   resolvedAt      DateTime?
   resolutionNote  String?
 
+  @@unique([planId, scheduledFor])
   @@unique([id, tenantId])
   @@index([tenantId, status])
   @@index([deviceId, status])
@@ -170,6 +174,7 @@ model DeviceMaintenance {
 }
 
 model Device {
+  maintenancePlans MaintenancePlan[]
   id                       String                   @id @default(uuid())
   name                     String
   type                     DeviceType               @default(SENSOR)
@@ -180,6 +185,9 @@ model Device {
   owner                    User?                    @relation(fields: [ownerId], references: [id])
   provisioningTokenHash    String?
   provisioningTokenExpires DateTime?
+  reportedFirmwareVersion String?
+  reportedProtocol String?
+  runtimeReportedAt DateTime?
   lastHeartbeatAt          DateTime?
   healthScore              Int?
   healthStatus             DeviceHealth?
@@ -1681,7 +1689,7 @@ model DeviceLocation {
   tenantId String
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   deviceId String
-  device   Device @relation(fields: [deviceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  device   Device @relation(fields: [deviceId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
   latitude Float
   longitude Float
   /// Human-readable place name. Nullable because a GPS fix has no label of its own.
@@ -1774,4 +1782,25 @@ model DeviceGroupMember {
   @@unique([groupId, deviceId])
   @@index([deviceId])
   @@map("device_group_members")
+}
+
+/// Durable technician recurrence; every due occurrence and its window commit together.
+model MaintenancePlan {
+  id String @id @default(uuid())
+  tenantId String
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  deviceId String
+  device Device @relation(fields: [deviceId, tenantId], references: [id, tenantId], onDelete: Cascade)
+  actorMembershipId String?
+  actorMembership Membership? @relation(fields: [actorMembershipId], references: [id], onDelete: SetNull)
+  reason String
+  intervalHours Int
+  nextDueAt DateTime
+  enabled Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  windows DeviceMaintenance[]
+  @@unique([id, tenantId])
+  @@index([enabled, nextDueAt])
+  @@map("maintenance_plans")
 }

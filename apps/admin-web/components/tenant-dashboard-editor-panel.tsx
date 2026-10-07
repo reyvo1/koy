@@ -82,7 +82,7 @@ const MODE_LABEL: Record<BindingMode, string> = {
 
 /** A GAUGE is rejected without a min/max range; see `DASHBOARD_WIDGET_RESOLUTION_INVALID`. */
 function presentationFor(kind: WidgetKind): Record<string, unknown> | undefined {
-  return kind === 'GAUGE' ? { min: 0, max: 100 } : undefined;
+  return kind === 'MAP' ? { coordinateSource: 'DEVICE_LOCATION_V1' } : kind === 'GAUGE' ? { min: 0, max: 100 } : undefined;
 }
 
 interface Props {

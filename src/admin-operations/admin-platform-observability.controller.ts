@@ -37,6 +37,9 @@ export class AdminPlatformObservabilityController {
     private readonly noc: NocIncidentService,
   ) {}
 
+  @Get('platform-device-locations')
+  async deviceLocations() { return this.platform.deviceLocations(); }
+
   @Get('platform-device-groups')
   @ApiOperation({ summary: 'Read bounded device-group directory across tenants' })
   async listDeviceGroups(@Query('tenantId') tenantId?: string) {

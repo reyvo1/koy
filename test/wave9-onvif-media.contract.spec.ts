@@ -121,12 +121,11 @@ describe('ONVIF discovery is bounded', () => {
     expect(read(ONVIF)).toMatch(/MAX_DISCOVERED|slice\(0,|maxResults/);
   });
 
-  it('it resolves on a timer rather than waiting for a reply', () => {
-    // The bound is `setTimeout(resolve, ...)` inside the bind callback. An earlier version of this
-    // assertion looked for `race|Promise.all|abort` and failed on correct code -- the vocabulary was
-    // wrong, not the behaviour. Asserting on a specific idiom instead of a category means a
-    // rewrite of a *correct* implementation reads as a regression.
-    expect(read(ONVIF)).toMatch(/setTimeout\(resolve, timeoutMs\)/);
+  it('bounds the whole operation before binding, even when a caller requests a longer timeout', () => {
+    const source = read(ONVIF);
+    expect(source).toMatch(/setTimeout\(resolve, Math\.min\(Math\.max\(timeoutMs, 1\), ONVIF_DISCOVERY_TIMEOUT_MS\)\)/);
+    expect(source.indexOf('timer = setTimeout')).toBeLessThan(source.indexOf('socket.bind('));
+    expect(source).toContain('if (timer) clearTimeout(timer)');
   });
 
   it('an empty result is an answer, not an error', () => {

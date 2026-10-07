@@ -4,7 +4,7 @@
 
 This census is tied to the post-production-readiness software baseline and must be updated whenever a backend controller or governed product page is added/removed. It is not a replacement for authorization tests: backend guards and database constraints remain authoritative.
 
-Current source inventory: **45 controller files / 187 HTTP-or-SSE endpoints**.
+Current source inventory: **46 controller files / 197 HTTP-or-SSE endpoints**.
 
 ## Classification
 
@@ -24,7 +24,7 @@ Current source inventory: **45 controller files / 187 HTTP-or-SSE endpoints**.
 | `admin-directory.controller.ts` | 5 | PRODUCT_UI + LEGACY | Tenant directory is surfaced; `GET /admin/users` is legacy and must not gain a new UI dependency. |
 | `admin-governance.controller.ts` | 11 | PRODUCT_UI | Platform RBAC/capability/runtime/command governance surfaces. |
 | `admin-operations.controller.ts` | 2 | PRODUCT_UI | Tenant operational summary + findings. |
-| `admin-platform-observability.controller.ts` | 12 | PRODUCT_UI | Super observability, reports, MQTT, NOC, command history, credentials/groups. |
+| `admin-platform-observability.controller.ts` | 13 | PRODUCT_UI | Super observability, reports, MQTT, NOC, command history, credentials/groups. |
 | `admin-user-provisioning.controller.ts` | 10 | PRODUCT_UI | Super and tenant user lifecycle. |
 | `accessible-analytics.controller.ts` | 1 | PRODUCT_UI | User/mobile accessible alerts. |
 | `app.controller.ts` | 1 | MACHINE_ONLY | Root service response; not a menu. |
@@ -32,9 +32,9 @@ Current source inventory: **45 controller files / 187 HTTP-or-SSE endpoints**.
 | `automation.controller.ts` | 7 | PRODUCT_UI | Tenant automation CRUD/activation. |
 | `billing-cycle.controller.ts` | 4 | MACHINE_ONLY | Billing runtime/internal integration surface. |
 | `billing-webhook.controller.ts` | 1 | MACHINE_ONLY | Payment provider webhook. |
-| `camera.controller.ts` | 2 | QUARANTINE | Network discovery/media status support CCTV quarantine; no production streaming claim. |
+| `camera.controller.ts` | 4 | QUARANTINE | Network discovery/media status support CCTV quarantine; authorized SDP live-view signaling added; quarantine remains pending new source-bound acceptance. |
 | `dashboard.controller.ts` | 7 | PRODUCT_UI | Workspace/dashboard lifecycle. |
-| `device-maintenance.controller.ts` | 3 | QUARANTINE | Technician maintenance support; technician surface remains quarantined. |
+| `device-maintenance.controller.ts` | 6 | QUARANTINE | Manual windows + guarded recurrence plans; partial unique index prevents concurrent OPEN windows. Quarantine remains pending acceptance. |
 | `camera-onboarding.controller.ts` | 4 | QUARANTINE | Camera inventory/pairing support CCTV quarantine. |
 | `capability.controller.ts` | 2 | PRODUCT_UI | Device capability detail/management. |
 | `command.controller.ts` | 3 | PRODUCT_UI | Tenant command dispatch/history. |
@@ -43,6 +43,7 @@ Current source inventory: **45 controller files / 187 HTTP-or-SSE endpoints**.
 | `device-technical-history.controller.ts` | 1 | PRODUCT_UI | Device technical history. |
 | `device.controller.ts` | 10 | PRODUCT_UI | Device list/detail/provision/location/health lifecycle. |
 | `health.controller.ts` | 3 | MACHINE_ONLY | Liveness/readiness probes. |
+| `integration-runtime.controller.ts` | 4 | PRODUCT_UI | Tenant MQTT bridge / Home Assistant connect, sync, status and disable; server-owned credentials, acknowledged operations. |
 | `integration-registry.controller.ts` | 3 | PRODUCT_UI | Tenant registry is now surfaced at `/tenant/integrasi`; registry state is not provider-connect proof. |
 | `metrics.controller.ts` | 1 | MACHINE_ONLY | Prometheus scrape surface. |
 | `mqtt.webhook.controller.ts` | 3 | MACHINE_ONLY | Broker auth/ACL/ACK callbacks. |
@@ -64,7 +65,9 @@ Current source inventory: **45 controller files / 187 HTTP-or-SSE endpoints**.
 | `users.controller.ts` | 3 | PRODUCT_UI + AUTH_UI | Profile is surfaced; tenant-context is a session/helper contract, not a menu. |
 | `webhook.controller.ts` | 6 | PRODUCT_UI | Tenant webhook lifecycle + secret rotation + delivery history. |
 
-## Gaps closed in this batch
+The 2026-10-07 operational expansion is detailed in `docs/PRODUCT-OPERATIONAL-COMPLETION-2026-10-07.md`; it includes typed controls, web camera playback, persisted GPS maps, durable maintenance plans, end-user scenes/schedules and MQTT/HA operations.
+
+## Earlier product closure
 
 1. **Tenant audit log** — `GET /audit-logs` existed without a tenant product surface. `/tenant/audit-log` and its BFF now expose it. The pagination bug was fixed at the source: `nextCursor` is now the same opaque base64url value the controller accepts on the next request.
 2. **Integration registry** — `GET/POST/DELETE /admin/integrations` existed without a tenant page. `/tenant/integrasi` now exposes registry lifecycle, while explicitly refusing to claim `REGISTERED` means a provider is connected.
@@ -81,7 +84,7 @@ The following are **not missing menus** and must remain outside ordinary product
 
 ## Intentional frontend quarantine
 
-`/noc`, `/cctv`, `/technician`, and `/mobile-preview` remain quarantined. They may have partial backend support, but the missing capabilities named on those pages prevent a production `KEEP` classification. Do not promote them merely because an endpoint exists.
+`/noc`, `/cctv`, `/technician`, and `/mobile-preview` remain quarantined. They may have partial backend support, but the updated capabilities now require a new source-bound full acceptance before a production `KEEP` classification. Do not promote them merely because an endpoint exists.
 
 ## Legacy cleanup candidate
 

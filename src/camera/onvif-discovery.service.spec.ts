@@ -65,6 +65,15 @@ describe('OnvifDiscoveryService', () => {
     });
   });
 
+  it('rejects a socket bind failure promptly and tears it down', async () => {
+    const udp = require('dgram');
+    let onError: ((error: Error) => void) | undefined;
+    const socket = { on: jest.fn((event, handler) => { if (event === 'error') onError = handler; }), bind: jest.fn(() => queueMicrotask(() => onError?.(new Error('fixture bind error')))), close: jest.fn() };
+    const spy = jest.spyOn(udp, 'createSocket').mockReturnValue(socket);
+    try { await expect(service.discover(3000)).rejects.toThrow('Jaringan discovery'); expect(socket.close).toHaveBeenCalledTimes(1); }
+    finally { spy.mockRestore(); }
+  });
+
   describe('discover', () => {
     it('resolves with an empty array when nothing answers', async () => {
       // A segment with no cameras is a normal state. Throwing here would turn a quiet network into a
@@ -73,9 +82,8 @@ describe('OnvifDiscoveryService', () => {
       expect(found).toEqual([]);
     });
 
-    it('does not reject when the host has no multicast route', async () => {
-      // Container hosts routinely have no route for 239.255.255.250. The bind callback can throw,
-      // and the socket can emit 'error'; neither may escape as a rejection.
+    it('reports a quiet available segment without inventing cameras', async () => {
+      // Real transport failures reject (covered above); a quiet segment still returns a list.
       await expect(service.discover(60)).resolves.toBeInstanceOf(Array);
     });
 

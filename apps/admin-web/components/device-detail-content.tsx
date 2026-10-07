@@ -9,6 +9,7 @@
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { CapabilityValueInput } from '@/components/capability-value-input';
+import { DeviceLocationEditor } from '@/components/device-location-editor';
 import DeviceSharePanel from '@/components/device-share-panel';
 import { parseCapabilityValue, readCapabilityConstraints } from '@/lib/capability-value';
 import { createLoadGuard } from '@/lib/safe-fetch';
@@ -319,8 +320,8 @@ export default function DeviceDetailContent() {
             ['Health (dari API)', HEALTH_LABEL[health]],
             ['Heartbeat Terakhir', device.lastHeartbeatAt ? new Date(device.lastHeartbeatAt).toLocaleString('id-ID') : 'belum ada'],
             ['Jumlah Capability', capabilityError ? '—' : String(capabilities.length)],
-            ['Current Firmware', technicalHistory?.firmware.currentVersion ?? 'belum ada kontrak per-device'],
-            ['Protocol / Adapter', technicalHistory?.protocol.name ?? 'belum ada kontrak per-device'],
+            ['Current Firmware', technicalHistory?.firmware.currentVersion ?? 'belum dilaporkan perangkat'],
+            ['Protocol / Adapter', technicalHistory?.protocol.name ?? 'belum dilaporkan perangkat'],
           ].map(([label, value]) => (
             <div key={label} className="rounded-xl border border-slate-800/80 bg-[#111c2e] px-5 py-4">
               <div className="text-[12px] text-slate-500">{label}</div>
@@ -329,6 +330,8 @@ export default function DeviceDetailContent() {
           ))}
         </div>
       )}
+
+      {tab === 'Information' ? <DeviceLocationEditor key={deviceId} deviceId={deviceId} /> : null}
 
       {/* Capabilities */}
       {tab === 'Capabilities' && (

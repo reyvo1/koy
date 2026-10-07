@@ -18,6 +18,7 @@
  * states the backend's own wording rather than a second copy that can drift.
  */
 
+import { ConfirmationDialog } from '@/components/confirmation-dialog';
 import { useCallback, useEffect, useState } from 'react';
 import { AlertTriangle, GitBranch, Layers } from 'lucide-react';
 
@@ -86,6 +87,7 @@ interface ApplyResult {
 }
 
 export default function SuperCapabilityVersionsPanel() {
+  const [pendingDeprecation, setPendingDeprecation] = useState<TemplateRow | null>(null);
   const [payload, setPayload] = useState<VersionsPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [applyState, setApplyState] = useState<
@@ -192,7 +194,7 @@ export default function SuperCapabilityVersionsPanel() {
     const tenant = tenantId.trim();
     const version = template.publishedVersion;
     if (!tenant || !version) return;
-    if (!window.confirm(`Deprekasi ${template.key} v${version}? Perangkat tidak diubah otomatis.`)) return;
+
     setLifecycleBusy(true);
     setLifecycleMessage(null);
     try {
@@ -203,6 +205,7 @@ export default function SuperCapabilityVersionsPanel() {
       });
       const body = (await response.json().catch(() => ({}))) as { message?: string };
       if (!response.ok) throw new Error(body.message ?? `backend ${response.status}`);
+      setPendingDeprecation(null);
       setLifecycleMessage(`Versi ${version} dideprekasi.`);
       await loadTemplates(tenant);
     } catch (cause) {
@@ -387,7 +390,7 @@ export default function SuperCapabilityVersionsPanel() {
                         <label className="flex items-center gap-1.5 text-[10.5px] text-slate-400"><input type="checkbox" checked={supersede[template.id] === true} onChange={(event) => setSupersede((previous) => ({ ...previous, [template.id]: event.target.checked }))} /> supersede versi aktif</label>
                         <label className="flex items-center gap-1.5 text-[10.5px] text-slate-400"><input type="checkbox" checked={rollback[template.id] === true} onChange={(event) => setRollback((previous) => ({ ...previous, [template.id]: event.target.checked }))} /> rollback ke versi lebih rendah</label>
                         <button type="button" disabled={lifecycleBusy} onClick={() => void publishTemplateVersion(template)} className="rounded-lg bg-teal-500/15 px-2.5 py-1.5 text-[10.5px] font-semibold text-teal-200 disabled:opacity-50">Publish</button>
-                        {template.publishedVersion ? <button type="button" disabled={lifecycleBusy} onClick={() => void deprecatePublishedVersion(template)} className="rounded-lg bg-red-500/10 px-2.5 py-1.5 text-[10.5px] font-semibold text-red-300 disabled:opacity-50">Deprecate v{template.publishedVersion}</button> : null}
+                        {template.publishedVersion ? <button type="button" disabled={lifecycleBusy} onClick={() => { setLifecycleMessage(null); setPendingDeprecation(template); }} className="rounded-lg bg-red-500/10 px-2.5 py-1.5 text-[10.5px] font-semibold text-red-300 disabled:opacity-50">Deprecate v{template.publishedVersion}</button> : null}
                       </div>
                       <div className="mt-1 text-[10px] text-slate-600">{template.versions?.length ? template.versions.map((version) => `${version.version}:${version.status}`).join(' · ') : 'Belum ada versi terbaca'}</div>
                     </div>
@@ -566,6 +569,7 @@ export default function SuperCapabilityVersionsPanel() {
       <p className="text-[11.5px] leading-relaxed text-slate-500">
         {payload.lifecycleContract.note}
       </p>
+      <ConfirmationDialog open={pendingDeprecation !== null} title="Deprekasi versi?" description={`Deprekasi ${pendingDeprecation?.key ?? ''} v${pendingDeprecation?.publishedVersion ?? ''}. Perangkat tidak diubah otomatis.`} busy={lifecycleBusy} error={lifecycleMessage} confirmLabel="Deprekasi" onCancel={() => setPendingDeprecation(null)} onConfirm={() => { if (pendingDeprecation) void deprecatePublishedVersion(pendingDeprecation); }} />
     </div>
   );
 }

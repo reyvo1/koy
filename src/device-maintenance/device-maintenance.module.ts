@@ -1,3 +1,4 @@
+import { MaintenancePlanService } from './maintenance-plan.service';
 import { Module } from '@nestjs/common';
 
 import { AdminRoleGuard } from '../admin-operations/admin-role.guard';
@@ -24,7 +25,7 @@ import { DeviceMaintenanceService } from './device-maintenance.service';
 @Module({
   imports: [PrismaModule, RbacModule],
   controllers: [DeviceMaintenanceController],
-  providers: [DeviceMaintenanceService, AdminRoleGuard],
+  providers: [MaintenancePlanService, DeviceMaintenanceService, AdminRoleGuard],
   exports: [DeviceMaintenanceService],
 })
 export class DeviceMaintenanceModule {}

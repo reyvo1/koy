@@ -91,11 +91,12 @@ export class DeviceController {
     @Param('id') id: string,
     @Body() body: { latitude?: number; longitude?: number; label?: string; recordedAt?: string },
   ) {
+    if (!body || typeof body !== 'object' || Array.isArray(body) || (body.recordedAt !== undefined && (typeof body.recordedAt !== 'string' || !Number.isFinite(Date.parse(body.recordedAt))))) throw new DomainBadRequestException(ERROR_CODES.BadRequest, 'Input lokasi tidak valid.');
     return this.locationService.recordFix({
       tenantId: req.user.tenantContext.tenantId,
       deviceId: id,
-      latitude: Number(body.latitude),
-      longitude: Number(body.longitude),
+      latitude: body.latitude,
+      longitude: body.longitude,
       label: body.label ?? null,
       recordedAt: body.recordedAt ? new Date(body.recordedAt) : undefined,
     });

@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { Cable, Plus, RefreshCw, Trash2, AlertTriangle } from 'lucide-react';
+import { ConfirmationDialog } from '@/components/confirmation-dialog';
 import { TenantShell } from '@/components/tenant-shell';
 import { EmptyState, SkeletonCard } from '@/components/ui-polish';
 
@@ -22,6 +23,9 @@ function providerLabel(provider: Provider): string {
 }
 
 export default function TenantIntegrationsPage() {
+  const [deviceId, setDeviceId] = useState('');
+  const [runtime, setRuntime] = useState<Record<string, { items: Array<{ internalEntityId: string; syncedAt: string }> }>>({});
+  const [pendingRemove, setPendingRemove] = useState<IntegrationRow | null>(null);
   const [rows, setRows] = useState<IntegrationRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -71,8 +75,13 @@ export default function TenantIntegrationsPage() {
     }
   }
 
+  async function operate(row: IntegrationRow, action: 'connect' | 'sync' | 'disconnect' | 'runtime') {
+    setBusy(row.id); setError(null); setNotice(null);
+    try { const response = await fetch(`/api/tenant/integrations/${encodeURIComponent(row.id)}/${action}`, action === 'runtime' ? { cache: 'no-store' } : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(action === 'sync' ? { deviceId } : {}) }); const body = await response.json(); if (!response.ok) throw new Error(body.message ?? body.error?.message ?? 'Operasi provider gagal.'); if (action === 'runtime') setRuntime((old) => ({ ...old, [row.id]: body })); else { setNotice(body.note ?? 'Operasi provider berhasil.'); await load(); } } catch (cause) { setError(cause instanceof Error ? cause.message : 'Operasi provider gagal.'); } finally { setBusy(null); }
+  }
+
   async function remove(row: IntegrationRow) {
-    if (!window.confirm(`Hapus registry integrasi "${row.displayName}"?`)) return;
+
     setBusy(row.id);
     setError(null);
     setNotice(null);
@@ -85,6 +94,7 @@ export default function TenantIntegrationsPage() {
         throw new Error(payload.message ?? `backend ${response.status}`);
       }
       setNotice(`Integrasi "${row.displayName}" dihapus.`);
+      setPendingRemove(null);
       await load();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'gagal menghapus integrasi');
@@ -136,13 +146,22 @@ export default function TenantIntegrationsPage() {
                   <div className="mt-0.5 text-[11.5px] text-slate-500">{providerLabel(row.provider)} · dibuat {new Date(row.createdAt).toLocaleString('id-ID')}</div>
                 </div>
                 <span className={`rounded-full px-2.5 py-1 text-[10.5px] font-bold ${row.status === 'CONNECTED' ? 'bg-emerald-500/10 text-emerald-300' : row.status === 'ERROR' ? 'bg-red-500/10 text-red-300' : 'bg-sky-500/10 text-sky-300'}`}>{row.status}</span>
-                <button type="button" disabled={busy === row.id} onClick={() => void remove(row)} aria-label={`Hapus integrasi ${row.displayName}`} className="rounded-lg border border-red-500/20 p-2 text-red-300 hover:bg-red-500/10 disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /></button>
+                <button type="button" disabled={busy === row.id} onClick={() => { setError(null); setPendingRemove(row); }} aria-label={`Hapus integrasi ${row.displayName}`} className="rounded-lg border border-red-500/20 p-2 text-red-300 hover:bg-red-500/10 disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" /></button>
               </div>
+              {['MQTT_BRIDGE', 'HOME_ASSISTANT'].includes(row.provider) ? <div className="mt-3 flex flex-wrap gap-2">
+                <button type="button" disabled={busy !== null} onClick={() => void operate(row, 'connect')} className="rounded-lg border border-teal-500/30 px-3 py-2 text-xs text-teal-300 disabled:opacity-50">Periksa koneksi</button>
+                <label className="text-xs text-slate-400">Device ID<input aria-label="Perangkat sinkronisasi" value={deviceId} onChange={(e) => setDeviceId(e.target.value)} className="ml-2 rounded-lg border border-slate-600 bg-slate-900 px-2 py-2 text-slate-200" /></label>
+                <button type="button" disabled={busy !== null || !deviceId} onClick={() => void operate(row, 'sync')} className="rounded-lg border border-slate-600 px-3 py-2 text-xs text-slate-200 disabled:opacity-50">Sinkronkan perangkat</button>
+                <button type="button" disabled={busy !== null} onClick={() => void operate(row, 'runtime')} className="rounded-lg border border-slate-600 px-3 py-2 text-xs text-slate-200">Riwayat sinkronisasi</button>
+                <button type="button" disabled={busy !== null} onClick={() => void operate(row, 'disconnect')} className="rounded-lg border border-slate-600 px-3 py-2 text-xs text-slate-200">Nonaktifkan</button>
+              </div> : <p className="text-xs text-amber-300">Provider ini memerlukan adapter dan otorisasi eksternal tersendiri.</p>}
+              {runtime[row.id] ? <ul className="mt-3 text-xs text-slate-400">{runtime[row.id].items.length === 0 ? <li>Belum ada sinkronisasi.</li> : runtime[row.id].items.map((item) => <li key={item.internalEntityId}>{item.internalEntityId} · {new Date(item.syncedAt).toLocaleString('id-ID')}</li>)}</ul> : null}
               {row.lastError ? <p className="mb-0 mt-2 font-mono text-[11.5px] text-red-300/80">{row.lastError}</p> : null}
             </article>
           ))}
         </div>
       )}
+      <ConfirmationDialog open={pendingRemove !== null} title="Hapus integrasi?" description={`Registry ${pendingRemove?.displayName ?? ''} dan pemetaan sinkronisasinya akan dihapus.`} busy={busy !== null} error={error} confirmLabel="Hapus integrasi" onCancel={() => setPendingRemove(null)} onConfirm={() => { if (pendingRemove) void remove(pendingRemove); }} />
     </TenantShell>
   );
 }

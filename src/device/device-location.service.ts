@@ -93,6 +93,9 @@ export class DeviceLocationService {
       );
     }
 
+    if (input.label != null && (typeof input.label !== 'string' || input.label.length > 120)) throw new DomainBadRequestException(ERROR_CODES.BadRequest, 'Label lokasi maksimal 120 karakter.');
+    if (input.recordedAt && !Number.isFinite(input.recordedAt.getTime())) throw new DomainBadRequestException(ERROR_CODES.BadRequest, 'Waktu lokasi tidak valid.');
+
     // Provenance before the write, and the tenant recorded is the one that came back from the
     // lookup rather than the one supplied. Without this, a caller could write into another tenant's
     // permanent history by naming their device id.

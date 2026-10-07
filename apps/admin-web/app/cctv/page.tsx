@@ -7,6 +7,7 @@
  */
 
 import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { CameraPlayer } from '@iot-platform/design-system';
 import { AdminShellV3 } from '@/components/admin-shell-v3';
 import { QuarantineBanner } from '@/components/quarantine-banner';
 import {
@@ -162,10 +163,11 @@ export default function CctvPage() {
           'Registrasi kamera dan penerbitan pairing URI sekali pakai yang benar-benar dari backend.',
           'Kode QR pairing yang benar-benar dapat dipindai.',
           'Daftar kamera beserta status dan metadata pairing yang tersimpan.',
+          'Live view melalui SDP WebRTC terotorisasi; sumber RTSP dan kredensial tetap di server.',
         ]}
         doesNotWork={[
-          'Tidak ada streaming video sama sekali — tidak ada RTSP, ONVIF, WebRTC, atau HLS di seluruh aplikasi.',
-          'Daftar kamera adalah metadata, bukan penampil. Membuka kamera tidak menunjukkan apa pun.',
+          'Sumber kamera dan media runtime harus dikonfigurasi operator; kegagalan koneksi ditampilkan sebagai gangguan.',
+          'Sertifikasi penuh untuk perubahan live view ini masih menunggu acceptance pada sumber baru; observasi hardware fisik dicatat terpisah.',
         ]}
       />
 
@@ -389,15 +391,14 @@ export default function CctvPage() {
                     pairing.
                   </p>
                 ) : null}
+                <div className="mt-4"><CameraPlayer deviceId={camera.id} /></div>
               </article>
             ))}
           </div>
         )}
 
         <p className="mb-0 mt-4 text-[11.5px] leading-relaxed text-slate-500">
-          Modul streaming (RTSP/ONVIF) belum tersedia. Daftar di atas menampilkan status
-          pairing dan heartbeat nyata dari backend; live view menyusul sesuai kontrak
-          platform.
+          Live view memakai runtime media yang dikonfigurasi operator. Kamera tanpa sumber streaming menampilkan alasan kegagalan; status pairing dan heartbeat tetap berasal dari backend.
         </p>
       </FadeIn>
     </AdminShellV3>

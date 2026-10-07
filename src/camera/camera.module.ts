@@ -1,5 +1,9 @@
 import { Module } from '@nestjs/common';
 
+import { DeviceModule } from '../device/device.module';
+import { AdminRoleGuard } from '../admin-operations/admin-role.guard';
+import { RuntimeConnectionsModule } from '../runtime-connections/runtime-connections.service';
+import { CameraPlaybackService } from './camera-playback.service';
 import { CameraController } from './camera.controller';
 import { MEDIA_RUNTIME_URL, MediaRuntimeService } from './media-runtime.service';
 import { OnvifDiscoveryService } from './onvif-discovery.service';
@@ -18,10 +22,10 @@ import { PrismaModule } from '../prisma/prisma.module';
   // UnknownDependenciesException on `PrismaService`. Same failure class as the MediaRuntimeService
   // string parameter -- a provider graph gap that no unit test can see, because tests construct the
   // guard directly and never go through Nest's injector.
-  imports: [PrismaModule],
+  imports: [PrismaModule, DeviceModule, RuntimeConnectionsModule],
   controllers: [CameraController],
   providers: [
-    OnvifDiscoveryService,
+    OnvifDiscoveryService, CameraPlaybackService, AdminRoleGuard,
     // Provided from the environment so the address is never written in code. Resolved eagerly from
     // a factory because the token exists specifically to give Nest something to inject; without a
     // provider for it the constructor argument is unresolvable again.
