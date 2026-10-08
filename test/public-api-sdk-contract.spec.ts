@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 
 const root = resolve(__dirname, '..');
@@ -64,6 +65,28 @@ describe('public API SDK ↔ controller contract', () => {
       .replace(/\/\/[^\n]*/g, '');
     expect(withoutComments).toContain('readonly status: number');
     expect(withoutComments).not.toMatch(/constructor\s*\(\s*readonly\s+/);
+  });
+
+  it('loads the package and shared parser through native Node ESM without a bundler', () => {
+    const output = execFileSync(process.execPath, [
+      '--experimental-strip-types', '--input-type=module', '--eval', `
+        import assert from 'node:assert/strict';
+        import { PublicApiClient, PublicApiError, parseCapabilityValue } from './packages/sdk/src/index.ts';
+        assert.equal(typeof PublicApiClient, 'function');
+        assert.equal(new PublicApiError(403, 'FORBIDDEN', 'denied').isPermissionFailure, true);
+        assert.deepEqual(parseCapabilityValue('25.5', { dataType: 'number', constraints: { min: 0, max: 100 } }), { ok: true, value: 25.5 });
+        assert.equal(parseCapabilityValue('101', { dataType: 'number', constraints: { max: 100 } }).ok, false);
+        assert.deepEqual(parseCapabilityValue('{"enabled":true}', { dataType: 'object' }), { ok: true, value: { enabled: true } });
+        const client = new PublicApiClient({ apiKey: 'fixture-key', baseUrl: 'https://fixture.invalid', fetch: async (url, init) => {
+          assert.equal(url, 'https://fixture.invalid/v1/devices?limit=1');
+          assert.equal(init.headers['x-api-key'], 'fixture-key');
+          return new Response(JSON.stringify({ items: [], count: 0 }), { status: 200 });
+        } });
+        assert.deepEqual(await client.listDevices({ limit: 1 }), { items: [], count: 0 });
+        console.log('NATIVE_NODE_SDK_PASS');
+      `,
+    ], { cwd: root, encoding: 'utf8', timeout: 15_000 });
+    expect(output.trim()).toBe('NATIVE_NODE_SDK_PASS');
   });
 
   it('every route the SDK calls is declared by the controller', () => {

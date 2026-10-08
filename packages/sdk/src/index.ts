@@ -170,4 +170,5 @@ export class PublicApiClient {
   }
 }
 
-export * from './capability-value';
+// Node's native TypeScript loader requires the source extension for ESM imports.
+export * from './capability-value.ts';

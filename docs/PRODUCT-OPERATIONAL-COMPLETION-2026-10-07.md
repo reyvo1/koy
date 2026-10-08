@@ -2,7 +2,7 @@
 
 Owner scope: close the gaps found in the backend/frontend/menu/button audit against the Development Kit. Physical equipment must not block software work. **Owner subsequently explicitly requested push in this same session; package only after required local gates pass.** This is one post-green product-hardening batch, not a new numbered wave/module.
 
-Baseline: commit `4907ea5822e07188394ebee3c72e860e79a793cc`, `main`, verified GitHub Actions run `37449896281` succeeded on that exact source. The new local changes are uncommitted and **not certified by that historical run**. Waves 1–13 remain closed; production deployment remains **NOT READY FOR PRODUCTION DEPLOYMENT** pending environment-specific approval.
+Baseline: commit `4907ea5822e07188394ebee3c72e860e79a793cc`, `main`, verified GitHub Actions run `37449896281` succeeded on that exact source. The implementation was committed as `68454f460d9eeee8a9750ec03daafa6570c5d5a6` and pushed to verified `origin/main` without force. Exact-source GitHub Actions run `37643985961` completed/failure at the Wave 5 SDK load. Core CI, both native ESP-IDF/QEMU jobs, PostgreSQL integration (16 suites / 72 tests), live EMQX, simulated ESP32/OTA and Wave 4 passed; this candidate is **not fully certified**. Waves 1–13 remain closed; production deployment remains **NOT READY FOR PRODUCTION DEPLOYMENT** pending environment-specific approval.
 
 ## Delivered behavior
 
@@ -55,7 +55,7 @@ The full-Jest repair retained safety: the new bounded internal maintenance queue
 
 - PostgreSQL evidence uses the real committed migrations in a disposable database/schema, not Prisma validate/generate. It covers simultaneous claims/manual requests, actor deletion, database tenant provenance, SQL location deduplication and report persistence.
 - Browser evidence is **BROWSER_FIXTURE + SYNTHETIC_MEDIA_TRANSPORT**: real React controls and real go2rtc/FFmpeg/Chrome-decoded frames; scene/command HTTP responses and camera device lookup are explicit fixtures. It does not claim the production auth/MQTT/full UAT path or PHYSICAL/HIL.
-- Full automated `SIMULATED_HARDWARE_LIVE_SERVICE` acceptance for the changed sealed source remains pending owner-authorized push and GitHub CI, per project policy. External provider/site observations remain separately labelled.
+- Full automated `SIMULATED_HARDWARE_LIVE_SERVICE` acceptance for the changed sealed source remains pending a new exact-source GitHub run after the native-Node SDK root repair, per project policy. External provider/site observations remain separately labelled.
 
 To repeat the focused browser test against an already-owned synthetic fixture:
 
@@ -69,4 +69,10 @@ The session fixture runs go2rtc with inline config, an FFmpeg test pattern, priv
 
 ## Next action
 
-Seal and package this batch after the required local prepush passes. On resume verify HEAD/status and the latest handoff first. The owner has now authorized push; verify target remote/branch/SHA, run the required complete local prepush, package the whole batch once and then obtain the full GitHub acceptance on that new source. Do not reuse run `37449896281` as proof for these uncommitted changes; do not promote quarantined routes or claim production approval from local fixtures.
+Validate the SDK native-Node repair, seal its bounded source/test/evidence batch and push under existing owner authorization. Monitor the resulting exact SHA through complete GitHub acceptance; red run `37643985961` is diagnostic evidence, not a green checkpoint. On resume verify HEAD/status and current handoff before acting. Quarantine promotion and production deployment retain separate scope/evidence decisions.
+
+## Native Node SDK CI repair — 2026-10-08
+
+Run `37643985961` stopped at `Wave 5 public API webhook and SDK live regression`: Node's ESM/type-stripping loader could not resolve the extensionless `./capability-value` re-export. Bundler/compiler checks alone did not exercise this consumer. The SDK now exports `./capability-value.ts` explicitly; its no-emit TypeScript project allows source extensions. The regression invokes native Node against the actual SDK entrypoint, tests valid/range-refused/object parser results, and exercises the public client with an explicit fixture fetch. The live SDK probe and all auth/API/UAT gates remain unchanged and mandatory.
+
+Repair QA: SDK typecheck and native-Node regression PASS (1 suite / 10 tests). Full new-source GitHub acceptance remains mandatory.
