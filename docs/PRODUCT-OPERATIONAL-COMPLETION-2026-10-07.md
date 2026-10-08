@@ -2,7 +2,7 @@
 
 Owner scope: close the gaps found in the backend/frontend/menu/button audit against the Development Kit. Physical equipment must not block software work. **Owner subsequently explicitly requested push in this same session; package only after required local gates pass.** This is one post-green product-hardening batch, not a new numbered wave/module.
 
-Baseline: commit `4907ea5822e07188394ebee3c72e860e79a793cc`, `main`, verified GitHub Actions run `37449896281` succeeded on that exact source. The implementation was committed as `68454f460d9eeee8a9750ec03daafa6570c5d5a6` and pushed to verified `origin/main` without force. Exact-source GitHub Actions run `37643985961` completed/failure at the Wave 5 SDK load. Core CI, both native ESP-IDF/QEMU jobs, PostgreSQL integration (16 suites / 72 tests), live EMQX, simulated ESP32/OTA and Wave 4 passed; this candidate is **not fully certified**. Waves 1–13 remain closed; production deployment remains **NOT READY FOR PRODUCTION DEPLOYMENT** pending environment-specific approval.
+Baseline: commit `4907ea5822e07188394ebee3c72e860e79a793cc`, `main`, verified GitHub Actions run `37449896281` succeeded on that exact source. The implementation was committed as `68454f460d9eeee8a9750ec03daafa6570c5d5a6` and pushed to verified `origin/main` without force. Exact-source GitHub Actions run `37643985961` completed/failure at the Wave 5 SDK load. Core CI, both native ESP-IDF/QEMU jobs, PostgreSQL integration (16 suites / 72 tests), live EMQX, simulated ESP32/OTA and Wave 4 passed; that first candidate was **not fully certified**. The native-Node root repair is now committed/pushed as `3b80897bb154f6fb80ea375a9e39b698e9c87159`; run `37712838417` passed core CI and both native targets, but live acceptance was blocked before starting by GitHub account billing/spending limits. Waves 1–13 remain closed; production deployment remains **NOT READY FOR PRODUCTION DEPLOYMENT** pending environment-specific approval.
 
 ## Delivered behavior
 
@@ -55,7 +55,7 @@ The full-Jest repair retained safety: the new bounded internal maintenance queue
 
 - PostgreSQL evidence uses the real committed migrations in a disposable database/schema, not Prisma validate/generate. It covers simultaneous claims/manual requests, actor deletion, database tenant provenance, SQL location deduplication and report persistence.
 - Browser evidence is **BROWSER_FIXTURE + SYNTHETIC_MEDIA_TRANSPORT**: real React controls and real go2rtc/FFmpeg/Chrome-decoded frames; scene/command HTTP responses and camera device lookup are explicit fixtures. It does not claim the production auth/MQTT/full UAT path or PHYSICAL/HIL.
-- Full automated `SIMULATED_HARDWARE_LIVE_SERVICE` acceptance for the changed sealed source remains pending a new exact-source GitHub run after the native-Node SDK root repair, per project policy. External provider/site observations remain separately labelled.
+- Full automated `SIMULATED_HARDWARE_LIVE_SERVICE` acceptance for the changed sealed source remains pending runner access for the live acceptance job in run `37712838417` (or exact-source acceptance of a receipt-only successor). GitHub account billing/spending limits stopped this job before any step ran; partial core/native PASS does not replace full acceptance. External provider/site observations remain separately labelled.
 
 To repeat the focused browser test against an already-owned synthetic fixture:
 
@@ -69,10 +69,16 @@ The session fixture runs go2rtc with inline config, an FFmpeg test pattern, priv
 
 ## Next action
 
-Validate the SDK native-Node repair, seal its bounded source/test/evidence batch and push under existing owner authorization. Monitor the resulting exact SHA through complete GitHub acceptance; red run `37643985961` is diagnostic evidence, not a green checkpoint. On resume verify HEAD/status and current handoff before acting. Quarantine promotion and production deployment retain separate scope/evidence decisions.
+Resolve the owner-owned GitHub Billing & plans blocker, then run the failed live acceptance against the verified source. The implementation and SDK repair are already pushed. Preserve all gates and record only executed evidence; quarantine promotion and production deployment retain separate scope/evidence decisions. On resume verify HEAD/status and the current handoff before acting.
 
 ## Native Node SDK CI repair — 2026-10-08
 
 Run `37643985961` stopped at `Wave 5 public API webhook and SDK live regression`: Node's ESM/type-stripping loader could not resolve the extensionless `./capability-value` re-export. Bundler/compiler checks alone did not exercise this consumer. The SDK now exports `./capability-value.ts` explicitly; its no-emit TypeScript project allows source extensions. The regression invokes native Node against the actual SDK entrypoint, tests valid/range-refused/object parser results, and exercises the public client with an explicit fixture fetch. The live SDK probe and all auth/API/UAT gates remain unchanged and mandatory.
 
 Repair QA: SDK typecheck and native-Node regression PASS (1 suite / 10 tests). Full new-source GitHub acceptance remains mandatory.
+
+## Exact-source CI result — 2026-10-08
+
+Commit `3b80897bb154f6fb80ea375a9e39b698e9c87159`, [Actions run 37712838417](https://github.com/reyvo1/iot-platform/actions/runs/37712838417): core CI and both ESP32/ESP32-C3 ESP-IDF/QEMU jobs succeeded. Full Jest and coverage each passed 291 suites / 2585 tests; E2E passed 4 tests; real PostgreSQL integration passed 16 suites / 72 tests; focused product-browser/synthetic-camera, MQTT, security and build gates succeeded. Production dependency audit reported 0 critical, 25 high, 10 moderate; no exception was added.
+
+The live acceptance job (`113104432598`) failed allocation with no runner and no steps. GitHub annotation states that recent account payments failed or the spending limit needs to be increased. This is an external account blocker, not a physical equipment dependency or an observed application failure. Software implementation is delivered, but **FULL AUTOMATED ACCEPTANCE REMAINS PENDING**. Owner must resolve Billing & plans; do not bypass the mandatory live gate. No deploy, force push or existing-runtime restart occurred.
