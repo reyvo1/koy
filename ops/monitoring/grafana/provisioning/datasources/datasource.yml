@@ -1,0 +1,35 @@
+# Grafana datasource provisioning for the IoT Platform monitoring stack.
+#
+# Why this file exists
+# --------------------
+# A datasource clicked together in the UI disappears the first time the container is
+# recreated, and a monitoring stack that silently loses its data source is worse than no
+# monitoring stack. Provisioning makes the datasource part of the repository so
+# `docker compose up` on a clean host produces the same working stack.
+#
+# The URL is a compose service name on the internal monitoring network (see
+# ops/monitoring/compose.yml); it is not reachable from outside that network, which is
+# what keeps the Grafana-to-Prometheus path off the host network stack.
+#
+# The `uid` is intentionally stable: ops/monitoring/grafana/dashboards/iot-platform-overview.json
+# references it, so changing the uid requires updating that dashboard (or re-pointing it
+# in the Grafana UI after import).
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: iot-platform-prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      httpMethod: POST
+      # Must match the global scrape_interval in ops/monitoring/prometheus.yml so Grafana
+      # rate() windows and Prometheus scrape steps stay aligned.
+      timeInterval: 15s
+      # With access: proxy, Grafana performs the request, so no bearer token is ever
+      # handed to a browser. The API's METRICS_ACCESS_TOKEN, when required, is configured
+      # in the Prometheus scrape job itself (see prometheus.yml), not here.
+      manageAlerts: false

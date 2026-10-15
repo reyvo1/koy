@@ -80,7 +80,9 @@ The 2026-10-07 operational expansion is detailed in `docs/PRODUCT-OPERATIONAL-CO
 
 ## Intentional backend-only surfaces
 
-The following are **not missing menus** and must remain outside ordinary product navigation unless their product contract changes: `/health*`, `/metrics`, broker `/mqtt/*` callbacks, telemetry ingest callback, payment webhook/cycle endpoints, device heartbeat/credential rotation, `/v1/*` API-key public API, and `/users/tenant-context`.
+The following are **not missing menus** and must remain outside ordinary product navigation unless their product contract changes: `/health*`, `/metrics`, broker `/mqtt/*` callbacks, telemetry ingest callback, payment webhook/cycle endpoints, device heartbeat/credential rotation, `/v1/*` API-key public API, `/users/tenant-context`, and `GET /organizations/:id/branches`.
+
+`GET /organizations/:id/branches` deserves its sentence, because it is the one endpoint whose BFF proxy (`/api/admin/organizations/[organizationId]/branches`) exists without a UI caller of its own. That is not an unfinished menu: the Super Admin organization surface already receives each organization's branch list inline from `GET /organizations`, and the tenant read view receives its own branches from `GET /organizations/current`, so both governed surfaces are complete without this read. It stays available (guarded by the same owner/branch-membership authorization as the rest of the organization surface) for API consumers and any future surface that needs to read one organization's branches by id.
 
 ## Intentional frontend quarantine
 

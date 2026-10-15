@@ -48,3 +48,9 @@ backups/
 
 # Mounted runtime connection secrets
 runtime-connections.json
+
+# Infrastructure skeleton — operator-owned values (real hostname, CIDRs, SSH public key) and
+# the plan file rendered from them. The committed terraform.tfvars.example holds placeholders
+# only; a real tfvars must never be tracked (infra/README.md).
+infra/terraform/terraform.tfvars
+infra/terraform/rendered/

@@ -1,0 +1,29 @@
+# Grafana dashboard provisioning for the IoT Platform monitoring stack.
+#
+# Why this file exists
+# --------------------
+# Provisioned dashboards are part of the repository instead of manual UI state: the
+# operator can destroy the stack, bring it back, and land on the same view. The provider
+# is path-based -- Grafana reads every dashboard JSON in the directory below on startup
+# (and every updateIntervalSeconds while running).
+#
+# What is NOT bundled: no third-party dashboard library. The only dashboard shipped is
+# ops/monitoring/grafana/dashboards/iot-platform-overview.json, which covers the six
+# questions this platform's operators actually ask. If a richer view is wanted, download
+# dashboards from the operator's chosen source (for example Grafana's public library or a
+# private internal catalog) into the same directory -- they are picked up automatically.
+# Nothing here phones home to fetch dashboards, by design.
+apiVersion: 1
+
+providers:
+  - name: iot-platform
+    orgId: 1
+    folder: IoT Platform
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 30
+    options:
+      # Matches the read-only dashboard volume in ops/monitoring/compose.yml.
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

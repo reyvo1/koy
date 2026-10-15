@@ -57,6 +57,7 @@
     "src/ota/ota-rollout-tenant-scope.contract.spec.ts": "stable-contract",
     "src/rbac/tenant-role-management.contract.spec.ts": "stable-contract",
     "test/admin-web-bff-content-type.contract.spec.ts": "stable-contract",
+    "test/admin-web-navigation-parity.contract.spec.ts": "stable-contract",
     "test/admin-web-proxy-session.contract.spec.ts": "stable-contract",
     "test/admin-web-session-lifecycle.contract.spec.ts": "stable-contract",
     "test/capability-template-lifecycle.contract.spec.ts": "current-state",
@@ -82,6 +83,7 @@
     "test/g1-super-directories.contract.spec.ts": "historical-evidence",
     "test/g1-tenant-structure-screens.contract.spec.ts": "historical-evidence",
     "test/historical-contract-transition-safety.contract.spec.ts": "policy-enforcement",
+    "test/frontend-api-route-parity.contract.spec.ts": "stable-contract",
     "test/integration-e2e-testing-completion.contract.spec.ts": "historical-evidence",
     "test/ios-final-release-proof-policy.contract.spec.ts": "stable-contract",
     "test/local-console-login-regression.contract.spec.ts": "historical-evidence",
@@ -137,6 +139,7 @@
     "test/node-runtime.contract.spec.ts": "stable-contract",
     "test/notification-operator-log.contract.spec.ts": "current-state",
     "test/operator-launcher.contract.spec.ts": "stable-contract",
+    "test/ops-production-observability.contract.spec.ts": "stable-contract",
     "test/ota-rollout-surface.contract.spec.ts": "stable-contract",
     "test/platform-tenant-identity.contract.spec.ts": "stable-contract",
     "test/production-configuration-lifecycle.contract.spec.ts": "historical-evidence",
@@ -180,6 +183,7 @@
     "test/wave9-onvif-media.contract.spec.ts": "current-state",
     "test/webhook-surface.contract.spec.ts": "stable-contract",
     "test/tenant-operator-surface-closure.contract.spec.ts": "stable-contract",
+    "test/user-web-surface-completeness.contract.spec.ts": "stable-contract",
     "test/backend-frontend-surface-census.contract.spec.ts": "stable-contract"
   },
   "historicalStableDocumentOwners": {

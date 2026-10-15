@@ -1,0 +1,133 @@
+# Prometheus scrape configuration for the IoT Platform production host.
+#
+# Why this file exists
+# --------------------
+# The platform already exposes a machine-readable health surface (GET /metrics on the API,
+# guarded by METRICS_ACCESS_TOKEN and restricted to loopback at ops/nginx), but nothing
+# scraped it. This file turns that surface, plus the host and broker, into the data source
+# that ops/monitoring/alert-rules.yml fires on.
+#
+# Topology note (read before editing targets)
+# -------------------------------------------
+# `api:3000`, `emqx:18083` and friends are PLACEHOLDER target hostnames, not discoveries.
+# They resolve only when this stack shares a Docker network with those containers (see the
+# commented `iot_platform_runtime` network in ops/monitoring/compose.yml). The documented
+# production topology in docs/deployment-recovery.md is one Linux VPS where the NestJS
+# application binds 127.0.0.1 and nginx is the only public listener, so on that topology the
+# operator replaces the `api:3000` target with the nginx loopback URL
+# (https://127.0.0.1/metrics with a Host header, or the host-side loopback address of the
+# scraping process) -- a container cannot reach a loopback-only listener through the bridge
+# gateway, and the nginx template denies off-loopback /metrics by design.
+#
+# Security note
+# -------------
+# Nothing in this file contains a credential. The API bearer token (METRICS_ACCESS_TOKEN)
+# is supplied to Prometheus through a credentials file mounted at runtime; the commented
+# `authorization` block below shows the only supported shape. EMQX dashboard basic auth is
+# handled the same way. Keep both files outside the repository.
+#
+# Rule loading
+# ------------
+# rule_files points at the alert definitions shipped beside this file. Prometheus reloads it
+# with `/`-reload when `--web.enable-lifecycle` is set (see ops/monitoring/compose.yml).
+
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+  external_labels:
+    service: iot-platform
+
+rule_files:
+  - /etc/prometheus/alert-rules.yml
+
+scrape_configs:
+  # Prometheus itself. Cheap, and it proves the TSDB is alive before anything else.
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # The IoT Platform API. metric families actually exposed by src/metrics/metrics.service.ts:
+  #   iot_platform_info{service,version}
+  #   iot_http_requests_total{method,route,status_code}
+  #   iot_http_request_duration_seconds{method,route,status_code}  (histogram, buckets 5ms..5s)
+  #   iot_telemetry_ingestion_total{outcome}
+  #   iot_dependency_readiness_checks_total{dependency,status}
+  #   iot_readiness_results_total{status}
+  #   iot_mqtt_publisher_*
+  # The /metrics route is excluded from its own instrumentation (src/metrics/metrics.interceptor.ts),
+  # so scrapes never inflate the request metrics they measure.
+  - job_name: iot-platform-api
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets: ['api:3000']
+        labels:
+          component: api
+    # Production requires the bearer token because MetricsAccessGuard rejects unauthenticated
+    # access once METRICS_ACCESS_TOKEN is set. Uncomment and mount the file when the API runs
+    # in that mode:
+    # authorization:
+    #   type: Bearer
+    #   credentials_file: /etc/prometheus/secrets/metrics-access-token
+
+  # Host metrics (CPU, memory, disk, filesystem capacity). Also the job that scrapes the
+  # node_exporter textfile collector, which is where the backup freshness metric lives
+  # (see ops/scripts/backup-offhost.sh and the backup rules in alert-rules.yml).
+  - job_name: node-exporter
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # Container resource metrics. cadvisor is OPTIONAL and is not part of the compose stack in
+  # ops/monitoring/compose.yml; start it on the Docker host if container-level dashboards are
+  # wanted, then keep or drop this job to match.
+  - job_name: cadvisor
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['cadvisor:8080']
+
+  # EMQX 5.x exposes Prometheus metrics on the dashboard port under /api/v5/prometheus,
+  # protected by dashboard basic auth. 18083 is the dashboard port used by
+  # docker-compose.rescue.yml. Keep credentials in a mounted file, never in this repository:
+  # basic_auth:
+  #   username_file: /etc/prometheus/secrets/emqx-dashboard-user
+  #   password_file: /etc/prometheus/secrets/emqx-dashboard-password
+  - job_name: emqx
+    metrics_path: /api/v5/prometheus
+    scheme: http
+    static_configs:
+      - targets: ['emqx:18083']
+
+  # PostgreSQL. Requires postgres_exporter running on the database host (systemd unit, not a
+  # container) with a read-only role and a loopback listener; it is deliberately NOT part of
+  # ops/monitoring/compose.yml because the exporter must see the database exactly the way the
+  # application does. These are the metrics the PostgreSQL alerts in alert-rules.yml use:
+  #   pg_up, pg_stat_activity_count, pg_settings_max_connections
+  - job_name: postgres
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+
+  # Redis. Requires redis_exporter on the Redis host; redis_up is the metric the Redis alert
+  # uses. Redis is non-authoritative (see docs/deployment-recovery.md), so the alert is
+  # informational rather than a data-loss trigger.
+  - job_name: redis
+    static_configs:
+      - targets: ['redis-exporter:9121']
+
+  # TLS certificate expiry. This is a prober job, not a scrape: blackbox_exporter performs the
+  # TLS handshake and reports probe_ssl_earliest_cert_expiry. Replace the example.com target
+  # with the operator's own public API hostname (example.com is the reserved documentation
+  # domain used by ops/nginx/iot-platform.conf.template).
+  - job_name: blackbox-https
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets: ['https://api.example.com/health']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115

@@ -42,6 +42,18 @@ describe('backend ↔ frontend surface census', () => {
     expect(census).toContain('MACHINE_ONLY');
   });
 
+  it('keeps the one UI-less organization branch read classified instead of silently unwired', () => {
+    // The Super organization surface reads branches inline from GET /organizations and the
+    // tenant read view reads them from GET /organizations/current, so the standalone
+    // GET /organizations/:id/branches read is classified API-only rather than looking like
+    // an unfinished menu. A regression that removes the classification fails here instead of
+    // quietly leaving an undocumented endpoint with no product surface.
+    expect(census).toContain('GET /organizations/:id/branches');
+    expect(census).toContain(
+      'without a UI caller of its own',
+    );
+  });
+
   it('keeps known partial frontend surfaces quarantined rather than calling them production-ready', () => {
     for (const route of ['/noc', '/cctv', '/technician', '/mobile-preview']) {
       expect(census).toContain(`\`${route}\``);

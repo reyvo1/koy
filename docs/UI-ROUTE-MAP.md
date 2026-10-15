@@ -99,6 +99,25 @@ produksi` (`AdminShellV3`) and `Beta · belum produksi` (`SuperAdminShell`).
 | `/mobile-preview` | QUARANTINE | Visual preview; operational values must not be simulated |
 | `/cctv` | QUARANTINE | Streaming contract incomplete |
 
+## Auth / pre-session surface (AUTH_UI)
+
+Admin Web auth pages are destinations an operator types or follows from an error/registration
+success message — never navigation targets, because an unverified or signed-out identity
+cannot hold a session. `scripts/validate-rescue-baseline.mjs` classifies exactly these five as
+`PRE_LOGIN_ROUTES`, and `auth-shell` is deliberately a bare frame with no menu at all.
+
+| Route | Status | Purpose |
+|---|---|---|
+| `/login` | AUTH_UI | Admin session sign-in |
+| `/daftar` | AUTH_UI | Registration |
+| `/lupa-password` | AUTH_UI | Password reset request |
+| `/reset-password` | AUTH_UI | Password reset completion |
+| `/verifikasi` | AUTH_UI | Account verification; reached from registration success and from the login page |
+
+User Web has no pre-session *route*: its unauthenticated state is the `LoginForm` component
+inside the app shell. Mobile has its own `mobile-login-screen` and `mobile-blocked-screen`
+inside `apps/user-mobile`, not a navigable route.
+
 ## End User
 
 User Web is now room-centric per Product Vision. `apps/user-web/app/page.tsx` redirects to `/beranda`; the dynamic dashboard remains available at `/dashboard` as an additional authorized view.

@@ -1,0 +1,56 @@
+[Unit]
+# Replicates the encrypted PostgreSQL backup off the production host.
+#
+# Why a separate unit from iot-platform-backup.service: the local backup must succeed (or at
+# least have run) before anything is worth replicating, so this unit is ordered After it.
+# There is deliberately no Requires= -- when the local run fails, the newest existing dump
+# is still replicated and the freshness alert fires on the unchanged timestamp, which is the
+# behaviour that keeps the off-host copy as recent as the local state allows.
+Description=Off-host replication of the encrypted PostgreSQL backup for IoT Platform
+After=iot-platform-backup.service
+Documentation=file:/opt/iot-platform/current/docs/deployment-recovery.md
+
+[Service]
+Type=oneshot
+# Upload time depends on the artifact size and the remote, not on the database. A large dump
+# on a slow residential uplink legitimately takes hours; 6h is a bound, not an expectation.
+TimeoutStartSec=6h
+User=postgres
+Group=postgres
+UMask=0077
+
+# Operator-owned environment. Create /etc/iot-platform/iot-platform-offhost-backup.env with
+# owner root:postgres and mode 0640, containing at minimum:
+#   OFFHOST_REMOTE=<rclone remote, e.g. s3:iot-backups>
+# Optional: RCLONE_CONFIG (already defaulted below), TEXTFILE_COLLECTOR_DIR, RCLONE_BIN.
+# The rclone configuration itself holds the remote credentials and MUST live outside this
+# repository (for example /var/lib/postgresql/.config/rclone/rclone.conf, mode 0600).
+# Environment= is a default only: a value in the EnvironmentFile wins over the same key here.
+Environment=RCLONE_CONFIG=/var/lib/postgresql/.config/rclone/rclone.conf
+Environment=TEXTFILE_COLLECTOR_DIR=/var/lib/node_exporter/textfile_collector
+EnvironmentFile=-/etc/iot-platform/iot-platform-offhost-backup.env
+
+# The encrypted dump directory is passed as an argument. The script only ever replicates
+# *.dump.gpg artifacts; the plaintext pg_dump output is removed by postgres-backup.sh before
+# this unit runs and is never uploaded.
+ExecStartPre=/usr/bin/test -x /usr/local/lib/iot-platform/backup-offhost.sh
+ExecStart=/usr/local/lib/iot-platform/backup-offhost.sh --dir /var/backups/iot-platform
+
+# Hardening, matching the least-privilege contract in docs/deployment-recovery.md: the
+# strict read-only system view plus exactly the two writable paths this job needs -- the
+# backup directory and the node_exporter textfile collector directory. Adding a writable path
+# here is a privilege grant, not a convenience; do not widen it without a reason.
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadWritePaths=/var/backups/iot-platform /var/lib/node_exporter/textfile_collector

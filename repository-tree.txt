@@ -580,6 +580,11 @@ docs/telemetry-storage-strategy.md
 docs/testing-strategy.md
 docs/wave-02-core-runtime-closure.md
 docs/wave-03-esp32-ota-simulation.md
+infra/README.md
+infra/terraform/main.tf
+infra/terraform/terraform.tfvars.example
+infra/terraform/variables.tf
+infra/terraform/versions.tf
 jest.config.js
 ops/acceptance/README.md
 ops/acceptance/rescue-02b-evidence.example.json
@@ -589,9 +594,19 @@ ops/emqx/http-authenticator.rescue-02.example.hocon
 ops/env/iot-platform-backup.env.example
 ops/env/iot-platform.env.example
 ops/env/rescue-local.env.example
+ops/logrotate/README.md
+ops/logrotate/iot-platform.conf
 ops/media/runtime-connections.compose.example.yml
+ops/monitoring/README.md
+ops/monitoring/alert-rules.yml
+ops/monitoring/compose.yml
+ops/monitoring/grafana/dashboards/iot-platform-overview.json
+ops/monitoring/grafana/provisioning/dashboards/dashboards.yml
+ops/monitoring/grafana/provisioning/datasources/datasource.yml
+ops/monitoring/prometheus.yml
 ops/nginx/iot-platform.conf.template
 ops/production/environment-attestation.example.json
+ops/scripts/backup-offhost.sh
 ops/scripts/ci-bootstrap-dependencies.sh
 ops/scripts/install-release.sh
 ops/scripts/postgres-backup.sh
@@ -604,6 +619,8 @@ ops/security/secret-scan-allowlist.json
 ops/sysctl/99-iot-platform.conf
 ops/systemd/iot-platform-backup.service
 ops/systemd/iot-platform-backup.timer
+ops/systemd/iot-platform-offhost-backup.service
+ops/systemd/iot-platform-offhost-backup.timer
 ops/systemd/iot-platform.service
 package-lock.json
 package.json
@@ -1232,6 +1249,7 @@ src/webhook/webhook-runtime.service.ts
 src/webhook/webhook.controller.ts
 src/webhook/webhook.module.ts
 test/admin-web-bff-content-type.contract.spec.ts
+test/admin-web-navigation-parity.contract.spec.ts
 test/admin-web-proxy-session.contract.spec.ts
 test/admin-web-session-lifecycle.contract.spec.ts
 test/application.smoke.e2e-spec.ts
@@ -1260,6 +1278,7 @@ test/fixtures/mqtt-tls/server-cert.pem
 test/fixtures/mqtt-tls/server-key.pem
 test/fixtures/wave2-localhost-tls.cert.pem
 test/fixtures/wave2-localhost-tls.key.pem
+test/frontend-api-route-parity.contract.spec.ts
 test/g1-automation-scenes-screens.contract.spec.ts
 test/g1-billing-apikeys.contract.spec.ts
 test/g1-commands-screen.contract.spec.ts
@@ -1358,6 +1377,7 @@ test/noc-operations.contract.spec.ts
 test/node-runtime.contract.spec.ts
 test/notification-operator-log.contract.spec.ts
 test/operator-launcher.contract.spec.ts
+test/ops-production-observability.contract.spec.ts
 test/ota-rollout-surface.contract.spec.ts
 test/platform-tenant-identity.contract.spec.ts
 test/production-configuration-lifecycle.contract.spec.ts
@@ -1398,6 +1418,7 @@ test/tenant-isolation-at-query-layer.contract.spec.ts
 test/tenant-operator-surface-closure.contract.spec.ts
 test/tenant-workspace-widget-readings.contract.spec.ts
 test/testing-strategy.contract.spec.ts
+test/user-web-surface-completeness.contract.spec.ts
 test/wave-02-core-runtime-closure-invariants.contract.spec.ts
 test/wave10-telemetry-retention.contract.spec.ts
 test/wave11-device-health-scoring.contract.spec.ts

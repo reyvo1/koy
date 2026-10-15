@@ -1,0 +1,313 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "IoT Platform operational overview. Six panels, each answering one operational question: is the API serving (request rate, 5xx ratio, p99 latency), is device telemetry being ingested, is PostgreSQL nearing its connection limit, and how old is the last verified off-host backup. Every panel states which production component emits its metric; panels whose metric comes from an operator-run exporter (PostgreSQL) or from a script (backup age) say so, so 'No data' is never mistaken for 'healthy'.",
+  "editable": true,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "iot-platform-prometheus" },
+      "description": "HTTP requests per second handled by the API, from iot_http_requests_total{method,route,status_code} emitted by src/metrics/metrics.service.ts. A flat line at zero during business hours is an outage in progress, not an idle system.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "pluginVersion": "13.0.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "sum by (route) (rate(iot_http_requests_total[5m]))",
+          "legendFormat": "{{route}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "API request rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "iot-platform-prometheus" },
+      "description": "Fraction of HTTP requests answered with a 5xx status. 5xx means the request reached the API and failed inside it, which is the failure class that produces support tickets. ratio>0.05 for 10m pages (IotPlatformHighErrorRatio in ops/monitoring/alert-rules.yml).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.02 },
+              { "color": "red", "value": 0.05 }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": { "titleSize": 14 }
+      },
+      "pluginVersion": "13.0.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "sum(rate(iot_http_requests_total{status_code=~\"5..\"}[5m])) / clamp_min(sum(rate(iot_http_requests_total[5m])), 1)",
+          "instant": true,
+          "legendFormat": "5xx ratio",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "HTTP 5xx error ratio",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "iot-platform-prometheus" },
+      "description": "99th percentile HTTP request duration, from the iot_http_request_duration_seconds histogram. Histogram buckets stop at 5s, so latency above that shows as +Inf and the panel saturates -- an unexplained pin at the ceiling is itself a finding. p99>1s for 15m pages.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 3,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "pluginVersion": "13.0.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(iot_http_request_duration_seconds_bucket[5m])))",
+          "legendFormat": "p99",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "API p99 request latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "iot-platform-prometheus" },
+      "description": "Telemetry ingestion outcomes per second, from iot_telemetry_ingestion_total{outcome} (accepted, duplicate, rejected, failed). 'accepted' should dominate; a rising 'failed' or 'rejected' rate means devices are publishing and the pipeline is refusing them.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "unit": "cps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 4,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "pluginVersion": "13.0.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "sum by (outcome) (rate(iot_telemetry_ingestion_total[5m]))",
+          "legendFormat": "{{outcome}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Telemetry ingest rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "iot-platform-prometheus" },
+      "description": "PostgreSQL backend connections, from pg_stat_activity_count. This metric is emitted by postgres_exporter running on the database host -- it is NOT part of ops/monitoring/compose.yml -- so 'No data' here means the exporter is not deployed, not that the database is idle. Above 80% of max_connections the pool will start refusing connections (IotPlatformPostgresConnectionsHigh).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 80 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "id": 5,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": { "titleSize": 14 }
+      },
+      "pluginVersion": "13.0.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "pg_stat_activity_count",
+          "instant": true,
+          "legendFormat": "connections",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "PostgreSQL connections",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "iot-platform-prometheus" },
+      "description": "Seconds since the last verified off-host backup, computed as time() - iot_backup_last_success_timestamp. The timestamp is written by ops/scripts/backup-offhost.sh through the node_exporter textfile collector, so it only exists once that script has succeeded at least once. The daily schedule means this value is normally under 90000s (25h). Anything at or above 129600s (36h) means the backup chain is broken (IotPlatformBackupStale / IotPlatformBackupMetricMissing).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 72000 },
+              { "color": "red", "value": 129600 }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": { "titleSize": 14 }
+      },
+      "pluginVersion": "13.0.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "time() - iot_backup_last_success_timestamp",
+          "instant": true,
+          "legendFormat": "backup age",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Backup age (since last off-host success)",
+      "type": "stat"
+    }
+  ],
+  "preload": false,
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": ["iot-platform"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "utc",
+  "title": "IoT Platform overview",
+  "uid": "iot-platform-overview",
+  "version": 1
+}

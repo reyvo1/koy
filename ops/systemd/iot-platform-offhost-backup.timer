@@ -1,0 +1,18 @@
+[Unit]
+# Daily off-host replication of the encrypted PostgreSQL backup.
+#
+# Scheduled after the local backup unit (02:15 UTC plus up to 15 minutes of randomised
+# delay) with enough margin that a normal local backup has finished first.
+Description=Daily off-host backup replication for IoT Platform
+
+[Timer]
+OnCalendar=*-*-* 04:00:00
+# A missed window (host down at the scheduled time) runs on the next boot rather than
+# skipping a day: a silently skipped replication is exactly what the freshness alert would
+# otherwise have to discover hours later.
+Persistent=true
+RandomizedDelaySec=15m
+Unit=iot-platform-offhost-backup.service
+
+[Install]
+WantedBy=timers.target

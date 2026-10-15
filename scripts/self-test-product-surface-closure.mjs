@@ -20,6 +20,9 @@ const required = [
   'docs/BACKEND-FRONTEND-SURFACE-CENSUS.md',
   'test/tenant-operator-surface-closure.contract.spec.ts',
   'test/backend-frontend-surface-census.contract.spec.ts',
+  'test/admin-web-navigation-parity.contract.spec.ts',
+  'test/user-web-surface-completeness.contract.spec.ts',
+  'test/frontend-api-route-parity.contract.spec.ts',
   'prisma/migrations/20261005165000_integration_registry_tenant_integrity/migration.sql',
 ];
 for (const path of required) assert(existsSync(join(root, path)), `product surface source exists: ${path}`);
@@ -169,6 +172,9 @@ for (const spec of [
   'test/notification-operator-log.contract.spec.ts',
   'test/tenant-operator-surface-closure.contract.spec.ts',
   'test/backend-frontend-surface-census.contract.spec.ts',
+  'test/admin-web-navigation-parity.contract.spec.ts',
+  'test/user-web-surface-completeness.contract.spec.ts',
+  'test/frontend-api-route-parity.contract.spec.ts',
 ]) {
   assert(targeted.includes(spec), `targeted QA includes ${spec}`);
 }

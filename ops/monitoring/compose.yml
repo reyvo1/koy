@@ -1,0 +1,204 @@
+# Monitoring stack for the IoT Platform production host.
+#
+# Why this file exists
+# --------------------
+# The repository shipped metrics, a backup pipeline and systemd units, but no way to watch
+# any of them. This stack is the missing observation layer: Prometheus scrapes the API,
+# the host and the broker (see prometheus.yml), evaluates alert-rules.yml, and hands
+# alerts to Alertmanager; Grafana renders the provisioned dashboards. Everything binds to
+# loopback by default so nothing here widens the public attack surface of a host whose
+# only public listeners are 80 and 443 (docs/deployment-recovery.md).
+#
+# Required environment (the stack fails to start without these, by design -- there are no
+# baked-in admin credentials and no baked-in defaults for them):
+#   GRAFANA_ADMIN_USER        Grafana administrator username. Operator-owned.
+#   GRAFANA_ADMIN_PASSWORD    Grafana administrator password. Operator-owned; never commit it.
+#
+# Optional environment (defaults shown, all operator-owned):
+#   MONITORING_BIND_ADDRESS   127.0.0.1 -- address the published ports bind to. Change only to
+#                             a VPN/LAN address you control; never 0.0.0.0.
+#   PROMETHEUS_PORT           9090
+#   GRAFANA_PORT              3001 -- NOT 3000: 127.0.0.1:3000 is the API upstream in
+#                             ops/nginx/iot-platform.conf.template.
+#   ALERTMANAGER_PORT         9093
+#   NODE_EXPORTER_PORT        9100
+#   NODE_EXPORTER_TEXTFILE_DIR
+#                             /var/lib/node_exporter/textfile_collector -- the directory
+#                             node_exporter scrapes .prom files from, which is where
+#                             ops/scripts/backup-offhost.sh writes iot_backup_last_success_timestamp.
+#                             Must be the same path the script uses on the host.
+#   PROMETHEUS_RETENTION_TIME 30d -- metric retention; alert state and backup history are
+#                             stored elsewhere by design.
+#   IOT_PLATFORM_RUNTIME_NETWORK
+#                             docker network connecting this stack to the API/EMQX containers.
+#
+# What this stack does NOT do
+# ---------------------------
+# It does not send a single alert anywhere by default: Alertmanager gets a minimal
+# null-receiver configuration inlined below, because the routing target (email, webhook,
+# chat ops) is an operator decision and must never be a committed guess. It does not ship
+# logs, install database or Redis exporters, or manage TLS. See ops/monitoring/README.md.
+#
+# Usage: see ops/monitoring/README.md.
+
+name: iot-platform-monitoring
+
+services:
+  prometheus:
+    image: prom/prometheus:v3.15.0
+    container_name: iot-monitoring-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      # Bounded retention: 30 days by default. Raise with an explicit `--storage.tsdb.max-block-duration`
+      # plan if longer history is genuinely needed -- unbounded growth on the backup host
+      # volume competes with the encrypted dumps for the same disk.
+      - '--storage.tsdb.retention.time=${PROMETHEUS_RETENTION_TIME:-30d}'
+      - '--web.enable-lifecycle'
+      - '--web.listen-address=:9090'
+      - '--web.external-url=${PROMETHEUS_EXTERNAL_URL:-http://localhost:9090}'
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alert-rules.yml:/etc/prometheus/alert-rules.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "${MONITORING_BIND_ADDRESS:-127.0.0.1}:${PROMETHEUS_PORT:-9090}:9090"
+    networks:
+      - monitoring
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:9090/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  grafana:
+    image: grafana/grafana:13.0.11
+    container_name: iot-monitoring-grafana
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?GRAFANA_ADMIN_USER is required, see ops/monitoring/README.md}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required, see ops/monitoring/README.md}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_USERS_ALLOW_ORG_CREATE: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      GF_SERVER_HTTP_PORT: "3000"
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+    volumes:
+      # Provisioning is read-only source of truth: the datasource and the dashboard provider
+      # come from the repository, not from clicks in the UI.
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      # The dashboard provider in grafana/provisioning/dashboards/dashboards.yml reads from
+      # this path. Keep it in the repository so a rebuilt container renders the same view.
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "${MONITORING_BIND_ADDRESS:-127.0.0.1}:${GRAFANA_PORT:-3001}:3000"
+    networks:
+      - monitoring
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  node-exporter:
+    image: prom/node-exporter:v1.12.1
+    container_name: iot-monitoring-node-exporter
+    command:
+      - '--path.rootfs=/host/rootfs'
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      # Container/overlay filesystems are not the host's disk problem.
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+      # Where iot_backup_last_success_timestamp and friends are read from.
+      - '--collector.textfile.directory=/host/textfile_collector'
+      - '--web.listen-address=:9100'
+    pid: host
+    volumes:
+      - /:/host/rootfs:ro,rslave
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - ${NODE_EXPORTER_TEXTFILE_DIR:-/var/lib/node_exporter/textfile_collector}:/host/textfile_collector:ro
+    ports:
+      - "${MONITORING_BIND_ADDRESS:-127.0.0.1}:${NODE_EXPORTER_PORT:-9100}:9100"
+    networks:
+      - monitoring
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:9100/metrics"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  alertmanager:
+    image: prom/alertmanager:v0.34.1
+    container_name: iot-monitoring-alertmanager
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.listen-address=:9093'
+    # Alertmanager refuses to start with a config that has no route, and the real routing
+    # config (email, webhook, chat ops) is operator-owned. The minimal default below is
+    # inlined deliberately instead of being written as another repository file: it collects
+    # alerts in the Alertmanager UI and sends nothing anywhere. To route alerts, mount your
+    # own file over /etc/alertmanager/alertmanager.yml and keep it outside this repository.
+    configs:
+      - source: alertmanager_default_config
+        target: /etc/alertmanager/alertmanager.yml
+    volumes:
+      - alertmanager_data:/alertmanager
+    ports:
+      - "${MONITORING_BIND_ADDRESS:-127.0.0.1}:${ALERTMANAGER_PORT:-9093}:9093"
+    networks:
+      - monitoring
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:9093/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+configs:
+  alertmanager_default_config:
+    content: |
+      global: {}
+      route:
+        receiver: iot-platform-default
+        group_by: [alertname, severity]
+        group_wait: 30s
+        group_interval: 5m
+        repeat_interval: 4h
+      receivers:
+        - name: iot-platform-default
+
+networks:
+  monitoring:
+    driver: bridge
+  # The `api:3000` / `emqx:18083` targets in prometheus.yml resolve only inside a network
+  # shared with those containers. To join the application's compose network instead of
+  # guessing addresses, create it and uncomment this block plus `iot_platform_runtime` on the
+  # services that must reach it (at minimum prometheus):
+  #
+  #   docker network create iot-platform-runtime
+  #
+  # iot_platform_runtime:
+  #   name: ${IOT_PLATFORM_RUNTIME_NETWORK:-iot-platform-runtime}
+  #   external: true
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  alertmanager_data:

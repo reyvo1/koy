@@ -1,0 +1,55 @@
+# Operator-owned values for the IoT Platform production host skeleton.
+#
+# Copy this file to terraform.tfvars (which is gitignored) and replace EVERY
+# REPLACE_WITH_* marker before any guarded provisioner in main.tf will run. The defaults in
+# variables.tf are deliberately the same placeholders: a plan that reaches a provisioner with
+# any placeholder still set is refused, so a half-filled copy fails loudly instead of
+# deploying a guess.
+#
+# Nothing in this file is a discovered fact about any environment. See infra/README.md.
+
+# The kill switch. Every resource in main.tf is `count = var.apply_enabled ? 1 : 0`, so the
+# committed default (false) makes `terraform apply` a provable no-op: zero resources, zero
+# commands, zero files written. Flip it to true only as a deliberate, reviewed step, and only
+# with every placeholder below replaced.
+apply_enabled = false
+
+# Which environment this plan describes. `staging` is accepted as a label but is not
+# provisioned by this skeleton today.
+environment = "production"
+
+# Hostname of the single production host (docs/deployment-recovery.md topology). Never a real
+# hostname in version control -- that value belongs in this uncommitted file.
+host_name = "REPLACE_WITH_OPERATOR_HOSTNAME"
+
+# SSH public key installed on the host. The private key never belongs in a repository, and it
+# is not referenced by anything here.
+ssh_public_key = "REPLACE_WITH_OPERATOR_SSH_PUBLIC_KEY"
+
+# The only source range permitted to reach SSH. An admin VPN range, not 0.0.0.0/0; an empty
+# value is refused rather than defaulting to the whole internet.
+ssh_allowed_cidr = "REPLACE_WITH_OPERATOR_CIDR"
+
+# Broker surface. 18884 matches the isolated listener used by docker-compose.rescue.yml; the
+# operator confirms the production broker port.
+mqtt_port = 18884
+
+# Device/telemetry source ranges permitted to publish to the broker. Every other source is
+# denied by the same ruleset; the placeholder means "not yet declared", not "everyone".
+mqtt_allowed_cidrs = ["REPLACE_WITH_OPERATOR_CIDR"]
+
+# Public HTTP ports. Only these are public in the documented topology; PostgreSQL, Redis, the
+# application port and /metrics stay private.
+public_http_ports = [80, 443]
+
+# Encrypted-backup capacity. Size from the measured dump, not from a guess; the mount point
+# must match what the backup units write to (/var/backups/iot-platform).
+backup_volume_size_gb = 50
+backup_volume_mount = "/var/backups/iot-platform"
+
+# DNS labels. This skeleton contains no DNS provider and creates no records, so these are
+# recorded values for the rendered plan, never deployed ones.
+dns_records = {
+  api    = "REPLACE_WITH_OPERATOR_API_FQDN"
+  broker = "REPLACE_WITH_OPERATOR_BROKER_FQDN"
+}

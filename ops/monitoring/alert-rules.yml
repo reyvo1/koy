@@ -1,0 +1,183 @@
+# Prometheus alerting rules for the IoT Platform production host.
+#
+# Why this file exists
+# --------------------
+# Scraping metrics is not monitoring. These rules turn the surfaces described in
+# ops/monitoring/prometheus.yml into a small number of alerts that map to decisions an
+# operator actually makes during an incident: is the API serving, is PostgreSQL losing
+# data, is the backup chain still producing off-host copies, and will the certificate
+# expire before the next maintenance window.
+#
+# Every rule carries a `for` so a single missed scrape cannot page anyone, a severity
+# label, and annotations that say what to do rather than restating the expression.
+#
+# Metric provenance (nothing here is invented)
+# --------------------------------------------
+#   iot_*                     The API itself (src/metrics/metrics.service.ts, GET /metrics).
+#   up{}                      Prometheus scrape health for a job in prometheus.yml.
+#   node_filesystem_*         node_exporter (bundled in ops/monitoring/compose.yml).
+#   pg_up / pg_stat_activity_count / pg_settings_max_connections
+#                             postgres_exporter, operator-run on the database host.
+#   redis_up                  redis_exporter, operator-run on the Redis host.
+#   probe_ssl_earliest_cert_expiry
+#                             blackbox_exporter, operator-run TLS prober job.
+#   iot_backup_last_success_timestamp
+#                             node_exporter textfile collector, written by
+#                             ops/scripts/backup-offhost.sh (file 6 of the monitoring
+#                             artifact set). THIS IS NOT SCAFFOLDED: until
+#                             ops/systemd/iot-platform-offhost-backup.timer has run
+#                             successfully at least once, the backup rules below fire on
+#                             the absence of the metric rather than on a stale timestamp,
+#                             which is the intended fail-closed behaviour.
+#
+# Threshold policy
+# ----------------
+# The values are deliberate starting points for the single-VPS topology in
+# docs/deployment-recovery.md, not universally correct numbers. Raise or lower them with
+# the recorded owner of the service; a rule that fires constantly is a rule that gets
+# muted, and a muted rule is worse than no rule.
+
+groups:
+  - name: iot-platform-availability
+    rules:
+      - alert: IotPlatformApiDown
+        expr: up{job="iot-platform-api"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "IoT Platform API is not answering Prometheus scrapes"
+          description: >-
+            The iot-platform-api job has failed for 5 minutes. A scrape failure means the
+            API process is down, nginx is not proxying, or the scrape target in
+            ops/monitoring/prometheus.yml no longer matches the deployment. Check
+            `systemctl status iot-platform.service`, then nginx, then the target: the API
+            binds 127.0.0.1 per docs/deployment-recovery.md and is unreachable from a
+            container through the bridge gateway.
+
+      - alert: IotPlatformPostgresDown
+        expr: pg_up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL is unreachable by postgres_exporter"
+          description: >-
+            pg_up has been 0 for 2 minutes. PostgreSQL is the authoritative datastore for
+            the platform (Redis is not a substitute), so treat this as a potential data
+            availability incident. Verify the database host, then the exporter itself --
+            an expired password or a stopped systemd unit produces the identical alert.
+
+      - alert: IotPlatformPostgresConnectionsHigh
+        expr: pg_stat_activity_count / clamp_min(pg_settings_max_connections, 1) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL is above 80% of max_connections"
+          description: >-
+            Connection usage has stayed above 80% of max_connections for 10 minutes. The
+            application normally holds a bounded Prisma pool; sustained growth means a
+            pool leak, a long-running query, or an idle-in-transaction session. Inspect
+            pg_stat_activity before restarting anything -- a restart drops the sessions
+            that matter along with the leaked ones.
+
+      - alert: IotPlatformEmqxDown
+        expr: up{job="emqx"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "EMQX broker is not answering its metrics endpoint"
+          description: >-
+            The emqx job in prometheus.yml has failed for 5 minutes. Devices cannot
+            publish or receive without the broker, and command dispatch stops with it.
+            Check the broker service first, then the scrape target: EMQX exposes metrics
+            on the dashboard port under /api/v5/prometheus and requires dashboard
+            credentials, so an auth change looks exactly like a broker outage.
+
+      - alert: IotPlatformRedisDown
+        expr: redis_up == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis is unreachable by redis_exporter"
+          description: >-
+            redis_up has been 0 for 2 minutes. Redis holds caches and ephemeral runtime
+            state, not authoritative data, but the application reports degraded readiness
+            without it. Verify the Redis host and the exporter; do not treat a Redis
+            outage as a reason to restore PostgreSQL.
+
+  - name: iot-platform-backups
+    rules:
+      - alert: IotPlatformBackupStale
+        expr: time() - iot_backup_last_success_timestamp > 36 * 60 * 60
+        for: 1h
+        labels:
+          severity: critical
+        annotations:
+          summary: "No successful off-host backup in over 36 hours"
+          description: >-
+            The last value written to iot_backup_last_success_timestamp is older than 36
+            hours, with an extra hour of grace before paging. The metric is produced ONLY
+            by ops/scripts/backup-offhost.sh (file 6 of the monitoring artifact set) via
+            the node_exporter textfile collector at
+            /var/lib/node_exporter/textfile_collector/iot_backup.prom, after a verified
+            off-host replication. A stale timestamp means the local encrypted dump, the
+            rclone upload, or the timer itself failed -- check
+            `journalctl -u iot-platform-offhost-backup.service` and
+            `journalctl -u iot-platform-backup.service`. 36 hours is intentionally larger
+            than the 24-hour schedule so a single delayed run cannot page.
+
+      - alert: IotPlatformBackupMetricMissing
+        expr: absent(iot_backup_last_success_timestamp)
+        for: 1h
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backup freshness metric is absent -- off-host backup may never have run"
+          description: >-
+            iot_backup_last_success_timestamp does not exist at all. This is the
+            never-bootstrapped and timer-disabled case, and it must page exactly as loudly
+            as a stale backup: an operator watching a dashboard with no data cannot tell
+            the difference between "healthy" and "not running". Confirm the textfile
+            collector directory is mounted into node-exporter (see
+            ops/monitoring/compose.yml) and that
+            ops/systemd/iot-platform-offhost-backup.timer is enabled.
+
+  - name: iot-platform-host
+    rules:
+      - alert: IotPlatformDiskSpaceLow
+        expr: |
+          100 * (
+            node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs|ramfs",mountpoint=~"/|/var|/var/backups.*"}
+            / clamp_min(node_filesystem_size_bytes{fstype!~"tmpfs|overlay|squashfs|ramfs",mountpoint=~"/|/var|/var/backups.*"}, 1)
+          ) < 15
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Filesystem below 15% free space"
+          description: >-
+            A monitored filesystem has been under 15% free for 10 minutes. The dangerous
+            one is the backup volume: when /var/backups/iot-platform fills, the encrypted
+            dump fails and the off-host backup chain stops even though the database is
+            healthy. Rotate or move backups first (ops/logrotate/iot-platform.conf covers
+            application logs, not dumps), then investigate normal growth.
+
+      - alert: IotPlatformCertificateExpiringSoon
+        expr: probe_ssl_earliest_cert_expiry - time() < 21 * 24 * 60 * 60
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "TLS certificate expires in under 21 days"
+          description: >-
+            The earliest certificate presented by the probed API endpoint expires within
+            21 days. Renew before the window closes: an expired certificate takes the
+            entire HTTPS surface down, including the loopback-only /metrics endpoint.
+            The value comes from blackbox_exporter (job blackbox-https in
+            ops/monitoring/prometheus.yml); if the prober is not running, this rule stays
+            silent rather than failing closed, so the operator owns that coverage.
+

@@ -142,6 +142,8 @@ The backup script:
 
 Default online retention is 35 days. Operations must additionally preserve at least four weekly and twelve monthly encrypted copies in a separate failure domain. Backup storage and off-host copies must use encryption at rest. Redis is non-authoritative and is not a substitute for PostgreSQL recovery.
 
+The off-host copy is `ops/scripts/backup-offhost.sh`, run by `iot-platform-offhost-backup.timer`/`.service` after the local backup unit (ordered `After=`, deliberately without `Requires=` so a failed local run still replicates the newest existing dump). It fails closed on every gap — no `rclone`, no `OFFHOST_REMOTE`, no checksum sidecar, an unwritable textfile collector directory — replicates only `*.dump.gpg` artifacts, verifies the local sidecar before upload, reads the remote object back and compares size and (when the backend exposes it) SHA-256 before declaring success, and writes the metric the backup alerts fire on. The remote, its credentials and the retention policy for the weekly/monthly copies live in operator-owned `rclone` configuration outside this repository.
+
 ## Restore Procedure
 
 Restore into a new isolated database first:
@@ -196,6 +198,16 @@ CI also runs non-mutating lint, release manifest verification, production artifa
 
 The production startup smoke uses bounded loopback HTTP polling, detects early child-process exit, and reports captured child output. `PRODUCTION_STARTUP_SMOKE_TIMEOUT_MS` accepts 5000 through 120000 milliseconds and defaults to 60000 milliseconds so native Windows filesystem or antivirus startup latency does not collapse into an opaque `fetch failed` result.
 
+## Observability and Alerting
+
+The application exposes a machine-readable health surface (`GET /metrics`, guarded by `METRICS_ACCESS_TOKEN`, loopback-only at Nginx). `ops/monitoring/` is the stack that observes it: Prometheus, Alertmanager, node_exporter and Grafana, every published port bound to `MONITORING_BIND_ADDRESS` (default `127.0.0.1`), with no committed credentials and a null-receiver default that sends no alert anywhere. `ops/monitoring/README.md` is the operator guide, including the jobs that stay "No data" until their operator-run exporter (`postgres_exporter`, `redis_exporter`, `blackbox_exporter`) exists — a missing panel is never converted into a healthy-looking one.
+
+The alerts map to decisions, not to metrics: API down, PostgreSQL unreachable or above 80% of `max_connections`, EMQX down, Redis unreachable (informational — Redis is non-authoritative), off-host backup stale or never run, backup volume below 15% free, and TLS certificate expiry inside 21 days. The two backup alerts fire on the timestamp written only by `ops/scripts/backup-offhost.sh`, so a broken replication chain pages instead of hiding behind an empty dashboard. Alert routing (email, webhook, chat ops) and the named monitoring owner remain operator decisions that this repository does not make.
+
+Application logs stay in the systemd journal by default (bounded by `journald`); `ops/logrotate/iot-platform.conf` is the bounded policy for hosts that enable file logging. Rotation never signals or restarts the service, and no central log shipping configuration is provided here.
+
+The intended single-host environment is described in `infra/terraform/`: offline providers only, every resource gated behind `apply_enabled` (default `false`), and guarded commands that refuse to run while any `REPLACE_WITH_*` placeholder remains. It creates no infrastructure and is not a deployment tool; releases are installed by `ops/scripts/install-release.sh`.
+
 ## Explicit Non-Goals
 
 This foundation does not:
@@ -206,7 +218,8 @@ This foundation does not:
 - reverse Prisma migrations during application rollback;
 - configure the production MQTT transport;
 - declare the platform ready for production deployment;
-- activate Module 09.
+- activate Module 09;
+- route alerts anywhere, ship logs to a central collector, or provision a staging environment.
 
 ## Next Slice
 

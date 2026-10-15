@@ -315,6 +315,13 @@ assert(!routeMap.includes('templateEntity: ABSENT') && routeMap.includes('Profil
 for (const route of ['/tenant/api-keys', '/tenant/webhooks', '/tenant/organisasi']) {
   assert(routeMap.includes(route), `UI route map includes runtime tenant route ${route}`);
 }
+// The pre-session surface must stay classified as AUTH_UI instead of being mistaken for
+// missing menus: validate-rescue-baseline.mjs exempts exactly these five routes from the
+// shell-menu reachability rule, and the route map has to say so in the same terms.
+assert(routeMap.includes('PRE_LOGIN_ROUTES'), 'UI route map names the validator pre-login classification');
+for (const route of ['/login', '/daftar', '/lupa-password', '/reset-password', '/verifikasi']) {
+  assert(routeMap.includes('`' + route + '`'), `UI route map classifies pre-session route ${route}`);
+}
 
 const productionReadiness = read('docs/production-readiness.md');
 assert(
