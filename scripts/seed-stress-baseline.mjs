@@ -220,12 +220,12 @@ async function main() {
     },
   });
 
-  // A numeric sibling: the aggregation endpoint refuses boolean capabilities (the Wave 1 lesson
-  // again), so the numeric capability is what the k6 window query reads. Empty buckets are a
-  // valid answer; the surface under test is the query contract itself.
+  // A numeric sibling with two jobs: the aggregation endpoint refuses boolean capabilities (the
+  // Wave 1 lesson again), and it gives the automation action a target that is not its own trigger
+  // source (the domain validator refuses an action that targets the trigger it listens to).
   await prisma.capability.upsert({
     where: { id: IDS.capabilityNumeric },
-    update: {},
+    update: { isWritable: true },
     create: {
       id: IDS.capabilityNumeric,
       deviceId: IDS.device,
@@ -234,7 +234,7 @@ async function main() {
       dataType: 'number',
       unit: 'W',
       isReadable: true,
-      isWritable: false,
+      isWritable: true,
       isReportable: true,
     },
   });
@@ -309,9 +309,13 @@ async function main() {
     },
   });
 
+  // The persisted definition must satisfy the same validator the API runs on activation: the
+  // action targets the numeric sibling (not the boolean trigger it listens to) and the value is
+  // the primitive the numeric dataType expects. `update` carries the same shape so a re-seed on
+  // an older database converges instead of leaving an unactivatable automation behind.
   await prisma.automation.upsert({
     where: { id: IDS.automation },
-    update: {},
+    update: { condition: { kind: 'ALWAYS' } },
     create: {
       id: IDS.automation,
       tenantId: TENANT_ID,
@@ -321,14 +325,14 @@ async function main() {
       triggerKind: 'CAPABILITY_REPORTED',
       triggerDeviceId: IDS.device,
       triggerCapabilityId: IDS.capability,
-      condition: {},
+      condition: { kind: 'ALWAYS' },
       cooldownSeconds: 0,
     },
   });
 
   await prisma.automationAction.upsert({
     where: { id: IDS.automationAction },
-    update: {},
+    update: { capabilityId: IDS.capabilityNumeric, value: 120 },
     create: {
       id: IDS.automationAction,
       tenantId: TENANT_ID,
@@ -337,8 +341,8 @@ async function main() {
       position: 0,
       kind: 'DEVICE_COMMAND',
       deviceId: IDS.device,
-      capabilityId: IDS.capability,
-      value: { value: true },
+      capabilityId: IDS.capabilityNumeric,
+      value: 120,
     },
   });
 
