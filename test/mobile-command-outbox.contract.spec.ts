@@ -79,6 +79,29 @@ describe('mobile offline command outbox contract', () => {
     expect(screen).toContain('outboxDiscardAction');
   });
 
+  it('shows the queued rows themselves, not just the counters', () => {
+    expect(bridge).toContain('async function list(tenantId: string)');
+    expect(bridge).toContain('async function discard(tenantId: string, entryIds: string[])');
+    expect(bridge).toContain('async function retry(tenantId: string, entryId: string)');
+    expect(app).toContain('offlineOutbox.list(');
+    expect(app).toContain('offlineOutbox.retry(');
+    expect(app).toContain('offlineOutbox.discard(');
+    expect(app).toContain('setOutboxEntries(');
+    expect(app).toContain('outboxEntries={outboxEntries}');
+    expect(shell).toContain('outboxEntries: MobileOutboxEntry[]');
+    expect(shell).toContain('onRetryQueuedCommand');
+    expect(shell).toContain('onDiscardQueuedCommand');
+    expect(screen).toContain('entries: MobileOutboxEntry[]');
+    expect(screen).toContain('formatOutboxValue');
+    expect(screen).toContain('outboxRowQueued');
+    expect(screen).toContain('outboxRowFailed');
+    expect(screen).toContain('outboxRowRetryAction');
+    expect(screen).toContain('outboxRowDiscardAction');
+    expect(screen).toContain('outboxMoreLabel');
+    expect(messages).toContain("outboxRowDiscardAction: 'Buang'");
+    expect(messages).toContain("outboxRowDiscardAction: 'Discard'");
+  });
+
   it('shows queued commands as queued, not sent, and localizes both locales', () => {
     expect(widget).toContain("case 'QUEUED_OFFLINE'");
     expect(widget).toContain('switchQueuedOffline');

@@ -27,7 +27,10 @@ import {
 import { mobileSettingsStore } from './src/settings/expo-secure-settings-store';
 import { mobileSnapshotCache } from './src/offline/expo-sqlite-snapshot-cache';
 import { mobileCommandOutboxStore } from './src/offline/expo-sqlite-outbox-store';
-import type { MobileOutboxSummary } from './src/offline/mobile-command-outbox';
+import type {
+  MobileOutboxEntry,
+  MobileOutboxSummary,
+} from './src/offline/mobile-command-outbox';
 import {
   connectMobileCommandOutbox,
   isMobileOfflineError,
@@ -105,6 +108,9 @@ export default function App() {
     failed: 0,
     pending: 0,
   });
+  // The summary drives the banner counters; this holds the readable per-command rows the operator
+  // needs offline, when "3 waiting" is not enough to know what is actually waiting.
+  const [outboxEntries, setOutboxEntries] = useState<MobileOutboxEntry[]>([]);
   // Both directory surfaces share the one origin-namespaced snapshot cache with the dashboard.
   const offlineSurfaces = useMemo(
     () => ({
@@ -254,6 +260,7 @@ export default function App() {
     void offlineDashboard.forget();
     void offlineOutbox.forget();
     setOutboxSummary({ failed: 0, pending: 0 });
+    setOutboxEntries([]);
     setState(await logoutMobileAuth(mobileSessionClient));
   }
 
@@ -311,6 +318,7 @@ export default function App() {
 
   async function refreshOutboxSummary(tenantId: string) {
     setOutboxSummary(await offlineOutbox.summary(tenantId));
+    setOutboxEntries(await offlineOutbox.list(tenantId));
   }
 
   async function flushOutbox(
@@ -338,6 +346,23 @@ export default function App() {
   async function discardFailedCommands() {
     if (!authenticatedTenantId) return;
     await offlineOutbox.discardFailed(authenticatedTenantId);
+    await refreshOutboxSummary(authenticatedTenantId);
+  }
+
+  async function retryQueuedCommand(entryId: string) {
+    if (!authenticatedTenantId) return;
+    const selectedDashboardId =
+      dashboardState.kind === 'ready' || dashboardState.kind === 'empty'
+        ? dashboardState.experience.selectedDashboardId
+        : null;
+    const sent = await offlineOutbox.retry(authenticatedTenantId, entryId);
+    await refreshOutboxSummary(authenticatedTenantId);
+    if (sent > 0) await loadDashboard(selectedDashboardId);
+  }
+
+  async function discardQueuedCommand(entryId: string) {
+    if (!authenticatedTenantId) return;
+    await offlineOutbox.discard(authenticatedTenantId, [entryId]);
     await refreshOutboxSummary(authenticatedTenantId);
   }
 
@@ -463,9 +488,12 @@ export default function App() {
           storageUnavailable={storageUnavailable}
           onSendCommand={sendDashboardCommand}
           onDiscardFailed={discardFailedCommands}
+          onDiscardQueuedCommand={discardQueuedCommand}
           onFlushOutbox={flushOutboxNow}
+          onRetryQueuedCommand={retryQueuedCommand}
           offline={offlineGateway}
           outbox={outboxSummary}
+          outboxEntries={outboxEntries}
           pending={state.kind === 'logging-out'}
           tenantId={state.tenantId}
         />

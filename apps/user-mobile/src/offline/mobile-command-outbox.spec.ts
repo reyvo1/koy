@@ -374,6 +374,71 @@ describe('offline command flush policy', () => {
     expect(await bridge.summary(TENANT)).toEqual({ failed: 0, pending: 0 });
   });
 
+  it('lists queued rows in order and discards exactly the named entries', async () => {
+    const port = new MemoryPort();
+    const { bridge } = makeBridge(port, async (entry) => ({ commandId: entry.id, status: 'PENDING' }));
+
+    const first = await bridge.enqueue(TENANT, { capabilityKey: 'power', deviceId: 'a', value: true });
+    const second = await bridge.enqueue(TENANT, { capabilityKey: 'power', deviceId: 'b', value: false });
+    const third = await bridge.enqueue(TENANT, { capabilityKey: 'power', deviceId: 'c', value: true });
+    expect(first.ok && second.ok && third.ok).toBe(true);
+    if (!first.ok || !second.ok || !third.ok) return;
+
+    // Entries enqueued inside the same millisecond tie on enqueuedAt, so only membership is
+    // guaranteed here; strict oldest-first ordering across milliseconds is covered in the store
+    // suite with controlled clocks.
+    const listed = await bridge.list(TENANT);
+    expect(listed).toHaveLength(3);
+    expect(new Set(listed.map((entry) => entry.deviceId))).toEqual(
+      new Set(['a', 'b', 'c']),
+    );
+
+    await bridge.discard(TENANT, [second.entry.id]);
+
+    const remaining = await bridge.list(TENANT);
+    expect(new Set(remaining.map((entry) => entry.deviceId))).toEqual(
+      new Set(['a', 'c']),
+    );
+    expect(await bridge.summary(TENANT)).toEqual({ failed: 0, pending: 2 });
+  });
+
+  it('retries a single failed entry with a fresh budget and flushes immediately', async () => {
+    const port = new MemoryPort();
+    let mode: 'offline' | 'ok' = 'offline';
+    const { bridge } = makeBridge(port, async (entry) => {
+      if (mode === 'offline') throw offlineError();
+      return { commandId: entry.id, status: 'PENDING' };
+    });
+
+    await bridge.enqueue(TENANT, { capabilityKey: 'power', deviceId: 'stuck', value: true });
+    await bridge.enqueue(TENANT, { capabilityKey: 'power', deviceId: 'other', value: true });
+    for (let attempt = 0; attempt < MAX_OUTBOX_ATTEMPTS; attempt += 1) {
+      // Every pass stops on the first connectivity failure, so whichever entry holds the head slot
+      // burns attempts and lands in failed; the entry behind it stays queued. Which one leads is
+      // not asserted because same-millisecond entries tie on enqueuedAt.
+      mode = 'offline';
+      await bridge.flush(TENANT);
+    }
+    expect(await bridge.summary(TENANT)).toEqual({ failed: 1, pending: 1 });
+    const failed = (await bridge.list(TENANT)).find(
+      (entry) => entry.status === 'failed',
+    );
+    expect(failed?.attempts).toBe(MAX_OUTBOX_ATTEMPTS);
+
+    mode = 'ok';
+    expect(await bridge.retry(TENANT, failed!.id)).toBe(2);
+    expect(await bridge.summary(TENANT)).toEqual({ failed: 0, pending: 0 });
+  });
+
+  it('retries nothing for an unknown entry id', async () => {
+    const port = new MemoryPort();
+    const { bridge } = makeBridge(port, async (entry) => ({ commandId: entry.id, status: 'PENDING' }));
+    await bridge.enqueue(TENANT, { capabilityKey: 'power', deviceId: 'a', value: true });
+
+    expect(await bridge.retry(TENANT, 'missing-entry')).toBe(0);
+    expect(await bridge.summary(TENANT)).toEqual({ failed: 0, pending: 1 });
+  });
+
   it('shares one pass between concurrent flushes', async () => {
     const port = new MemoryPort();
     let sends = 0;

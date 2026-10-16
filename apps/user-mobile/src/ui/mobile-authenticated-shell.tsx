@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -24,7 +24,10 @@ import {
   mobileMessages,
   type MobileLocale,
 } from '../localization/messages';
-import type { MobileOutboxSummary } from '../offline/mobile-command-outbox';
+import type {
+  MobileOutboxEntry,
+  MobileOutboxSummary,
+} from '../offline/mobile-command-outbox';
 import type { MobileAppearance } from '../settings/mobile-settings-store';
 import { mobileSessionClient } from '../session';
 import {
@@ -64,8 +67,12 @@ interface MobileAuthenticatedShellProps {
   ): Promise<{ commandId: string; status: string }>;
   /** App owns the offline outbox, so the shell renders its summary and asks it to act. */
   outbox: MobileOutboxSummary;
+  /** The readable queued rows behind the counters, oldest first, straight from the outbox. */
+  outboxEntries: MobileOutboxEntry[];
   onFlushOutbox(): Promise<void>;
   onDiscardFailed(): Promise<void>;
+  onDiscardQueuedCommand(entryId: string): Promise<void>;
+  onRetryQueuedCommand(entryId: string): Promise<void>;
   /**
    * App owns the offline snapshot cache, so the shell asks it for the last-known directory and
    * alerts instead of touching storage itself. `onConnectivityProven` fires after any validated
@@ -120,8 +127,11 @@ export function MobileAuthenticatedShell({
   onSelectDashboard,
   onSendCommand,
   outbox,
+  outboxEntries,
   onFlushOutbox,
   onDiscardFailed,
+  onDiscardQueuedCommand,
+  onRetryQueuedCommand,
   offline,
 }: MobileAuthenticatedShellProps) {
   // The locale drives every string below, so it is read from the device before the first render of
@@ -133,6 +143,13 @@ export function MobileAuthenticatedShell({
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<MobileTab>('home');
   const [devices, setDevices] = useState<MobileDeviceSummary[]>([]);
+  // Queue rows name their device the way the directory does. When the roster has not loaded (first
+  // offline start on a fresh cache) the row falls back to the raw id rather than inventing a label.
+  const deviceNames = useMemo(
+    () =>
+      Object.fromEntries(devices.map((device) => [device.id, device.name])),
+    [devices],
+  );
   const [inventoryLoading, setInventoryLoading] = useState(false);
   const [inventoryError, setInventoryError] = useState<string | null>(null);
   const [inventoryCachedAt, setInventoryCachedAt] = useState<string | null>(null);
@@ -394,14 +411,18 @@ export function MobileAuthenticatedShell({
       >
         {tab === 'home' ? (
           <MobileDashboardScreen
+            deviceNames={deviceNames}
             isDark={isDark}
             locale={locale}
             onDiscardFailed={onDiscardFailed}
+            onDiscardQueuedCommand={onDiscardQueuedCommand}
             onFlushOutbox={onFlushOutbox}
             onRefresh={onRefreshDashboard}
+            onRetryQueuedCommand={onRetryQueuedCommand}
             onSelectDashboard={onSelectDashboard}
             onSendCommand={onSendCommand}
             outbox={outbox}
+            outboxEntries={outboxEntries}
             state={dashboardState}
           />
         ) : null}

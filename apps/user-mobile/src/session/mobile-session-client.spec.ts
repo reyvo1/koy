@@ -282,6 +282,67 @@ describe('mobile session client', () => {
     expect(memory.readSession()).toBeNull();
   });
 
+  it('keeps the existing session when refresh fails with a transient server error', async () => {
+    const memory = createMemoryStore(initialSession);
+    const client = new MobileSessionClient({
+      apiOrigin: 'https://api.example.com',
+      fetcher: async (input) => {
+        const url = new URL(String(input));
+        return url.pathname === '/auth/refresh'
+          ? jsonResponse(
+              {
+                error: {
+                  code: 'AUTH_REFRESH_UNAVAILABLE',
+                  message: 'Refresh temporarily unavailable',
+                },
+              },
+              503,
+            )
+          : jsonResponse({}, 401);
+      },
+      sessionStore: memory.store,
+    });
+
+    await expect(client.requestJson('/users/profile')).rejects.toEqual(
+      expect.objectContaining<Partial<MobileApiError>>({
+        code: 'AUTH_REFRESH_UNAVAILABLE',
+        status: 503,
+      }),
+    );
+    expect(memory.calls.clear).toBe(0);
+    expect(memory.readSession()).toEqual(initialSession);
+
+    // The expired access token is still in place, so a later successful refresh can recover the
+    // session without forcing the operator to sign in again.
+    await expect(client.requestJson('/users/profile')).rejects.toEqual(
+      expect.objectContaining<Partial<MobileApiError>>({ status: 503 }),
+    );
+    expect(memory.calls.clear).toBe(0);
+  });
+
+  it('keeps the existing session when refresh is rate limited', async () => {
+    const memory = createMemoryStore(initialSession);
+    const client = new MobileSessionClient({
+      apiOrigin: 'https://api.example.com',
+      fetcher: async (input) => {
+        const url = new URL(String(input));
+        return url.pathname === '/auth/refresh'
+          ? jsonResponse(
+              { error: { code: 'AUTH_RATE_LIMITED', message: 'Too many requests' } },
+              429,
+            )
+          : jsonResponse({}, 401);
+      },
+      sessionStore: memory.store,
+    });
+
+    await expect(client.requestJson('/users/profile')).rejects.toEqual(
+      expect.objectContaining<Partial<MobileApiError>>({ status: 429 }),
+    );
+    expect(memory.calls.clear).toBe(0);
+    expect(memory.readSession()).toEqual(initialSession);
+  });
+
   it('keeps the existing session when refresh cannot reach the backend', async () => {
     const memory = createMemoryStore(initialSession);
     const client = new MobileSessionClient({

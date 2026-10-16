@@ -7,7 +7,10 @@ import type {
   MobileDashboardState,
   MobileResolvedWidget,
 } from '../dashboard';
-import type { MobileOutboxSummary } from '../offline/mobile-command-outbox';
+import type {
+  MobileOutboxEntry,
+  MobileOutboxSummary,
+} from '../offline/mobile-command-outbox';
 import { MobileDashboardWidgetCard, type DashboardCopy } from './mobile-dashboard-widget';
 import { MobileStateNotice } from './mobile-state-notice';
 
@@ -16,6 +19,13 @@ interface MobileDashboardScreenProps {
   locale: MobileLocale;
   state: MobileDashboardState;
   outbox: MobileOutboxSummary;
+  /**
+   * The rows behind the counters and the directory's names for them. The rows are the operator's
+   * only way to check what is actually queued while offline; without them "3 waiting" is a number
+   * they have to trust instead of verify.
+   */
+  outboxEntries: MobileOutboxEntry[];
+  deviceNames: Record<string, string>;
   onRefresh(selectedDashboardId: string | null): Promise<void>;
   onSelectDashboard(dashboardId: string): Promise<void>;
   onSendCommand(
@@ -25,6 +35,8 @@ interface MobileDashboardScreenProps {
   ): Promise<{ commandId: string; status: string }>;
   onFlushOutbox(): Promise<void>;
   onDiscardFailed(): Promise<void>;
+  onRetryQueuedCommand(entryId: string): Promise<void>;
+  onDiscardQueuedCommand(entryId: string): Promise<void>;
 }
 
 export function MobileDashboardScreen({
@@ -32,11 +44,15 @@ export function MobileDashboardScreen({
   isDark,
   state,
   outbox,
+  outboxEntries,
+  deviceNames,
   onRefresh,
   onSelectDashboard,
   onSendCommand,
   onFlushOutbox,
   onDiscardFailed,
+  onRetryQueuedCommand,
+  onDiscardQueuedCommand,
 }: MobileDashboardScreenProps) {
   const copy = mobileMessages[locale].dashboard;
 
@@ -72,10 +88,14 @@ export function MobileDashboardScreen({
         <MobileStateNotice isDark={isDark} notice={state.notice} />
         <OutboxBanner
           copy={copy}
+          deviceNames={deviceNames}
+          entries={outboxEntries}
           isDark={isDark}
-          outbox={outbox}
           onDiscardFailed={onDiscardFailed}
+          onDiscardQueuedCommand={onDiscardQueuedCommand}
           onFlushOutbox={onFlushOutbox}
+          onRetryQueuedCommand={onRetryQueuedCommand}
+          outbox={outbox}
         />
         <ActionButton
           isDark={isDark}
@@ -114,10 +134,14 @@ export function MobileDashboardScreen({
 
       <OutboxBanner
         copy={copy}
+        deviceNames={deviceNames}
+        entries={outboxEntries}
         isDark={isDark}
-        outbox={outbox}
         onDiscardFailed={onDiscardFailed}
+        onDiscardQueuedCommand={onDiscardQueuedCommand}
         onFlushOutbox={onFlushOutbox}
+        onRetryQueuedCommand={onRetryQueuedCommand}
+        outbox={outbox}
       />
 
       <DashboardSelector
@@ -154,24 +178,40 @@ export function MobileDashboardScreen({
   );
 }
 
+const OUTBOX_VISIBLE_ROWS = 6;
+
+function formatOutboxValue(value: MobileOutboxEntry['value']): string {
+  if (typeof value === 'boolean') return value ? 'ON' : 'OFF';
+  return String(value);
+}
+
 function OutboxBanner({
   copy,
+  deviceNames,
+  entries,
   isDark,
   outbox,
   onFlushOutbox,
   onDiscardFailed,
+  onRetryQueuedCommand,
+  onDiscardQueuedCommand,
 }: {
   copy: DashboardCopy;
+  deviceNames: Record<string, string>;
+  entries: MobileOutboxEntry[];
   isDark: boolean;
   outbox: MobileOutboxSummary;
   onFlushOutbox(): Promise<void>;
   onDiscardFailed(): Promise<void>;
+  onRetryQueuedCommand(entryId: string): Promise<void>;
+  onDiscardQueuedCommand(entryId: string): Promise<void>;
 }) {
   if (outbox.pending === 0 && outbox.failed === 0) return null;
 
   const parts: string[] = [];
   if (outbox.pending > 0) parts.push(`${copy.outboxPendingPrefix} ${outbox.pending}`);
   if (outbox.failed > 0) parts.push(`${copy.outboxFailedPrefix} ${outbox.failed}`);
+  const hiddenRows = entries.length - OUTBOX_VISIBLE_ROWS;
 
   return (
     <View>
@@ -184,6 +224,77 @@ function OutboxBanner({
           requestId: null,
         }}
       />
+      {entries.length > 0 ? (
+        <View style={[styles.outboxList, isDark && styles.cardDark]}>
+          {entries.slice(0, OUTBOX_VISIBLE_ROWS).map((entry) => (
+            <View key={entry.id} style={styles.outboxRow}>
+              <View style={styles.outboxRowInfo}>
+                <Text
+                  numberOfLines={1}
+                  style={[styles.outboxRowTitle, isDark && styles.textDark]}
+                >
+                  {deviceNames[entry.deviceId] ?? entry.deviceId}
+                </Text>
+                <Text
+                  numberOfLines={1}
+                  style={[styles.outboxRowMeta, isDark && styles.textMutedDark]}
+                >
+                  {[
+                    entry.capabilityKey,
+                    formatOutboxValue(entry.value),
+                    entry.status === 'failed'
+                      ? copy.outboxRowFailed
+                      : copy.outboxRowQueued,
+                    formatCachedAt(entry.enqueuedAt),
+                  ].join(' · ')}
+                </Text>
+              </View>
+              <View style={styles.outboxRowActions}>
+                {entry.status === 'failed' ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => void onRetryQueuedCommand(entry.id)}
+                    style={({ pressed }) => [
+                      styles.outboxRowButton,
+                      isDark && styles.outboxRowButtonDark,
+                      pressed && styles.buttonPressed,
+                    ]}
+                  >
+                    <Text
+                      style={[styles.outboxRowButtonText, isDark && styles.textDark]}
+                    >
+                      {copy.outboxRowRetryAction}
+                    </Text>
+                  </Pressable>
+                ) : null}
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => void onDiscardQueuedCommand(entry.id)}
+                  style={({ pressed }) => [
+                    styles.outboxRowButton,
+                    isDark && styles.outboxRowButtonDark,
+                    pressed && styles.buttonPressed,
+                  ]}
+                >
+                  <Text
+                    style={[styles.outboxRowButtonText, isDark && styles.textDark]}
+                  >
+                    {copy.outboxRowDiscardAction}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          ))}
+          {hiddenRows > 0 ? (
+            <Text
+              numberOfLines={1}
+              style={[styles.outboxRowMeta, isDark && styles.textMutedDark]}
+            >
+              {`+${hiddenRows} ${copy.outboxMoreLabel}`}
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
       <ActionButton
         isDark={isDark}
         label={copy.outboxFlushAction}
@@ -418,6 +529,55 @@ export function formatCachedAt(value: string): string {
 const styles = StyleSheet.create({
   section: {
     gap: 16,
+  },
+  outboxList: {
+    gap: 10,
+    marginBottom: 12,
+    borderColor: '#cbd5e1',
+    borderRadius: 16,
+    borderWidth: 1,
+    backgroundColor: '#f8fafc',
+    padding: 14,
+  },
+  outboxRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  outboxRowInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  outboxRowTitle: {
+    color: '#0f172a',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  outboxRowMeta: {
+    color: '#475569',
+    fontSize: 12,
+  },
+  outboxRowActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  outboxRowButton: {
+    borderColor: '#cbd5e1',
+    borderRadius: 999,
+    borderWidth: 1,
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  outboxRowButtonDark: {
+    borderColor: '#475569',
+    backgroundColor: '#1e293b',
+  },
+  outboxRowButtonText: {
+    color: '#334155',
+    fontSize: 12,
+    fontWeight: '700',
   },
   heading: {
     gap: 4,

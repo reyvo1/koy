@@ -121,9 +121,17 @@ describe('Module 10 Slice 10.11 Mobile Secure Session Foundation', () => {
     expect(sessionClient).toContain('this.options.sessionStore.replace');
     expect(sessionClient).toContain('await this.clearSession()');
     expect(sessionClient).toContain('status === 403');
+    // Only an authorization verdict may end the session during refresh; a transient 5xx/429 must
+    // keep it, so an offline operator is never logged out by a server hiccup.
+    expect(sessionClient).toContain(
+      'if (response.status === 401 || response.status === 403)',
+    );
     expect(
       read('apps/user-mobile/src/session/mobile-session-client.spec.ts'),
     ).toContain('preserves an authoritative 403');
+    expect(
+      read('apps/user-mobile/src/session/mobile-session-client.spec.ts'),
+    ).toContain('keeps the existing session when refresh fails with a transient server error');
     expect(sessionClient).not.toMatch(/mqtt:\/\/|mqtts:\/\/|rtsp:\/\//);
   });
 

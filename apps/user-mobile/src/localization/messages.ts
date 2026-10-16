@@ -115,6 +115,11 @@ export const mobileMessages = {
       outboxFailedPrefix: 'Gagal dikonfirmasi:',
       outboxFlushAction: 'Kirim ulang sekarang',
       outboxDiscardAction: 'Buang yang gagal',
+      outboxRowQueued: 'Menunggu',
+      outboxRowFailed: 'Gagal',
+      outboxRowRetryAction: 'Kirim ulang',
+      outboxRowDiscardAction: 'Buang',
+      outboxMoreLabel: 'lainnya',
       mapUnsupported:
         'Widget peta tetap fail-closed sampai kontrak lokasi disetujui.',
       invalidData: 'Data widget tidak dapat digunakan saat ini.',
@@ -262,6 +267,11 @@ export const mobileMessages = {
       outboxFailedPrefix: 'Failed to confirm:',
       outboxFlushAction: 'Retry now',
       outboxDiscardAction: 'Discard failed',
+      outboxRowQueued: 'Queued',
+      outboxRowFailed: 'Failed',
+      outboxRowRetryAction: 'Retry',
+      outboxRowDiscardAction: 'Discard',
+      outboxMoreLabel: 'more',
       mapUnsupported:
         'Map widgets remain fail-closed until the location contract is approved.',
       invalidData: 'Widget data cannot be used right now.',

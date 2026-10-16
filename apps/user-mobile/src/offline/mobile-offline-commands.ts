@@ -29,6 +29,7 @@ export interface MobileOutboxSender {
 }
 
 export interface MobileCommandOutbox {
+  discard(tenantId: string, entryIds: string[]): Promise<void>;
   discardFailed(tenantId: string): Promise<void>;
   enqueue(
     tenantId: string,
@@ -36,6 +37,8 @@ export interface MobileCommandOutbox {
   ): Promise<MobileOutboxEnqueueResult>;
   flush(tenantId: string): Promise<number>;
   forget(): Promise<void>;
+  list(tenantId: string): Promise<MobileOutboxEntry[]>;
+  retry(tenantId: string, entryId: string): Promise<number>;
   retryFailed(tenantId: string): Promise<number>;
   summary(tenantId: string): Promise<MobileOutboxSummary>;
 }
@@ -89,6 +92,32 @@ export function connectMobileCommandOutbox({
     return sent;
   }
 
+  /**
+   * A single-entry retry, mirroring the bulk one: the entry gets a fresh attempt budget and one
+   * flush pass runs immediately, so the operator sees whether it went through.
+   */
+  async function retry(tenantId: string, entryId: string): Promise<number> {
+    const entry = (await store.list(apiOrigin, tenantId)).find(
+      (candidate) => candidate.id === entryId,
+    );
+    if (!entry) return 0;
+    await store.update({
+      ...entry,
+      attempts: 0,
+      lastError: null,
+      status: 'queued',
+    });
+    return flush(tenantId);
+  }
+
+  async function discard(tenantId: string, entryIds: string[]): Promise<void> {
+    await store.remove(apiOrigin, tenantId, entryIds);
+  }
+
+  async function list(tenantId: string): Promise<MobileOutboxEntry[]> {
+    return store.list(apiOrigin, tenantId);
+  }
+
   async function retryFailed(tenantId: string): Promise<number> {
     const failed = (await store.list(apiOrigin, tenantId)).filter(
       (entry) => entry.status === 'failed',
@@ -130,7 +159,17 @@ export function connectMobileCommandOutbox({
     return store.enqueue(apiOrigin, tenantId, input, new Date());
   }
 
-  return { discardFailed, enqueue, flush, forget, retryFailed, summary };
+  return {
+    discard,
+    discardFailed,
+    enqueue,
+    flush,
+    forget,
+    list,
+    retry,
+    retryFailed,
+    summary,
+  };
 }
 
 /**

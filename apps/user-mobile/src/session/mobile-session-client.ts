@@ -202,7 +202,12 @@ export class MobileSessionClient {
 
     if (!response.ok) {
       const apiError = await this.toApiError(response);
-      await this.clearSession();
+      // Only an authorization verdict ends the session. A 5xx or 429 from the refresh endpoint is
+      // a transient server fault, not a statement about the refresh token; clearing on it would
+      // turn a hiccup into a forced logout — and an offline operator cannot log back in at all.
+      if (response.status === 401 || response.status === 403) {
+        await this.clearSession();
+      }
       throw apiError;
     }
 
