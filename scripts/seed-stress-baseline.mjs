@@ -108,26 +108,6 @@ async function main() {
     },
   });
 
-  // An upsert with `update: {}` keeps an existing account, so a re-run after a partial failure
-  // would write a NEW password to .stress-credentials while the stored hash stayed the old one --
-  // and the suite would fail with 401 against a credential the operator believes is current. The
-  // stress baseline is disposable by design, so its three passwords are re-synchronized every run.
-  await prisma.userCredential.upsert({
-    where: { userId: IDS.superAdmin },
-    update: { passwordHash: await argon2.hash(superPassword) },
-    create: { userId: IDS.superAdmin, passwordHash: await argon2.hash(superPassword) },
-  });
-  await prisma.userCredential.upsert({
-    where: { userId: IDS.admin },
-    update: { passwordHash: await argon2.hash(adminPassword) },
-    create: { userId: IDS.admin, passwordHash: await argon2.hash(adminPassword) },
-  });
-  await prisma.userCredential.upsert({
-    where: { userId: IDS.member },
-    update: { passwordHash: await argon2.hash(memberPassword) },
-    create: { userId: IDS.member, passwordHash: await argon2.hash(memberPassword) },
-  });
-
   await prisma.membership.upsert({
     where: { id: IDS.superMembership },
     update: {},
@@ -187,6 +167,26 @@ async function main() {
       role: 'MEMBER',
       status: 'ACTIVE',
     },
+  });
+
+  // An upsert with `update: {}` keeps an existing account, so a re-run after a partial failure
+  // would write a NEW password to .stress-credentials while the stored hash stayed the old one --
+  // and the suite would fail with 401 against a credential the operator believes is current. The
+  // stress baseline is disposable by design, so its three passwords are re-synchronized every run.
+  await prisma.userCredential.upsert({
+    where: { userId: IDS.superAdmin },
+    update: { passwordHash: await argon2.hash(superPassword) },
+    create: { userId: IDS.superAdmin, passwordHash: await argon2.hash(superPassword) },
+  });
+  await prisma.userCredential.upsert({
+    where: { userId: IDS.admin },
+    update: { passwordHash: await argon2.hash(adminPassword) },
+    create: { userId: IDS.admin, passwordHash: await argon2.hash(adminPassword) },
+  });
+  await prisma.userCredential.upsert({
+    where: { userId: IDS.member },
+    update: { passwordHash: await argon2.hash(memberPassword) },
+    create: { userId: IDS.member, passwordHash: await argon2.hash(memberPassword) },
   });
 
   await prisma.device.upsert({
