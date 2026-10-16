@@ -464,6 +464,336 @@ a {
 .iot-badge--info { background: var(--iot-color-info-soft); color: var(--iot-color-info); }
 .iot-badge--accent { background: var(--iot-color-accent-soft); color: var(--iot-color-accent); }
 
+/* ============================================================
+   Charts & gauges (shared SeriesChart / GaugeDial components).
+   Tooltips and legends live in HTML positioned over the SVG, so
+   they inherit real typography, shadows and tokens.
+   ============================================================ */
+.iot-chart {
+  position: relative;
+}
+.iot-chart__empty {
+  margin: 0;
+}
+.iot-chart__tooltip {
+  position: absolute;
+  top: var(--iot-space-2);
+  z-index: 3;
+  min-width: 9rem;
+  pointer-events: none;
+  border: 1px solid var(--iot-color-border-strong);
+  border-radius: var(--iot-radius-sm);
+  background: var(--iot-color-bg-elevated);
+  box-shadow: var(--iot-shadow-raised);
+  padding: var(--iot-space-2) var(--iot-space-3);
+}
+.iot-chart__tooltip-time {
+  margin: 0 0 var(--iot-space-1);
+  font-size: var(--iot-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--iot-color-muted);
+}
+.iot-chart__tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: var(--iot-space-2);
+  margin: 0;
+  font-size: var(--iot-text-sm);
+  color: var(--iot-color-muted);
+  font-variant-numeric: tabular-nums;
+}
+.iot-chart__tooltip-row strong {
+  margin-left: auto;
+  color: var(--iot-color-text-strong);
+}
+.iot-chart__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--iot-space-2) var(--iot-space-4);
+  margin: var(--iot-space-2) 0 0;
+  font-size: var(--iot-text-sm);
+  color: var(--iot-color-muted);
+}
+.iot-chart__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--iot-space-2);
+}
+.iot-chart__swatch {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  flex: none;
+}
+.iot-gauge-dial {
+  display: grid;
+  justify-items: center;
+  gap: var(--iot-space-1);
+}
+.iot-gauge-dial__label {
+  margin: 0;
+  font-size: var(--iot-text-sm);
+  color: var(--iot-color-muted);
+}
+
+/*
+ * Dynamic dashboard widgets (User Web). These class names were rendered by
+ * widget-card.tsx while no stylesheet ever defined them — the whole widget grid
+ * rendered as unstyled text. Defined here because styles.css is the single
+ * source of visual truth both web applications import.
+ */
+.iot-dashboard-toolbar,
+.iot-dashboard-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--iot-space-4);
+  margin-bottom: var(--iot-space-6);
+}
+.iot-dashboard-toolbar > div > p,
+.iot-dashboard-heading > div > p {
+  margin: var(--iot-space-1) 0 0;
+  color: var(--iot-color-muted);
+  font-size: var(--iot-text-md);
+}
+.iot-dashboard-toolbar h2,
+.iot-dashboard-heading h2 {
+  margin: 0;
+  color: var(--iot-color-text-strong);
+}
+.iot-dashboard-toolbar label {
+  display: grid;
+  gap: var(--iot-space-1);
+  font-size: var(--iot-text-sm);
+  font-weight: 600;
+  color: var(--iot-color-muted);
+}
+.iot-dashboard-toolbar select {
+  border: 1px solid var(--iot-color-border);
+  border-radius: var(--iot-radius-sm);
+  background: var(--iot-color-bg-elevated);
+  padding: 0.55rem 0.75rem;
+  color: var(--iot-color-text);
+  font: inherit;
+}
+.iot-dashboard-heading dl {
+  display: flex;
+  gap: var(--iot-space-6);
+  margin: 0;
+}
+.iot-dashboard-heading dl > div {
+  display: grid;
+  gap: 0.1rem;
+}
+.iot-dashboard-heading dt {
+  font-size: var(--iot-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--iot-color-subtle);
+}
+.iot-dashboard-heading dd {
+  margin: 0;
+  font-size: var(--iot-text-lg);
+  font-weight: 700;
+  color: var(--iot-color-text-strong);
+  font-variant-numeric: tabular-nums;
+}
+.iot-dashboard-grid__item {
+  min-width: 0;
+}
+
+.iot-widget {
+  display: grid;
+  gap: var(--iot-space-3);
+  border: 1px solid var(--iot-color-border);
+  border-radius: var(--iot-radius-md);
+  background: var(--iot-color-surface);
+  box-shadow: var(--iot-shadow-surface);
+  padding: var(--iot-space-5);
+}
+.iot-widget__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--iot-space-3);
+}
+.iot-widget__header h2 {
+  margin: 0;
+  font-size: var(--iot-text-lg);
+  color: var(--iot-color-text-strong);
+}
+.iot-widget__state {
+  flex: none;
+  border-radius: 999px;
+  background: var(--iot-color-surface-subtle);
+  padding: 0.2rem 0.65rem;
+  font-size: var(--iot-text-xs);
+  font-weight: 700;
+  color: var(--iot-color-muted);
+}
+.iot-widget[data-state='ready'] .iot-widget__state {
+  background: var(--iot-color-success-soft);
+  color: var(--iot-color-success);
+}
+.iot-widget[data-state='stale'] .iot-widget__state {
+  background: var(--iot-color-warning-soft);
+  color: var(--iot-color-warning);
+}
+.iot-widget[data-state='error'] .iot-widget__state,
+.iot-widget[data-state='invalid'] .iot-widget__state {
+  background: var(--iot-color-danger-soft);
+  color: var(--iot-color-danger);
+}
+.iot-widget__message {
+  margin: 0;
+  font-size: var(--iot-text-md);
+  color: var(--iot-color-muted);
+}
+.iot-widget__footer {
+  border-top: 1px solid var(--iot-color-border);
+  padding-top: var(--iot-space-2);
+  font-size: var(--iot-text-sm);
+  color: var(--iot-color-subtle);
+}
+.iot-values {
+  display: grid;
+  gap: var(--iot-space-2);
+  margin: 0;
+}
+.iot-values > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--iot-space-3);
+}
+.iot-values dt {
+  font-size: var(--iot-text-md);
+  color: var(--iot-color-muted);
+}
+.iot-values dd {
+  margin: 0;
+  font-size: var(--iot-text-lg);
+  font-weight: 700;
+  color: var(--iot-color-text-strong);
+  font-variant-numeric: tabular-nums;
+}
+.iot-status-value {
+  display: grid;
+  justify-items: center;
+  padding: var(--iot-space-4) 0;
+  margin: 0;
+}
+.iot-status-value strong {
+  font-size: var(--iot-text-2xl);
+  color: var(--iot-color-text-strong);
+}
+.iot-switch-control {
+  display: grid;
+  gap: var(--iot-space-3);
+}
+.iot-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--iot-space-2);
+}
+.iot-table-wrap {
+  overflow: auto;
+  border: 1px solid var(--iot-color-border);
+  border-radius: var(--iot-radius-sm);
+}
+.iot-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--iot-text-md);
+}
+.iot-table-wrap th {
+  text-align: left;
+  padding: var(--iot-space-2) var(--iot-space-3);
+  font-size: var(--iot-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--iot-color-muted);
+  background: var(--iot-color-surface-subtle);
+  border-bottom: 1px solid var(--iot-color-border);
+}
+.iot-table-wrap td {
+  padding: var(--iot-space-2) var(--iot-space-3);
+  border-top: 1px solid var(--iot-color-border);
+  color: var(--iot-color-text);
+}
+.iot-table-wrap tbody tr:hover {
+  background: var(--iot-color-surface-hover);
+}
+.iot-series {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.iot-series li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: var(--iot-space-3);
+  padding: var(--iot-space-2) 0;
+  border-top: 1px solid var(--iot-color-border);
+  font-size: var(--iot-text-md);
+}
+.iot-series li:first-child {
+  border-top: 0;
+}
+.iot-series strong {
+  color: var(--iot-color-text-strong);
+  font-variant-numeric: tabular-nums;
+}
+.iot-series time {
+  color: var(--iot-color-subtle);
+  font-size: var(--iot-text-sm);
+}
+.iot-form-error {
+  margin: var(--iot-space-2) 0;
+  border-radius: var(--iot-radius-sm);
+  background: var(--iot-color-danger-soft);
+  padding: var(--iot-space-2) var(--iot-space-3);
+  font-size: var(--iot-text-md);
+  color: var(--iot-color-danger);
+}
+.iot-login {
+  display: grid;
+  gap: var(--iot-space-4);
+  width: min(100%, 26rem);
+  margin-inline: auto;
+  border: 1px solid var(--iot-color-border);
+  border-radius: var(--iot-radius-lg);
+  background: var(--iot-color-surface);
+  box-shadow: var(--iot-shadow-surface);
+  padding: var(--iot-space-6);
+}
+.iot-login label {
+  display: grid;
+  gap: var(--iot-space-1);
+  font-size: var(--iot-text-base);
+  font-weight: 600;
+  color: var(--iot-color-text);
+}
+.iot-login input {
+  border: 1px solid var(--iot-color-border);
+  border-radius: var(--iot-radius-sm);
+  background: var(--iot-color-bg-elevated);
+  padding: 0.625rem 0.875rem;
+  color: var(--iot-color-text);
+  font: inherit;
+}
+.iot-login h2 {
+  margin: 0;
+}
+
 /* Empty state — an explicit, styled absence rather than a blank region. */
 .iot-empty {
   display: grid;

@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import { SeriesChart } from '@iot-platform/design-system';
 import { Activity, ServerCrash } from 'lucide-react';
 import { useTelemetryStream } from '@/lib/use-telemetry-stream';
 
@@ -23,10 +24,6 @@ interface Bucket {
   avg?: number;
 }
 
-const W = 560;
-const H = 200;
-const PAD = { l: 34, r: 12, t: 14, b: 22 };
-
 function Chart({
   buckets,
   live,
@@ -34,24 +31,18 @@ function Chart({
   buckets: Bucket[];
   live: { value: number | null; connected: boolean };
 }) {
-  const values = buckets.map((b) => b.avg ?? 0);
-  const max = Math.max(...values, 1);
-  const min = Math.min(...values, 0);
-  const span = max - min || 1;
-
-  const points = buckets.map((b, i) => {
-    const x = PAD.l + (i / Math.max(buckets.length - 1, 1)) * (W - PAD.l - PAD.r);
-    const y = H - PAD.b - ((b.avg ?? 0) - min) / span * (H - PAD.t - PAD.b);
-    return `${x},${y}`;
-  });
+  const points = buckets.map((bucket, index) => ({
+    at: bucket.start ?? String(index),
+    value: bucket.avg ?? 0,
+  }));
 
   return (
     <div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Grafik telemetri 24 jam">
-        <line x1={PAD.l} y1={H - PAD.b} x2={W - PAD.r} y2={H - PAD.b} stroke="var(--iot-color-border)" />
-        <line x1={PAD.l} y1={PAD.t} x2={PAD.l} y2={H - PAD.b} stroke="var(--iot-color-border)" />
-        <polyline points={points.join(' ')} fill="none" stroke="var(--iot-color-accent)" strokeWidth={2} />
-      </svg>
+      <SeriesChart
+        ariaLabel="Grafik telemetri 24 jam"
+        height={200}
+        series={[{ key: 'avg', label: 'Rata-rata', points }]}
+      />
       <div className="mt-1 flex items-center gap-2 text-[12px]" style={{ color: 'var(--iot-color-muted)' }}>
         <span
           className={`h-2 w-2 rounded-full ${live.connected ? 'animate-pulse bg-emerald-500' : 'bg-slate-300'}`}

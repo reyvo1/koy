@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { SeriesChart } from '@iot-platform/design-system';
 import { TenantShell } from '@/components/tenant-shell';
 import { CountUp, FadeIn, shadow } from '@/components/ui-polish';
 import {
@@ -36,28 +37,6 @@ interface SceneRow {
 function isOnline(device: DeviceRow): boolean {
   const status = (device.status ?? '').toUpperCase();
   return (status === 'ACTIVE' || status === 'ONLINE') && Boolean(device.lastHeartbeatAt);
-}
-
-function smoothPath(values: number[], w: number, h: number): string {
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const span = max - min || 1;
-  const pts = values.map((value, index) => ({
-    x: (index / (values.length - 1)) * (w - 12) + 6,
-    y: h - 14 - ((value - min) / span) * (h - 30),
-  }));
-  let path = `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
-  for (let index = 0; index < pts.length - 1; index += 1) {
-    const p0 = pts[Math.max(0, index - 1)];
-    const p1 = pts[index];
-    const p2 = pts[index + 1];
-    const p3 = pts[Math.min(pts.length - 1, index + 2)];
-    path += ` C${(p1.x + (p2.x - p0.x) / 6).toFixed(1)},${(p1.y + (p2.y - p0.y) / 6).toFixed(1)} ${(
-      p2.x -
-      (p3.x - p1.x) / 6
-    ).toFixed(1)},${(p2.y - (p3.y - p1.y) / 6).toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
-  }
-  return path;
 }
 
 function TelemetrySparkline() {
@@ -110,9 +89,6 @@ function TelemetrySparkline() {
     };
   }, []);
 
-  const width = 640;
-  const height = 120;
-  const path = points && points.length >= 2 ? smoothPath(points, width, height) : null;
   const last = points && points.length > 0 ? points[points.length - 1] : null;
 
   return (
@@ -134,23 +110,18 @@ function TelemetrySparkline() {
         <div role="alert" className="grid h-[120px] place-items-center rounded-xl border border-red-500/25 bg-red-500/5 px-4 text-center text-[12.5px] text-red-300">
           {error}
         </div>
-      ) : path ? (
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          className="h-[120px] w-full"
-          preserveAspectRatio="none"
-          role="img"
-          aria-label={`Grafik telemetri ${rangeLabel}`}
-        >
-          <defs>
-            <linearGradient id="spark" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#2dd4bf" stopOpacity="0.35" />
-              <stop offset="100%" stopColor="#2dd4bf" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <path d={`${path} L${width - 4},${height} L4,${height} Z`} fill="url(#spark)" stroke="none" />
-          <path d={path} fill="none" stroke="#2dd4bf" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-        </svg>
+      ) : points.length >= 2 ? (
+        <SeriesChart
+          ariaLabel={`Grafik telemetri ${rangeLabel}`}
+          height={120}
+          series={[
+            {
+              key: 'avg',
+              points: points.map((value, index) => ({ at: String(index), value })),
+            },
+          ]}
+          showAxis={false}
+        />
       ) : (
         <div className="grid h-[120px] place-items-center rounded-xl border border-dashed border-slate-700/60 px-4 text-center text-[12.5px] text-slate-500">
           Belum ada data telemetri. Grafik akan muncul setelah perangkat mengirim data.

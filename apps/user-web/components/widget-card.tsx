@@ -1,6 +1,6 @@
 'use client';
 
-import { GeoMap, type MapLocation } from '@iot-platform/design-system';
+import { GaugeDial, GeoMap, SeriesChart, type MapLocation } from '@iot-platform/design-system';
 import { TERMINAL_COMMAND_STATUSES } from '../lib/contracts';
 import { useState } from 'react';
 import type {
@@ -262,18 +262,35 @@ function GaugeWidget({
   }
 
   return (
-    <div className="iot-gauge">
-      <strong>{formatNumber(value, capability?.constraints.precision)}</strong>
-      {capability?.unit ? <span>{capability.unit}</span> : null}
-      <meter max={max} min={min} value={Math.min(Math.max(value, min), max)} />
-      <small>
-        {min} – {max}
-      </small>
-    </div>
+    <GaugeDial
+      ariaLabel={`Gauge ${resolution.title}`}
+      max={max}
+      min={min}
+      precision={capability?.constraints.precision}
+      unit={capability?.unit ?? null}
+      value={value}
+    />
   );
 }
 
 function ChartWidget({ bindings }: { bindings: WidgetBindingData[] }) {
+  const series = bindings.flatMap((binding, index) => {
+    const points = extractSeries(binding).flatMap((point) =>
+      typeof point.value === 'number' && Number.isFinite(point.value)
+        ? [{ at: point.observedAt, value: point.value }]
+        : [],
+    );
+    return points.length > 0
+      ? [{ key: binding.id, label: binding.alias, tone: CHART_TONES[index % CHART_TONES.length], points }]
+      : [];
+  });
+
+  if (series.length > 0) {
+    return <SeriesChart ariaLabel="Grafik data widget" height={160} series={series} />;
+  }
+
+  // Non-numeric series (strings, booleans, mixed payloads) keep the honest list instead of
+  // compressing them into a graph the data does not support.
   const points = bindings.flatMap((binding) =>
     extractSeries(binding).map((point) => ({
       ...point,
@@ -355,6 +372,8 @@ function formatBindingValue(binding: WidgetBindingData): string {
     ? formatUnknown(series[series.length - 1]?.value)
     : stateText(binding.state);
 }
+
+const CHART_TONES = ['accent', 'info', 'warning', 'danger', 'success'] as const;
 
 function extractSeries(binding: WidgetBindingData) {
   const candidates = binding.data?.points ?? binding.data?.buckets;

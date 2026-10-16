@@ -1,5 +1,5 @@
 'use client';
-import { GeoMap, type MapLocation } from '@iot-platform/design-system';
+import { GaugeDial, GeoMap, SeriesChart, type MapLocation } from '@iot-platform/design-system';
 
 /**
  * Workspace (Modul 18) — dashboard list + detail (resolution) + widget readings + delete.
@@ -594,6 +594,45 @@ function WidgetReadings({
 
   if (widget.kind === 'MAP') return <GeoMap locations={reading.bindings.filter((entry) => entry.data && (entry.state === 'READY' || entry.state === 'STALE')).map((entry) => entry.data as unknown as MapLocation)} />;
 
+  if (widget.kind === 'GAUGE') {
+    const binding = reading.bindings[0];
+    const numeric = binding ? latestNumericValue(binding) : null;
+    const capability = widget.bindings?.[0]?.capability;
+    const presentation = widget.presentation ?? {};
+    if (numeric === null) {
+      return <p className="m-0 text-[12px] text-slate-400">Nilai numerik belum tersedia.</p>;
+    }
+    const min = finiteOr(presentation.min) ?? capability?.constraints?.min ?? 0;
+    const max = finiteOr(presentation.max) ?? capability?.constraints?.max ?? 100;
+    return (
+      <GaugeDial
+        ariaLabel={`Gauge ${widget.title ?? binding?.alias ?? ''}`}
+        max={max}
+        min={min}
+        precision={capability?.constraints?.precision}
+        unit={capability?.unit ?? null}
+        value={numeric}
+      />
+    );
+  }
+
+  if (widget.kind === 'CHART') {
+    const series = reading.bindings.flatMap((entry, index) => {
+      const points = extractSeries(entry).flatMap((point) =>
+        typeof point.value === 'number' && Number.isFinite(point.value)
+          ? [{ at: point.observedAt, value: point.value }]
+          : [],
+      );
+      return points.length > 0
+        ? [{ key: entry.id, label: entry.alias, tone: CHART_TONES[index % CHART_TONES.length], points }]
+        : [];
+    });
+    if (series.length === 0) {
+      return <p className="m-0 text-[12px] text-slate-400">Belum ada titik data numerik untuk grafik ini.</p>;
+    }
+    return <SeriesChart ariaLabel={`Grafik ${widget.title ?? 'widget'}`} height={150} series={series} />;
+  }
+
   const unit = widget.bindings?.[0]?.capability?.unit ?? null;
   const precision = widget.bindings?.[0]?.capability?.constraints?.precision;
 
@@ -649,6 +688,23 @@ function formatBinding(
     return withUnit(formatUnknown(latest, precision), unit);
   }
   return STATE_LABEL[binding.state] ?? binding.state;
+}
+
+const CHART_TONES = ['accent', 'info', 'warning', 'danger', 'success'] as const;
+
+function latestNumericValue(binding: WidgetBindingData): number | null {
+  const direct = binding.data?.value;
+  if (typeof direct === 'number' && Number.isFinite(direct)) return direct;
+  const series = extractSeries(binding);
+  for (let index = series.length - 1; index >= 0; index -= 1) {
+    const value = series[index]?.value;
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+  }
+  return null;
+}
+
+function finiteOr(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 function extractSeries(binding: WidgetBindingData) {

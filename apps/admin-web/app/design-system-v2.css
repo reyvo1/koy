@@ -254,23 +254,6 @@
   box-shadow: 0 0 0 3px var(--iot-color-accent-soft);
 }
 
-.iot2-donut-wrap { display: flex; align-items: center; gap: var(--iot-space-6); }
-.iot2-legend {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  font-size: var(--iot-text-md);
-  display: grid;
-  gap: var(--iot-space-2);
-}
-.iot2-legend li { display: flex; align-items: center; gap: var(--iot-space-2); }
-.iot2-legend__dot {
-  display: inline-block;
-  width: 11px;
-  height: 11px;
-  border-radius: var(--iot-radius-sm);
-}
-
 .iot2-alert {
   display: flex;
   gap: var(--iot-space-3);

@@ -635,8 +635,10 @@ packages/design-system/src/camera-player.tsx
 packages/design-system/src/capability-value-input.tsx
 packages/design-system/src/confirmation-dialog.tsx
 packages/design-system/src/design-system-v2.css
+packages/design-system/src/gauge-dial.tsx
 packages/design-system/src/geo-map.tsx
 packages/design-system/src/index.tsx
+packages/design-system/src/series-chart.tsx
 packages/design-system/src/styles.css
 packages/design-system/tsconfig.json
 packages/esp32-sdk/CMakeLists.txt
@@ -1427,6 +1429,7 @@ test/tenant-isolation-at-query-layer.contract.spec.ts
 test/tenant-operator-surface-closure.contract.spec.ts
 test/tenant-workspace-widget-readings.contract.spec.ts
 test/testing-strategy.contract.spec.ts
+test/ui-chart-system.contract.spec.ts
 test/user-web-surface-completeness.contract.spec.ts
 test/wave-02-core-runtime-closure-invariants.contract.spec.ts
 test/wave10-telemetry-retention.contract.spec.ts

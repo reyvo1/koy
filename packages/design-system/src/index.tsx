@@ -95,7 +95,16 @@ export function StateNotice({
 }
 
 export { CameraPlayer } from './camera-player';
+export { GaugeDial, type GaugeDialProps, type GaugeTone } from './gauge-dial';
 export { GeoMap, type MapLocation } from './geo-map';
+export {
+  SeriesChart,
+  type ChartBand,
+  type ChartPoint,
+  type ChartSeries,
+  type SeriesChartProps,
+  type SeriesTone,
+} from './series-chart';
 
 export { ConfirmationDialog } from './confirmation-dialog';
 export { CapabilityValueInput } from './capability-value-input';

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { SeriesChart } from '@iot-platform/design-system';
 import { SuperPage } from '@/components/super-admin-shell';
 
 interface Bucket { start: string; end: string; count: number; min: number; max: number; avg: number; }
@@ -77,8 +78,13 @@ export default function SuperTelemetryPage() {
   };
 
   const selectedDevice = devices.find((device) => device.id === deviceId);
-  const w = 640, h = 240, pad = { t: 14, r: 14, b: 26, l: 44 };
-  const maxV = buckets.length ? Math.max(...buckets.map((bucket) => bucket.max), 1) : 1; const minV = buckets.length ? Math.min(...buckets.map((bucket) => bucket.min), 0) : 0; const range = maxV - minV || 1;
+  const chartSeries = useMemo(() => [{ key: capabilityKey || 'avg', label: capabilityKey || 'Rata-rata', points: buckets.map((bucket) => ({ at: bucket.start, value: bucket.avg })) }], [buckets, capabilityKey]);
+  const chartBand = useMemo(() => (buckets.length > 1
+    ? {
+        upper: buckets.map((bucket) => ({ at: bucket.start, value: bucket.max })),
+        lower: buckets.map((bucket) => ({ at: bucket.start, value: bucket.min })),
+      }
+    : undefined), [buckets]);
 
   return (
     <div className="space-y-5">
@@ -91,7 +97,9 @@ export default function SuperTelemetryPage() {
         {error ? <p role="alert" className="mb-4 rounded-xl border border-red-500/25 bg-red-500/5 px-4 py-2.5 text-[13px] text-red-300">{error}</p> : null}
         <h2 className="mb-3 text-[15px] font-bold text-white">Aggregate 24 jam</h2>
         {!deviceId ? <StateBox title="Belum ada perangkat pada platform" /> : !capabilityKey || !numericCapabilities.some((cap) => cap.key === capabilityKey) ? <StateBox title="Pilih capability numerik untuk grafik aggregate" detail={`${selectedDevice?.name ?? 'Perangkat'} dapat tetap dieksplor di tabel raw evidence di bawah.`} /> : loading ? <div className="h-[220px] animate-pulse rounded-xl bg-slate-800/40" /> : buckets.length === 0 ? <StateBox title="Belum ada aggregate telemetry pada 24 jam terakhir" /> : (
-          <div className="rounded-xl border border-slate-800/60 p-4"><svg width="100%" viewBox={`0 0 ${w} ${h}`} aria-label="Grafik telemetry platform"><defs><linearGradient id="tGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2dd4bf" stopOpacity=".35" /><stop offset="100%" stopColor="#2dd4bf" stopOpacity="0" /></linearGradient></defs>{(() => { const points = buckets.map((bucket, index) => ({ x: pad.l + (index / Math.max(buckets.length - 1, 1)) * (w - pad.l - pad.r), y: pad.t + (1 - (bucket.avg - minV) / range) * (h - pad.t - pad.b) })); const line = points.map((point, index) => `${index ? 'L' : 'M'}${point.x},${point.y}`).join(' '); return <><path d={`${line} L${points[points.length - 1].x},${h - pad.b} L${points[0].x},${h - pad.b} Z`} fill="url(#tGrad)" /><path d={line} fill="none" stroke="#2dd4bf" strokeWidth={2.5} /></>; })()}</svg></div>
+          <div className="rounded-xl border border-slate-800/60 p-4">
+            <SeriesChart ariaLabel={`Grafik aggregate telemetry ${capabilityKey}`} band={chartBand} series={chartSeries} />
+          </div>
         )}
       </SuperPage>
 

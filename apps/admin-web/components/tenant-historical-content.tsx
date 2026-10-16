@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import { SeriesChart } from '@iot-platform/design-system';
 
 interface DeviceRow {
   id: string;
@@ -161,6 +162,28 @@ export default function TenantHistoricalContent() {
     };
   }, [buckets]);
 
+  const chartPoints = useMemo(
+    () =>
+      buckets.flatMap((bucket) =>
+        typeof bucket.avg === 'number'
+          ? [{ at: bucket.start ?? '', value: bucket.avg }]
+          : [],
+      ),
+    [buckets],
+  );
+
+  const chartBand = useMemo(() => {
+    if (buckets.length < 2) return undefined;
+    const complete = buckets.every(
+      (bucket) => typeof bucket.min === 'number' && typeof bucket.max === 'number',
+    );
+    if (!complete) return undefined;
+    return {
+      upper: buckets.map((bucket) => ({ at: bucket.start ?? '', value: bucket.max as number })),
+      lower: buckets.map((bucket) => ({ at: bucket.start ?? '', value: bucket.min as number })),
+    };
+  }, [buckets]);
+
   const readingValue = (reading: Reading): string => {
     if (reading.value === null || reading.value === undefined) return '—';
     return `${String(reading.value)}${reading.unit ? ` ${reading.unit}` : ''}`;
@@ -223,6 +246,16 @@ export default function TenantHistoricalContent() {
           </div>
         ) : stats ? (
           <>
+            {chartPoints.length > 0 ? (
+              <div className="mb-5">
+                <SeriesChart
+                  ariaLabel="Grafik agregat historis"
+                  band={chartBand}
+                  height={200}
+                  series={[{ key: 'avg', label: 'Rata-rata', points: chartPoints }]}
+                />
+              </div>
+            ) : null}
             <div className="mb-5 grid grid-cols-3 gap-3">
               {[
                 ['Rata-rata', stats.avg.toFixed(1)],

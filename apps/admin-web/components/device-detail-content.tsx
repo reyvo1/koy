@@ -8,6 +8,7 @@
 
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
+import { SeriesChart } from '@iot-platform/design-system';
 import { CapabilityValueInput } from '@/components/capability-value-input';
 import { DeviceLocationEditor } from '@/components/device-location-editor';
 import DeviceSharePanel from '@/components/device-share-panel';
@@ -403,31 +404,17 @@ export default function DeviceDetailContent() {
           ) : buckets.length === 0 ? (
             <p className="py-8 text-center text-slate-500">Belum ada data telemetry numerik.</p>
           ) : (
-            <svg width="100%" viewBox="0 0 560 220">
-              <defs>
-                <linearGradient id="dtGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#2dd4bf" stopOpacity=".3" />
-                  <stop offset="100%" stopColor="#2dd4bf" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              {(() => {
-                const w = 560, h = 220, pad = { t: 14, r: 14, b: 24, l: 44 };
-                const maxV = Math.max(...buckets.map(b => b.avg), 1);
-                const minV = Math.min(...buckets.map(b => b.avg), 0);
-                const range = maxV - minV || 1;
-                const pts = buckets.map((b, i) => ({
-                  x: pad.l + (i / Math.max(buckets.length - 1, 1)) * (w - pad.l - pad.r),
-                  y: pad.t + (1 - (b.avg - minV) / range) * (h - pad.t - pad.b),
-                }));
-                const line = pts.map((p, i) => `${i ? 'L' : 'M'}${p.x},${p.y}`).join(' ');
-                return (
-                  <>
-                    <path d={`${line} L${pts[pts.length-1].x},${h-pad.b} L${pts[0].x},${h-pad.b} Z`} fill="url(#dtGrad)" />
-                    <path d={line} fill="none" stroke="#2dd4bf" strokeWidth={2.5} />
-                  </>
-                );
-              })()}
-            </svg>
+            <SeriesChart
+              ariaLabel="Grafik telemetry 24 jam"
+              height={220}
+              series={[
+                {
+                  key: 'avg',
+                  label: 'Rata-rata',
+                  points: buckets.map((bucket) => ({ at: bucket.start, value: bucket.avg })),
+                },
+              ]}
+            />
           )}
         </div>
       )}
