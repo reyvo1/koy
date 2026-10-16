@@ -596,7 +596,7 @@ c0fcedda9d03a39e8f7b5c55ac87ddb6253883db3765f0b78369c7ad46a01ae6  ./ops/emqx/htt
 b91163e2877cc7478f3d3cdec391656b83f2b995664e6fd583e130fb2fea64d7  ./ops/env/iot-platform.env.example
 4e08d0f82fda70c1925bf30c7e6a4d293e7f6976c115185de3dab45e0c7634d6  ./ops/env/rescue-local.env.example
 8e445049d21e42ca3fee304c49f393a1b24fccfa409488bb62ffaadb6838d5b6  ./ops/loadtest/README.md
-4789f1d85a32506ee187deb0e7f149911d3ca2f19d13efe52234b92dc6299179  ./ops/loadtest/k6/functions-stress.js
+70d35eaca032f2aa1629595f61ee356bc14a914261619fb930b361ac12929a7a  ./ops/loadtest/k6/functions-stress.js
 383c378d1cef5913d520c99cea8a042d97da39c6d48dc485d878dd31127c6b53  ./ops/loadtest/k6/lib/auth.js
 155111b912350b7567d31f7697e906a225064e69e4caa434ff33fd79d4665051  ./ops/loadtest/k6/lib/config.js
 45dc0c7fc98cabc10e99744f1e218801306e0d115bb26bd24c9ca396fb749ad5  ./ops/logrotate/README.md

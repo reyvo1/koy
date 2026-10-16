@@ -418,7 +418,9 @@ export function teardown(ctx) {
   }
 
   if (ctx.apiKey?.id) {
-    const response = http.del(`${origin}/admin/api-keys/${ctx.apiKey.id}`, {
+    // Signature is del(url, body, params): passing the headers object as the BODY would send the
+    // request unauthenticated and fail with 401 while looking like a revoked session.
+    const response = http.del(`${origin}/admin/api-keys/${ctx.apiKey.id}`, null, {
       headers: bearerHeaders(ctx.adminToken, { 'x-tenant-id': ctx.tenant }),
       tags: { class: 'teardown', name: 'delete api key' },
     });
