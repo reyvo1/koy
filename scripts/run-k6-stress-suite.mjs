@@ -111,7 +111,11 @@ console.log(`  functions:   ${budget.functions.length} declared\n`);
 
 const run = spawnSync(
   k6Bin,
-  ['run', `--summary-export=${summaryPath}`, SCRIPT],
+  // k6 v1.0 made `compact` the default end-of-test summary and the export follows that model,
+  // which emptied every metric this runner re-checks (the run passed k6's own thresholds while
+  // the file had no `metrics` object). `legacy` keeps the { metrics: { name: { values } } }
+  // contract this runner parses; migrate to handleSummary() before k6 v2 drops the mode.
+  ['run', `--summary-export=${summaryPath}`, '--summary-mode=legacy', SCRIPT],
   {
     cwd: root,
     encoding: 'utf8',

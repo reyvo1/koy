@@ -65,10 +65,10 @@ a806666cbf85171af1027b36a496a750a0c20b253f48e82583a9f25a436622e1  ./AI-Developme
 cab10a82cb5f2255ecdf99981067119041beb07ab6c1f1976e531d10db5fd724  ./AI-Development-Kit/templates/MODULE-STATUS-TEMPLATE.md
 68f8de30afc578e0ab20ac92ef560f3081a95d699d998621092f1f61c0d00791  ./AI-Development-Kit/workflows/AGENT-EXECUTION-LOOP.md
 78e5c067c68636d36a3289d001fd159176a7792b7e33af206463d7aaa93a0f7c  ./AI-Development-Kit/workflows/FAILURE-PROTOCOL.md
-752f8efd8c08de7807e1cfcd24f7936440b3832fefe671be87e4c22d5acf80cf  ./CURRENT-STATE.md
+6699e3d35c4ae7c89dec4d66c3f6cbddfb7baf5757fb0ec74059714926472ff7  ./CURRENT-STATE.md
 bd29d21f37c224e1d6b4af71e0025d8f4019b3914381248356add4266724f1b0  ./GATE-1-STATUS.md
-be197258264d9d583ab7e1b6b9594973151999bec5a877a29c82c923368c0406  ./PASTE-KE-CHAT-BERIKUTNYA.txt
-c2325e7d8215d28e18b02aab8f35222a95a678fb812de700b5e63f1d52a02dc0  ./PROJECT-HANDOFF.md
+4c450abede2408c73e94d249cf3df8bf3d843601ca81f3506a28bb2a5bf19964  ./PASTE-KE-CHAT-BERIKUTNYA.txt
+41002818eece179394c5d8b289c06db01b8765a2031f8e1b77e06c47edb7bd00  ./PROJECT-HANDOFF.md
 818d1504f9c83a672557cc3c45452c033f04098ce52f609be506b3bbe7dfe7d6  ./UI-DESIGN-SYSTEM.md
 c2482384a4f53220f51123f4fd6ae19151c47cb1a15dc2d49f9a8228beaaa964  ./apps/admin-web/.env.example
 63f2c50380ed6303237cce215ce27af1d620d094c215e28d1b1538a3c070e3bb  ./apps/admin-web/AGENTS.md
@@ -442,7 +442,7 @@ bead9f184b27083639c20803cac92b239a55bcea908cf442f5eed777f6b59df9  ./apps/user-we
 ccd2a17f28b9205adc19fbf05b2a9389dc24115b8ce40b6d958777af90bea7a1  ./apps/user-web/postcss.config.mjs
 7794f4a44d2c31c1f33e91477a00025f4e62687a88946b7c17f58f26257ef2e8  ./apps/user-web/public/icon.png
 38ee09e8ee48c7e75cab63bd076513018ca07b655295664d07c107e408606495  ./apps/user-web/tsconfig.json
-3eed419c4dbec9eccd471c42022a689e9c0ee47273d246143b904ea8f3a3c7df  ./chat-session.md
+c592fb8cae5d160e9cb1203f4527af3d9e00bbd16c648257d67b1ffd09dd6e17  ./chat-session.md
 08395048b09eab1f15b7264df8b76ae8b4e99634c0f516aa3ce775042bd1859e  ./config/performance-budget.json
 3f7f2db41062faaeea13fd74832ddcd6e9332a2b4063f13af8ff0cf3c60b030a  ./config/stress-budget.json
 57e9cc3083ac5d0b99e00ed9afa5f740d958130437c0d6a1b52d7ed89ad04fb5  ./docker-compose.rescue.yml
@@ -463,7 +463,7 @@ e609750984b6a528a218c343a0e3614403e010751dd1529cdc17da3d9148d2cf  ./docs/RESCUE-
 2fd52fea04918f5e778492de8879f074e594fb72c449993eef7b4ef3e8e33921  ./docs/ROADMAP-COMPLETE.md
 b7c50d5ecd0ef5538e96d0c7c2b40311e951e764d53f6f16f27f516f3eb1c911  ./docs/ROADMAP-SMART-HOTEL.md
 6149db8093c4f5835d3ee5bf7a76ae1f90c6fad4f00cdf96d00ddb491a087574  ./docs/SECRET-SCAN-POLICY.md
-31bb7f89b415db395aac58a0b0c5b179a1e1c0ed4926a3d07d6bdc54b8e79e6b  ./docs/SESSION-CHECKPOINT.md
+2b71e2763d2c8734a8f73dd5145db5fe9d866d79781277b64a7490a0895258c9  ./docs/SESSION-CHECKPOINT.md
 03d88ce7efa18d6b1381392e386db54b5f026a9e345f02e6299c07d6102d41bb  ./docs/SESSION-HANDOFF-PROTOCOL.md
 cc7efd6089313daacae59b9e676431d674b7b8e45702a812618728689fe7c16e  ./docs/STAGING-RUNBOOK.md
 1fc4adecc7abe855470936cef9ac09129d7b83a8926f1d8bddbfc244c1a5f2dd  ./docs/UAT-CHECKLIST.md
@@ -781,7 +781,7 @@ cc98d6a2d12790e6f404c374b1b37740ae811f7eb3484a770b2a09c09167dd8d  ./scripts/run-
 c7bb3687053c057e3080a52ffd9016014774edf1c554308ad44fbcf16315f9da  ./scripts/run-capability-template-probe.sh
 ad10681d5fe3397782ff779a270e93a92c451d4e8ec263a46a98fe3f43afe5fd  ./scripts/run-device-location-probe.sh
 4695983dca8e49b58e843810d7bdc40d6737f6333afcf3511c32bdc634b0af64  ./scripts/run-device-maintenance-probe.sh
-dae652ef1a52519c0d39a54710267fd8f97a5b16070d92f62e2c0efe3a844ea5  ./scripts/run-k6-stress-suite.mjs
+37cc7757fcd5af6b36f283cee6cd793d465b7fb5d0803ff9983f9c1795716922  ./scripts/run-k6-stress-suite.mjs
 57bc41ccdc1d68ec525f9a1e18da0c03131cead983692ce41800da49ddfe860c  ./scripts/run-load-gate.ts
 f3570f103ee0515ce6ad43e67c54c108671319db17359c0446088a7da670f5cc  ./scripts/run-media-probe.sh
 9587e102d685b51c4c3b73ff8b492d82098d56add6fb78e1cda07c5238d9eed2  ./scripts/run-mobile-notification-probe.sh
@@ -1325,7 +1325,7 @@ faa630682a585582ee1271d368eeebc68a0f5f671b6fe6f5228235764995f98f  ./test/jest-in
 e27389dfe4addbe71cb09c27948efad91909b0a081d592e69a81b897f0e2a613  ./test/jest-mobile-notification-integration.json
 5b2bc3aa95a4ab26871b3f8f2b3f2c9f8db28b61805f8535a21db04076d24a3d  ./test/jest-mqtt-integration.json
 9b1afab653827a7bb8e1ea9eebe97689e680eb7a80a4eedee28495f662982cb2  ./test/jest-mqtt-publisher-integration.json
-32bd0bfced6cdb81774cbaa1ee4b7572467c9939b1733be76d22957ee34ac9ae  ./test/k6-stress-suite.contract.spec.ts
+83fcded94e00e93a65dfc319cab33eea7cdd43ca1307c0b8a9beb6c20a170a5f  ./test/k6-stress-suite.contract.spec.ts
 85d78b1617d850371b535162ae88ff985c1720221908314ac6db1d7494e93e9f  ./test/local-console-login-regression.contract.spec.ts
 d3f57c4dcedcd04dabf73dd75ab22be2ed643f9630b4a38abfe33687e400f4ae  ./test/mobile-notification-parity.integration-spec.ts
 c35d447cd9ae5b3fdf1d92d5414be293c16f9e5ff4d2e73427e6c896d6a793be  ./test/module-09-completion-review.contract.spec.ts

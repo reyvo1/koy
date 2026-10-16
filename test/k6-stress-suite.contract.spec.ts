@@ -214,6 +214,7 @@ describe('k6 function stress suite (coverage, budgets, and a run that can fail)'
 
     it('re-checks k6\'s own numbers from the summary export', () => {
       expect(runner).toContain('--summary-export');
+      expect(runner).toContain('--summary-mode=legacy');
       expect(runner).toContain('iot_functions_');
       expect(runner).toContain('exceeds');
     });
