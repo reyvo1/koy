@@ -23,6 +23,7 @@ import {
   mobileMessages,
   type MobileLocale,
 } from '../localization/messages';
+import type { MobileOutboxSummary } from '../offline/mobile-command-outbox';
 import type { MobileAppearance } from '../settings/mobile-settings-store';
 import { mobileSessionClient } from '../session';
 import { MobileDashboardScreen } from './mobile-dashboard-screen';
@@ -55,6 +56,10 @@ interface MobileAuthenticatedShellProps {
     capabilityKey: string,
     value: unknown,
   ): Promise<{ commandId: string; status: string }>;
+  /** App owns the offline outbox, so the shell renders its summary and asks it to act. */
+  outbox: MobileOutboxSummary;
+  onFlushOutbox(): Promise<void>;
+  onDiscardFailed(): Promise<void>;
 }
 
 /**
@@ -87,6 +92,9 @@ export function MobileAuthenticatedShell({
   onRefreshDashboard,
   onSelectDashboard,
   onSendCommand,
+  outbox,
+  onFlushOutbox,
+  onDiscardFailed,
 }: MobileAuthenticatedShellProps) {
   // The locale drives every string below, so it is read from the device before the first render of
   // copy. Until it resolves the default is used, which is the same thing the store falls back to on
@@ -325,11 +333,14 @@ export function MobileAuthenticatedShell({
       >
         {tab === 'home' ? (
           <MobileDashboardScreen
-            locale={locale}
             isDark={isDark}
+            locale={locale}
+            onDiscardFailed={onDiscardFailed}
+            onFlushOutbox={onFlushOutbox}
             onRefresh={onRefreshDashboard}
             onSelectDashboard={onSelectDashboard}
             onSendCommand={onSendCommand}
+            outbox={outbox}
             state={dashboardState}
           />
         ) : null}

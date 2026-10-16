@@ -139,7 +139,11 @@ export function MobileDeviceDetailPanel({
     setCommandNotice('Command dikirim; state fisik tetap menunggu ACK/telemetry.');
     try {
       const result = await onSendCommand(deviceId, capabilityKey, value);
-      setCommandNotice(`Status command: ${result.status}. State perangkat tidak diasumsikan dari klik.`);
+      setCommandNotice(
+        result.status === 'QUEUED_OFFLINE'
+          ? 'Tidak ada koneksi. Perintah disimpan dan akan dikirim otomatis saat online.'
+          : `Status command: ${result.status}. State perangkat tidak diasumsikan dari klik.`,
+      );
       await onRefresh();
     } catch {
       setCommandNotice('Command gagal dikirim atau tidak diotorisasi backend.');

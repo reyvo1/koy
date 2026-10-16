@@ -187,7 +187,8 @@
     "test/user-web-surface-completeness.contract.spec.ts": "stable-contract",
     "test/backend-frontend-surface-census.contract.spec.ts": "stable-contract",
     "test/ui-chart-system.contract.spec.ts": "current-state",
-    "test/mobile-offline-first.contract.spec.ts": "current-state"
+    "test/mobile-offline-first.contract.spec.ts": "current-state",
+    "test/mobile-command-outbox.contract.spec.ts": "current-state"
   },
   "historicalStableDocumentOwners": {
     "test/module-10-activation.contract.spec.ts": [

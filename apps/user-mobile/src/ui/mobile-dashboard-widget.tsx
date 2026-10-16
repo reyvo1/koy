@@ -248,6 +248,8 @@ function commandFeedback(dashboardCopy: DashboardCopy, status: string): string {
     case 'SENT':
     case 'PENDING':
       return dashboardCopy.switchAwaitingAck;
+    case 'QUEUED_OFFLINE':
+      return dashboardCopy.switchQueuedOffline;
     default:
       return dashboardCopy.switchSent;
   }

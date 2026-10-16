@@ -107,7 +107,14 @@ export const mobileMessages = {
       switchRejected: 'Perangkat melaporkan command gagal. UI tidak mengubah status perangkat secara asumsi.',
       switchTimedOut: 'Command tidak mendapat ACK sebelum batas waktu. Status aktual tetap mengikuti telemetry.',
       switchAwaitingAck: 'Command masih menunggu ACK perangkat; UI tidak mengasumsikan status sudah berubah.',
+      switchQueuedOffline:
+        'Tidak ada koneksi. Perintah disimpan di perangkat dan akan dikirim otomatis saat online.',
       switchFailed: 'Perintah perangkat gagal dikirim.',
+      outboxPendingTitle: 'Perintah menunggu koneksi',
+      outboxPendingPrefix: 'Menunggu dikirim:',
+      outboxFailedPrefix: 'Gagal dikonfirmasi:',
+      outboxFlushAction: 'Kirim ulang sekarang',
+      outboxDiscardAction: 'Buang yang gagal',
       mapUnsupported:
         'Widget peta tetap fail-closed sampai kontrak lokasi disetujui.',
       invalidData: 'Data widget tidak dapat digunakan saat ini.',
@@ -247,7 +254,14 @@ export const mobileMessages = {
       switchRejected: 'The device reported that the command failed. The UI did not assume a new device state.',
       switchTimedOut: 'The command did not receive an ACK before timeout. Actual state still follows telemetry.',
       switchAwaitingAck: 'The command is still waiting for device ACK; the UI does not assume the state changed.',
+      switchQueuedOffline:
+        'No connection. The command is saved on the device and will be sent automatically when online.',
       switchFailed: 'The device command could not be sent.',
+      outboxPendingTitle: 'Commands waiting for connectivity',
+      outboxPendingPrefix: 'Waiting to send:',
+      outboxFailedPrefix: 'Failed to confirm:',
+      outboxFlushAction: 'Retry now',
+      outboxDiscardAction: 'Discard failed',
       mapUnsupported:
         'Map widgets remain fail-closed until the location contract is approved.',
       invalidData: 'Widget data cannot be used right now.',

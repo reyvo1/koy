@@ -1,4 +1,7 @@
-import * as SQLite from 'expo-sqlite';
+import {
+  OFFLINE_SNAPSHOT_TABLE,
+  openMobileOfflineDatabase,
+} from './expo-sqlite-database';
 
 import {
   createMobileSnapshotCache,
@@ -8,67 +11,46 @@ import {
 /**
  * The Expo-backed snapshot cache port.
  *
- * Exactly one module in this folder imports `expo-sqlite`, mirroring the secure-store pattern: the
- * bounded store logic stays plain node code, and the native module stays out of every component
- * that only wants to read a cached dashboard.
+ * The shared database module is the only expo-sqlite importer; this adapter only translates the
+ * bounded store's reads and writes into one table, mirroring the secure-store pattern.
  */
-export const OFFLINE_CACHE_DATABASE = 'iot-platform.offline-snapshots.v1.db';
-export const OFFLINE_CACHE_TABLE = 'mobile_snapshots';
-
-let databasePromise: Promise<SQLite.SQLiteDatabase> | null = null;
-
-async function database(): Promise<SQLite.SQLiteDatabase> {
-  databasePromise ??= SQLite.openDatabaseAsync(OFFLINE_CACHE_DATABASE).then(
-    async (opened) => {
-      await opened.execAsync(
-        `CREATE TABLE IF NOT EXISTS ${OFFLINE_CACHE_TABLE} (` +
-          'cache_key TEXT PRIMARY KEY NOT NULL, ' +
-          'payload TEXT NOT NULL, ' +
-          'cached_at TEXT NOT NULL);',
-      );
-      return opened;
-    },
-  );
-  return databasePromise;
-}
-
 const port: MobileSnapshotCachePort = {
   async read(key) {
     const row = await (
-      await database()
+      await openMobileOfflineDatabase()
     ).getFirstAsync<{ cached_at: string; payload: string }>(
-      `SELECT payload, cached_at FROM ${OFFLINE_CACHE_TABLE} WHERE cache_key = ?`,
+      `SELECT payload, cached_at FROM ${OFFLINE_SNAPSHOT_TABLE} WHERE cache_key = ?`,
       key,
     );
     return row ? { cachedAt: row.cached_at, key, payload: row.payload } : null;
   },
   async readIndex() {
     const rows = await (
-      await database()
+      await openMobileOfflineDatabase()
     ).getAllAsync<{ cached_at: string; cache_key: string }>(
-      `SELECT cache_key, cached_at FROM ${OFFLINE_CACHE_TABLE}`,
+      `SELECT cache_key, cached_at FROM ${OFFLINE_SNAPSHOT_TABLE}`,
     );
     return rows.map((row) => ({ cachedAt: row.cached_at, key: row.cache_key }));
   },
   async remove(keys) {
-    const opened = await database();
+    const opened = await openMobileOfflineDatabase();
     for (const key of keys) {
       await opened.runAsync(
-        `DELETE FROM ${OFFLINE_CACHE_TABLE} WHERE cache_key = ?`,
+        `DELETE FROM ${OFFLINE_SNAPSHOT_TABLE} WHERE cache_key = ?`,
         key,
       );
     }
   },
   async removeAll() {
     await (
-      await database()
-    ).runAsync(`DELETE FROM ${OFFLINE_CACHE_TABLE}`);
+      await openMobileOfflineDatabase()
+    ).runAsync(`DELETE FROM ${OFFLINE_SNAPSHOT_TABLE}`);
   },
   async upsert(snapshot) {
     await (
-      await database()
+      await openMobileOfflineDatabase()
     ).runAsync(
-      `INSERT OR REPLACE INTO ${OFFLINE_CACHE_TABLE} (cache_key, payload, cached_at) VALUES (?, ?, ?)`,
+      `INSERT OR REPLACE INTO ${OFFLINE_SNAPSHOT_TABLE} (cache_key, payload, cached_at) VALUES (?, ?, ?)`,
       snapshot.key,
       snapshot.payload,
       snapshot.cachedAt,

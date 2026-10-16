@@ -24,7 +24,10 @@ describe('mobile offline-first contract', () => {
   });
 
   it('keeps the sqlite native import in exactly one module', () => {
-    expect(sqlitePort).toContain("from 'expo-sqlite'");
+    const database = read('apps/user-mobile/src/offline/expo-sqlite-database.ts');
+    expect(database).toContain("from 'expo-sqlite'");
+    expect(sqlitePort).toContain("from './expo-sqlite-database'");
+    expect(sqlitePort).not.toContain("from 'expo-sqlite'");
     expect(store).not.toContain('expo-sqlite');
     expect(bridge).not.toContain('expo-sqlite');
   });

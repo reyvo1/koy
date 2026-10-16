@@ -3607,6 +3607,10 @@ const NON_RESPONSE_FIELD_NAMES = new Set([
   // offline unit spec and mobile-offline-first.contract.spec.ts pin it, which is what
   // distinguishes it from the unproduced fields this check exists to catch.
   'cachedAt',
+  // Local queue timestamps. `enqueuedAt` and `lastAttemptAt` are stamped by the phone's offline
+  // command outbox and never cross the wire as response fields; mobile-command-outbox.spec.ts pins
+  // both, and the entry itself exists only between enqueue and replay or discard.
+  'enqueuedAt', 'lastAttemptAt',
 ]);
 
 function backendCorpus() {

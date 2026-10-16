@@ -7,6 +7,7 @@ import type {
   MobileDashboardState,
   MobileResolvedWidget,
 } from '../dashboard';
+import type { MobileOutboxSummary } from '../offline/mobile-command-outbox';
 import { MobileDashboardWidgetCard, type DashboardCopy } from './mobile-dashboard-widget';
 import { MobileStateNotice } from './mobile-state-notice';
 
@@ -14,6 +15,7 @@ interface MobileDashboardScreenProps {
   isDark: boolean;
   locale: MobileLocale;
   state: MobileDashboardState;
+  outbox: MobileOutboxSummary;
   onRefresh(selectedDashboardId: string | null): Promise<void>;
   onSelectDashboard(dashboardId: string): Promise<void>;
   onSendCommand(
@@ -21,15 +23,20 @@ interface MobileDashboardScreenProps {
     capabilityKey: string,
     value: boolean,
   ): Promise<{ commandId: string; status: string }>;
+  onFlushOutbox(): Promise<void>;
+  onDiscardFailed(): Promise<void>;
 }
 
 export function MobileDashboardScreen({
   locale,
   isDark,
   state,
+  outbox,
   onRefresh,
   onSelectDashboard,
   onSendCommand,
+  onFlushOutbox,
+  onDiscardFailed,
 }: MobileDashboardScreenProps) {
   const copy = mobileMessages[locale].dashboard;
 
@@ -63,6 +70,13 @@ export function MobileDashboardScreen({
           description={copy.unavailableDescription}
         />
         <MobileStateNotice isDark={isDark} notice={state.notice} />
+        <OutboxBanner
+          copy={copy}
+          isDark={isDark}
+          outbox={outbox}
+          onDiscardFailed={onDiscardFailed}
+          onFlushOutbox={onFlushOutbox}
+        />
         <ActionButton
           isDark={isDark}
           label={copy.retryAction}
@@ -98,6 +112,14 @@ export function MobileDashboardScreen({
         />
       ) : null}
 
+      <OutboxBanner
+        copy={copy}
+        isDark={isDark}
+        outbox={outbox}
+        onDiscardFailed={onDiscardFailed}
+        onFlushOutbox={onFlushOutbox}
+      />
+
       <DashboardSelector
         copy={copy}
         experience={experience}
@@ -128,6 +150,52 @@ export function MobileDashboardScreen({
         label={copy.refreshAction}
         onPress={() => onRefresh(experience.selectedDashboardId)}
       />
+    </View>
+  );
+}
+
+function OutboxBanner({
+  copy,
+  isDark,
+  outbox,
+  onFlushOutbox,
+  onDiscardFailed,
+}: {
+  copy: DashboardCopy;
+  isDark: boolean;
+  outbox: MobileOutboxSummary;
+  onFlushOutbox(): Promise<void>;
+  onDiscardFailed(): Promise<void>;
+}) {
+  if (outbox.pending === 0 && outbox.failed === 0) return null;
+
+  const parts: string[] = [];
+  if (outbox.pending > 0) parts.push(`${copy.outboxPendingPrefix} ${outbox.pending}`);
+  if (outbox.failed > 0) parts.push(`${copy.outboxFailedPrefix} ${outbox.failed}`);
+
+  return (
+    <View>
+      <MobileStateNotice
+        isDark={isDark}
+        notice={{
+          tone: 'offline',
+          title: copy.outboxPendingTitle,
+          message: parts.join(' · '),
+          requestId: null,
+        }}
+      />
+      <ActionButton
+        isDark={isDark}
+        label={copy.outboxFlushAction}
+        onPress={onFlushOutbox}
+      />
+      {outbox.failed > 0 ? (
+        <ActionButton
+          isDark={isDark}
+          label={copy.outboxDiscardAction}
+          onPress={onDiscardFailed}
+        />
+      ) : null}
     </View>
   );
 }

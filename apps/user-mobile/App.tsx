@@ -24,6 +24,12 @@ import {
 } from './src/settings/mobile-settings-store';
 import { mobileSettingsStore } from './src/settings/expo-secure-settings-store';
 import { mobileSnapshotCache } from './src/offline/expo-sqlite-snapshot-cache';
+import { mobileCommandOutboxStore } from './src/offline/expo-sqlite-outbox-store';
+import type { MobileOutboxSummary } from './src/offline/mobile-command-outbox';
+import {
+  connectMobileCommandOutbox,
+  isMobileOfflineError,
+} from './src/offline/mobile-offline-commands';
 import {
   connectMobileOfflineDashboard,
   shouldServeCachedDashboard,
@@ -71,6 +77,28 @@ export default function App() {
       }),
     [],
   );
+  // Same origin rule as the snapshot cache: a build pointed at a second server replays its commands
+  // against that server only, never the first one.
+  const offlineOutbox = useMemo(
+    () =>
+      connectMobileCommandOutbox({
+        apiOrigin: mobileSessionClient.origin,
+        store: mobileCommandOutboxStore,
+        send: (entry) =>
+          sendCapabilityCommand(
+            mobileSessionClient,
+            entry.deviceId,
+            entry.capabilityKey,
+            entry.value,
+            entry.idempotencyKey,
+          ),
+      }),
+    [],
+  );
+  const [outboxSummary, setOutboxSummary] = useState<MobileOutboxSummary>({
+    failed: 0,
+    pending: 0,
+  });
 
   useEffect(() => {
     let active = true;
@@ -154,6 +182,7 @@ export default function App() {
 
     let active = true;
     setDashboardState({ kind: 'loading', selectedDashboardId: null });
+    void refreshOutboxSummary(authenticatedTenantId);
 
     void loadMobileDashboardState(mobileSessionClient, null).then(
       (nextState) => {
@@ -174,9 +203,12 @@ export default function App() {
   async function logout(tenantId: string) {
     setState({ kind: 'logging-out', tenantId });
     setDashboardState({ kind: 'idle' });
-    // The cached snapshot belongs to the session that is ending; a shared phone must not offer the
-    // previous operator's dashboard to the next one.
+    // The cached snapshot and the pending command queue belong to the session that is ending; a
+    // shared phone must neither offer the previous operator's dashboard nor replay their commands
+    // under the next operator's session.
     void offlineDashboard.forget();
+    void offlineOutbox.forget();
+    setOutboxSummary({ failed: 0, pending: 0 });
     setState(await logoutMobileAuth(mobileSessionClient));
   }
 
@@ -223,7 +255,45 @@ export default function App() {
 
     if (authenticatedTenantId) {
       void offlineDashboard.remember(authenticatedTenantId, nextState);
+      // A network answer proves connectivity is back, which is the only trigger the queue trusts:
+      // a pass that sends something refreshes the dashboard so the UI shows acknowledged work
+      // rather than the pre-queue state.
+      if (nextState.kind === 'ready' || nextState.kind === 'empty') {
+        void flushOutbox(authenticatedTenantId, selectedDashboardId);
+      }
     }
+  }
+
+  async function refreshOutboxSummary(tenantId: string) {
+    setOutboxSummary(await offlineOutbox.summary(tenantId));
+  }
+
+  async function flushOutbox(
+    tenantId: string,
+    selectedDashboardId: string | null,
+  ) {
+    const sent = await offlineOutbox.flush(tenantId);
+    await refreshOutboxSummary(tenantId);
+    // Loading after a successful flush settles back into this function with an empty queue, so the
+    // refresh cannot loop.
+    if (sent > 0) await loadDashboard(selectedDashboardId);
+  }
+
+  async function flushOutboxNow() {
+    if (!authenticatedTenantId) return;
+    const selectedDashboardId =
+      dashboardState.kind === 'ready' || dashboardState.kind === 'empty'
+        ? dashboardState.experience.selectedDashboardId
+        : null;
+    const sent = await offlineOutbox.retryFailed(authenticatedTenantId);
+    await refreshOutboxSummary(authenticatedTenantId);
+    if (sent > 0) await loadDashboard(selectedDashboardId);
+  }
+
+  async function discardFailedCommands() {
+    if (!authenticatedTenantId) return;
+    await offlineOutbox.discardFailed(authenticatedTenantId);
+    await refreshOutboxSummary(authenticatedTenantId);
   }
 
   async function sendDashboardCommand(
@@ -231,12 +301,28 @@ export default function App() {
     capabilityKey: string,
     value: unknown,
   ) {
-    const accepted = await sendCapabilityCommand(
-      mobileSessionClient,
-      deviceId,
-      capabilityKey,
-      value,
-    );
+    let accepted: { commandId: string; status: string };
+    try {
+      accepted = await sendCapabilityCommand(
+        mobileSessionClient,
+        deviceId,
+        capabilityKey,
+        value,
+      );
+    } catch (cause) {
+      // Only an unreachable API queues: any other failure is a server verdict the operator must
+      // see. A queued command reuses its stored idempotency key on every replay, so a response
+      // lost in flight cannot execute twice.
+      if (!authenticatedTenantId || !isMobileOfflineError(cause)) throw cause;
+      const queued = await offlineOutbox.enqueue(authenticatedTenantId, {
+        capabilityKey,
+        deviceId,
+        value,
+      });
+      if (!queued.ok) throw cause;
+      void refreshOutboxSummary(authenticatedTenantId);
+      return { commandId: queued.entry.id, status: 'QUEUED_OFFLINE' };
+    }
 
     if (!accepted.commandId) return accepted;
 
@@ -318,6 +404,9 @@ export default function App() {
           settingsError={settingsError}
           storageUnavailable={storageUnavailable}
           onSendCommand={sendDashboardCommand}
+          onDiscardFailed={discardFailedCommands}
+          onFlushOutbox={flushOutboxNow}
+          outbox={outboxSummary}
           pending={state.kind === 'logging-out'}
           tenantId={state.tenantId}
         />

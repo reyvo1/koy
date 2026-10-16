@@ -224,6 +224,7 @@ export async function sendCapabilityCommand(
   deviceId: string,
   capabilityKey: string,
   value: unknown,
+  idempotencyKey?: string,
 ): Promise<{ commandId: string; status: string }> {
   if (!/^[a-zA-Z0-9._:-]{1,128}$/.test(capabilityKey)) {
     throw new MobileApiError(
@@ -244,7 +245,9 @@ export async function sendCapabilityCommand(
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         payload: { [capabilityKey]: value },
-        idempotencyKey: `mobile-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+        idempotencyKey:
+          idempotencyKey ??
+          `mobile-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
       }),
     });
 
