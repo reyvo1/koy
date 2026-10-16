@@ -115,6 +115,11 @@ export function setup() {
     profileName: 'k6 Stress Operator',
   };
 
+  // The aggregation endpoint demands a complete canonical window (capability, from, to, bucket);
+  // the window is fixed at setup time -- one hour ending now -- so the run itself only reads it.
+  ctx.aggregateFrom = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  ctx.aggregateTo = new Date(Date.now()).toISOString();
+
   // TenantContextGuard refuses a valid session without the tenant header, so every setup read
   // carries the same identity the run will use.
   const adminHeaders = { 'x-tenant-id': admin.tenant };
@@ -353,11 +358,35 @@ function runSingle(fn, ctx) {
     headers: headersFor(fn, ctx),
     tags: { class: fn.class, name: fn.name, role: fn.role },
   };
+
+  // Optimistic-concurrency routes cannot be called blind: activate/deactivate demand the revision
+  // read a moment earlier, and a bodyless POST declaring JSON would be refused by the body parser
+  // before the handler ever saw it. The revision is read, then the flip carries it.
+  if (fn.flip) {
+    runFlip(fn, ctx, url, params);
+    return;
+  }
+
   if (fn.body) params.body = buildBody(fn.body, ctx);
 
   const response =
     fn.method === 'GET' ? http.get(url, params) : http.request(fn.method, url, params.body, params);
   observe(fn, response);
+}
+
+function runFlip(fn, ctx, url, params) {
+  const detailPath = fn.path.slice(0, -(fn.flip.length + 1));
+  const detail = http.get(buildUrl(origin, detailPath, undefined, ctx), {
+    headers: params.headers,
+    tags: { class: fn.class, name: `${fn.name}: revision read`, role: fn.role },
+  });
+  const revision = Number(safeJson(detail)?.revision);
+  if (detail.status < 200 || detail.status >= 300 || !Number.isInteger(revision) || revision < 1) {
+    check(detail, { [`${fn.name} answered 2xx`]: () => false });
+    return;
+  }
+  params.body = JSON.stringify({ expectedRevision: revision });
+  observe(fn, http.request(fn.method, url, params.body, params));
 }
 
 function runSequence(fn, ctx) {
@@ -369,7 +398,13 @@ function runSequence(fn, ctx) {
   for (const step of fn.sequence) {
     const url = buildUrl(origin, step.path, undefined, local);
     const params = {
-      headers: bearerHeaders(ctx.adminToken, Object.assign({ 'x-tenant-id': ctx.tenant }, JSON_HEADERS)),
+      // Content-Type describes the body actually sent: Fastify parses any request that declares
+      // `application/json`, and a bodyless DELETE declaring it is refused as an empty JSON body
+      // before the handler runs. Only steps with a body advertise JSON.
+      headers: bearerHeaders(
+        ctx.adminToken,
+        Object.assign({ 'x-tenant-id': ctx.tenant }, step.body ? JSON_HEADERS : {}),
+      ),
       tags: { class: fn.class, name: `${fn.name}: ${step.method} ${step.path}`, role: fn.role },
     };
     if (step.body) params.body = buildBody(step.body, local);
@@ -432,11 +467,32 @@ export function teardown(ctx) {
   }
 
   if (ctx.automationId) {
-    const action = ctx.automationOriginallyActive ? 'activate' : 'deactivate';
-    http.post(`${origin}/automations/${ctx.automationId}/${action}`, null, {
-      headers: bearerHeaders(ctx.adminToken, { 'x-tenant-id': ctx.tenant }),
-      tags: { class: 'teardown', name: `restore automation ${action}` },
+    // Restoring the original activation is optimistic-concurrency work too: the live revision is
+    // read first and the flip carries it, or a bodyless POST would be refused as empty JSON.
+    const headers = bearerHeaders(
+      ctx.adminToken,
+      Object.assign({ 'x-tenant-id': ctx.tenant }, JSON_HEADERS),
+    );
+    const detail = http.get(`${origin}/automations/${ctx.automationId}`, {
+      headers,
+      tags: { class: 'teardown', name: 'automation revision read' },
     });
+    const revision = Number(safeJson(detail)?.revision);
+    if (detail.status >= 200 && detail.status < 300 && Number.isInteger(revision) && revision >= 1) {
+      const action = ctx.automationOriginallyActive ? 'activate' : 'deactivate';
+      const response = http.post(
+        `${origin}/automations/${ctx.automationId}/${action}`,
+        JSON.stringify({ expectedRevision: revision }),
+        { headers, tags: { class: 'teardown', name: `restore automation ${action}` } },
+      );
+      if (response.status >= 300) {
+        console.error(
+          `teardown: could not restore the automation to its original activation state (HTTP ${response.status})`,
+        );
+      }
+    } else {
+      console.error(`teardown: could not read the automation revision (HTTP ${detail.status})`);
+    }
   }
 
   for (const [label, session] of [

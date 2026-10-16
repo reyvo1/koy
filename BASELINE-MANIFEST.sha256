@@ -65,10 +65,10 @@ a806666cbf85171af1027b36a496a750a0c20b253f48e82583a9f25a436622e1  ./AI-Developme
 cab10a82cb5f2255ecdf99981067119041beb07ab6c1f1976e531d10db5fd724  ./AI-Development-Kit/templates/MODULE-STATUS-TEMPLATE.md
 68f8de30afc578e0ab20ac92ef560f3081a95d699d998621092f1f61c0d00791  ./AI-Development-Kit/workflows/AGENT-EXECUTION-LOOP.md
 78e5c067c68636d36a3289d001fd159176a7792b7e33af206463d7aaa93a0f7c  ./AI-Development-Kit/workflows/FAILURE-PROTOCOL.md
-4c8f43e058c7982aac7e9f24d976db84333fcb3ef98b2b8bbb625f5780712fbf  ./CURRENT-STATE.md
+c06726cc2754696b85143bd523d475875b6a7e8594222857aa25dc0c4763b2e5  ./CURRENT-STATE.md
 bd29d21f37c224e1d6b4af71e0025d8f4019b3914381248356add4266724f1b0  ./GATE-1-STATUS.md
-dea326a4e307dffd0125bf9d296b6cbd9ff829b656553ea6b732dbbed98b7a22  ./PASTE-KE-CHAT-BERIKUTNYA.txt
-79710fb83edc7cfa8da975f5a5f5fcdc65741c1b812434899ba8dd8e1e9b6441  ./PROJECT-HANDOFF.md
+84ce382eca6340e37c10f4d4059a5616c61a716e3b0b2cac48f32a4f833871bb  ./PASTE-KE-CHAT-BERIKUTNYA.txt
+bf40d1b2734c2a9b30b7f76bcc6fa0ba9d7782f47895fd32468122dd41ba3c83  ./PROJECT-HANDOFF.md
 818d1504f9c83a672557cc3c45452c033f04098ce52f609be506b3bbe7dfe7d6  ./UI-DESIGN-SYSTEM.md
 c2482384a4f53220f51123f4fd6ae19151c47cb1a15dc2d49f9a8228beaaa964  ./apps/admin-web/.env.example
 63f2c50380ed6303237cce215ce27af1d620d094c215e28d1b1538a3c070e3bb  ./apps/admin-web/AGENTS.md
@@ -442,9 +442,9 @@ bead9f184b27083639c20803cac92b239a55bcea908cf442f5eed777f6b59df9  ./apps/user-we
 ccd2a17f28b9205adc19fbf05b2a9389dc24115b8ce40b6d958777af90bea7a1  ./apps/user-web/postcss.config.mjs
 7794f4a44d2c31c1f33e91477a00025f4e62687a88946b7c17f58f26257ef2e8  ./apps/user-web/public/icon.png
 38ee09e8ee48c7e75cab63bd076513018ca07b655295664d07c107e408606495  ./apps/user-web/tsconfig.json
-99dcf4968564498c09c05d3edc852c2ab053090834ec909754227395d133b23b  ./chat-session.md
+4ef8231d741702a68ee3fe3ffdb7286ad42a3944aaf4fa4d5571d561aea5fb26  ./chat-session.md
 08395048b09eab1f15b7264df8b76ae8b4e99634c0f516aa3ce775042bd1859e  ./config/performance-budget.json
-904d59c81275e1201beafb19d9f9dd0981259e284642a5039d670b2f55483897  ./config/stress-budget.json
+3f7f2db41062faaeea13fd74832ddcd6e9332a2b4063f13af8ff0cf3c60b030a  ./config/stress-budget.json
 57e9cc3083ac5d0b99e00ed9afa5f740d958130437c0d6a1b52d7ed89ad04fb5  ./docker-compose.rescue.yml
 12b78207cb3ce4d59fefc85abb8fb5fe7412c497252d1b0bc61a189996b84f30  ./docker-compose.yml
 2836bc3494223f4afcff9ed62d0262c81d9f0513ea98164f9870ba02829b2013  ./docs/BACKEND-FRONTEND-SURFACE-CENSUS.md
@@ -463,7 +463,7 @@ e609750984b6a528a218c343a0e3614403e010751dd1529cdc17da3d9148d2cf  ./docs/RESCUE-
 2fd52fea04918f5e778492de8879f074e594fb72c449993eef7b4ef3e8e33921  ./docs/ROADMAP-COMPLETE.md
 b7c50d5ecd0ef5538e96d0c7c2b40311e951e764d53f6f16f27f516f3eb1c911  ./docs/ROADMAP-SMART-HOTEL.md
 6149db8093c4f5835d3ee5bf7a76ae1f90c6fad4f00cdf96d00ddb491a087574  ./docs/SECRET-SCAN-POLICY.md
-93eddaeb1f3510bb0fff7ce794215ebdee498c68a044db4c62a21b313217b501  ./docs/SESSION-CHECKPOINT.md
+b268a21d28785302e2e37c50caffd1ac8e2955b54179e4fdec1db427ac957931  ./docs/SESSION-CHECKPOINT.md
 03d88ce7efa18d6b1381392e386db54b5f026a9e345f02e6299c07d6102d41bb  ./docs/SESSION-HANDOFF-PROTOCOL.md
 cc7efd6089313daacae59b9e676431d674b7b8e45702a812618728689fe7c16e  ./docs/STAGING-RUNBOOK.md
 1fc4adecc7abe855470936cef9ac09129d7b83a8926f1d8bddbfc244c1a5f2dd  ./docs/UAT-CHECKLIST.md
@@ -596,7 +596,7 @@ c0fcedda9d03a39e8f7b5c55ac87ddb6253883db3765f0b78369c7ad46a01ae6  ./ops/emqx/htt
 b91163e2877cc7478f3d3cdec391656b83f2b995664e6fd583e130fb2fea64d7  ./ops/env/iot-platform.env.example
 4e08d0f82fda70c1925bf30c7e6a4d293e7f6976c115185de3dab45e0c7634d6  ./ops/env/rescue-local.env.example
 8e445049d21e42ca3fee304c49f393a1b24fccfa409488bb62ffaadb6838d5b6  ./ops/loadtest/README.md
-70d35eaca032f2aa1629595f61ee356bc14a914261619fb930b361ac12929a7a  ./ops/loadtest/k6/functions-stress.js
+f78d98c4c165992c102e3b2a606a9e07f20cbb88e48dd68ee268d15f1bd72327  ./ops/loadtest/k6/functions-stress.js
 383c378d1cef5913d520c99cea8a042d97da39c6d48dc485d878dd31127c6b53  ./ops/loadtest/k6/lib/auth.js
 155111b912350b7567d31f7697e906a225064e69e4caa434ff33fd79d4665051  ./ops/loadtest/k6/lib/config.js
 45dc0c7fc98cabc10e99744f1e218801306e0d115bb26bd24c9ca396fb749ad5  ./ops/logrotate/README.md
@@ -803,7 +803,7 @@ d019bdee14197e09eddfd77e5aff1d920742c2339547a24641f047679f8d8341  ./scripts/run-
 820a0f7f47de7aace3c223da0104855759ee3c44a90efc63f117f606b9afd376  ./scripts/run-wave9-simulated-hardware-probes.sh
 b499e0dd8d5b78193db1ea5738632fb3215565e91a49c57346c9135514ba6985  ./scripts/seed-demo-accounts-for-browser.sh
 ef5d7ed6e9d79c9cecf4247b99b4f8e8ba383a2e702e472b80fcc12d416fadf9  ./scripts/seed-demo-accounts.mjs
-5b50ca3989308d7535a0da9a74dc903514d94b54d9e5c66d2d2b7bbaca7b0ae7  ./scripts/seed-stress-baseline.mjs
+3c5275b944768e7444fdab1b1c0376b5a0f80a5453482aaa8c924e5a39d1c98a  ./scripts/seed-stress-baseline.mjs
 a11d340862aeab5ccd1a73b2971f2c8dec0be5d5d2a15b6e9c826499c3778800  ./scripts/seed-uat-baseline.mjs
 43ebfe345db86e082e7151b82ea3c2f303ef5bba4b2e777c60804714c00d714a  ./scripts/self-test-baseline-hygiene.mjs
 3e91861ee92d8051d85e12fd24c991bb77c612e1974042f2dae4f6f937d54f27  ./scripts/self-test-baseline-manifest.mjs

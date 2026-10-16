@@ -51,6 +51,7 @@ const IDS = {
   memberMembership: '77777777-7777-4777-8777-0000000000d1',
   device: '77777777-7777-4777-8777-0000000000e1',
   capability: '77777777-7777-4777-8777-0000000000f1',
+  capabilityNumeric: '77777777-7777-4777-8777-0000000000f2',
   dashboard: '77777777-7777-4777-8777-000000000101',
   layout: '77777777-7777-4777-8777-000000000102',
   widget: '77777777-7777-4777-8777-000000000103',
@@ -215,6 +216,25 @@ async function main() {
       dataType: 'boolean',
       isReadable: true,
       isWritable: true,
+      isReportable: true,
+    },
+  });
+
+  // A numeric sibling: the aggregation endpoint refuses boolean capabilities (the Wave 1 lesson
+  // again), so the numeric capability is what the k6 window query reads. Empty buckets are a
+  // valid answer; the surface under test is the query contract itself.
+  await prisma.capability.upsert({
+    where: { id: IDS.capabilityNumeric },
+    update: {},
+    create: {
+      id: IDS.capabilityNumeric,
+      deviceId: IDS.device,
+      key: 'power_consumption',
+      semanticType: 'power',
+      dataType: 'number',
+      unit: 'W',
+      isReadable: true,
+      isWritable: false,
       isReportable: true,
     },
   });

@@ -286,7 +286,10 @@
         "deviceId"
       ],
       "query": {
-        "capability": "power"
+        "capability": "power_consumption",
+        "from": ":aggregateFrom",
+        "to": ":aggregateTo",
+        "bucket": "15m"
       }
     },
     {
