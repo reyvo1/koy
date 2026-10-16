@@ -86,6 +86,18 @@ export function MobileDashboardScreen({
         description={copy.readyDescription}
       />
 
+      {state.cachedAt ? (
+        <MobileStateNotice
+          isDark={isDark}
+          notice={{
+            tone: 'offline',
+            title: copy.offlineCachedTitle,
+            message: `${copy.offlineCachedPrefix} ${formatCachedAt(state.cachedAt)}`,
+            requestId: null,
+          }}
+        />
+      ) : null}
+
       <DashboardSelector
         copy={copy}
         experience={experience}
@@ -323,6 +335,16 @@ function ActionButton({
       </Text>
     </Pressable>
   );
+}
+
+function formatCachedAt(value: string): string {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat('id-ID', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+      }).format(date);
 }
 
 const styles = StyleSheet.create({

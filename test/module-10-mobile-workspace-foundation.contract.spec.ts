@@ -105,6 +105,7 @@ describe('Module 10 Slice 10.11 Mobile Workspace Foundation', () => {
       'expo-dev-client': '57.0.7',
       'expo-secure-store': '~57.0.1',
       'expo-splash-screen': '~57.0.10',
+      'expo-sqlite': '~57.0.4',
       'expo-system-ui': '~57.0.1',
       react: '19.2.3',
       'react-native': '0.86.0',

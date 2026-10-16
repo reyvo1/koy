@@ -3602,6 +3602,11 @@ const NON_RESPONSE_FIELD_NAMES = new Set([
   // Device-local display settings. `locale` and `appearance` are read from the phone's own secure
   // storage and never cross the wire, so no backend property of those names exists or should.
   'locale', 'appearance',
+  // The offline snapshot timestamp. `cachedAt` is stamped by the phone when it stores a validated
+  // dashboard response and is never produced by the backend; the banner renders it and both the
+  // offline unit spec and mobile-offline-first.contract.spec.ts pin it, which is what
+  // distinguishes it from the unproduced fields this check exists to catch.
+  'cachedAt',
 ]);
 
 function backendCorpus() {

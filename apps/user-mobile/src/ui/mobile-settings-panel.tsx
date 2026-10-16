@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { MOBILE_LOCALES, mobileMessages, type MobileLocale } from '../localization/messages';
 import type { MobileAppearance } from '../settings/mobile-settings-store';
-import { mobilePalette, type MobilePalette } from './mobile-theme';
+import { mobilePalette, type MobileThemeTokens } from './mobile-theme';
 
 /**
  * The display-settings half of the profile screen.
@@ -138,7 +138,7 @@ export function MobileSettingsPanel({
   );
 }
 
-function createStyles(palette: MobilePalette) {
+function createStyles(palette: MobileThemeTokens) {
   return StyleSheet.create({
     gap: { gap: 12 },
     card: {

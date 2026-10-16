@@ -6,7 +6,7 @@
  * custom properties. Every surface takes its colors from here so light and
  * dark mode stay one code path instead of parallel `xDark` style objects.
  */
-export interface MobilePalette {
+export interface MobileThemeTokens {
   accent: string;
   accentContrast: string;
   accentSoft: string;
@@ -29,7 +29,7 @@ export interface MobilePalette {
   warningSoft: string;
 }
 
-const light: MobilePalette = {
+const light: MobileThemeTokens = {
   accent: '#0f766e',
   accentContrast: '#ffffff',
   accentSoft: '#ccfbf1',
@@ -52,7 +52,7 @@ const light: MobilePalette = {
   warningSoft: 'rgba(161, 98, 7, 0.14)',
 };
 
-const dark: MobilePalette = {
+const dark: MobileThemeTokens = {
   accent: '#2dd4bf',
   accentContrast: '#04211f',
   accentSoft: 'rgba(45, 212, 191, 0.2)',
@@ -75,16 +75,16 @@ const dark: MobilePalette = {
   warningSoft: 'rgba(251, 191, 36, 0.16)',
 };
 
-export function mobilePalette(isDark: boolean): MobilePalette {
+export function mobilePalette(isDark: boolean): MobileThemeTokens {
   return isDark ? dark : light;
 }
 
-export function chartTones(palette: MobilePalette): string[] {
+export function chartTones(palette: MobileThemeTokens): string[] {
   return [palette.accent, palette.info, palette.warning, palette.success];
 }
 
 export function stateTone(
-  palette: MobilePalette,
+  palette: MobileThemeTokens,
   state: string,
 ): { backgroundColor: string; color: string } {
   if (state === 'READY') {

@@ -370,6 +370,10 @@ apps/user-mobile/src/device-control/mobile-device-client.ts
 apps/user-mobile/src/device-control/mobile-notification-client.spec.ts
 apps/user-mobile/src/device-control/mobile-notification-client.ts
 apps/user-mobile/src/localization/messages.ts
+apps/user-mobile/src/offline/expo-sqlite-snapshot-cache.ts
+apps/user-mobile/src/offline/mobile-offline-dashboard.spec.ts
+apps/user-mobile/src/offline/mobile-offline-dashboard.ts
+apps/user-mobile/src/offline/mobile-snapshot-cache.ts
 apps/user-mobile/src/session/expo-secure-session-store.ts
 apps/user-mobile/src/session/index.ts
 apps/user-mobile/src/session/mobile-session-client.spec.ts
@@ -1335,6 +1339,7 @@ test/jest-mqtt-publisher-integration.json
 test/k6-stress-suite.contract.spec.ts
 test/local-console-login-regression.contract.spec.ts
 test/mobile-notification-parity.integration-spec.ts
+test/mobile-offline-first.contract.spec.ts
 test/module-09-completion-review.contract.spec.ts
 test/module-09-latest-telemetry-query.contract.spec.ts
 test/module-09-source-of-truth-reconciliation.contract.spec.ts

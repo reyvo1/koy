@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { StatusBar, StyleSheet, View, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -23,6 +23,11 @@ import {
   type MobileAppearance,
 } from './src/settings/mobile-settings-store';
 import { mobileSettingsStore } from './src/settings/expo-secure-settings-store';
+import { mobileSnapshotCache } from './src/offline/expo-sqlite-snapshot-cache';
+import {
+  connectMobileOfflineDashboard,
+  shouldServeCachedDashboard,
+} from './src/offline/mobile-offline-dashboard';
 import { defaultMobileLocale, type MobileLocale } from './src/localization/messages';
 import { MobileAuthenticatedShell } from './src/ui/mobile-authenticated-shell';
 import { MobileBlockedScreen } from './src/ui/mobile-blocked-screen';
@@ -56,6 +61,16 @@ export default function App() {
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [storageUnavailable, setStorageUnavailable] = useState(false);
   const isDark = resolveMobileAppearance(appearance, colorScheme === 'dark');
+  // One per server origin: the cache is namespaced by origin, so a build pointed at a second
+  // server can never read the first server's snapshot.
+  const offlineDashboard = useMemo(
+    () =>
+      connectMobileOfflineDashboard({
+        apiOrigin: mobileSessionClient.origin,
+        cache: mobileSnapshotCache,
+      }),
+    [],
+  );
 
   useEffect(() => {
     let active = true;
@@ -142,7 +157,7 @@ export default function App() {
 
     void loadMobileDashboardState(mobileSessionClient, null).then(
       (nextState) => {
-        if (active) applyDashboardState(nextState);
+        if (active) void settleDashboardState(nextState, null);
       },
     );
 
@@ -159,6 +174,9 @@ export default function App() {
   async function logout(tenantId: string) {
     setState({ kind: 'logging-out', tenantId });
     setDashboardState({ kind: 'idle' });
+    // The cached snapshot belongs to the session that is ending; a shared phone must not offer the
+    // previous operator's dashboard to the next one.
+    void offlineDashboard.forget();
     setState(await logoutMobileAuth(mobileSessionClient));
   }
 
@@ -170,9 +188,42 @@ export default function App() {
 
   async function loadDashboard(selectedDashboardId: string | null) {
     setDashboardState({ kind: 'loading', selectedDashboardId });
-    applyDashboardState(
-      await loadMobileDashboardState(mobileSessionClient, selectedDashboardId),
+    const nextState = await loadMobileDashboardState(
+      mobileSessionClient,
+      selectedDashboardId,
     );
+    await settleDashboardState(nextState, selectedDashboardId);
+  }
+
+  /**
+   * The one place where a network dashboard load is allowed to fall back to the offline snapshot.
+   * `shouldServeCachedDashboard` restricts that to connectivity outages, so a rejected session or a
+   * permission answer still renders as itself. Successful loads refresh the snapshot.
+   */
+  async function settleDashboardState(
+    nextState: MobileDashboardState,
+    selectedDashboardId: string | null,
+  ) {
+    if (authenticatedTenantId && shouldServeCachedDashboard(nextState)) {
+      const cached = await offlineDashboard.read(
+        authenticatedTenantId,
+        selectedDashboardId,
+      );
+      if (cached) {
+        setDashboardState({
+          kind: cached.experience.selectedDashboardId ? 'ready' : 'empty',
+          experience: cached.experience,
+          cachedAt: cached.cachedAt,
+        });
+        return;
+      }
+    }
+
+    applyDashboardState(nextState);
+
+    if (authenticatedTenantId) {
+      void offlineDashboard.remember(authenticatedTenantId, nextState);
+    }
   }
 
   async function sendDashboardCommand(

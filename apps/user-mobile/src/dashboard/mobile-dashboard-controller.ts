@@ -18,8 +18,18 @@ export interface MobileDashboardNotice {
 export type MobileDashboardState =
   | { kind: 'idle' }
   | { kind: 'loading'; selectedDashboardId: string | null }
-  | { kind: 'ready'; experience: MobileDashboardExperience }
-  | { kind: 'empty'; experience: MobileDashboardExperience }
+  | {
+      kind: 'ready';
+      experience: MobileDashboardExperience;
+      /** Set only when this experience was served from the offline cache. */
+      cachedAt?: string;
+    }
+  | {
+      kind: 'empty';
+      experience: MobileDashboardExperience;
+      /** Set only when this experience was served from the offline cache. */
+      cachedAt?: string;
+    }
   | {
       kind: 'unavailable';
       notice: MobileDashboardNotice;

@@ -58,6 +58,11 @@ export class MobileSessionClient {
     this.fetcher = options.fetcher ?? fetch;
   }
 
+  /** The validated origin every request goes to; it also namespaces the offline snapshot cache. */
+  get origin(): string {
+    return this.apiOrigin;
+  }
+
   async login(
     credentials: MobileLoginCredentials,
   ): Promise<MobileSessionSummary> {
