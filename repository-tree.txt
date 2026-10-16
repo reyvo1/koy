@@ -387,8 +387,10 @@ apps/user-mobile/src/ui/mobile-device-routines.tsx
 apps/user-mobile/src/ui/mobile-location-map.tsx
 apps/user-mobile/src/ui/mobile-login-screen.tsx
 apps/user-mobile/src/ui/mobile-notification-delivery-panel.tsx
+apps/user-mobile/src/ui/mobile-series-chart.tsx
 apps/user-mobile/src/ui/mobile-settings-panel.tsx
 apps/user-mobile/src/ui/mobile-state-notice.tsx
+apps/user-mobile/src/ui/mobile-theme.ts
 apps/user-mobile/tsconfig.json
 apps/user-web/.env.example
 apps/user-web/AGENTS.md

@@ -2,6 +2,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { MobileLocationMap, type MobileMapLocation } from './mobile-location-map';
 import { useState } from 'react';
 
+import { MobileSeriesChart, type MobileSeriesPoint } from './mobile-series-chart';
+import { chartTones, mobilePalette, stateTone } from './mobile-theme';
 import { mobileMessages, type MobileLocale } from '../localization/messages';
 
 import type {
@@ -42,26 +44,31 @@ export function MobileDashboardWidgetCard({
   onSendCommand,
 }: MobileDashboardWidgetCardProps) {
   const dashboardCopy = dashboardCopyFor(locale);
+  const palette = mobilePalette(isDark);
+  const tone = stateTone(palette, data.state);
   return (
     <View
       accessibilityLabel={`${resolution.title}. ${stateLabel(dashboardCopy, data.state)}`}
       accessibilityRole="summary"
-      style={[styles.card, isDark && styles.cardDark]}
+      style={[
+        styles.card,
+        { backgroundColor: palette.surface, borderColor: palette.border },
+      ]}
     >
       <View style={styles.header}>
         <View style={styles.heading}>
-          <Text style={[styles.eyebrow, isDark && styles.textMutedDark]}>
+          <Text style={[styles.eyebrow, { color: palette.muted }]}>
             {kindLabel(dashboardCopy, resolution.kind)}
           </Text>
           <Text
             accessibilityRole="header"
-            style={[styles.title, isDark && styles.textDark]}
+            style={[styles.title, { color: palette.textStrong }]}
           >
             {resolution.title}
           </Text>
         </View>
-        <View style={[styles.badge, isDark && styles.badgeDark]}>
-          <Text style={[styles.badgeText, isDark && styles.textDark]}>
+        <View style={[styles.badge, { backgroundColor: tone.backgroundColor }]}>
+          <Text style={[styles.badgeText, { color: tone.color }]}>
             {stateLabel(dashboardCopy, data.state)}
           </Text>
         </View>
@@ -69,7 +76,7 @@ export function MobileDashboardWidgetCard({
 
       {renderWidget(dashboardCopy, resolution, data, isDark, onSendCommand)}
 
-      <Text style={[styles.timestamp, isDark && styles.textMutedDark]}>
+      <Text style={[styles.timestamp, { color: palette.muted }]}>
         {dashboardCopy.updatedPrefix} {formatDate(dashboardCopy, resolveTimestamp(data))}
       </Text>
     </View>
@@ -147,6 +154,7 @@ function SwitchControl({
   ): Promise<{ commandId: string; status: string }>;
   resolution: MobileResolvedWidget;
 }) {
+  const palette = mobilePalette(isDark);
   const [pending, setPending] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const binding = resolution.bindings[0];
@@ -190,12 +198,12 @@ function SwitchControl({
           onPress={() => void send(true)}
           style={({ pressed }) => [
             styles.switchButton,
-            styles.switchButtonPrimary,
+            { backgroundColor: palette.accent, borderColor: palette.accent },
             pressed && !pending && styles.switchButtonPressed,
             pending && styles.switchButtonDisabled,
           ]}
         >
-          <Text style={styles.switchButtonPrimaryText}>
+          <Text style={[styles.switchButtonText, { color: palette.accentContrast }]}>
             {dashboardCopy.switchOnAction}
           </Text>
         </Pressable>
@@ -206,19 +214,19 @@ function SwitchControl({
           onPress={() => void send(false)}
           style={({ pressed }) => [
             styles.switchButton,
-            isDark && styles.switchButtonDark,
+            { backgroundColor: palette.surface, borderColor: palette.borderStrong },
             pressed && !pending && styles.switchButtonPressed,
             pending && styles.switchButtonDisabled,
           ]}
         >
-          <Text style={[styles.switchButtonText, isDark && styles.textDark]}>
+          <Text style={[styles.switchButtonText, { color: palette.text }]}>
             {dashboardCopy.switchOffAction}
           </Text>
         </Pressable>
       </View>
       <Text
         accessibilityLiveRegion="polite"
-        style={[styles.message, isDark && styles.textMutedDark]}
+        style={[styles.message, { color: palette.muted }]}
       >
         {pending
           ? dashboardCopy.switchPending
@@ -254,6 +262,8 @@ function BindingValues({
   bindings: MobileWidgetBindingData[];
   isDark: boolean;
 }) {
+  const palette = mobilePalette(isDark);
+
   if (bindings.length === 0) {
     return (
       <WidgetMessage isDark={isDark} text={dashboardCopy.unavailableData} />
@@ -264,10 +274,10 @@ function BindingValues({
     <View style={styles.values}>
       {bindings.slice(0, 8).map((binding) => (
         <View key={binding.id} style={styles.valueRow}>
-          <Text style={[styles.valueLabel, isDark && styles.textMutedDark]}>
+          <Text style={[styles.valueLabel, { color: palette.muted }]}>
             {binding.alias}
           </Text>
-          <Text style={[styles.value, isDark && styles.textDark]}>
+          <Text style={[styles.value, { color: palette.textStrong }]}>
             {formatBindingValue(dashboardCopy, binding)}
           </Text>
         </View>
@@ -287,6 +297,7 @@ function GaugeValue({
   isDark: boolean;
   resolution: MobileResolvedWidget;
 }) {
+  const palette = mobilePalette(isDark);
   const value = numericValue(binding?.data?.value);
   const capability = resolution.bindings[0]?.capability;
   const min =
@@ -306,14 +317,16 @@ function GaugeValue({
     );
   }
 
+  const filled = Math.round(progress * GAUGE_SEGMENTS);
+
   return (
     <View style={styles.gauge}>
       <View style={styles.gaugeValueRow}>
-        <Text style={[styles.gaugeValue, isDark && styles.textDark]}>
+        <Text style={[styles.gaugeValue, { color: palette.textStrong }]}>
           {formatNumber(value, capability?.constraints.precision)}
         </Text>
         {capability?.unit ? (
-          <Text style={[styles.gaugeUnit, isDark && styles.textMutedDark]}>
+          <Text style={[styles.gaugeUnit, { color: palette.muted }]}>
             {capability.unit}
           </Text>
         ) : null}
@@ -322,16 +335,34 @@ function GaugeValue({
         accessibilityLabel={`Rentang ${min} sampai ${max}, nilai ${value}`}
         accessibilityRole="progressbar"
         accessibilityValue={{ min, max, now: value }}
-        style={[styles.track, isDark && styles.trackDark]}
+        style={styles.gaugeTrack}
       >
-        <View style={[styles.fill, { width: `${progress * 100}%` }]} />
+        {Array.from({ length: GAUGE_SEGMENTS }).map((_, index) => (
+          <View
+            key={index}
+            style={[
+              styles.gaugeSegment,
+              {
+                backgroundColor:
+                  index < filled ? palette.accent : palette.track,
+              },
+            ]}
+          />
+        ))}
       </View>
-      <Text style={[styles.range, isDark && styles.textMutedDark]}>
-        {formatNumber(min)} – {formatNumber(max)}
-      </Text>
+      <View style={styles.gaugeRangeRow}>
+        <Text style={[styles.range, { color: palette.subtle }]}>
+          {formatNumber(min)}
+        </Text>
+        <Text style={[styles.range, { color: palette.subtle }]}>
+          {formatNumber(max)}
+        </Text>
+      </View>
     </View>
   );
 }
+
+const GAUGE_SEGMENTS = 24;
 
 function SeriesValues({
   dashboardCopy,
@@ -342,14 +373,17 @@ function SeriesValues({
   bindings: MobileWidgetBindingData[];
   isDark: boolean;
 }) {
-  const points = bindings.flatMap((binding) =>
-    extractSeries(binding).map((point) => ({
-      ...point,
+  const palette = mobilePalette(isDark);
+  const tones = chartTones(palette);
+  const sections = bindings
+    .map((binding) => ({
       alias: binding.alias,
-    })),
-  );
+      points: numericSeries(binding),
+    }))
+    .filter((section) => section.points.length > 0)
+    .slice(0, 4);
 
-  if (points.length === 0) {
+  if (sections.length === 0) {
     return (
       <WidgetMessage isDark={isDark} text={dashboardCopy.seriesUnavailable} />
     );
@@ -360,29 +394,38 @@ function SeriesValues({
       accessibilityLabel={dashboardCopy.seriesAccessibilityLabel}
       style={styles.series}
     >
-      {points.slice(-6).map((point, index) => (
-        <View
-          key={`${point.alias}-${point.observedAt}-${index}`}
-          style={styles.seriesRow}
-        >
-          <Text style={[styles.seriesAlias, isDark && styles.textMutedDark]}>
-            {point.alias}
-          </Text>
-          <Text style={[styles.seriesValue, isDark && styles.textDark]}>
-            {formatUnknown(dashboardCopy, point.value)}
-          </Text>
-          <Text style={[styles.seriesTime, isDark && styles.textMutedDark]}>
-            {formatDate(dashboardCopy, point.observedAt)}
-          </Text>
-        </View>
-      ))}
+      {sections.map((section, index) => {
+        const latest = section.points[section.points.length - 1]!;
+        return (
+          <View key={`${section.alias}-${index}`} style={styles.seriesSection}>
+            <View style={styles.seriesHeader}>
+              <Text style={[styles.seriesAlias, { color: palette.muted }]}>
+                {section.alias}
+              </Text>
+              <Text style={[styles.seriesValue, { color: palette.textStrong }]}>
+                {formatNumber(latest.value)}
+              </Text>
+            </View>
+            <MobileSeriesChart
+              accessibilityLabel={`${section.alias}. ${dashboardCopy.seriesAccessibilityLabel}`}
+              formatTime={(at) => formatDate(dashboardCopy, at)}
+              formatValue={(value) => formatNumber(value)}
+              isDark={isDark}
+              points={section.points}
+              tone={tones[index % tones.length]}
+            />
+          </View>
+        );
+      })}
     </View>
   );
 }
 
 function WidgetMessage({ isDark, text }: { isDark: boolean; text: string }) {
   return (
-    <Text style={[styles.message, isDark && styles.textMutedDark]}>{text}</Text>
+    <Text style={[styles.message, { color: mobilePalette(isDark).muted }]}>
+      {text}
+    </Text>
   );
 }
 
@@ -419,6 +462,14 @@ function extractSeries(binding: MobileWidgetBindingData) {
       ? [{ observedAt, value }]
       : [];
   });
+}
+
+function numericSeries(binding: MobileWidgetBindingData): MobileSeriesPoint[] {
+  return extractSeries(binding).flatMap((point) =>
+    typeof point.value === 'number' && Number.isFinite(point.value)
+      ? [{ at: point.observedAt, value: point.value }]
+      : [],
+  );
 }
 
 function numericValue(value: unknown): number | null {
@@ -466,15 +517,9 @@ function kindLabel(dashboardCopy: DashboardCopy, kind: string): string {
 const styles = StyleSheet.create({
   card: {
     gap: 14,
-    borderColor: '#dbe3ef',
-    borderRadius: 18,
+    borderRadius: 20,
     borderWidth: 1,
-    backgroundColor: '#ffffff',
     padding: 18,
-  },
-  cardDark: {
-    borderColor: '#334155',
-    backgroundColor: '#1e293b',
   },
   header: {
     flexDirection: 'row',
@@ -487,29 +532,22 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   eyebrow: {
-    color: '#64748b',
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
   title: {
-    color: '#0f172a',
     fontSize: 20,
     fontWeight: '700',
     lineHeight: 26,
   },
   badge: {
     borderRadius: 999,
-    backgroundColor: '#e2e8f0',
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
-  badgeDark: {
-    backgroundColor: '#334155',
-  },
   badgeText: {
-    color: '#334155',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -524,11 +562,9 @@ const styles = StyleSheet.create({
   },
   valueLabel: {
     flex: 1,
-    color: '#64748b',
     fontSize: 14,
   },
   value: {
-    color: '#0f172a',
     fontSize: 17,
     fontWeight: '700',
     textAlign: 'right',
@@ -542,57 +578,53 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   gaugeValue: {
-    color: '#0f172a',
     fontSize: 34,
     fontWeight: '800',
   },
   gaugeUnit: {
-    color: '#64748b',
     fontSize: 16,
     fontWeight: '600',
   },
-  track: {
-    height: 10,
-    overflow: 'hidden',
-    borderRadius: 999,
-    backgroundColor: '#e2e8f0',
+  gaugeTrack: {
+    flexDirection: 'row',
+    gap: 3,
+    height: 12,
   },
-  trackDark: {
-    backgroundColor: '#334155',
+  gaugeSegment: {
+    flex: 1,
+    borderRadius: 4,
   },
-  fill: {
-    height: '100%',
-    borderRadius: 999,
-    backgroundColor: '#2563eb',
+  gaugeRangeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
   },
   range: {
-    color: '#64748b',
     fontSize: 12,
+    fontVariant: ['tabular-nums'],
   },
   series: {
+    gap: 16,
+  },
+  seriesSection: {
     gap: 8,
   },
-  seriesRow: {
+  seriesHeader: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    gap: 8,
+    justifyContent: 'space-between',
+    gap: 12,
   },
   seriesAlias: {
     flex: 1,
-    color: '#64748b',
     fontSize: 13,
   },
   seriesValue: {
-    color: '#0f172a',
     fontSize: 15,
     fontWeight: '700',
-  },
-  seriesTime: {
-    color: '#64748b',
-    fontSize: 11,
+    fontVariant: ['tabular-nums'],
   },
   message: {
-    color: '#475569',
     fontSize: 14,
     lineHeight: 21,
   },
@@ -609,19 +641,10 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    borderColor: '#94a3b8',
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 10,
-  },
-  switchButtonPrimary: {
-    borderColor: '#2563eb',
-    backgroundColor: '#2563eb',
-  },
-  switchButtonDark: {
-    borderColor: '#64748b',
-    backgroundColor: '#0f172a',
   },
   switchButtonPressed: {
     opacity: 0.8,
@@ -630,23 +653,10 @@ const styles = StyleSheet.create({
     opacity: 0.55,
   },
   switchButtonText: {
-    color: '#0f172a',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  switchButtonPrimaryText: {
-    color: '#ffffff',
     fontSize: 14,
     fontWeight: '700',
   },
   timestamp: {
-    color: '#64748b',
     fontSize: 12,
-  },
-  textDark: {
-    color: '#f8fafc',
-  },
-  textMutedDark: {
-    color: '#cbd5e1',
   },
 });
