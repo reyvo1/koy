@@ -13,6 +13,7 @@ import {
   type MobileDeviceSummary,
   type MobileTelemetryPoint,
 } from '../device-control/mobile-device-client';
+import { isMobileOfflineError } from '../offline/mobile-offline-commands';
 import {
   loadMobileNotificationHistory,
   loadMobileNotificationSummary,
@@ -26,7 +27,12 @@ import {
 import type { MobileOutboxSummary } from '../offline/mobile-command-outbox';
 import type { MobileAppearance } from '../settings/mobile-settings-store';
 import { mobileSessionClient } from '../session';
-import { MobileDashboardScreen } from './mobile-dashboard-screen';
+import {
+  MobileDashboardScreen,
+  formatCachedAt,
+} from './mobile-dashboard-screen';
+import type { DashboardCopy } from './mobile-dashboard-widget';
+import { MobileStateNotice } from './mobile-state-notice';
 import { MobileAlertsPanel } from './mobile-alerts-panel';
 import { MobileDeviceDetailPanel } from './mobile-device-detail-panel';
 import { MobileNotificationDeliveryPanel } from './mobile-notification-delivery-panel';
@@ -60,6 +66,27 @@ interface MobileAuthenticatedShellProps {
   outbox: MobileOutboxSummary;
   onFlushOutbox(): Promise<void>;
   onDiscardFailed(): Promise<void>;
+  /**
+   * App owns the offline snapshot cache, so the shell asks it for the last-known directory and
+   * alerts instead of touching storage itself. `onConnectivityProven` fires after any validated
+   * network read, which is the queue's cue that replaying is worth a pass.
+   */
+  offline: MobileShellOfflineGateway;
+}
+
+interface MobileShellOfflineGateway {
+  onConnectivityProven(): void;
+  readAlerts(
+    tenantId: string,
+  ): Promise<{ alerts: MobileAlertsPayload; cachedAt: string } | null>;
+  readDevices(
+    tenantId: string,
+  ): Promise<{ cachedAt: string; devices: MobileDeviceSummary[] } | null>;
+  rememberAlerts(tenantId: string, alerts: MobileAlertsPayload): Promise<boolean>;
+  rememberDevices(
+    tenantId: string,
+    devices: MobileDeviceSummary[],
+  ): Promise<boolean>;
 }
 
 /**
@@ -95,6 +122,7 @@ export function MobileAuthenticatedShell({
   outbox,
   onFlushOutbox,
   onDiscardFailed,
+  offline,
 }: MobileAuthenticatedShellProps) {
   // The locale drives every string below, so it is read from the device before the first render of
   // copy. Until it resolves the default is used, which is the same thing the store falls back to on
@@ -107,6 +135,7 @@ export function MobileAuthenticatedShell({
   const [devices, setDevices] = useState<MobileDeviceSummary[]>([]);
   const [inventoryLoading, setInventoryLoading] = useState(false);
   const [inventoryError, setInventoryError] = useState<string | null>(null);
+  const [inventoryCachedAt, setInventoryCachedAt] = useState<string | null>(null);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [telemetry, setTelemetry] = useState<MobileTelemetryPoint[]>([]);
   const [telemetryLoading, setTelemetryLoading] = useState(false);
@@ -118,6 +147,7 @@ export function MobileAuthenticatedShell({
   const [alerts, setAlerts] = useState<MobileAlertsPayload | null>(null);
   const [alertsLoading, setAlertsLoading] = useState(false);
   const [alertsError, setAlertsError] = useState<string | null>(null);
+  const [alertsCachedAt, setAlertsCachedAt] = useState<string | null>(null);
   // `null`, not `[]`: the history has not been read yet until a request has actually answered, and
   // a first render must be distinguishable from a render after an outage.
   const [notificationHistory, setNotificationHistory] =
@@ -129,28 +159,46 @@ export function MobileAuthenticatedShell({
     string | null
   >(null);
 
+  const applyDeviceRows = useCallback((rows: MobileDeviceSummary[]) => {
+    setDevices(rows);
+    setSelectedDeviceId((current) =>
+      current && rows.some((device) => device.id === current)
+        ? current
+        : rows[0]?.id ?? null,
+    );
+    setDetailDeviceId((current) =>
+      current && rows.some((device) => device.id === current) ? current : null,
+    );
+  }, []);
+
   const loadInventory = useCallback(async () => {
     setInventoryLoading(true);
     setInventoryError(null);
     try {
       const rows = await loadMobileDevices(mobileSessionClient);
-      setDevices(rows);
-      setSelectedDeviceId((current) =>
-        current && rows.some((device) => device.id === current)
-          ? current
-          : rows[0]?.id ?? null,
-      );
-      setDetailDeviceId((current) =>
-        current && rows.some((device) => device.id === current) ? current : null,
-      );
-    } catch {
-      setDevices([]);
-      setSelectedDeviceId(null);
-      setInventoryError('Daftar perangkat belum dapat dimuat dari API tenant.');
+      applyDeviceRows(rows);
+      setInventoryCachedAt(null);
+      offline.onConnectivityProven();
+      void offline.rememberDevices(tenantId, rows);
+    } catch (cause) {
+      // A connectivity outage serves the last directory this device validated; any other failure
+      // (rejected session, permissions) is an answer and must render as itself.
+      const cached = isMobileOfflineError(cause)
+        ? await offline.readDevices(tenantId)
+        : null;
+      if (cached) {
+        applyDeviceRows(cached.devices);
+        setInventoryCachedAt(cached.cachedAt);
+      } else {
+        setDevices([]);
+        setSelectedDeviceId(null);
+        setInventoryCachedAt(null);
+        setInventoryError('Daftar perangkat belum dapat dimuat dari API tenant.');
+      }
     } finally {
       setInventoryLoading(false);
     }
-  }, []);
+  }, [applyDeviceRows, offline, tenantId]);
 
   const loadTelemetry = useCallback(async (deviceId: string | null) => {
     if (!deviceId) {
@@ -195,14 +243,27 @@ export function MobileAuthenticatedShell({
     setAlertsLoading(true);
     setAlertsError(null);
     try {
-      setAlerts(await loadMobileAlerts(mobileSessionClient));
-    } catch {
-      setAlerts(null);
-      setAlertsError('Alerts analitik belum dapat dimuat dari backend.');
+      const payload = await loadMobileAlerts(mobileSessionClient);
+      setAlerts(payload);
+      setAlertsCachedAt(null);
+      offline.onConnectivityProven();
+      void offline.rememberAlerts(tenantId, payload);
+    } catch (cause) {
+      const cached = isMobileOfflineError(cause)
+        ? await offline.readAlerts(tenantId)
+        : null;
+      if (cached) {
+        setAlerts(cached.alerts);
+        setAlertsCachedAt(cached.cachedAt);
+      } else {
+        setAlerts(null);
+        setAlertsCachedAt(null);
+        setAlertsError('Alerts analitik belum dapat dimuat dari backend.');
+      }
     } finally {
       setAlertsLoading(false);
     }
-  }, []);
+  }, [offline, tenantId]);
 
   /**
    * Load the delivery log and its summary together.
@@ -357,35 +418,54 @@ export function MobileAuthenticatedShell({
               onSendCommand={onSendCommand}
             />
           ) : (
-            <DeviceDirectory
-              devices={devices}
-              error={inventoryError}
-              isDark={isDark}
-              loading={inventoryLoading}
-              onOpenDevice={setDetailDeviceId}
-              onRefresh={loadInventory}
-            />
+            <View style={styles.sectionGap}>
+              <CachedSurfaceBanner
+                cachedAt={inventoryCachedAt}
+                copy={copy.dashboard}
+                isDark={isDark}
+              />
+              <DeviceDirectory
+                devices={devices}
+                error={inventoryError}
+                isDark={isDark}
+                loading={inventoryLoading}
+                onOpenDevice={setDetailDeviceId}
+                onRefresh={loadInventory}
+              />
+            </View>
           )
         ) : null}
 
         {tab === 'realtime' ? (
-          <RealtimePanel
-            devices={devices}
-            inventoryError={inventoryError}
-            inventoryLoading={inventoryLoading}
-            isDark={isDark}
-            onRefreshInventory={loadInventory}
-            onRefreshTelemetry={() => loadTelemetry(selectedDeviceId)}
-            onSelectDevice={setSelectedDeviceId}
-            selectedDeviceId={selectedDeviceId}
-            telemetry={telemetry}
-            telemetryError={telemetryError}
-            telemetryLoading={telemetryLoading}
-          />
+          <View style={styles.sectionGap}>
+            <CachedSurfaceBanner
+              cachedAt={inventoryCachedAt}
+              copy={copy.dashboard}
+              isDark={isDark}
+            />
+            <RealtimePanel
+              devices={devices}
+              inventoryError={inventoryError}
+              inventoryLoading={inventoryLoading}
+              isDark={isDark}
+              onRefreshInventory={loadInventory}
+              onRefreshTelemetry={() => loadTelemetry(selectedDeviceId)}
+              onSelectDevice={setSelectedDeviceId}
+              selectedDeviceId={selectedDeviceId}
+              telemetry={telemetry}
+              telemetryError={telemetryError}
+              telemetryLoading={telemetryLoading}
+            />
+          </View>
         ) : null}
 
         {tab === 'alerts' ? (
           <View style={styles.sectionGap}>
+            <CachedSurfaceBanner
+              cachedAt={alertsCachedAt}
+              copy={copy.dashboard}
+              isDark={isDark}
+            />
             <MobileAlertsPanel
               error={alertsError}
               isDark={isDark}
@@ -491,6 +571,34 @@ export function MobileAuthenticatedShell({
         })}
       </View>
     </View>
+  );
+}
+
+/**
+ * The cached-mode banner for the directory surfaces. It reuses the dashboard's offline copy on
+ * purpose: "offline mode, data stored at <time>" states the same fact on every surface, and one
+ * wording means the translation cannot drift between tabs.
+ */
+function CachedSurfaceBanner({
+  cachedAt,
+  copy,
+  isDark,
+}: {
+  cachedAt: string | null;
+  copy: DashboardCopy;
+  isDark: boolean;
+}) {
+  if (!cachedAt) return null;
+  return (
+    <MobileStateNotice
+      isDark={isDark}
+      notice={{
+        tone: 'offline',
+        title: copy.offlineCachedTitle,
+        message: `${copy.offlineCachedPrefix} ${formatCachedAt(cachedAt)}`,
+        requestId: null,
+      }}
+    />
   );
 }
 

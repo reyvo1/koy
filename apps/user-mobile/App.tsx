@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StatusBar, StyleSheet, View, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -16,6 +16,8 @@ import type { MobileLoginCredentials } from './src/session';
 import {
   reconcileMobileCommand,
   sendCapabilityCommand,
+  type MobileAlertsPayload,
+  type MobileDeviceSummary,
 } from './src/device-control/mobile-device-client';
 import { mobileSessionClient } from './src/session';
 import {
@@ -34,6 +36,10 @@ import {
   connectMobileOfflineDashboard,
   shouldServeCachedDashboard,
 } from './src/offline/mobile-offline-dashboard';
+import {
+  connectMobileOfflineAlerts,
+  connectMobileOfflineDevices,
+} from './src/offline/mobile-offline-surfaces';
 import { defaultMobileLocale, type MobileLocale } from './src/localization/messages';
 import { MobileAuthenticatedShell } from './src/ui/mobile-authenticated-shell';
 import { MobileBlockedScreen } from './src/ui/mobile-blocked-screen';
@@ -99,6 +105,45 @@ export default function App() {
     failed: 0,
     pending: 0,
   });
+  // Both directory surfaces share the one origin-namespaced snapshot cache with the dashboard.
+  const offlineSurfaces = useMemo(
+    () => ({
+      alerts: connectMobileOfflineAlerts({
+        apiOrigin: mobileSessionClient.origin,
+        cache: mobileSnapshotCache,
+      }),
+      devices: connectMobileOfflineDevices({
+        apiOrigin: mobileSessionClient.origin,
+        cache: mobileSnapshotCache,
+      }),
+    }),
+    [],
+  );
+  // A stable gateway object keeps the shell's load callbacks stable; the connectivity trigger is
+  // routed through a ref so it always sees the latest session and dashboard selection.
+  const connectivityProvenRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    connectivityProvenRef.current = () => {
+      if (!authenticatedTenantId) return;
+      const selectedDashboardId =
+        dashboardState.kind === 'ready' || dashboardState.kind === 'empty'
+          ? dashboardState.experience.selectedDashboardId
+          : null;
+      void flushOutbox(authenticatedTenantId, selectedDashboardId);
+    };
+  });
+  const offlineGateway = useMemo(
+    () => ({
+      onConnectivityProven: () => connectivityProvenRef.current(),
+      readAlerts: (tenantId: string) => offlineSurfaces.alerts.read(tenantId),
+      readDevices: (tenantId: string) => offlineSurfaces.devices.read(tenantId),
+      rememberAlerts: (tenantId: string, alerts: MobileAlertsPayload) =>
+        offlineSurfaces.alerts.remember(tenantId, alerts),
+      rememberDevices: (tenantId: string, devices: MobileDeviceSummary[]) =>
+        offlineSurfaces.devices.remember(tenantId, devices),
+    }),
+    [offlineSurfaces],
+  );
 
   useEffect(() => {
     let active = true;
@@ -336,11 +381,24 @@ export default function App() {
       terminal: false,
     }));
 
+    const selectedDashboardId =
+      dashboardState.kind === 'ready' || dashboardState.kind === 'empty'
+        ? dashboardState.experience.selectedDashboardId
+        : null;
+    // A successful send proves connectivity, so this is the cheapest honest moment to drain
+    // anything the queue held while offline; one reload then covers both outcomes.
+    const flushed = authenticatedTenantId
+      ? await offlineOutbox.flush(authenticatedTenantId)
+      : 0;
+    if (authenticatedTenantId && flushed > 0) {
+      await refreshOutboxSummary(authenticatedTenantId);
+    }
+
     if (settled.terminal) {
-      const selectedDashboardId =
-        dashboardState.kind === 'ready' || dashboardState.kind === 'empty'
-          ? dashboardState.experience.selectedDashboardId
-          : null;
+      await loadDashboard(selectedDashboardId);
+    } else if (flushed > 0) {
+      // A drained queue changed server state too, so the dashboard refreshes from authorized data
+      // even when this command has not reached a terminal result yet.
       await loadDashboard(selectedDashboardId);
     }
 
@@ -406,6 +464,7 @@ export default function App() {
           onSendCommand={sendDashboardCommand}
           onDiscardFailed={discardFailedCommands}
           onFlushOutbox={flushOutboxNow}
+          offline={offlineGateway}
           outbox={outboxSummary}
           pending={state.kind === 'logging-out'}
           tenantId={state.tenantId}

@@ -46,6 +46,11 @@ describe('mobile offline command outbox contract', () => {
     expect(app).toContain('entry.idempotencyKey');
   });
 
+  it('supersedes same-control intents instead of stacking duplicates', () => {
+    expect(store).toContain('superseded');
+    expect(store).toContain('replaced');
+  });
+
   it('treats only unreachable answers as offline and stops on transient failures', () => {
     expect(bridge).toContain("cause.status === 0 || cause.code === 'MOBILE_API_UNREACHABLE'");
     expect(bridge).toContain('cause.status === 0 || cause.status === 429 || cause.status >= 500');

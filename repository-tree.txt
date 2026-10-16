@@ -378,6 +378,8 @@ apps/user-mobile/src/offline/mobile-command-outbox.ts
 apps/user-mobile/src/offline/mobile-offline-commands.ts
 apps/user-mobile/src/offline/mobile-offline-dashboard.spec.ts
 apps/user-mobile/src/offline/mobile-offline-dashboard.ts
+apps/user-mobile/src/offline/mobile-offline-surfaces.spec.ts
+apps/user-mobile/src/offline/mobile-offline-surfaces.ts
 apps/user-mobile/src/offline/mobile-snapshot-cache.ts
 apps/user-mobile/src/session/expo-secure-session-store.ts
 apps/user-mobile/src/session/index.ts
@@ -1346,6 +1348,7 @@ test/local-console-login-regression.contract.spec.ts
 test/mobile-command-outbox.contract.spec.ts
 test/mobile-notification-parity.integration-spec.ts
 test/mobile-offline-first.contract.spec.ts
+test/mobile-offline-surfaces.contract.spec.ts
 test/module-09-completion-review.contract.spec.ts
 test/module-09-latest-telemetry-query.contract.spec.ts
 test/module-09-source-of-truth-reconciliation.contract.spec.ts

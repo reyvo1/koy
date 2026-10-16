@@ -71,6 +71,7 @@ describe('offline command outbox store', () => {
     expect(result.entry.attempts).toBe(0);
     expect(result.entry.idempotencyKey).toBe(`mobile-outbox-${result.entry.id}`);
     expect(result.entry.enqueuedAt).toBe(NOW.toISOString());
+    expect(result.replaced).toBeNull();
     expect(port.rows.has(outboxEntryKey(ORIGIN, TENANT, result.entry.id))).toBe(true);
     expect(port.rows.has(outboxEntryKey('https://other.example', TENANT, result.entry.id))).toBe(false);
   });
@@ -116,6 +117,77 @@ describe('offline command outbox store', () => {
     expect(
       (await store.enqueue(ORIGIN, TENANT, { capabilityKey: 'power', deviceId: 'd', value: overflow }, NOW)).ok,
     ).toBe(false);
+  });
+
+  it('coalesces same-device same-capability intents so the last tap wins', async () => {
+    const port = new MemoryPort();
+    const store = createMobileOutboxStore(port);
+
+    const first = await store.enqueue(
+      ORIGIN,
+      TENANT,
+      { capabilityKey: 'power', deviceId: 'device-1', value: true },
+      NOW,
+    );
+    const second = await store.enqueue(
+      ORIGIN,
+      TENANT,
+      { capabilityKey: 'power', deviceId: 'device-1', value: false },
+      new Date(NOW.getTime() + 1_000),
+    );
+
+    expect(first.ok && second.ok).toBe(true);
+    if (!first.ok || !second.ok) return;
+    expect(second.replaced).toBe(first.entry.id);
+    const entries = await store.list(ORIGIN, TENANT);
+    expect(entries).toHaveLength(1);
+    expect(entries[0].id).toBe(second.entry.id);
+    expect(entries[0].value).toBe(false);
+    // A fresh identity, because replaying a new value under the old idempotency key would make the
+    // server answer with the superseded payload.
+    expect(entries[0].idempotencyKey).toBe(`mobile-outbox-${second.entry.id}`);
+    expect(entries[0].idempotencyKey).not.toBe(first.entry.idempotencyKey);
+    // The original position is preserved so superseding cannot queue-jump later commands.
+    expect(entries[0].enqueuedAt).toBe(first.entry.enqueuedAt);
+  });
+
+  it('lets a superseding intent through a full queue and resets the attempt budget', async () => {
+    const port = new MemoryPort();
+    const store = createMobileOutboxStore(port);
+
+    for (let index = 0; index < MAX_OUTBOX_ENTRIES; index += 1) {
+      await store.enqueue(
+        ORIGIN,
+        TENANT,
+        { capabilityKey: 'power', deviceId: `device-${index}`, value: index },
+        new Date(NOW.getTime() + index),
+      );
+    }
+    const [target] = await store.list(ORIGIN, TENANT);
+    await store.update({
+      ...target,
+      attempts: MAX_OUTBOX_ATTEMPTS,
+      lastError: '0:MOBILE_API_UNREACHABLE',
+      lastAttemptAt: NOW.toISOString(),
+      status: 'failed',
+    });
+
+    const superseding = await store.enqueue(
+      ORIGIN,
+      TENANT,
+      { capabilityKey: 'power', deviceId: target.deviceId, value: 'updated' },
+      new Date(NOW.getTime() + 100),
+    );
+
+    expect(superseding.ok).toBe(true);
+    if (!superseding.ok) return;
+    expect(superseding.replaced).toBe(target.id);
+    const entries = await store.list(ORIGIN, TENANT);
+    expect(entries).toHaveLength(MAX_OUTBOX_ENTRIES);
+    const replaced = entries.find((entry) => entry.id === superseding.entry.id);
+    expect(replaced?.status).toBe('queued');
+    expect(replaced?.attempts).toBe(0);
+    expect(replaced?.lastError).toBeNull();
   });
 
   it('refuses to grow past the cap without dropping older commands', async () => {

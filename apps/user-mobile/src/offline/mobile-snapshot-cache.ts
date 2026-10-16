@@ -50,6 +50,18 @@ export function dashboardSnapshotKey(
   return `dashboard|${apiOrigin}|${tenantId}|${dashboardId ?? 'default'}`;
 }
 
+/**
+ * Read-surface snapshots (device directory, alerts) share the same cache and the same origin+tenant
+ * namespacing as dashboards; the leading surface segment keeps the kinds from colliding.
+ */
+export function surfaceSnapshotKey(
+  apiOrigin: string,
+  tenantId: string,
+  surface: string,
+): string {
+  return `surface|${apiOrigin}|${tenantId}|${surface}`;
+}
+
 export function createMobileSnapshotCache(
   port: MobileSnapshotCachePort,
 ): MobileSnapshotCache {

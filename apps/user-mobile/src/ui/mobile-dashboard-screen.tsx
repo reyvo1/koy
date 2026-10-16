@@ -405,7 +405,7 @@ function ActionButton({
   );
 }
 
-function formatCachedAt(value: string): string {
+export function formatCachedAt(value: string): string {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
     ? value

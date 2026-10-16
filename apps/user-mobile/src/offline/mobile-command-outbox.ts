@@ -63,7 +63,7 @@ export interface MobileOutboxSummary {
 }
 
 export type MobileOutboxEnqueueResult =
-  | { entry: MobileOutboxEntry; ok: true }
+  | { entry: MobileOutboxEntry; ok: true; replaced: string | null }
   | { ok: false; reason: 'OUTBOX_FULL' | 'STORAGE_FAILED' | 'VALUE_UNSUPPORTED' };
 
 export interface MobileOutboxStore {
@@ -137,7 +137,16 @@ export function createMobileOutboxStore(
     }
 
     const existing = await list(apiOrigin, tenantId);
-    if (existing.length >= MAX_OUTBOX_ENTRIES) {
+    // Last intent wins per device and capability: re-tapping the same control offline supersedes
+    // the still-queued intent for that control instead of stacking duplicate commands. The
+    // replacement gets a fresh identity, because replaying a new value under the old idempotency
+    // key would make the server answer with the old payload.
+    const superseded = existing.find(
+      (entry) =>
+        entry.deviceId === input.deviceId &&
+        entry.capabilityKey === input.capabilityKey,
+    );
+    if (!superseded && existing.length >= MAX_OUTBOX_ENTRIES) {
       return { ok: false, reason: 'OUTBOX_FULL' };
     }
 
@@ -147,7 +156,8 @@ export function createMobileOutboxStore(
       attempts: 0,
       capabilityKey: input.capabilityKey,
       deviceId: input.deviceId,
-      enqueuedAt: now.toISOString(),
+      // The original position is kept, so superseding a command cannot queue-jump later ones.
+      enqueuedAt: superseded?.enqueuedAt ?? now.toISOString(),
       id,
       idempotencyKey: `mobile-outbox-${id}`,
       lastAttemptAt: null,
@@ -160,7 +170,8 @@ export function createMobileOutboxStore(
     if (!(await upsert(entry))) {
       return { ok: false, reason: 'STORAGE_FAILED' };
     }
-    return { entry, ok: true };
+    if (superseded) await remove(apiOrigin, tenantId, [superseded.id]);
+    return { entry, ok: true, replaced: superseded?.id ?? null };
   }
 
   async function update(entry: MobileOutboxEntry): Promise<boolean> {
