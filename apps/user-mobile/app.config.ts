@@ -14,6 +14,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     version: '0.1.0',
     orientation: 'portrait',
     userInterfaceStyle: 'automatic',
+    icon: './assets/icon.png',
     ios: {
       ...config.ios,
       supportsTablet: true,
@@ -21,10 +22,26 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     android: {
       package: 'com.reyvo.iotplatform',
       ...config.android,
+      adaptiveIcon: {
+        backgroundColor: '#0f766e',
+        foregroundImage: './assets/adaptive-icon.png',
+      },
       predictiveBackGestureEnabled: false,
     },
     plugins: [
       ...(config.plugins ?? []),
+      [
+        'expo-splash-screen',
+        {
+          backgroundColor: '#0f766e',
+          dark: {
+            backgroundColor: '#111827',
+          },
+          image: './assets/splash-icon.png',
+          imageWidth: 180,
+          resizeMode: 'contain',
+        },
+      ],
       [
         'expo-secure-store',
         {

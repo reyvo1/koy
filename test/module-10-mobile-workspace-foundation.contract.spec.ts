@@ -104,9 +104,11 @@ describe('Module 10 Slice 10.11 Mobile Workspace Foundation', () => {
       expo: '57.0.7',
       'expo-dev-client': '57.0.7',
       'expo-secure-store': '~57.0.1',
+      'expo-splash-screen': '~57.0.10',
       'expo-system-ui': '~57.0.1',
       react: '19.2.3',
       'react-native': '0.86.0',
+      'react-native-safe-area-context': '~5.7.0',
     });
     expect(mobilePackage.devDependencies).toEqual({
       '@types/react': '~19.2.4',

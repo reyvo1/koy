@@ -8,16 +8,22 @@ interface MobileStateNoticeProps {
 }
 
 export function MobileStateNotice({ isDark, notice }: MobileStateNoticeProps) {
+  const toneStyle = (() => {
+    if (isDark) {
+      if (notice.tone === 'offline') return styles.noticeOfflineDark;
+      if (notice.tone === 'warning') return styles.noticeWarningDark;
+      return styles.noticeDark;
+    }
+    if (notice.tone === 'offline') return styles.noticeOffline;
+    if (notice.tone === 'warning') return styles.noticeWarning;
+    return null;
+  })();
+
   return (
     <View
       accessibilityLiveRegion="polite"
       accessibilityRole="alert"
-      style={[
-        styles.notice,
-        notice.tone === 'offline' && styles.noticeOffline,
-        notice.tone === 'warning' && styles.noticeWarning,
-        isDark && styles.noticeDark,
-      ]}
+      style={[styles.notice, toneStyle]}
     >
       <Text style={[styles.title, isDark && styles.textDark]}>
         {notice.title}
@@ -52,8 +58,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#fffbeb',
   },
   noticeDark: {
-    borderColor: '#475569',
-    backgroundColor: '#1f2937',
+    borderColor: '#7f1d1d',
+    backgroundColor: 'rgba(248, 113, 113, 0.12)',
+  },
+  noticeOfflineDark: {
+    borderColor: '#1e3a8a',
+    backgroundColor: 'rgba(96, 165, 250, 0.12)',
+  },
+  noticeWarningDark: {
+    borderColor: '#92400e',
+    backgroundColor: 'rgba(251, 191, 36, 0.12)',
   },
   title: {
     color: '#991b1b',

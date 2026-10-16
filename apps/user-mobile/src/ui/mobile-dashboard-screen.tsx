@@ -367,8 +367,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#1e293b',
   },
   selectorButtonSelected: {
-    borderColor: '#2563eb',
-    backgroundColor: '#dbeafe',
+    borderColor: '#0f766e',
+    backgroundColor: '#ccfbf1',
   },
   selectorButtonText: {
     color: '#334155',
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   selectorButtonTextSelected: {
-    color: '#1d4ed8',
+    color: '#0f766e',
   },
   dashboardContent: {
     gap: 14,
@@ -401,8 +401,8 @@ const styles = StyleSheet.create({
     padding: 18,
   },
   cardDark: {
-    borderColor: '#475569',
-    backgroundColor: '#0f172a',
+    borderColor: '#334155',
+    backgroundColor: '#1e293b',
   },
   emptyTitle: {
     color: '#0f172a',

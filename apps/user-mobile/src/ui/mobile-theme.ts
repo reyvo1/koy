@@ -56,7 +56,7 @@ const dark: MobilePalette = {
   accent: '#2dd4bf',
   accentContrast: '#04211f',
   accentSoft: 'rgba(45, 212, 191, 0.2)',
-  background: '#0f172a',
+  background: '#111827',
   border: '#334155',
   borderStrong: '#64748b',
   danger: '#f87171',

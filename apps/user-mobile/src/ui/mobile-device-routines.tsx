@@ -58,8 +58,8 @@ export function MobileDeviceRoutines({
       ['boolean', 'integer', 'number', 'string', 'enum'].includes(cap.dataType),
   );
   const cap = caps.find((row) => row.id === capId) ?? caps[0];
-  const color = isDark ? '#e6e9f0' : '#1e293b',
-    backgroundColor = isDark ? '#131722' : '#fff';
+  const color = isDark ? '#f8fafc' : '#1e293b',
+    backgroundColor = isDark ? '#0f172a' : '#ffffff';
   const field = {
     color,
     backgroundColor,

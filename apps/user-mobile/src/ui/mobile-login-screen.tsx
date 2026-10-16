@@ -7,6 +7,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { MobileAuthNotice } from '../app/mobile-auth-controller';
 import type { MobileLoginCredentials } from '../session';
@@ -29,6 +30,7 @@ export function MobileLoginScreen({
   onSubmit,
 }: MobileLoginScreenProps) {
   const copy = mobileMessages[locale];
+  const insets = useSafeAreaInsets();
   const [tenantId, setTenantId] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -49,7 +51,13 @@ export function MobileLoginScreen({
   return (
     <ScrollView
       automaticallyAdjustKeyboardInsets
-      contentContainerStyle={styles.scrollContent}
+      contentContainerStyle={[
+        styles.scrollContent,
+        {
+          paddingTop: 28 + insets.top,
+          paddingBottom: 28 + insets.bottom,
+        },
+      ]}
       keyboardShouldPersistTaps="handled"
     >
       <View
@@ -57,6 +65,17 @@ export function MobileLoginScreen({
         style={[styles.card, isDark && styles.cardDark]}
       >
         <View style={styles.heading}>
+          <View accessibilityElementsHidden importantForAccessibility="no" style={styles.brandMark}>
+            {[16, 24, 32].map((height) => (
+              <View
+                key={height}
+                style={[
+                  styles.brandBar,
+                  { backgroundColor: isDark ? '#2dd4bf' : '#0f766e', height },
+                ]}
+              />
+            ))}
+          </View>
           <Text style={[styles.eyebrow, isDark && styles.textMutedDark]}>
             {copy.login.eyebrow}
           </Text>
@@ -164,6 +183,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     padding: 22,
   },
+  brandMark: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 5,
+    height: 32,
+  },
+  brandBar: {
+    width: 7,
+    borderRadius: 3,
+  },
   cardDark: {
     borderColor: '#334155',
     backgroundColor: '#1e293b',
@@ -219,7 +248,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 12,
-    backgroundColor: '#1d4ed8',
+    backgroundColor: '#0f766e',
     paddingHorizontal: 18,
     paddingVertical: 12,
   },

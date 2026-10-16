@@ -349,6 +349,9 @@ apps/user-mobile/.env.example
 apps/user-mobile/.gitignore
 apps/user-mobile/App.tsx
 apps/user-mobile/app.config.ts
+apps/user-mobile/assets/adaptive-icon.png
+apps/user-mobile/assets/icon.png
+apps/user-mobile/assets/splash-icon.png
 apps/user-mobile/index.ts
 apps/user-mobile/package.json
 apps/user-mobile/src/app/mobile-auth-controller.spec.ts

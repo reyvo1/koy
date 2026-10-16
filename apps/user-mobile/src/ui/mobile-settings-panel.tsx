@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { MOBILE_LOCALES, mobileMessages, type MobileLocale } from '../localization/messages';
 import type { MobileAppearance } from '../settings/mobile-settings-store';
+import { mobilePalette, type MobilePalette } from './mobile-theme';
 
 /**
  * The display-settings half of the profile screen.
@@ -25,6 +26,7 @@ import type { MobileAppearance } from '../settings/mobile-settings-store';
 export function MobileSettingsPanel({
   appearance,
   error,
+  isDark,
   locale,
   onSelectAppearance,
   onSelectLocale,
@@ -32,12 +34,14 @@ export function MobileSettingsPanel({
 }: {
   appearance: MobileAppearance;
   error: string | null;
+  isDark: boolean;
   locale: MobileLocale;
   onSelectAppearance(appearance: MobileAppearance): void;
   onSelectLocale(locale: MobileLocale): void;
   storageUnavailable: boolean;
 }) {
   const copy = mobileMessages[locale];
+  const styles = createStyles(mobilePalette(isDark));
 
   const appearances: ReadonlyArray<{
     key: MobileAppearance;
@@ -134,32 +138,40 @@ export function MobileSettingsPanel({
   );
 }
 
-const styles = StyleSheet.create({
-  gap: { gap: 12 },
-  card: {
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#1f2937',
-    backgroundColor: '#111827',
-    padding: 14,
-    gap: 8,
-  },
-  cardWarning: { borderColor: '#92400e', backgroundColor: '#1c1408' },
-  title: { fontSize: 14, fontWeight: '700', color: '#f9fafb' },
-  titleWarning: { fontSize: 13, fontWeight: '600', color: '#fbbf24' },
-  meta: { fontSize: 12, lineHeight: 17, color: '#9ca3af' },
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
-  choice: {
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#374151',
-    backgroundColor: '#0b1220',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  choiceSelected: { borderColor: '#14b8a6', backgroundColor: '#0d2b2b' },
-  choiceDisabled: { opacity: 0.4 },
-  choicePressed: { opacity: 0.75 },
-  choiceText: { fontSize: 12.5, fontWeight: '600', color: '#d1d5db' },
-  choiceTextSelected: { color: '#5eead4' },
-});
+function createStyles(palette: MobilePalette) {
+  return StyleSheet.create({
+    gap: { gap: 12 },
+    card: {
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: palette.border,
+      backgroundColor: palette.surface,
+      padding: 14,
+      gap: 8,
+    },
+    cardWarning: {
+      borderColor: palette.warning,
+      backgroundColor: palette.warningSoft,
+    },
+    title: { fontSize: 14, fontWeight: '700', color: palette.textStrong },
+    titleWarning: { fontSize: 13, fontWeight: '600', color: palette.warning },
+    meta: { fontSize: 12, lineHeight: 17, color: palette.muted },
+    row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+    choice: {
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: palette.borderStrong,
+      backgroundColor: palette.surface,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+    choiceSelected: {
+      borderColor: palette.accent,
+      backgroundColor: palette.accentSoft,
+    },
+    choiceDisabled: { opacity: 0.4 },
+    choicePressed: { opacity: 0.75 },
+    choiceText: { fontSize: 12.5, fontWeight: '600', color: palette.text },
+    choiceTextSelected: { color: palette.accent },
+  });
+}

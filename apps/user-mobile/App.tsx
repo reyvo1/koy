@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { StatusBar, StyleSheet, View, useColorScheme } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import {
   MobileAuthState,
@@ -226,7 +227,8 @@ export default function App() {
   }
 
   return (
-    <View style={[styles.screen, isDark && styles.screenDark]}>
+    <SafeAreaProvider>
+      <View style={[styles.screen, isDark && styles.screenDark]}>
       {state.kind === 'booting' ? (
         <View style={styles.centered}>
           <MobileStateNotice
@@ -281,7 +283,8 @@ export default function App() {
       ) : null}
 
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-    </View>
+      </View>
+    </SafeAreaProvider>
   );
 }
 

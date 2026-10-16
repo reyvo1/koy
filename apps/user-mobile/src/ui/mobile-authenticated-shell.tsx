@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { MobileDashboardState } from '../dashboard';
 import {
@@ -93,6 +94,7 @@ export function MobileAuthenticatedShell({
 
 
   const copy = mobileMessages[locale];
+  const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<MobileTab>('home');
   const [devices, setDevices] = useState<MobileDeviceSummary[]>([]);
   const [inventoryLoading, setInventoryLoading] = useState(false);
@@ -285,7 +287,13 @@ export function MobileAuthenticatedShell({
 
   return (
     <View style={[styles.shell, isDark && styles.shellDark]}>
-      <View style={[styles.header, isDark && styles.cardDark]}>
+      <View
+        style={[
+          styles.header,
+          isDark && styles.cardDark,
+          { paddingTop: 18 + insets.top },
+        ]}
+      >
         <View style={styles.headerCopy}>
           <Text style={[styles.eyebrow, isDark && styles.textMutedDark]}>
             {copy.authenticated.eyebrow}
@@ -403,6 +411,7 @@ export function MobileAuthenticatedShell({
             <MobileSettingsPanel
               appearance={appearance}
               error={settingsError}
+              isDark={isDark}
               locale={locale}
               onSelectAppearance={selectAppearance}
               onSelectLocale={selectLocale}
@@ -433,7 +442,11 @@ export function MobileAuthenticatedShell({
       <View
         accessibilityLabel="Navigasi utama mobile"
         accessibilityRole="tablist"
-        style={[styles.navBar, isDark && styles.navBarDark]}
+        style={[
+          styles.navBar,
+          isDark && styles.navBarDark,
+          { paddingBottom: 8 + insets.bottom },
+        ]}
       >
         {NAV_ITEMS.map((item) => {
           const selected = item.key === tab;
@@ -446,16 +459,18 @@ export function MobileAuthenticatedShell({
               onPress={() => setTab(item.key)}
               style={({ pressed }) => [
                 styles.navItem,
-                selected && styles.navItemSelected,
                 isDark && styles.navItemDark,
+                selected &&
+                  (isDark ? styles.navItemSelectedDark : styles.navItemSelected),
                 pressed && styles.buttonPressed,
               ]}
             >
               <Text
                 style={[
                   styles.navLabel,
-                  selected && styles.navLabelSelected,
                   isDark && styles.textDark,
+                  selected &&
+                    (isDark ? styles.navLabelSelectedDark : styles.navLabelSelected),
                 ]}
               >
                 {label}
@@ -730,8 +745,8 @@ const styles = StyleSheet.create({
   eyebrow: { color: '#475569', fontSize: 12, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' },
   title: { color: '#0f172a', fontSize: 26, fontWeight: '800' },
   description: { color: '#475569', fontSize: 14, lineHeight: 21 },
-  tenantBadge: { alignSelf: 'flex-start', borderColor: '#bfdbfe', borderRadius: 10, borderWidth: 1, backgroundColor: '#eff6ff', paddingHorizontal: 12, paddingVertical: 8 },
-  tenantBadgeDark: { borderColor: '#1d4ed8', backgroundColor: '#172554' },
+  tenantBadge: { alignSelf: 'flex-start', borderColor: '#99f6e4', borderRadius: 10, borderWidth: 1, backgroundColor: '#ccfbf1', paddingHorizontal: 12, paddingVertical: 8 },
+  tenantBadgeDark: { borderColor: '#0f766e', backgroundColor: 'rgba(45, 212, 191, 0.14)' },
   tenantLabel: { color: '#475569', fontSize: 11, fontWeight: '600' },
   tenantId: { color: '#0f172a', fontSize: 13, fontWeight: '700' },
   content: { gap: 16, paddingHorizontal: 16, paddingVertical: 18, paddingBottom: 28 },
@@ -764,8 +779,10 @@ const styles = StyleSheet.create({
   navItem: { flex: 1, alignItems: 'center', borderRadius: 10, paddingHorizontal: 4, paddingVertical: 9 },
   navItemDark: { backgroundColor: 'transparent' },
   navItemSelected: { backgroundColor: '#ccfbf1' },
+  navItemSelectedDark: { backgroundColor: 'rgba(45, 212, 191, 0.16)' },
   navLabel: { color: '#64748b', fontSize: 11, fontWeight: '700' },
   navLabelSelected: { color: '#0f766e' },
+  navLabelSelectedDark: { color: '#2dd4bf' },
   textDark: { color: '#f8fafc' },
   textMutedDark: { color: '#cbd5e1' },
 });
