@@ -111,11 +111,12 @@ console.log(`  functions:   ${budget.functions.length} declared\n`);
 
 const run = spawnSync(
   k6Bin,
-  // k6 v1.0 made `compact` the default end-of-test summary and the export follows that model,
-  // which emptied every metric this runner re-checks (the run passed k6's own thresholds while
-  // the file had no `metrics` object). `legacy` keeps the { metrics: { name: { values } } }
-  // contract this runner parses; migrate to handleSummary() before k6 v2 drops the mode.
-  ['run', `--summary-export=${summaryPath}`, '--summary-mode=legacy', SCRIPT],
+  // k6 v1.0's --summary-export writes a flattened document (metrics.<name>.<stat> instead of the
+  // pre-1.0 metrics.<name>.values.<stat>), and --summary-mode only changes the console display,
+  // not this file (internal/js/summary-wrapper.js in k6 v1.0.0). The reader below follows the
+  // flattened shape; assuming the nested one read every metric as missing while the run itself
+  // was green.
+  ['run', `--summary-export=${summaryPath}`, SCRIPT],
   {
     cwd: root,
     encoding: 'utf8',
@@ -154,10 +155,12 @@ const metrics = summary.metrics ?? {};
 const failures = [];
 const rows = [];
 
+// k6 v1.0's export flattens each metric's statistics into the metric object itself
+// (metrics.<name>.<stat>): trends carry their percentiles directly, rates carry `value` plus
+// `passes`/`fails`. The pre-1.0 nested `values` object is exactly what this reader used to
+// assume, and that mismatch is why a green run was judged "missing every metric".
 function metric(name) {
-  const entry = metrics[name];
-  if (!entry?.values) return null;
-  return entry.values;
+  return metrics[name] ?? null;
 }
 
 const globalLatency = metric('http_req_duration');
@@ -178,39 +181,40 @@ if (!globalLatency || !Number.isFinite(globalLatency['p(95)'])) {
   );
 }
 
+// Rate metrics export `value` (the wrapper renames k6's internal `rate` key on the way out).
 rows.push([
   'ALL',
   'http_req_failed',
-  globalFailed ? `${(globalFailed.rate * 100).toFixed(3)}%` : 'MISSING',
+  globalFailed ? `${(globalFailed.value * 100).toFixed(3)}%` : 'MISSING',
   `rate < ${budget.thresholds.http_req_failed.rate}`,
 ]);
-if (!globalFailed || !Number.isFinite(globalFailed.rate)) {
+if (!globalFailed || !Number.isFinite(globalFailed.value)) {
   failures.push('http_req_failed rate is missing from the k6 summary');
-} else if (globalFailed.rate > budget.thresholds.http_req_failed.rate) {
+} else if (globalFailed.value > budget.thresholds.http_req_failed.rate) {
   failures.push(
-    `http_req_failed rate ${(globalFailed.rate * 100).toFixed(3)}% exceeds ${budget.thresholds.http_req_failed.rate}`,
+    `http_req_failed rate ${(globalFailed.value * 100).toFixed(3)}% exceeds ${budget.thresholds.http_req_failed.rate}`,
   );
 }
 
 rows.push([
   'ALL',
   'checks',
-  checks ? `${(checks.rate * 100).toFixed(3)}%` : 'MISSING',
+  checks ? `${(checks.value * 100).toFixed(3)}%` : 'MISSING',
   `rate > ${budget.thresholds.checks.rate}`,
 ]);
-if (!checks || !Number.isFinite(checks.rate)) {
+if (!checks || !Number.isFinite(checks.value)) {
   failures.push('checks rate is missing from the k6 summary');
-} else if (checks.rate < budget.thresholds.checks.rate) {
-  failures.push(`checks rate ${(checks.rate * 100).toFixed(3)}% is below ${budget.thresholds.checks.rate}`);
+} else if (checks.value < budget.thresholds.checks.rate) {
+  failures.push(`checks rate ${(checks.value * 100).toFixed(3)}% is below ${budget.thresholds.checks.rate}`);
 }
 
 for (const [cls, limits] of Object.entries(budget.thresholds.classes)) {
-  const values = metric(`iot_functions_${cls}_duration_ms`);
-  const measured = values?.['p(95)'];
+  const classMetric = metric(`iot_functions_${cls}_duration_ms`);
+  const measured = classMetric?.['p(95)'];
   rows.push([
     cls,
     `${budget.functions.filter((fn) => fn.class === cls).length} function(s)`,
-    values ? `${Number(measured).toFixed(0)}ms` : 'MISSING',
+    classMetric ? `${Number(measured).toFixed(0)}ms` : 'MISSING',
     `p95 < ${limits.p95Ms}ms`,
   ]);
   if (!Number.isFinite(measured)) {
@@ -223,8 +227,13 @@ for (const [cls, limits] of Object.entries(budget.thresholds.classes)) {
 }
 
 // Every declared function class must have produced traffic; a class with zero requests means the
-// weighted picker never chose it, which is a coverage failure, not a fast run.
-const requestCount = summary.root_group?.checks?.length ?? 0;
+// weighted picker never chose it, which is a coverage failure, not a fast run. k6 v1.0 exports
+// root_group.checks as a name-keyed object where the pre-1.0 document used an array, so both
+// shapes are counted.
+const checkRecords = summary.root_group?.checks;
+const requestCount = Array.isArray(checkRecords)
+  ? checkRecords.length
+  : Object.keys(checkRecords ?? {}).length;
 if (requestCount === 0) {
   failures.push('the k6 summary recorded no checks: no declared function was exercised');
 }
