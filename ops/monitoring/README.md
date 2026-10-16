@@ -145,6 +145,16 @@ The dashboard and datasource are provisioned; a rebuilt container renders the sa
 panel shows "No data", find the exporter job (see "What the stack does NOT do") before
 changing the dashboard.
 
+## Related: the k6 function stress dashboard
+
+`ops/loadtest/` holds the k6 function stress suite (declared coverage in
+`config/stress-budget.json`, run through `npm run stress:seed` + `npm run stress:suite`), and
+`grafana/dashboards/k6-stress-overview.json` is provisioned beside this stack's own dashboards. It
+renders "No data" until the operator exports k6 results to Prometheus with
+`--out experimental-prometheus-rw=<prometheus>/api/v1/write`, because remote write is a write
+credential for this host and is therefore an operator decision, exactly like alert routing above.
+The dashboard's first panel says so on the dashboard itself.
+
 ## Attestations this stack feeds
 
 `docs/deployment-recovery.md` requires explicit operator attestations for monitoring access

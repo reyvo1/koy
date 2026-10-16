@@ -444,6 +444,7 @@ apps/user-web/public/icon.png
 apps/user-web/tsconfig.json
 chat-session.md
 config/performance-budget.json
+config/stress-budget.json
 docker-compose.rescue.yml
 docker-compose.yml
 docs/BACKEND-FRONTEND-SURFACE-CENSUS.md
@@ -594,6 +595,10 @@ ops/emqx/http-authenticator.rescue-02.example.hocon
 ops/env/iot-platform-backup.env.example
 ops/env/iot-platform.env.example
 ops/env/rescue-local.env.example
+ops/loadtest/README.md
+ops/loadtest/k6/functions-stress.js
+ops/loadtest/k6/lib/auth.js
+ops/loadtest/k6/lib/config.js
 ops/logrotate/README.md
 ops/logrotate/iot-platform.conf
 ops/media/runtime-connections.compose.example.yml
@@ -601,6 +606,7 @@ ops/monitoring/README.md
 ops/monitoring/alert-rules.yml
 ops/monitoring/compose.yml
 ops/monitoring/grafana/dashboards/iot-platform-overview.json
+ops/monitoring/grafana/dashboards/k6-stress-overview.json
 ops/monitoring/grafana/provisioning/dashboards/dashboards.yml
 ops/monitoring/grafana/provisioning/datasources/datasource.yml
 ops/monitoring/prometheus.yml
@@ -775,6 +781,7 @@ scripts/run-camera-probe.sh
 scripts/run-capability-template-probe.sh
 scripts/run-device-location-probe.sh
 scripts/run-device-maintenance-probe.sh
+scripts/run-k6-stress-suite.mjs
 scripts/run-load-gate.ts
 scripts/run-media-probe.sh
 scripts/run-mobile-notification-probe.sh
@@ -796,6 +803,7 @@ scripts/run-wave7-operations-probes.sh
 scripts/run-wave9-simulated-hardware-probes.sh
 scripts/seed-demo-accounts-for-browser.sh
 scripts/seed-demo-accounts.mjs
+scripts/seed-stress-baseline.mjs
 scripts/seed-uat-baseline.mjs
 scripts/self-test-baseline-hygiene.mjs
 scripts/self-test-baseline-manifest.mjs
@@ -1317,6 +1325,7 @@ test/jest-integration.json
 test/jest-mobile-notification-integration.json
 test/jest-mqtt-integration.json
 test/jest-mqtt-publisher-integration.json
+test/k6-stress-suite.contract.spec.ts
 test/local-console-login-regression.contract.spec.ts
 test/mobile-notification-parity.integration-spec.ts
 test/module-09-completion-review.contract.spec.ts

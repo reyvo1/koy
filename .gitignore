@@ -54,3 +54,6 @@ runtime-connections.json
 # only; a real tfvars must never be tracked (infra/README.md).
 infra/terraform/terraform.tfvars
 infra/terraform/rendered/
+
+# k6 stress baseline credentials (scripts/seed-stress-baseline.mjs)
+.stress-credentials

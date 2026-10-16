@@ -85,6 +85,7 @@
     "test/historical-contract-transition-safety.contract.spec.ts": "policy-enforcement",
     "test/frontend-api-route-parity.contract.spec.ts": "stable-contract",
     "test/integration-e2e-testing-completion.contract.spec.ts": "historical-evidence",
+    "test/k6-stress-suite.contract.spec.ts": "stable-contract",
     "test/ios-final-release-proof-policy.contract.spec.ts": "stable-contract",
     "test/local-console-login-regression.contract.spec.ts": "historical-evidence",
     "test/module-09-completion-review.contract.spec.ts": "historical-evidence",

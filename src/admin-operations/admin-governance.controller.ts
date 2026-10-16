@@ -93,7 +93,10 @@ export class AdminGovernanceController {
   ) {
     // Explicit tenant, the same rule `platform-commands/dispatch` follows: a platform read
     // that fell back to a default would show one customer's capability declarations to another.
-    return this.capabilityTemplates.listTemplates(tenantId.trim(), take ? Number(take) : 100);
+    // The argument is passed through as-is: `requireTenant` in the service answers a missing or
+    // blank tenant with the same 400 the sibling platform routes return, whereas trimming here
+    // turned that case into a TypeError and a 500.
+    return this.capabilityTemplates.listTemplates(tenantId, take ? Number(take) : 100);
   }
 
   @Post('platform-capability-templates')

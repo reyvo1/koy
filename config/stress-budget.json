@@ -1,0 +1,1032 @@
+{
+  "$comment": [
+    "k6 function stress budgets. Every number here is a CLAIM this platform asserts, mirroring the",
+    "philosophy of config/performance-budget.json: the first run produces the measurement, and these",
+    "values are then revised to reality or the platform is tightened. A threshold nobody chose is not",
+    "a threshold.",
+    "",
+    "The 'functions' array is the coverage contract: it enumerates the operator/user product surfaces",
+    "the suite must exercise, per role, and the k6 script derives BOTH its traffic mix and its k6",
+    "thresholds from this file. An endpoint missing here is a surface the stress suite does not cover,",
+    "so adding a product surface means adding an entry here — enforced by",
+    "test/k6-stress-suite.contract.spec.ts, which resolves every declared path back to a real controller.",
+    "",
+    "Every entry must be expected to answer 2xx for the declared role once the stress baseline is",
+    "seeded; the setup stage fails the run when a required entity is absent, so 'no data' can never look",
+    "like 'healthy under load'.",
+    "",
+    "Deliberately NOT covered (each listed in notStressed with its reason): long-lived SSE streams,",
+    "machine-only surfaces (broker auth/ACL/webhooks, billing cycle/webhook, device",
+    "pair/heartbeat/rotate), camera playback signalling (needs a live go2rtc), OTA campaign writes, and",
+    "device-mutating public writes (`/v1` DEVICE_CONTROL) because a stress run must never act on real",
+    "actuators."
+  ],
+  "schema": "iot-platform-k6-function-stress/1",
+  "settings": {
+    "executor": "ramping-arrival-rate",
+    "startRate": 5,
+    "preAllocatedVUs": 10,
+    "maxVUs": 120,
+    "timeUnit": "1s",
+    "stages": [
+      {
+        "target": 10,
+        "duration": "30s"
+      },
+      {
+        "target": 40,
+        "duration": "1m"
+      },
+      {
+        "target": 80,
+        "duration": "1m"
+      },
+      {
+        "target": 0,
+        "duration": "30s"
+      }
+    ],
+    "gracefulStop": "30s",
+    "scenarioName": "all_functions"
+  },
+  "thresholds": {
+    "$comment": "Global gates on k6 built-in metrics; the suite additionally emits one trend per class so the class budgets below are enforced per surface rather than hidden behind an aggregate.",
+    "http_req_failed": {
+      "rate": 0.005
+    },
+    "http_req_duration": {
+      "p95Ms": 1500
+    },
+    "checks": {
+      "rate": 0.99
+    },
+    "classes": {
+      "health": {
+        "p95Ms": 250,
+        "errorRate": 0.001
+      },
+      "read": {
+        "p95Ms": 900,
+        "errorRate": 0.002
+      },
+      "write": {
+        "p95Ms": 2500,
+        "errorRate": 0.01
+      },
+      "publicApi": {
+        "p95Ms": 900,
+        "errorRate": 0.002
+      },
+      "deviceProtocol": {
+        "p95Ms": 600,
+        "errorRate": 0.001
+      }
+    }
+  },
+  "functions": [
+    {
+      "name": "liveness",
+      "class": "health",
+      "role": "anonymous",
+      "method": "GET",
+      "path": "/health/live",
+      "weight": 1
+    },
+    {
+      "name": "operational summary",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/admin/operational-summary",
+      "weight": 3
+    },
+    {
+      "name": "tenant api keys",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/admin/api-keys",
+      "weight": 1
+    },
+    {
+      "name": "webhook endpoints",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/admin/webhooks/endpoints",
+      "weight": 1
+    },
+    {
+      "name": "webhook deliveries",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/admin/webhooks/deliveries",
+      "weight": 1
+    },
+    {
+      "name": "integration registry",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/admin/integrations",
+      "weight": 1
+    },
+    {
+      "name": "role catalog",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/admin/roles/catalog",
+      "weight": 2
+    },
+    {
+      "name": "custom roles",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/admin/roles",
+      "weight": 1
+    },
+    {
+      "name": "tenant users",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/admin/tenant-users",
+      "weight": 1
+    },
+    {
+      "name": "dashboards list",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/dashboards",
+      "weight": 3
+    },
+    {
+      "name": "dashboard detail",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/dashboards/:dashboardId",
+      "weight": 3,
+      "requires": [
+        "dashboardId"
+      ]
+    },
+    {
+      "name": "dashboard resolution",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/dashboards/:dashboardId/resolution",
+      "weight": 3,
+      "requires": [
+        "dashboardId"
+      ]
+    },
+    {
+      "name": "dashboard widget data",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/dashboards/:dashboardId/widgets/:widgetId/data",
+      "weight": 3,
+      "requires": [
+        "dashboardId",
+        "widgetId"
+      ]
+    },
+    {
+      "name": "devices list",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/devices",
+      "weight": 4
+    },
+    {
+      "name": "device detail",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/devices/:deviceId",
+      "weight": 3,
+      "requires": [
+        "deviceId"
+      ]
+    },
+    {
+      "name": "device health",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/devices/:deviceId/health",
+      "weight": 2,
+      "requires": [
+        "deviceId"
+      ]
+    },
+    {
+      "name": "device location",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/devices/:deviceId/location",
+      "weight": 1,
+      "requires": [
+        "deviceId"
+      ]
+    },
+    {
+      "name": "device command log",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/devices/:deviceId/command-log",
+      "weight": 2,
+      "requires": [
+        "deviceId"
+      ]
+    },
+    {
+      "name": "device latest telemetry",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/devices/:deviceId/telemetry/latest",
+      "weight": 2,
+      "requires": [
+        "deviceId"
+      ]
+    },
+    {
+      "name": "device telemetry history",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/devices/:deviceId/telemetry/history",
+      "weight": 2,
+      "requires": [
+        "deviceId"
+      ],
+      "query": {
+        "limit": "50"
+      }
+    },
+    {
+      "name": "device telemetry aggregate",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/devices/:deviceId/telemetry/aggregate",
+      "weight": 2,
+      "requires": [
+        "deviceId"
+      ],
+      "query": {
+        "capability": "power"
+      }
+    },
+    {
+      "name": "device groups",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/device-groups",
+      "weight": 2
+    },
+    {
+      "name": "automations list",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/automations",
+      "weight": 2
+    },
+    {
+      "name": "automation detail",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/automations/:automationId",
+      "weight": 2,
+      "requires": [
+        "automationId"
+      ]
+    },
+    {
+      "name": "scenes list",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/scenes",
+      "weight": 2
+    },
+    {
+      "name": "scene detail",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/scenes/:sceneId",
+      "weight": 2,
+      "requires": [
+        "sceneId"
+      ]
+    },
+    {
+      "name": "scene executions",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/scenes/:sceneId/executions",
+      "weight": 1,
+      "requires": [
+        "sceneId"
+      ]
+    },
+    {
+      "name": "schedules list",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/schedules",
+      "weight": 2
+    },
+    {
+      "name": "schedule detail",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/schedules/:scheduleId",
+      "weight": 2,
+      "requires": [
+        "scheduleId"
+      ]
+    },
+    {
+      "name": "schedule runs",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/schedules/:scheduleId/runs",
+      "weight": 1,
+      "requires": [
+        "scheduleId"
+      ]
+    },
+    {
+      "name": "notifications list",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/notifications",
+      "weight": 2
+    },
+    {
+      "name": "notifications summary",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/notifications/summary",
+      "weight": 2
+    },
+    {
+      "name": "notification detail",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/notifications/:notificationId",
+      "weight": 1,
+      "requires": [
+        "notificationId"
+      ]
+    },
+    {
+      "name": "maintenance plans",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/device-maintenance/plans",
+      "weight": 1
+    },
+    {
+      "name": "camera inventory",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/cameras",
+      "weight": 1
+    },
+    {
+      "name": "camera media status",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/camera-network/media/status",
+      "weight": 1
+    },
+    {
+      "name": "spaces",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/spaces",
+      "weight": 1
+    },
+    {
+      "name": "organization membership",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/organizations/current",
+      "weight": 1
+    },
+    {
+      "name": "rbac audit trail",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/audit-logs",
+      "weight": 2,
+      "query": {
+        "limit": "20"
+      }
+    },
+    {
+      "name": "own profile",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/users/profile",
+      "weight": 1
+    },
+    {
+      "name": "command history",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/devices/:deviceId/commands",
+      "weight": 2,
+      "requires": [
+        "deviceId"
+      ],
+      "query": {
+        "limit": "20"
+      }
+    },
+    {
+      "name": "command detail",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/devices/:deviceId/commands/:commandId",
+      "weight": 1,
+      "requires": [
+        "deviceId",
+        "commandCorrelationId"
+      ]
+    },
+    {
+      "name": "device shares",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/devices/:deviceId/shares",
+      "weight": 1,
+      "requires": [
+        "deviceId"
+      ]
+    },
+    {
+      "name": "device technical history",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/devices/:deviceId/technical-history",
+      "weight": 1,
+      "requires": [
+        "deviceId"
+      ]
+    },
+    {
+      "name": "device capabilities",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/devices/:deviceId/capabilities",
+      "weight": 2,
+      "requires": [
+        "deviceId"
+      ]
+    },
+    {
+      "name": "integration runtime status",
+      "class": "read",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/admin/integrations/:integrationId/runtime",
+      "weight": 1,
+      "requires": [
+        "integrationId"
+      ]
+    },
+    {
+      "name": "metrics scrape",
+      "class": "health",
+      "role": "tenant-admin",
+      "method": "GET",
+      "path": "/metrics",
+      "weight": 1,
+      "optional": true,
+      "requiresEnv": [
+        "STRESS_METRICS_TOKEN"
+      ],
+      "metricsToken": true
+    },
+    {
+      "name": "automation activate",
+      "class": "write",
+      "role": "tenant-admin",
+      "method": "POST",
+      "path": "/automations/:automationId/activate",
+      "weight": 1,
+      "requires": [
+        "automationId"
+      ],
+      "flip": "activate"
+    },
+    {
+      "name": "automation deactivate",
+      "class": "write",
+      "role": "tenant-admin",
+      "method": "POST",
+      "path": "/automations/:automationId/deactivate",
+      "weight": 1,
+      "requires": [
+        "automationId"
+      ],
+      "flip": "deactivate"
+    },
+    {
+      "name": "profile update idempotent",
+      "class": "write",
+      "role": "tenant-admin",
+      "method": "POST",
+      "path": "/users/profile",
+      "weight": 1,
+      "body": {
+        "name": ":profileName"
+      }
+    },
+    {
+      "name": "device group churn",
+      "class": "write",
+      "role": "tenant-admin",
+      "type": "sequence",
+      "weight": 1,
+      "sequence": [
+        {
+          "method": "POST",
+          "path": "/device-groups",
+          "body": {
+            "name": ":groupName",
+            "description": "k6 stress suite churn"
+          },
+          "capture": {
+            "groupId": "id"
+          }
+        },
+        {
+          "method": "POST",
+          "path": "/device-groups/:groupId/members",
+          "body": {
+            "deviceId": ":deviceId"
+          }
+        },
+        {
+          "method": "DELETE",
+          "path": "/device-groups/:groupId/members/:deviceId"
+        },
+        {
+          "method": "DELETE",
+          "path": "/device-groups/:groupId"
+        }
+      ]
+    },
+    {
+      "name": "member devices",
+      "class": "read",
+      "role": "member",
+      "method": "GET",
+      "path": "/devices",
+      "weight": 2
+    },
+    {
+      "name": "member accessible alerts",
+      "class": "read",
+      "role": "member",
+      "method": "GET",
+      "path": "/analytics/alerts/accessible",
+      "weight": 1
+    },
+    {
+      "name": "member accessible spaces",
+      "class": "read",
+      "role": "member",
+      "method": "GET",
+      "path": "/spaces/accessible",
+      "weight": 1
+    },
+    {
+      "name": "tenants directory",
+      "class": "read",
+      "role": "super-admin",
+      "method": "GET",
+      "path": "/admin/tenants",
+      "weight": 2
+    },
+    {
+      "name": "billing subscriptions",
+      "class": "read",
+      "role": "super-admin",
+      "method": "GET",
+      "path": "/admin/billing/subscriptions",
+      "weight": 2
+    },
+    {
+      "name": "firmware directory",
+      "class": "read",
+      "role": "super-admin",
+      "method": "GET",
+      "path": "/admin/firmware",
+      "weight": 1
+    },
+    {
+      "name": "platform devices",
+      "class": "read",
+      "role": "super-admin",
+      "method": "GET",
+      "path": "/admin/platform-devices",
+      "weight": 2
+    },
+    {
+      "name": "platform capabilities",
+      "class": "read",
+      "role": "super-admin",
+      "method": "GET",
+      "path": "/admin/platform-capabilities",
+      "weight": 2
+    },
+    {
+      "name": "platform findings",
+      "class": "read",
+      "role": "super-admin",
+      "method": "GET",
+      "path": "/admin/platform-findings",
+      "weight": 1
+    },
+    {
+      "name": "platform api keys",
+      "class": "read",
+      "role": "super-admin",
+      "method": "GET",
+      "path": "/admin/platform-api-keys",
+      "weight": 1
+    },
+    {
+      "name": "platform users",
+      "class": "read",
+      "role": "super-admin",
+      "method": "GET",
+      "path": "/admin/platform-users",
+      "weight": 2
+    },
+    {
+      "name": "permission catalog",
+      "class": "read",
+      "role": "super-admin",
+      "method": "GET",
+      "path": "/admin/platform-rbac/permission-catalog",
+      "weight": 2
+    },
+    {
+      "name": "platform custom roles",
+      "class": "read",
+      "role": "super-admin",
+      "method": "GET",
+      "path": "/admin/platform-rbac/custom-roles",
+      "weight": 1
+    },
+    {
+      "name": "platform rbac audit",
+      "class": "read",
+      "role": "super-admin",
+      "method": "GET",
+      "path": "/admin/platform-rbac/audit",
+      "weight": 1
+    },
+    {
+      "name": "capability versions",
+      "class": "read",
+      "role": "super-admin",
+      "method": "GET",
+      "path": "/admin/platform-capabilities/versions",
+      "weight": 1
+    },
+    {
+      "name": "capability templates",
+      "class": "read",
+      "role": "super-admin",
+      "method": "GET",
+      "path": "/admin/platform-capability-templates",
+      "weight": 1,
+      "query": {
+        "tenantId": ":tenant"
+      }
+    },
+    {
+      "name": "runtime signals",
+      "class": "read",
+      "role": "super-admin",
+      "method": "GET",
+      "path": "/admin/platform-runtime-signals",
+      "weight": 1
+    },
+    {
+      "name": "platform device locations",
+      "class": "read",
+      "role": "super-admin",
+      "method": "GET",
+      "path": "/admin/platform-device-locations",
+      "weight": 1
+    },
+    {
+      "name": "platform device groups",
+      "class": "read",
+      "role": "super-admin",
+      "method": "GET",
+      "path": "/admin/platform-device-groups",
+      "weight": 1
+    },
+    {
+      "name": "platform device credentials",
+      "class": "read",
+      "role": "super-admin",
+      "method": "GET",
+      "path": "/admin/platform-device-credentials",
+      "weight": 1
+    },
+    {
+      "name": "platform commands",
+      "class": "read",
+      "role": "super-admin",
+      "method": "GET",
+      "path": "/admin/platform-commands",
+      "weight": 1
+    },
+    {
+      "name": "telemetry explorer",
+      "class": "read",
+      "role": "super-admin",
+      "method": "GET",
+      "path": "/admin/platform-telemetry/explorer",
+      "weight": 1,
+      "requires": [
+        "deviceId"
+      ],
+      "query": {
+        "deviceId": ":deviceId",
+        "capability": "power",
+        "limit": "20"
+      }
+    },
+    {
+      "name": "tenant summary report",
+      "class": "read",
+      "role": "super-admin",
+      "method": "GET",
+      "path": "/admin/platform-reports/tenant-summary",
+      "weight": 1,
+      "query": {
+        "hours": "24"
+      }
+    },
+    {
+      "name": "saved reports",
+      "class": "read",
+      "role": "super-admin",
+      "method": "GET",
+      "path": "/admin/platform-reports/saved",
+      "weight": 1,
+      "query": {
+        "tenantId": ":tenant"
+      }
+    },
+    {
+      "name": "mqtt management",
+      "class": "read",
+      "role": "super-admin",
+      "method": "GET",
+      "path": "/admin/platform-mqtt/management",
+      "weight": 1
+    },
+    {
+      "name": "noc acknowledgements",
+      "class": "read",
+      "role": "super-admin",
+      "method": "GET",
+      "path": "/admin/platform-noc/acknowledgements",
+      "weight": 1,
+      "query": {
+        "tenantId": ":tenant"
+      }
+    },
+    {
+      "name": "public devices",
+      "class": "publicApi",
+      "role": "api-key",
+      "method": "GET",
+      "path": "/v1/devices",
+      "weight": 2,
+      "query": {
+        "limit": "20"
+      }
+    },
+    {
+      "name": "public telemetry",
+      "class": "publicApi",
+      "role": "api-key",
+      "method": "GET",
+      "path": "/v1/telemetry",
+      "weight": 2,
+      "query": {
+        "limit": "20"
+      }
+    },
+    {
+      "name": "public findings",
+      "class": "publicApi",
+      "role": "api-key",
+      "method": "GET",
+      "path": "/v1/findings",
+      "weight": 1,
+      "query": {
+        "limit": "20"
+      }
+    }
+  ],
+  "notStressed": [
+    {
+      "path": "/devices/:deviceId/telemetry/stream",
+      "method": "SSE",
+      "reason": "Long-lived server-sent events hold one connection for the scenario lifetime, so they would measure the load generator holding a socket open rather than platform throughput. Live probes cover the stream end-to-end."
+    },
+    {
+      "path": "/camera-network/devices/:id/playback",
+      "method": "POST",
+      "reason": "Signalling requires a live go2rtc media server and a real SDP offer; CCTV remains QUARANTINE pending source-bound acceptance."
+    },
+    {
+      "path": "/camera-network/devices/:id/playback/:sessionId",
+      "method": "DELETE",
+      "reason": "Same signalling prerequisite as the POST above."
+    },
+    {
+      "path": "/camera-network/discover",
+      "method": "GET",
+      "reason": "ONVIF discovery is a broadcast against the operator network and cannot run meaningfully against the CI runtime."
+    },
+    {
+      "path": "/ota/rollouts/:rolloutId",
+      "method": "GET",
+      "reason": "The platform exposes no rollout LIST route, so the only way to obtain an id is to create firmware artifacts and a rollout -- a write with real side effects. An operator reads rollout detail while watching one rollout, not under load."
+    },
+    {
+      "path": "/ota/rollouts/:rolloutId/transition",
+      "method": "POST",
+      "reason": "Rollout state transitions mutate a live rollout against real devices; a stress run must not advance firmware campaigns."
+    },
+    {
+      "path": "/ota/rollouts/:rolloutId/progress",
+      "method": "POST",
+      "reason": "Progress reporting is device-originated protocol traffic, not an operator surface."
+    },
+    {
+      "path": "/ota/firmware-artifacts",
+      "method": "POST",
+      "reason": "Creating firmware artifacts uploads binaries that no stress run should leave behind."
+    },
+    {
+      "path": "/ota/rollouts",
+      "method": "POST",
+      "reason": "See the rollout transition entry: rollout creation is a campaign action, not a stress surface."
+    },
+    {
+      "path": "/devices/:id/pair",
+      "method": "POST",
+      "reason": "Device protocol surface (MACHINE_ONLY); the simulated ESP32 probes already cover pairing."
+    },
+    {
+      "path": "/devices/:id/heartbeat",
+      "method": "PATCH",
+      "reason": "Device protocol surface (MACHINE_ONLY); covered by the ESP32 simulation probes."
+    },
+    {
+      "path": "/devices/:id/rotate",
+      "method": "PATCH",
+      "reason": "Credential rotation mutates device credentials; covered by the MQTT/broker probes."
+    },
+    {
+      "path": "/mqtt/auth",
+      "method": "POST",
+      "reason": "Broker authentication callback (MACHINE_ONLY); covered by the live broker smoke."
+    },
+    {
+      "path": "/mqtt/acl",
+      "method": "POST",
+      "reason": "Broker authorization callback (MACHINE_ONLY); covered by the live broker smoke."
+    },
+    {
+      "path": "/mqtt/ack",
+      "method": "POST",
+      "reason": "Broker ACK callback (MACHINE_ONLY); covered by the live broker smoke."
+    },
+    {
+      "path": "/mqtt/webhook/telemetry",
+      "method": "POST",
+      "reason": "Broker telemetry ingestion (MACHINE_ONLY); covered by the live broker smoke."
+    },
+    {
+      "path": "/billing/mode",
+      "method": "GET",
+      "reason": "Billing runtime mode is tenant-internal state, not an operator surface."
+    },
+    {
+      "path": "/billing/subscription",
+      "method": "POST",
+      "reason": "Mutates a tenant's subscription; a stress run must not create or move subscriptions."
+    },
+    {
+      "path": "/billing/usage",
+      "method": "POST",
+      "reason": "Billing runtime accounting (MACHINE_ONLY)."
+    },
+    {
+      "path": "/billing/cycle",
+      "method": "POST",
+      "reason": "Billing runtime cycle execution (MACHINE_ONLY)."
+    },
+    {
+      "path": "/billing/webhooks/midtrans",
+      "method": "POST",
+      "reason": "Payment provider webhook (MACHINE_ONLY); covered by the integration probes."
+    },
+    {
+      "path": "/auth/register",
+      "method": "POST",
+      "reason": "Registration creates a user per call; the auth contract suites cover it."
+    },
+    {
+      "path": "/auth/verify-email",
+      "method": "POST",
+      "reason": "Single-use verification token; covered by the auth suites."
+    },
+    {
+      "path": "/auth/forgot-password",
+      "method": "POST",
+      "reason": "Sends email per call; covered by the auth suites."
+    },
+    {
+      "path": "/auth/reset-password",
+      "method": "POST",
+      "reason": "Single-use reset token; covered by the auth suites."
+    },
+    {
+      "path": "/users/tenant-context",
+      "method": "GET",
+      "reason": "Session helper contract, classified backend-only by docs/BACKEND-FRONTEND-SURFACE-CENSUS.md."
+    },
+    {
+      "path": "/admin/users",
+      "method": "GET",
+      "reason": "Legacy duplicate of the platform/tenant directories; the census forbids new UI dependencies on it."
+    },
+    {
+      "path": "/admin/integrations/:integrationId/connect",
+      "method": "POST",
+      "reason": "Connecting an integration performs a live provider handshake with server-owned credentials; a stress run must not open provider connections."
+    },
+    {
+      "path": "/admin/integrations/:integrationId/sync",
+      "method": "POST",
+      "reason": "Synchronization pushes and pulls real provider state; the integration probes already prove the acknowledged-operation path."
+    },
+    {
+      "path": "/admin/integrations/:integrationId/disconnect",
+      "method": "POST",
+      "reason": "Disconnecting is a one-shot operator decision with real effect, not a throughput surface."
+    }
+  ]
+}

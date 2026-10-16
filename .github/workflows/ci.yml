@@ -480,6 +480,34 @@ jobs:
         run: |
           npm run load:gate
 
+      - name: Install k6
+        timeout-minutes: 5
+        # Pinned release tarball rather than a package manager, so the stress suite runs against a
+        # known k6 build instead of whatever the runner image happens to ship.
+        run: |
+          K6_VERSION=v1.0.0
+          curl -sSLo /tmp/k6.tar.gz "https://github.com/grafana/k6/releases/download/${K6_VERSION}/k6-${K6_VERSION}-linux-amd64.tar.gz"
+          sudo tar -xzf /tmp/k6.tar.gz -C /usr/local/bin k6
+          k6 version
+
+      - name: Seed the k6 stress baseline
+        timeout-minutes: 10
+        # The suite refuses to run against an empty platform (an endpoint with no entity cannot be
+        # stressed, and skipping it would manufacture coverage), so the entities it needs are seeded
+        # here. Passwords go to the git-ignored .stress-credentials the suite reads.
+        run: |
+          npm run stress:seed
+
+      - name: k6 function stress suite
+        timeout-minutes: 15
+        # Authenticated functional stress against the SAME live API the acceptance probes use, held
+        # to config/stress-budget.json. It fails closed rather than skipping when the target, the
+        # identities or the budget are unavailable.
+        env:
+          K6_BASE_URL: http://127.0.0.1:3000
+        run: |
+          npm run stress:suite
+
       - name: Wave 12 cross-region operations
         timeout-minutes: 10
         # The only gate for the completeness claim. Only a real join across findings -> devices -> regions

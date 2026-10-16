@@ -1,0 +1,121 @@
+{
+  "annotations": { "list": [] },
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "panels": [],
+      "title": "k6 function stress — where this data comes from",
+      "type": "row"
+    },
+    {
+      "description": "This dashboard renders the k6 function stress suite (ops/loadtest, `npm run stress:suite`). Panels show \"No data\" until the operator exports k6 results to Prometheus with `k6 run --out experimental-prometheus-rw=$PROMETHEUS_REMOTE_WRITE_URL`. That is an operator decision — a remote-write endpoint is a write credential for the monitoring host — so nothing in this repository enables it, exactly as documented in ops/monitoring/README.md under \"What the stack does NOT do\". A panel with no data therefore means the export is not configured, not that the platform was never stressed.",
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 1 },
+      "id": 2,
+      "options": {
+        "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+        "content": "The suite is the source of truth for coverage (config/stress-budget.json) and for the budgets it enforces. Run it against a live API and export to Prometheus to make these panels live.\n\n  K6_PROMETHEUS_RW_URL=http://127.0.0.1:9090/api/v1/write k6 run --out experimental-prometheus-rw=$K6_PROMETHEUS_RW_URL ops/loadtest/k6/functions-stress.js\n\nSchema (see ops/loadtest/README.md): config/stress-budget.json → scripts/run-k6-stress-suite.mjs → ops/loadtest/k6/functions-stress.js.",
+        "mode": "markdown"
+      },
+      "pluginVersion": "13.0.11",
+      "title": "Provenance and how to populate this dashboard",
+      "type": "text"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 3,
+      "panels": [],
+      "title": "Load and saturation",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "iot-platform-prometheus" },
+      "description": "Virtual users driven by the suite. A run whose VU count never leaves the pre-allocated floor measured queueing, not load.",
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 6 },
+      "id": 4,
+      "options": { "legend": { "displayMode": "list", "showLegend": true }, "tooltip": { "mode": "single" } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "iot-platform-prometheus" }, "expr": "sum(k6_vus)", "legendFormat": "VUs" }],
+      "title": "Virtual users",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "iot-platform-prometheus" },
+      "description": "Requests per second, per declared function class. The read class dominating is expected: the budget weights reads far above writes.",
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 6 },
+      "id": 5,
+      "options": { "legend": { "displayMode": "list", "showLegend": true }, "tooltip": { "mode": "multi" } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "iot-platform-prometheus" }, "expr": "sum by (class) (rate(k6_http_reqs_total[1m]))", "legendFormat": "{{class}}" }],
+      "title": "Requests per second by function class",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "iot-platform-prometheus" },
+      "description": "Failed request ratio overall. The suite fails the run above the budget's error rate, so a visible climb here is a pre-failure signal, not decoration.",
+      "fieldConfig": { "defaults": { "max": 1, "min": 0, "unit": "percentunit" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 6 },
+      "id": 6,
+      "options": { "legend": { "displayMode": "list", "showLegend": true }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "iot-platform-prometheus" }, "expr": "sum(rate(k6_http_req_failed_total[1m])) / clamp_min(sum(rate(k6_http_reqs_total[1m])), 0.001)", "legendFormat": "failed ratio" }
+      ],
+      "title": "Failed request ratio",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 12 },
+      "id": 7,
+      "panels": [],
+      "title": "Latency per function class (the budgets the suite enforces)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "iot-platform-prometheus" },
+      "description": "p95 per function class from the suite's own trends. Compare against config/stress-budget.json: health 250ms, read 900ms, public API 900ms, write 2500ms.",
+      "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 13 },
+      "id": 8,
+      "options": { "legend": { "displayMode": "list", "showLegend": true }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "iot-platform-prometheus" }, "expr": "histogram_quantile(0.95, sum by (le, class) (rate(k6_iot_functions_read_duration_ms_bucket[2m])))", "legendFormat": "read p95" },
+        { "datasource": { "type": "prometheus", "uid": "iot-platform-prometheus" }, "expr": "histogram_quantile(0.95, sum by (le, class) (rate(k6_iot_functions_write_duration_ms_bucket[2m])))", "legendFormat": "write p95" },
+        { "datasource": { "type": "prometheus", "uid": "iot-platform-prometheus" }, "expr": "histogram_quantile(0.95, sum by (le, class) (rate(k6_iot_functions_publicApi_duration_ms_bucket[2m])))", "legendFormat": "publicApi p95" },
+        { "datasource": { "type": "prometheus", "uid": "iot-platform-prometheus" }, "expr": "histogram_quantile(0.95, sum by (le, class) (rate(k6_iot_functions_health_duration_ms_bucket[2m])))", "legendFormat": "health p95" }
+      ],
+      "title": "p95 latency by function class",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "iot-platform-prometheus" },
+      "description": "Absolute latency ceiling observed across every class, next to the aggregate budget of 1500ms.",
+      "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 13 },
+      "id": 9,
+      "options": { "legend": { "displayMode": "list", "showLegend": true }, "tooltip": { "mode": "multi" } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "iot-platform-prometheus" }, "expr": "k6_http_req_duration_ms", "legendFormat": "{{class}} p{{quantile}}" }],
+      "title": "Observed latency ceiling",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": ["iot-platform", "k6", "stress", "performance"],
+  "templating": { "list": [] },
+  "time": { "from": "now-3h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "k6 function stress overview",
+  "uid": "iot-platform-k6-stress",
+  "version": 1,
+  "weekStart": ""
+}
