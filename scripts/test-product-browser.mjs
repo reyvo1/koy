@@ -155,21 +155,89 @@ const server = createServer(async (req, res) => {
 });
 await new Promise((done) => server.listen(0, '127.0.0.1', done));
 const url = `http://127.0.0.1:${server.address().port}`;
-const profile = mkdtempSync(join(tmpdir(), 'iot-product-browser-'));
 const port = 19322;
-const chrome = spawn(
-  process.env.PRODUCT_TEST_CHROME ?? 'google-chrome',
-  [
-    '--headless=new',
-    '--no-sandbox',
-    '--disable-dev-shm-usage',
-    `--remote-debugging-port=${port}`,
-    `--user-data-dir=${profile}`,
-    'about:blank',
-  ],
-  { stdio: 'ignore' },
-);
+let profile = mkdtempSync(join(tmpdir(), 'iot-product-browser-'));
+let chrome;
 let socket;
+
+/**
+ * Launch headless Chrome and wait for its DevTools endpoint to expose a page.
+ *
+ * The old wait was a flat nine-second poll that read any slow start as "Chrome unavailable". A cold
+ * CI runner can legitimately need longer, and a launch error or an early exit deserves its own
+ * message instead of the same verdict. The assertions later in this script are untouched; this only
+ * makes the environmental failure class detectable and its slow case tolerable.
+ */
+async function launchChromeAndWait() {
+  const child = spawn(
+    process.env.PRODUCT_TEST_CHROME ?? 'google-chrome',
+    [
+      '--headless=new',
+      '--no-sandbox',
+      '--disable-dev-shm-usage',
+      `--remote-debugging-port=${port}`,
+      `--user-data-dir=${profile}`,
+      'about:blank',
+    ],
+    { stdio: 'ignore' },
+  );
+  let spawnError = null;
+  let exited = false;
+  let exitCode = null;
+  child.on('error', (cause) => {
+    spawnError = cause;
+  });
+  child.on('exit', (code) => {
+    exited = true;
+    exitCode = code;
+  });
+
+  const deadline = Date.now() + 30000;
+  let tab = null;
+  while (Date.now() < deadline) {
+    if (spawnError || exited) break;
+    try {
+      const result = await fetch(`http://127.0.0.1:${port}/json/list`);
+      tab = (await result.json()).find((item) => item.type === 'page');
+      if (tab) break;
+    } catch {}
+    await pause(150);
+  }
+  if (tab) return { child, tab };
+
+  child.kill('SIGKILL');
+  if (spawnError) {
+    throw new Error(
+      `Chrome unavailable: could not launch google-chrome (${spawnError.code ?? spawnError.message})`,
+    );
+  }
+  if (exited) {
+    throw new Error(
+      `Chrome unavailable: process exited early with code ${exitCode}`,
+    );
+  }
+  throw new Error(
+    'Chrome unavailable: DevTools endpoint did not answer within 30s',
+  );
+}
+
+/** One relaunch with a fresh profile covers a one-off launch crash; the second failure is real. */
+async function launchChrome() {
+  let lastError;
+  for (let launch = 1; launch <= 2; launch += 1) {
+    try {
+      return await launchChromeAndWait();
+    } catch (cause) {
+      lastError = cause;
+      if (launch < 2) {
+        await pause(1000);
+        rmSync(profile, { recursive: true, force: true });
+        profile = mkdtempSync(join(tmpdir(), 'iot-product-browser-'));
+      }
+    }
+  }
+  throw lastError;
+}
 const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 let id = 0;
 const pending = new Map(),
@@ -221,17 +289,9 @@ async function input(label, value) {
   await pause(150);
 }
 try {
-  let tab;
-  for (let attempt = 0; attempt < 60; attempt++) {
-    try {
-      const result = await fetch(`http://127.0.0.1:${port}/json/list`);
-      tab = (await result.json()).find((item) => item.type === 'page');
-      if (tab) break;
-    } catch {}
-    await pause(150);
-  }
-  if (!tab) throw new Error('Chrome unavailable');
-  socket = new WebSocket(tab.webSocketDebuggerUrl);
+  const launched = await launchChrome();
+  chrome = launched.child;
+  socket = new WebSocket(launched.tab.webSocketDebuggerUrl);
   await new Promise((done, reject) => {
     socket.addEventListener('open', done, { once: true });
     socket.addEventListener('error', reject, { once: true });
@@ -321,7 +381,7 @@ try {
   );
 } finally {
   if (socket) socket.close();
-  chrome.kill();
+  if (chrome) chrome.kill();
   for (const call of pending.values()) {
     clearTimeout(call.timer);
     call.reject(new Error('closed'));

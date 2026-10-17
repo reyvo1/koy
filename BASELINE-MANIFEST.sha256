@@ -65,9 +65,9 @@ a806666cbf85171af1027b36a496a750a0c20b253f48e82583a9f25a436622e1  ./AI-Developme
 cab10a82cb5f2255ecdf99981067119041beb07ab6c1f1976e531d10db5fd724  ./AI-Development-Kit/templates/MODULE-STATUS-TEMPLATE.md
 68f8de30afc578e0ab20ac92ef560f3081a95d699d998621092f1f61c0d00791  ./AI-Development-Kit/workflows/AGENT-EXECUTION-LOOP.md
 78e5c067c68636d36a3289d001fd159176a7792b7e33af206463d7aaa93a0f7c  ./AI-Development-Kit/workflows/FAILURE-PROTOCOL.md
-bfe2316b8c9b5fef9268619756b14a44b4bc175a3f096aa0e2af2aa8581cd9a0  ./CURRENT-STATE.md
+ab85f28e9ed772b2a86f088d788dcbfac14d2de6464317b71c524ecc5b8a9df3  ./CURRENT-STATE.md
 bd29d21f37c224e1d6b4af71e0025d8f4019b3914381248356add4266724f1b0  ./GATE-1-STATUS.md
-c8e2ec6eaa20b1c9ea4721b65a71e7e9574c3e2ad6e2194773f274ee44553cc4  ./PASTE-KE-CHAT-BERIKUTNYA.txt
+898f2dfa608e1a8ccd677a9d0862ddf2c211916d4f34b90afc2eea3a769f4e7d  ./PASTE-KE-CHAT-BERIKUTNYA.txt
 2b1f7f4afce4f3196b0258437c83d64fdda0b01d21a7d9d390695aad6eff2c41  ./PROJECT-HANDOFF.md
 818d1504f9c83a672557cc3c45452c033f04098ce52f609be506b3bbe7dfe7d6  ./UI-DESIGN-SYSTEM.md
 c2482384a4f53220f51123f4fd6ae19151c47cb1a15dc2d49f9a8228beaaa964  ./apps/admin-web/.env.example
@@ -460,7 +460,7 @@ bead9f184b27083639c20803cac92b239a55bcea908cf442f5eed777f6b59df9  ./apps/user-we
 ccd2a17f28b9205adc19fbf05b2a9389dc24115b8ce40b6d958777af90bea7a1  ./apps/user-web/postcss.config.mjs
 7794f4a44d2c31c1f33e91477a00025f4e62687a88946b7c17f58f26257ef2e8  ./apps/user-web/public/icon.png
 38ee09e8ee48c7e75cab63bd076513018ca07b655295664d07c107e408606495  ./apps/user-web/tsconfig.json
-69a756c9394d4e9869bf788cca052cc638029626162bed6d2ae2e4198a7a9882  ./chat-session.md
+fca1686a4980c92ee648329911f0ee3b831421412cb630c5f27ba9cd8df3dff3  ./chat-session.md
 08395048b09eab1f15b7264df8b76ae8b4e99634c0f516aa3ce775042bd1859e  ./config/performance-budget.json
 3f7f2db41062faaeea13fd74832ddcd6e9332a2b4063f13af8ff0cf3c60b030a  ./config/stress-budget.json
 57e9cc3083ac5d0b99e00ed9afa5f740d958130437c0d6a1b52d7ed89ad04fb5  ./docker-compose.rescue.yml
@@ -481,7 +481,7 @@ e609750984b6a528a218c343a0e3614403e010751dd1529cdc17da3d9148d2cf  ./docs/RESCUE-
 2fd52fea04918f5e778492de8879f074e594fb72c449993eef7b4ef3e8e33921  ./docs/ROADMAP-COMPLETE.md
 b7c50d5ecd0ef5538e96d0c7c2b40311e951e764d53f6f16f27f516f3eb1c911  ./docs/ROADMAP-SMART-HOTEL.md
 6149db8093c4f5835d3ee5bf7a76ae1f90c6fad4f00cdf96d00ddb491a087574  ./docs/SECRET-SCAN-POLICY.md
-4a4f02bb06680cda08b4ec226b0b3adc9ddc59272d4a0bc46551245a34754d10  ./docs/SESSION-CHECKPOINT.md
+eda9423694c6eca8ec26984653fa8d93a19a77dd9f651fceeed3474cb5cbb9ae  ./docs/SESSION-CHECKPOINT.md
 03d88ce7efa18d6b1381392e386db54b5f026a9e345f02e6299c07d6102d41bb  ./docs/SESSION-HANDOFF-PROTOCOL.md
 cc7efd6089313daacae59b9e676431d674b7b8e45702a812618728689fe7c16e  ./docs/STAGING-RUNBOOK.md
 1fc4adecc7abe855470936cef9ac09129d7b83a8926f1d8bddbfc244c1a5f2dd  ./docs/UAT-CHECKLIST.md
@@ -647,7 +647,7 @@ d296e3a0df131f20476c6d8c4ece1af57e861ed63b49659ab468ab3f038bc155  ./ops/systemd/
 0ab8a7cb3c2364eaae2ed177ad5dc0c605e90167f70de7f89aa552d184c0cdfa  ./ops/systemd/iot-platform-offhost-backup.timer
 c16ce529395244a7a5cdd9b4b86902273e232212695edd8c768c8de28cfbe78f  ./ops/systemd/iot-platform.service
 8324af11e31b28f764886f81456da39d3d6b503cbf97f394c1eddbb0aca5839e  ./package-lock.json
-40ca7099d39211cf70d3a577fc997d04aed8eb042a5ea82668f79b4d69299a97  ./package.json
+12dc1843db20c97f2dab3d2029e6bf15f0cf15861be2e93359d3b91261e7644b  ./package.json
 a119fdac221907cc9580b940bb96d031ae518f3a3f97dab501bfe3e94cef19d3  ./packages/design-system/package.json
 a6a80d485fd45df498f0ff7b7ed29c8c99a5d0aad2caeb80fd0df23a9d69400e  ./packages/design-system/src/camera-player.tsx
 b9b3e462cf4f09ca525457ac78f1274b48dac05b701f37ad32414a3d0515356e  ./packages/design-system/src/capability-value-input.tsx
@@ -868,7 +868,7 @@ e5ecf6478ad35ea331d316d9fc3a0987a2890af0f2f2e9c097e6a8462ee1bac2  ./scripts/self
 6ca25bc759b0080811af5cbde2ef2c8a54bd431298f4c1c8c4d7b32cdbe9d9a4  ./scripts/self-test-wave3-qemu-boot-runner.mjs
 fc8166a9fbf52dbe8b4d55173a0286fd63ee820e71cbe8a91640ddd46ebbcac0  ./scripts/self-test-wave5-public-api-probes.mjs
 272932d6980425b1454979ae0ca937d5f00cf30ca8e8f0cd4f765f2fb8af5daf  ./scripts/self-test-web-framework-contract-sync.mjs
-a510e32e152a9fb1814f847876ec3c9b2a9a23e0ce8119dcf7ec3745e38b9da8  ./scripts/test-product-browser.mjs
+8e760402ba2c93909cfb9cf365ad1f1684c1955268df00ea8e2a255a15c83af2  ./scripts/test-product-browser.mjs
 97afe3f8817e0472cb6e3b1d4f500911e533053af3fb0d8ea8d0704f97db0c14  ./scripts/validate-rescue-02b-evidence.mjs
 c8088ad6bdc471a647c6825a1472e96f18ff043669b10172233b63e9eefc83c7  ./scripts/validate-rescue-baseline.mjs
 131e3de48ca0e1238757be43693b6c7c74a2c4d34f3ab3bd242e080069364240  ./scripts/validate-rescue-gate1-receipt.mjs
@@ -1286,7 +1286,7 @@ b0113cd2acb7cad97daf082089aecc2d2a1a09ac3b3adb67512c8616c4627973  ./test/capabil
 a7146c20bcaac9b7334779d528d91b790973fbfcdf9e2f08cd6af18a5dfbc572  ./test/ci-dependency-bootstrap.contract.spec.ts
 f9435954f20b91eca8b0b50f9318d39d121f9b0a8014a216c6df4df0e4f4badd  ./test/client-fetch-mount-safety.contract.spec.ts
 d3178aed893dc29e72dba70fcf5ebb5868c75f7ac8b92e4156516b0047609575  ./test/console-fail-closed-surfaces.contract.spec.ts
-f0d86da5c07e55722664d1f2e70fd02838d04549184dafd2ad47e4c98742fd83  ./test/contract-surface-policy.json
+6cb6ce34d063ada7e0692cd3aaf78497ff09d92065fbbbe569843813946de48f  ./test/contract-surface-policy.json
 f89733d829433e0fdb0cd0bde0ba37d1392376bbd0b7292e6b36cb30fb50abb9  ./test/credential-column-exposure.contract.spec.ts
 ef693928a55b95aaf66fa09673f6cae0ea63f4214bd56d69eb5a6bc5193dd131  ./test/database-testing.contract.spec.ts
 78da4fb95cd308e7dc09d6971409e0058ec7d8b32f1dbd482d65aca1f712b0df  ./test/deep-product-integrity.contract.spec.ts
@@ -1412,6 +1412,7 @@ ace7c6453532b6eb775622b16d8ecacb9dc5260e866b11b43d1b38bf78b13188  ./test/operato
 19b8c7762722730e87f419c7b4841d58cbcd766f0e7e4366cd6ac6c2b574ff6e  ./test/ops-production-observability.contract.spec.ts
 b7579f09693ba335194eb3fffd73f7c400c2ee9a25ccf2975c3af33e2cead87f  ./test/ota-rollout-surface.contract.spec.ts
 998788a951de005d953624cb74191f701a43044de70b64d9b5dbbe566a3940d6  ./test/platform-tenant-identity.contract.spec.ts
+a6c42bff42ac2cac6baa9f3935c3b5219439d588e8d01cf5ca512a84d66dc79f  ./test/product-browser-harness.contract.spec.ts
 45a9094b4b3959b6a39545ba7ab66185de59132ab6bd1c39ee7cd11cfd56c7bc  ./test/production-configuration-lifecycle.contract.spec.ts
 c874e588a123f01918c9a2d4ef3ca663ff9b3161e5de5125113d1ce79f88b705  ./test/production-readiness-completion.contract.spec.ts
 ecb6f61bcc8fcd3e3b2c4ddd67065b5d10d5e6fa96305bf45f2f9ea121ace511  ./test/production-readiness-review.contract.spec.ts
@@ -1524,4 +1525,4 @@ d526784499ba2f416a3fca603acb5dd534fb7450580e048a80abcba43f9ece63  ./tools/redis-
 0543e915f75a5ecc6acceb422f4bebbac2e6a4ca6a77c3b8a031191884d8996c  ./tsconfig.build.json
 7256486d18986f5c8b6c0d1548e30a2cdf8dfb0c4d1fb27e5dffd081ee67fa98  ./tsconfig.jest.json
 fb2278ad89fcdbeb387aa4a8e0f3c550b9ffd464d1ce83b2c2aee1ff72ddc14c  ./tsconfig.json
-604009469bf9a8b24119e449be0020c0843ac8fb2bfd8ee99a70fc23c0a5426c  ./repository-tree.txt
+ecf80bc612d8d57f1d40836aa4f379422272817eeea432c2aa71f53270d52396  ./repository-tree.txt

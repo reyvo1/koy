@@ -143,6 +143,7 @@
     "test/ops-production-observability.contract.spec.ts": "stable-contract",
     "test/ota-rollout-surface.contract.spec.ts": "stable-contract",
     "test/platform-tenant-identity.contract.spec.ts": "stable-contract",
+    "test/product-browser-harness.contract.spec.ts": "current-state",
     "test/production-configuration-lifecycle.contract.spec.ts": "historical-evidence",
     "test/production-readiness-completion.contract.spec.ts": "historical-evidence",
     "test/production-readiness-review.contract.spec.ts": "historical-evidence",

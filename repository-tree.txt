@@ -1412,6 +1412,7 @@ test/operator-launcher.contract.spec.ts
 test/ops-production-observability.contract.spec.ts
 test/ota-rollout-surface.contract.spec.ts
 test/platform-tenant-identity.contract.spec.ts
+test/product-browser-harness.contract.spec.ts
 test/production-configuration-lifecycle.contract.spec.ts
 test/production-readiness-completion.contract.spec.ts
 test/production-readiness-review.contract.spec.ts
