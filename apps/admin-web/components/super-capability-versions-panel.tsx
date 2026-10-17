@@ -19,8 +19,9 @@
  */
 
 import { ConfirmationDialog } from '@/components/confirmation-dialog';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertTriangle, GitBranch, Layers } from 'lucide-react';
+import { createLoadGuard } from '@/lib/safe-fetch';
 
 interface VersionRow {
   schemaVersion: string;
@@ -110,7 +111,9 @@ export default function SuperCapabilityVersionsPanel() {
   const [supersede, setSupersede] = useState<Record<string, boolean>>({});
   const [rollback, setRollback] = useState<Record<string, boolean>>({});
 
+  const templatesGuard = useRef(createLoadGuard());
   const loadTemplates = useCallback(async (nextTenantId: string) => {
+    const isCurrent = templatesGuard.current.begin();
     if (!nextTenantId) {
       // Back to "nothing asked" rather than "asked and found nothing".
       setTemplates(null);
@@ -126,12 +129,14 @@ export default function SuperCapabilityVersionsPanel() {
       );
       const body = (await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { templates?: TemplateRow[]; message?: string };
       if (!response.ok) throw new Error(body?.message ?? `backend ${response.status}`);
+      if (!isCurrent()) return;
       setTemplates(body.templates ?? []);
     } catch (cause) {
+      if (!isCurrent()) return;
       setTemplates(null);
       setTemplateError(cause instanceof Error ? cause.message : 'gagal memuat template');
     } finally {
-      setTemplatesLoading(false);
+      if (isCurrent()) setTemplatesLoading(false);
     }
   }, []);
 

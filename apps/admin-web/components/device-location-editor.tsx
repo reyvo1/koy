@@ -1,6 +1,7 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { GeoMap, type MapLocation } from '@iot-platform/design-system';
+import { createLoadGuard } from '@/lib/safe-fetch';
 import { useAdminSessionRole } from './use-admin-session-role';
 export function DeviceLocationEditor({ deviceId }: { deviceId: string }) {
   const role = useAdminSessionRole(); // UX hint only; backend repeats CONTROL authorization.
@@ -10,17 +11,21 @@ export function DeviceLocationEditor({ deviceId }: { deviceId: string }) {
     [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const endpoint = `/api/devices/${encodeURIComponent(deviceId)}/location`;
+  const loadGuard = useRef(createLoadGuard());
   const load = useCallback(async () => {
+    const isCurrent = loadGuard.current.begin();
     setLoading(true);
     try {
       const response = await fetch(endpoint, { cache: 'no-store' });
       const body = await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       if (!response.ok) throw new Error('Lokasi gagal dibaca.');
+      if (!isCurrent()) return;
       setLatest(body.latest ?? null);
     } catch (cause) {
+      if (!isCurrent()) return;
       setError(cause instanceof Error ? cause.message : 'Lokasi gagal dibaca.');
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
   }, [endpoint]);
   useEffect(() => {

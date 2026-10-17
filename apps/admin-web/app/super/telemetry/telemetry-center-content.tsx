@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SeriesChart } from '@iot-platform/design-system';
 import { SuperPage } from '@/components/super-admin-shell';
+import { createLoadGuard } from '@/lib/safe-fetch';
 
 interface Bucket { start: string; end: string; count: number; min: number; max: number; avg: number; }
 interface DeviceRow { id: string; name: string; status: string; tenantName?: string | null; }
@@ -44,28 +45,40 @@ export default function SuperTelemetryPage() {
     if (!deviceCapabilities.some((cap) => cap.key === capabilityKey)) setCapabilityKey(deviceCapabilities[0]?.key ?? '');
   }, [deviceCapabilities, deviceId, capabilityKey]);
 
+  const chartGuard = useRef(createLoadGuard());
   const loadChart = useCallback(async () => {
+    const isCurrent = chartGuard.current.begin();
     if (!deviceId || !capabilityKey || !numericCapabilities.some((cap) => cap.key === capabilityKey)) { setBuckets([]); return; }
     setLoading(true); setError(null);
     try {
       const query = new URLSearchParams({ deviceId, capability: capabilityKey, hours: '24' });
       const response = await fetch(`/api/super/telemetry-chart?${query}`); const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body?.error?.message ?? `telemetry backend ${response.status}`);
+      if (!isCurrent()) return;
       setBuckets(Array.isArray(body.buckets) ? body.buckets : []);
-    } catch (cause) { setBuckets([]); setError(cause instanceof Error ? cause.message : 'telemetry tidak tersedia'); }
-    finally { setLoading(false); }
+    } catch (cause) {
+      if (!isCurrent()) return;
+      setBuckets([]); setError(cause instanceof Error ? cause.message : 'telemetry tidak tersedia');
+    }
+    finally { if (isCurrent()) setLoading(false); }
   }, [capabilityKey, deviceId, numericCapabilities]);
 
+  const explorerGuard = useRef(createLoadGuard());
   const loadExplorer = useCallback(async () => {
+    const isCurrent = explorerGuard.current.begin();
     if (!deviceId) { setExplorerRows([]); return; }
     setExplorerLoading(true); setError(null);
     try {
       const query = new URLSearchParams({ deviceId, limit: '150' }); if (capabilityKey) query.set('capability', capabilityKey);
       const response = await fetch(`/api/super/telemetry-explorer?${query}`); const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body?.error?.message ?? `explorer backend ${response.status}`);
+      if (!isCurrent()) return;
       setExplorerRows(Array.isArray(body.items) ? body.items : []);
-    } catch (cause) { setExplorerRows([]); setError(cause instanceof Error ? cause.message : 'telemetry explorer tidak tersedia'); }
-    finally { setExplorerLoading(false); }
+    } catch (cause) {
+      if (!isCurrent()) return;
+      setExplorerRows([]); setError(cause instanceof Error ? cause.message : 'telemetry explorer tidak tersedia');
+    }
+    finally { if (isCurrent()) setExplorerLoading(false); }
   }, [capabilityKey, deviceId]);
 
   useEffect(() => { void loadChart(); void loadExplorer(); }, [loadChart, loadExplorer]);

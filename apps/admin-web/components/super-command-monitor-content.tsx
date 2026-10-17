@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createLoadGuard } from '@/lib/safe-fetch';
 
 type CommandStatus = 'PENDING' | 'SENT' | 'ACKNOWLEDGED' | 'FAILED' | 'TIMED_OUT';
 interface CommandRow {
@@ -41,7 +42,9 @@ export default function SuperCommandMonitorContent() {
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
+  const loadGuard = useRef(createLoadGuard());
   const load = useCallback(async () => {
+    const isCurrent = loadGuard.current.begin();
     setRefreshing(true);
     setError(null);
     try {
@@ -51,11 +54,13 @@ export default function SuperCommandMonitorContent() {
       const body = await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       if (!response.ok) throw new Error(body?.error?.message ?? `backend ${response.status}`);
       if (body.sendCommandEnabled === true) throw new Error('kontrak read-only dilanggar backend');
+      if (!isCurrent()) return;
       setRows(Array.isArray(body.items) ? body.items : []);
     } catch (cause) {
+      if (!isCurrent()) return;
       setError(cause instanceof Error ? cause.message : 'gagal memuat command');
     } finally {
-      setRefreshing(false);
+      if (isCurrent()) setRefreshing(false);
     }
   }, [status]);
 

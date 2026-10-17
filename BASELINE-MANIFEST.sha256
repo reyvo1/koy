@@ -65,9 +65,9 @@ a806666cbf85171af1027b36a496a750a0c20b253f48e82583a9f25a436622e1  ./AI-Developme
 cab10a82cb5f2255ecdf99981067119041beb07ab6c1f1976e531d10db5fd724  ./AI-Development-Kit/templates/MODULE-STATUS-TEMPLATE.md
 68f8de30afc578e0ab20ac92ef560f3081a95d699d998621092f1f61c0d00791  ./AI-Development-Kit/workflows/AGENT-EXECUTION-LOOP.md
 78e5c067c68636d36a3289d001fd159176a7792b7e33af206463d7aaa93a0f7c  ./AI-Development-Kit/workflows/FAILURE-PROTOCOL.md
-8e94f1d2ec0442ce808ed7be30d6859d82c595d746125562e659b931e5fb22af  ./CURRENT-STATE.md
+7cf049b5c0a60bcdad69b77b0e391c10f80d2dbb8c5b30d65ffbbecfdf837d08  ./CURRENT-STATE.md
 bd29d21f37c224e1d6b4af71e0025d8f4019b3914381248356add4266724f1b0  ./GATE-1-STATUS.md
-609e68d00d28f7388c2c584d7d46bc7103235f6d7bbadc3135757f0920aad6b8  ./PASTE-KE-CHAT-BERIKUTNYA.txt
+af1da0ed861b642f116351276be97cf812e49879aea13b834834eb2c52a2d45f  ./PASTE-KE-CHAT-BERIKUTNYA.txt
 2b1f7f4afce4f3196b0258437c83d64fdda0b01d21a7d9d390695aad6eff2c41  ./PROJECT-HANDOFF.md
 818d1504f9c83a672557cc3c45452c033f04098ce52f609be506b3bbe7dfe7d6  ./UI-DESIGN-SYSTEM.md
 c2482384a4f53220f51123f4fd6ae19151c47cb1a15dc2d49f9a8228beaaa964  ./apps/admin-web/.env.example
@@ -240,12 +240,12 @@ b0778d1d8b2d6412b48ff44e7afc3e56fb4206258246b79a32de4118bc0fdd3f  ./apps/admin-w
 88d45ae2fd1ecc56359423b8a0dcce7793bb10e1374bb342c25aa5dbc154e672  ./apps/admin-web/app/super/settings/page.tsx
 6fd908f5b4347f07bbaa624007e0f716a365df8ed82da4bfe26aef33c89f97e3  ./apps/admin-web/app/super/subscriptions/page.tsx
 abaca9fbbe41e9bb202a79a5ea37ab76440b49eb0ed479873e1ac427dd576414  ./apps/admin-web/app/super/telemetry/page.tsx
-595431064bfff48f64ae586fbb2448adafbbe314e7fda73fa61bcb5843822c7d  ./apps/admin-web/app/super/telemetry/telemetry-center-content.tsx
+432d54046ab14765de0b234ec52fe34086c165db74e601aa4e1fb06c30b66841  ./apps/admin-web/app/super/telemetry/telemetry-center-content.tsx
 08ea734971e409ee3e100327b288497f5f1dafb0cdb38d913b02c3d0d9496c43  ./apps/admin-web/app/super/tenants/page.tsx
 773797c17aae1263c9c26f15645aa4bbb3fd4ca77fafac508d48a4ef4ebd183d  ./apps/admin-web/app/super/users/page.tsx
 18b1f74e582bbf41a1afbc83ae31064d0bf3d63e396b8fe2bdba4bd7116b8086  ./apps/admin-web/app/technician/page.tsx
 94eb18323e23a945d57eee532193431a36eeef5223fa4bc826ab37c17571fafd  ./apps/admin-web/app/tenant/api-keys/page.tsx
-1a408a05456cce68fd1ceea112f3da9fafe9a9de3d25f117daf82f2e4ccdef8d  ./apps/admin-web/app/tenant/audit-log/page.tsx
+c74bb454b9a75c9772b5992246817e8f2fe16e4d2bd41a982c01e76178b57a5d  ./apps/admin-web/app/tenant/audit-log/page.tsx
 f85e53d86114e655a558de9c729d77e657a2cb0920976eb16c0850dedee826c7  ./apps/admin-web/app/tenant/dashboard/page.tsx
 051e3ede4ffb3ea455b05ace059df982eff67d173f818dcd4a7a9a1c97f3ab61  ./apps/admin-web/app/tenant/gedung/page.tsx
 7bd7fa2a83f7b8d38783586d134a1077ce0585c54b7ae641eddaa6c397caacf3  ./apps/admin-web/app/tenant/grafik/page.tsx
@@ -254,7 +254,7 @@ d41cf93c7b70c646e5c8991c79a1c1293bf0c5e4eabd64a2d12c14e0cc96558e  ./apps/admin-w
 886c6cf7a2ba3091486253547fb8039af725944459b4fd682def610d18fc4ba0  ./apps/admin-web/app/tenant/integrasi/page.tsx
 0911c5336b019ecd1a3d661f33aa96fc6482f8a629195ccd44ecaa6d44d788dc  ./apps/admin-web/app/tenant/laporan/page.tsx
 e45960d41dcf60d88803bc59ce4b3ab3b395c8fc6df77cced4a597f21870d8d1  ./apps/admin-web/app/tenant/lokasi/page.tsx
-1ca4db137882634d8273a93378ef80675e6e18f2508d2a56b33271be6f934641  ./apps/admin-web/app/tenant/notifikasi/page.tsx
+0f4af6ba6bc861795e097e896b65d5a9fd20784d70bdd34c083aba89d95694ca  ./apps/admin-web/app/tenant/notifikasi/page.tsx
 6bff1897ee1718f340ef41ce9964aac3ff91edb0120b55921f754f24c8e8d8ef  ./apps/admin-web/app/tenant/organisasi/page.tsx
 2eb015b6b7bb12cb0d3a6df518684cc77beee423e03940774f91d40ffd3fee66  ./apps/admin-web/app/tenant/otomatisasi/page.tsx
 96f56cc3ffdc06cf653c6a47c1b90911fa7b651c8c08312000f0e64590eaa3f0  ./apps/admin-web/app/tenant/pengguna/page.tsx
@@ -277,8 +277,8 @@ eacdf0682271b2282bce24d7ece6d6383b7ac9c2bbd4c10821b7ff42d45ecef4  ./apps/admin-w
 994e61ae0ed97311cd6601fbba609331ea82e47db8b9a58530f62278bea528ec  ./apps/admin-web/components/capability-value-input.tsx
 84b5c5ac67edce50d262f28be2f94afb2835fbdd6be411b1f3126ad0552b7f30  ./apps/admin-web/components/confirmation-dialog.tsx
 42ac3c7519cd364e7efcc6a3dd0ba78dff65db1507d7fa09ea7341ebfaa78d84  ./apps/admin-web/components/device-detail-content.tsx
-04b714a0bcdd0e615164301abfa93b10120580cb06a1a9af6242585766cbb071  ./apps/admin-web/components/device-location-editor.tsx
-4dd9e216e8f78515dda0bb7f3f7214c5c0ddae503ec78d3c7bf88e6ab65ebbb0  ./apps/admin-web/components/device-share-panel.tsx
+1f97de6a7d9e1fe09f2423088ee5fb664b86590704c94878e05cd0572fe62088  ./apps/admin-web/components/device-location-editor.tsx
+b9732da3cb74850ba20822d955001ac2b7f5359eba6f2dcc51bf3d1dd25d177c  ./apps/admin-web/components/device-share-panel.tsx
 007755f722b86ba4cb369e90d7d3de229eb03f496aad7ae64c524983407e166b  ./apps/admin-web/components/enterprise-table.tsx
 f63108a93122fcb3e1ab912fd3b710991b9eeb75a590dc402afd49730658f138  ./apps/admin-web/components/maintenance-plans-content.tsx
 6de7eaae742813ecab1899552d85a25e2e17a3291822700bbff5e961b89ce274  ./apps/admin-web/components/noc-content.tsx
@@ -291,9 +291,9 @@ f63108a93122fcb3e1ab912fd3b710991b9eeb75a590dc402afd49730658f138  ./apps/admin-w
 4bcfc7bf00cdef4c526e7c9f1c709b7ad95144cb1eef2a938e870a299feff2dc  ./apps/admin-web/components/super-api-keys-content.tsx
 1446fec83246fda6a280e6a90ff4cd95a3f60b8efc2512e816a3d2e0fef96e3b  ./apps/admin-web/components/super-billing-content.tsx
 1c7e7840a07f2c841e0787756bba1be21c01e8ac79930ff381c63de9d7e48da9  ./apps/admin-web/components/super-capabilities-content.tsx
-836abea49689834bf2c131cc38cd2077703bfe65fed4c7a28718c818ae1409b7  ./apps/admin-web/components/super-capability-versions-panel.tsx
+85288f96d3ddb1cdb8966d1dcc299dde512eb870c07e8ccb085a9360769dce2d  ./apps/admin-web/components/super-capability-versions-panel.tsx
 ffd137cfc9b62e2a64259878c876d0f1db02992e453ee736cc328ca09b90cbcc  ./apps/admin-web/components/super-command-dispatch-panel.tsx
-772edd2a9642069d9eb788d350d94241a0373ab8d92f9a6276c1983de02107e0  ./apps/admin-web/components/super-command-monitor-content.tsx
+538de608da314b24ac7e773e2050cbf91020a9dd9f8571c4ebb4b4921248e644  ./apps/admin-web/components/super-command-monitor-content.tsx
 e6525a8882e45f6e5a1f0689133f4f2b42fd1784e1ed4402dcb3a2f6d21af7eb  ./apps/admin-web/components/super-device-credentials-content.tsx
 5c81975c6247d7eabdcc670a80dcfd805304d086a3cfff23854009cc2c2951a6  ./apps/admin-web/components/super-device-groups-content.tsx
 c0eb7c6d62db2adab3d1bd05806a42d61a3b62e738f658c76db7b9648d29888a  ./apps/admin-web/components/super-devices-content.tsx
@@ -302,7 +302,7 @@ be677957ddcdcecd7933fb493d6864c9373c88d9fdb7444362e133e48cd6acf6  ./apps/admin-w
 90ad34ccc6a99ebf47666c27b4a16fe0eabac7a3b8ee9f46ac6e3a2e6c58a37f  ./apps/admin-web/components/super-mqtt-content.tsx
 1f4ff9f236e3491760dc3c0e4548aea4bcd2dc74bcf30086e0bd03a6d9ab2ac4  ./apps/admin-web/components/super-organizations-content.tsx
 fb28e0da30a4b4aade68811548ace87db378eb0c6ce6ae8fe84e1e0786c2e501  ./apps/admin-web/components/super-provisioning-content.tsx
-5c38d4479a146fde1e0d7103f44e8e3ecb132295415e70f82a1be44de4409148  ./apps/admin-web/components/super-reports-content.tsx
+6b5fb66ff38a29b1b22e09660e2b0067fe2ee7445eb6cafaaab74681691e698a  ./apps/admin-web/components/super-reports-content.tsx
 d73f2d35ac806ce57ec9dc9d92203989fd35f793ea7f9205ccfd5fa48f19dbeb  ./apps/admin-web/components/super-roles-content.tsx
 4e80ab288323d081f63cbac6bb81422c733a80e6109f947377bce9e84f58a8b8  ./apps/admin-web/components/super-security-content.tsx
 78e59a914099af60bc29caa27850ead7d50d5aa2209a0bce7488a07fe8238f2b  ./apps/admin-web/components/super-settings-content.tsx
@@ -460,7 +460,7 @@ e100d7810ca74d0809296a27b384596caf72f6e8350d463b4838f5aa043573bf  ./apps/user-we
 ccd2a17f28b9205adc19fbf05b2a9389dc24115b8ce40b6d958777af90bea7a1  ./apps/user-web/postcss.config.mjs
 7794f4a44d2c31c1f33e91477a00025f4e62687a88946b7c17f58f26257ef2e8  ./apps/user-web/public/icon.png
 38ee09e8ee48c7e75cab63bd076513018ca07b655295664d07c107e408606495  ./apps/user-web/tsconfig.json
-986ee47b4634fd240d1708062c0faab17161c68e8c791551881380084199ad75  ./chat-session.md
+428be0b8c2fc1c08f54073d629017fcb8cf1de17702f87b8a770340cf3836124  ./chat-session.md
 08395048b09eab1f15b7264df8b76ae8b4e99634c0f516aa3ce775042bd1859e  ./config/performance-budget.json
 3f7f2db41062faaeea13fd74832ddcd6e9332a2b4063f13af8ff0cf3c60b030a  ./config/stress-budget.json
 57e9cc3083ac5d0b99e00ed9afa5f740d958130437c0d6a1b52d7ed89ad04fb5  ./docker-compose.rescue.yml
@@ -481,7 +481,7 @@ e609750984b6a528a218c343a0e3614403e010751dd1529cdc17da3d9148d2cf  ./docs/RESCUE-
 2fd52fea04918f5e778492de8879f074e594fb72c449993eef7b4ef3e8e33921  ./docs/ROADMAP-COMPLETE.md
 b7c50d5ecd0ef5538e96d0c7c2b40311e951e764d53f6f16f27f516f3eb1c911  ./docs/ROADMAP-SMART-HOTEL.md
 6149db8093c4f5835d3ee5bf7a76ae1f90c6fad4f00cdf96d00ddb491a087574  ./docs/SECRET-SCAN-POLICY.md
-d4d0fd157d42f898d31de5d76a57603341af619ca508dc62390ab461173b93ff  ./docs/SESSION-CHECKPOINT.md
+c8ec961ac7a00f49e33648fb3b8488f6f5cdc3633b0f563fc0fd693bb844c894  ./docs/SESSION-CHECKPOINT.md
 03d88ce7efa18d6b1381392e386db54b5f026a9e345f02e6299c07d6102d41bb  ./docs/SESSION-HANDOFF-PROTOCOL.md
 cc7efd6089313daacae59b9e676431d674b7b8e45702a812618728689fe7c16e  ./docs/STAGING-RUNBOOK.md
 1fc4adecc7abe855470936cef9ac09129d7b83a8926f1d8bddbfc244c1a5f2dd  ./docs/UAT-CHECKLIST.md
@@ -1285,7 +1285,7 @@ d405c1765c5eed10853800a3ad137e936431133bfc230c5b53268be164eb03e0  ./test/admin-w
 b0113cd2acb7cad97daf082089aecc2d2a1a09ac3b3adb67512c8616c4627973  ./test/capability-template-lifecycle.contract.spec.ts
 a7146c20bcaac9b7334779d528d91b790973fbfcdf9e2f08cd6af18a5dfbc572  ./test/ci-dependency-bootstrap.contract.spec.ts
 f9435954f20b91eca8b0b50f9318d39d121f9b0a8014a216c6df4df0e4f4badd  ./test/client-fetch-mount-safety.contract.spec.ts
-a6159e5e139060626cabe47990b8b918f3fc8adefdbc9c0a43b47737829a261b  ./test/console-fail-closed-surfaces.contract.spec.ts
+b86787cd760ee432da579914376917b158918562f2c678c264c3d3b90d90e9b6  ./test/console-fail-closed-surfaces.contract.spec.ts
 6cb6ce34d063ada7e0692cd3aaf78497ff09d92065fbbbe569843813946de48f  ./test/contract-surface-policy.json
 f89733d829433e0fdb0cd0bde0ba37d1392376bbd0b7292e6b36cb30fb50abb9  ./test/credential-column-exposure.contract.spec.ts
 ef693928a55b95aaf66fa09673f6cae0ea63f4214bd56d69eb5a6bc5193dd131  ./test/database-testing.contract.spec.ts

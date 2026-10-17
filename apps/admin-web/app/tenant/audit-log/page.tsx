@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ShieldCheck, RefreshCw, AlertTriangle } from 'lucide-react';
+import { createLoadGuard } from '@/lib/safe-fetch';
 import { TenantShell } from '@/components/tenant-shell';
 import { EmptyState, SkeletonCard } from '@/components/ui-polish';
 
@@ -37,8 +38,10 @@ export default function TenantAuditLogPage() {
   const [error, setError] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
 
+  const pageGuard = useRef(createLoadGuard());
   const fetchPage = useCallback(
     async (cursor?: string, append = false) => {
+      const isCurrent = pageGuard.current.begin();
       if (append) setLoadingMore(true);
       else setRows(null);
       setError(null);
@@ -53,13 +56,15 @@ export default function TenantAuditLogPage() {
         if (!response.ok) throw new Error(`backend ${response.status}`);
         const payload = (await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as AuditPagePayload;
         const items = Array.isArray(payload.items) ? payload.items : [];
+        if (!isCurrent()) return;
         setRows((current) => (append && current ? [...current, ...items] : items));
         setNextCursor(typeof payload.nextCursor === 'string' ? payload.nextCursor : null);
       } catch (cause) {
+        if (!isCurrent()) return;
         setError(cause instanceof Error ? cause.message : 'gagal memuat log audit');
         if (!append) setRows([]);
       } finally {
-        setLoadingMore(false);
+        if (isCurrent()) setLoadingMore(false);
       }
     },
     [action, resourceType],

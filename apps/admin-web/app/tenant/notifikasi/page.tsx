@@ -14,8 +14,9 @@
  * angka "terkirim" tanpa penjelasan kegagalan tidak bisa ditindaklanjuti.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { TenantShell } from '@/components/tenant-shell';
+import { createLoadGuard } from '@/lib/safe-fetch';
 import { EmptyState, FadeIn, SkeletonCard } from '@/components/ui-polish';
 import { Bell, RefreshCw, AlertTriangle, CircleCheck, Clock } from 'lucide-react';
 
@@ -70,7 +71,9 @@ export default function NotificationsPage() {
   const [detail, setDetail] = useState<NotificationDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState<string | null>(null);
 
+  const loadGuard = useRef(createLoadGuard());
   const load = useCallback(async () => {
+    const isCurrent = loadGuard.current.begin();
     setError(null);
     try {
       const query = statusFilter ? `?status=${encodeURIComponent(statusFilter)}` : '';
@@ -82,13 +85,14 @@ export default function NotificationsPage() {
       const payload = (await listRes.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as {
         items?: NotificationRow[];
       } | NotificationRow[];
+      const summary = summaryRes.ok
+        ? ((await summaryRes.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as Record<string, number>)
+        : null;
+      if (!isCurrent()) return;
       setRows(Array.isArray(payload) ? payload : (payload.items ?? []));
-      setSummary(
-        summaryRes.ok
-          ? ((await summaryRes.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as Record<string, number>)
-          : null,
-      );
+      setSummary(summary);
     } catch (cause) {
+      if (!isCurrent()) return;
       setRows(null);
       setError(cause instanceof Error ? cause.message : 'gagal memuat notifikasi');
     }

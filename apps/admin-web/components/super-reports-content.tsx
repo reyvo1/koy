@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createLoadGuard } from '@/lib/safe-fetch';
 
 interface ReportRow {
   tenantId: string;
@@ -55,7 +56,9 @@ export default function SuperReportsContent() {
   const [saving, setSaving] = useState(false);
   const [saveNote, setSaveNote] = useState<string | null>(null);
 
+  const savedGuard = useRef(createLoadGuard());
   const loadSaved = useCallback(async () => {
+    const isCurrent = savedGuard.current.begin();
     setSavedError(null);
     if (!archiveTenant.trim()) {
       // Not an error: no tenant chosen means no archive to show. `null` rather than an empty list,
@@ -70,12 +73,14 @@ export default function SuperReportsContent() {
       );
       const body = await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       if (!response.ok) throw new Error(body?.error?.message ?? `backend ${response.status}`);
+      if (!isCurrent()) return;
       setSaved({
         items: Array.isArray(body.items) ? body.items : [],
         total: body.total ?? 0,
         retentionDays: body.retentionDays ?? 28,
       });
     } catch (cause) {
+      if (!isCurrent()) return;
       setSaved(null);
       setSavedError(cause instanceof Error ? cause.message : 'gagal memuat laporan tersimpan');
     }
@@ -152,16 +157,20 @@ export default function SuperReportsContent() {
     URL.revokeObjectURL(url);
     }, [archiveTenant]);
 
+  const reportGuard = useRef(createLoadGuard());
   const load = useCallback(async () => {
+    const isCurrent = reportGuard.current.begin();
     setLoading(true); setError(null);
     try {
       const response = await fetch(`/api/super/reports/tenant-summary?hours=${hours}`);
       const body = await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       if (!response.ok) throw new Error(body?.error?.message ?? `backend ${response.status}`);
+      if (!isCurrent()) return;
       setReport({ ...body, items: Array.isArray(body.items) ? body.items : [] });
     } catch (cause) {
+      if (!isCurrent()) return;
       setError(cause instanceof Error ? cause.message : 'gagal memuat laporan');
-    } finally { setLoading(false); }
+    } finally { if (isCurrent()) setLoading(false); }
   }, [hours]);
   useEffect(() => { void load(); }, [load]);
 

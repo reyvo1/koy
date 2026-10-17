@@ -14,8 +14,9 @@
  * grant is shown as such rather than as an active share.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Share2, ShieldCheck, Eye, Zap, X, AlertTriangle } from 'lucide-react';
+import { createLoadGuard } from '@/lib/safe-fetch';
 
 interface ShareRow {
   id: string;
@@ -58,7 +59,9 @@ export default function DeviceSharePanel({ deviceId }: { deviceId: string }) {
   const [permission, setPermission] = useState<'VIEW' | 'CONTROL'>('CONTROL');
   const [days, setDays] = useState('7');
 
+  const loadGuard = useRef(createLoadGuard());
   const load = useCallback(() => {
+    const isCurrent = loadGuard.current.begin();
     setError(null);
     fetch(`/api/devices/${deviceId}/shares`)
       .then(async (res) => {
@@ -66,12 +69,14 @@ export default function DeviceSharePanel({ deviceId }: { deviceId: string }) {
         return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       })
       .then((data: unknown) => {
+        if (!isCurrent()) return;
         const rows = Array.isArray(data)
           ? data
           : ((data as { items?: ShareRow[] }).items ?? []);
         setShares(rows);
       })
       .catch((cause: unknown) => {
+        if (!isCurrent()) return;
         setShares([]);
         setError(cause instanceof Error ? cause.message : 'gagal memuat');
       });

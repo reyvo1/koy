@@ -326,3 +326,32 @@ describe('every web component guards its response body parses', () => {
     },
   );
 });
+
+/**
+ * W7 closes the selector-switch race on the admin surfaces whose reads are driven by a
+ * value the operator can change while a request is in flight: picking another device,
+ * tenant, hour bucket, dashboard or status filter re-fires the load, and without a guard
+ * the slower previous response lands last and the screen describes the pre-switch
+ * selection. The house fix is the shared `createLoadGuard()` (same primitive
+ * `device-detail-content.tsx` already used): each load begins a generation and every
+ * state write downstream of an await is dropped unless that run is still the latest.
+ */
+describe('selector-driven admin loads drop stale responses', () => {
+  it.each([
+    `${ADMIN_WEB}/device-location-editor.tsx`,
+    `${ADMIN_WEB}/device-share-panel.tsx`,
+    `${ADMIN_WEB}/super-command-monitor-content.tsx`,
+    `${ADMIN_WEB}/super-reports-content.tsx`,
+    `${ADMIN_WEB}/super-capability-versions-panel.tsx`,
+    'apps/admin-web/app/super/telemetry/telemetry-center-content.tsx',
+    'apps/admin-web/app/tenant/notifikasi/page.tsx',
+    'apps/admin-web/app/tenant/audit-log/page.tsx',
+  ])('%s guards its selector-driven reads with the shared generation guard', (file) => {
+    const source = read(file);
+    expect(source).toContain("import { createLoadGuard } from '@/lib/safe-fetch';");
+    expect(source).toContain('useRef(createLoadGuard())');
+    expect(source).toContain('.begin()');
+    const dropped = source.match(/if \(!isCurrent\(\)\) return;/g) ?? [];
+    expect(dropped.length).toBeGreaterThanOrEqual(2);
+  });
+});
