@@ -79,6 +79,24 @@ describe('mobile offline command outbox contract', () => {
     expect(screen).toContain('outboxDiscardAction');
   });
 
+  it('drains the queue on app resume and while entries wait, without connectivity probing', () => {
+    const drainScheduler = read(
+      'apps/user-mobile/src/offline/mobile-outbox-drain-scheduler.ts',
+    );
+    expect(drainScheduler).toContain('OUTBOX_DRAIN_INTERVAL_MS = 60_000');
+    expect(drainScheduler).toContain('onAppActive');
+    expect(drainScheduler).toContain('setPending');
+    expect(drainScheduler).toContain('dispose');
+    expect(drainScheduler).not.toMatch(/NetInfo|expo-network/);
+    expect(app).toContain('createMobileOutboxDrainScheduler');
+    expect(app).toContain('flushOutboxNowRef');
+    expect(app).toContain('AppState.addEventListener');
+    expect(app).toContain("next === 'active'");
+    expect(app).toContain('outboxDrainScheduler.setPending(outboxSummary.pending > 0)');
+    expect(app).toContain('outboxDrainScheduler.onAppActive()');
+    expect(app).toContain('outboxDrainScheduler.dispose()');
+  });
+
   it('shows the queued rows themselves, not just the counters', () => {
     expect(bridge).toContain('async function list(tenantId: string)');
     expect(bridge).toContain('async function discard(tenantId: string, entryIds: string[])');

@@ -380,6 +380,8 @@ apps/user-mobile/src/offline/mobile-offline-dashboard.spec.ts
 apps/user-mobile/src/offline/mobile-offline-dashboard.ts
 apps/user-mobile/src/offline/mobile-offline-surfaces.spec.ts
 apps/user-mobile/src/offline/mobile-offline-surfaces.ts
+apps/user-mobile/src/offline/mobile-outbox-drain-scheduler.spec.ts
+apps/user-mobile/src/offline/mobile-outbox-drain-scheduler.ts
 apps/user-mobile/src/offline/mobile-snapshot-cache.ts
 apps/user-mobile/src/session/expo-secure-session-store.ts
 apps/user-mobile/src/session/index.ts

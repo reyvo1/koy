@@ -65,9 +65,9 @@ a806666cbf85171af1027b36a496a750a0c20b253f48e82583a9f25a436622e1  ./AI-Developme
 cab10a82cb5f2255ecdf99981067119041beb07ab6c1f1976e531d10db5fd724  ./AI-Development-Kit/templates/MODULE-STATUS-TEMPLATE.md
 68f8de30afc578e0ab20ac92ef560f3081a95d699d998621092f1f61c0d00791  ./AI-Development-Kit/workflows/AGENT-EXECUTION-LOOP.md
 78e5c067c68636d36a3289d001fd159176a7792b7e33af206463d7aaa93a0f7c  ./AI-Development-Kit/workflows/FAILURE-PROTOCOL.md
-a4d5e809a13ae682a1cb1fb09700dc7d20984b014f0e383feef1496d395f9453  ./CURRENT-STATE.md
+638d7ef8092286833e12c31b8a05ad6b4c576ffb8c42e29987715bed352ed6e1  ./CURRENT-STATE.md
 bd29d21f37c224e1d6b4af71e0025d8f4019b3914381248356add4266724f1b0  ./GATE-1-STATUS.md
-f95adbb2f35c3f09ac26d544b6732d3a9d45472ad18045ba2402748463ea1e41  ./PASTE-KE-CHAT-BERIKUTNYA.txt
+a1792c300d1d028c8928793ce4b08997cfa7f15c1ec4ec9b5b7d376567fe7f68  ./PASTE-KE-CHAT-BERIKUTNYA.txt
 2b1f7f4afce4f3196b0258437c83d64fdda0b01d21a7d9d390695aad6eff2c41  ./PROJECT-HANDOFF.md
 818d1504f9c83a672557cc3c45452c033f04098ce52f609be506b3bbe7dfe7d6  ./UI-DESIGN-SYSTEM.md
 c2482384a4f53220f51123f4fd6ae19151c47cb1a15dc2d49f9a8228beaaa964  ./apps/admin-web/.env.example
@@ -347,7 +347,7 @@ dfac7ac2d86d326a0e5adb024e7943c181393ed17a5fcb8f0315b24c7da6ddde  ./apps/admin-w
 38ee09e8ee48c7e75cab63bd076513018ca07b655295664d07c107e408606495  ./apps/admin-web/tsconfig.json
 627f37f80fbde2c0d4abd9f7c3489ef46f41ef8ec7d5fb20fcb5fba42a807a46  ./apps/user-mobile/.env.example
 81221c271a08992af74d214f1edbe0c55c79ee27f065f93e276f8e0ee4a01bb2  ./apps/user-mobile/.gitignore
-7bd0276711e9601476ba93ca9abc007f88c526280c2941b66163cd8a023b57be  ./apps/user-mobile/App.tsx
+2e30844301c5284086f65c74192c019e52a0f494febfa7c716c883c5fb88bca9  ./apps/user-mobile/App.tsx
 a7719ff63da9a3fff3cd0dd24ad6e0d2423793a9a15c097ee11f6184e6509fa9  ./apps/user-mobile/app.config.ts
 d6f9d16893b0fa35801a1f69a1ed44d05735319455357fb40886b774e0b7bc83  ./apps/user-mobile/assets/adaptive-icon.png
 7aa5a15d1f211aea340dcf6a9555640e5e946513f20b2620047d4fae1479daae  ./apps/user-mobile/assets/icon.png
@@ -380,6 +380,8 @@ aaaafbbe9f6f4a0f7f7181167a8fdb3b7646b1ea990261ca8049f66e7d8dc9fb  ./apps/user-mo
 50a1a7d8baeea9f1d42f1f5ebe53527c4c74496c32689f1793158812785d5d91  ./apps/user-mobile/src/offline/mobile-offline-dashboard.ts
 8da911d3508f44fb9d52d0fd7b50ce3ea00bb4bab6c023fa0a505a265548396d  ./apps/user-mobile/src/offline/mobile-offline-surfaces.spec.ts
 87c8c7ff2851f1d759c620435a147edbefe4e4beb241a98d64f3d6666019b91a  ./apps/user-mobile/src/offline/mobile-offline-surfaces.ts
+803a15c205733f0d95fc1631dbbcf806630b362664e03f2f74066871189876c0  ./apps/user-mobile/src/offline/mobile-outbox-drain-scheduler.spec.ts
+52b7d70eaa13b83c265c2d696ba3539dea760b1e216e8932087fd48c1f97ce89  ./apps/user-mobile/src/offline/mobile-outbox-drain-scheduler.ts
 cf3352e9d8d0013385fb062586c57c8f84123647e753c8e4adc006ba543997c2  ./apps/user-mobile/src/offline/mobile-snapshot-cache.ts
 927b49641440ade0ae225b83f4b530e76e83e1ff1eacbd1e2414324387f4d075  ./apps/user-mobile/src/session/expo-secure-session-store.ts
 2ce63062f7dc2ff1a8ad91e0b39b8a6d679097116df0b17dd982a8a377208acb  ./apps/user-mobile/src/session/index.ts
@@ -458,7 +460,7 @@ bead9f184b27083639c20803cac92b239a55bcea908cf442f5eed777f6b59df9  ./apps/user-we
 ccd2a17f28b9205adc19fbf05b2a9389dc24115b8ce40b6d958777af90bea7a1  ./apps/user-web/postcss.config.mjs
 7794f4a44d2c31c1f33e91477a00025f4e62687a88946b7c17f58f26257ef2e8  ./apps/user-web/public/icon.png
 38ee09e8ee48c7e75cab63bd076513018ca07b655295664d07c107e408606495  ./apps/user-web/tsconfig.json
-a2546ffec00cc2f7dfa0e75a8725ee6fe551d7dffa8f9140f66e7cefdd595d61  ./chat-session.md
+385254c7eba81caf50a3d6ba549854a62eb11d65acd39c48aee6a2d4b7e35fb3  ./chat-session.md
 08395048b09eab1f15b7264df8b76ae8b4e99634c0f516aa3ce775042bd1859e  ./config/performance-budget.json
 3f7f2db41062faaeea13fd74832ddcd6e9332a2b4063f13af8ff0cf3c60b030a  ./config/stress-budget.json
 57e9cc3083ac5d0b99e00ed9afa5f740d958130437c0d6a1b52d7ed89ad04fb5  ./docker-compose.rescue.yml
@@ -479,7 +481,7 @@ e609750984b6a528a218c343a0e3614403e010751dd1529cdc17da3d9148d2cf  ./docs/RESCUE-
 2fd52fea04918f5e778492de8879f074e594fb72c449993eef7b4ef3e8e33921  ./docs/ROADMAP-COMPLETE.md
 b7c50d5ecd0ef5538e96d0c7c2b40311e951e764d53f6f16f27f516f3eb1c911  ./docs/ROADMAP-SMART-HOTEL.md
 6149db8093c4f5835d3ee5bf7a76ae1f90c6fad4f00cdf96d00ddb491a087574  ./docs/SECRET-SCAN-POLICY.md
-c89056f6975fdb72e0c0e7c9377c614c0ed08ecc3b1f0ffad8ad9d7546a3251c  ./docs/SESSION-CHECKPOINT.md
+a8b0c022d45331941095724100cb6285ac55aa026ff948a516cf1b125c696387  ./docs/SESSION-CHECKPOINT.md
 03d88ce7efa18d6b1381392e386db54b5f026a9e345f02e6299c07d6102d41bb  ./docs/SESSION-HANDOFF-PROTOCOL.md
 cc7efd6089313daacae59b9e676431d674b7b8e45702a812618728689fe7c16e  ./docs/STAGING-RUNBOOK.md
 1fc4adecc7abe855470936cef9ac09129d7b83a8926f1d8bddbfc244c1a5f2dd  ./docs/UAT-CHECKLIST.md
@@ -645,7 +647,7 @@ d296e3a0df131f20476c6d8c4ece1af57e861ed63b49659ab468ab3f038bc155  ./ops/systemd/
 0ab8a7cb3c2364eaae2ed177ad5dc0c605e90167f70de7f89aa552d184c0cdfa  ./ops/systemd/iot-platform-offhost-backup.timer
 c16ce529395244a7a5cdd9b4b86902273e232212695edd8c768c8de28cfbe78f  ./ops/systemd/iot-platform.service
 8324af11e31b28f764886f81456da39d3d6b503cbf97f394c1eddbb0aca5839e  ./package-lock.json
-42a6f3e8021559e8325bd2ffcd069d1118c0d7d5200476370ccc381248ae5f15  ./package.json
+40ca7099d39211cf70d3a577fc997d04aed8eb042a5ea82668f79b4d69299a97  ./package.json
 a119fdac221907cc9580b940bb96d031ae518f3a3f97dab501bfe3e94cef19d3  ./packages/design-system/package.json
 a6a80d485fd45df498f0ff7b7ed29c8c99a5d0aad2caeb80fd0df23a9d69400e  ./packages/design-system/src/camera-player.tsx
 b9b3e462cf4f09ca525457ac78f1274b48dac05b701f37ad32414a3d0515356e  ./packages/design-system/src/capability-value-input.tsx
@@ -1345,7 +1347,7 @@ e27389dfe4addbe71cb09c27948efad91909b0a081d592e69a81b897f0e2a613  ./test/jest-mo
 9b1afab653827a7bb8e1ea9eebe97689e680eb7a80a4eedee28495f662982cb2  ./test/jest-mqtt-publisher-integration.json
 32bd0bfced6cdb81774cbaa1ee4b7572467c9939b1733be76d22957ee34ac9ae  ./test/k6-stress-suite.contract.spec.ts
 85d78b1617d850371b535162ae88ff985c1720221908314ac6db1d7494e93e9f  ./test/local-console-login-regression.contract.spec.ts
-2b071ff688727293dff2cb960153faaadd4bec39ea98bb8d98abb9503b04fe9e  ./test/mobile-command-outbox.contract.spec.ts
+37bfb2d23c541352917525005074d0f80f32f0778e27d162c3868c5a936bc23b  ./test/mobile-command-outbox.contract.spec.ts
 d3f57c4dcedcd04dabf73dd75ab22be2ed643f9630b4a38abfe33687e400f4ae  ./test/mobile-notification-parity.integration-spec.ts
 a4659e163f58b413d2909f6aa013696bebb954a49826019f783a84e78f8bb3b4  ./test/mobile-offline-first.contract.spec.ts
 036fbacf45a9ba02540a3e6ea0a9cbb2c0de23789fa0ffcf6b5cb3b893b287b4  ./test/mobile-offline-surfaces.contract.spec.ts
@@ -1522,4 +1524,4 @@ d526784499ba2f416a3fca603acb5dd534fb7450580e048a80abcba43f9ece63  ./tools/redis-
 0543e915f75a5ecc6acceb422f4bebbac2e6a4ca6a77c3b8a031191884d8996c  ./tsconfig.build.json
 7256486d18986f5c8b6c0d1548e30a2cdf8dfb0c4d1fb27e5dffd081ee67fa98  ./tsconfig.jest.json
 fb2278ad89fcdbeb387aa4a8e0f3c550b9ffd464d1ce83b2c2aee1ff72ddc14c  ./tsconfig.json
-56b1d4e3aaeb0ff1da991122b71675da3edaaaf511b6d4f1180555f6ce822d30  ./repository-tree.txt
+604009469bf9a8b24119e449be0020c0843ac8fb2bfd8ee99a70fc23c0a5426c  ./repository-tree.txt

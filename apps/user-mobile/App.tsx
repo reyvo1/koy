@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { StatusBar, StyleSheet, View, useColorScheme } from 'react-native';
+import {
+  AppState,
+  StatusBar,
+  StyleSheet,
+  View,
+  useColorScheme,
+} from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import {
@@ -35,6 +41,7 @@ import {
   connectMobileCommandOutbox,
   isMobileOfflineError,
 } from './src/offline/mobile-offline-commands';
+import { createMobileOutboxDrainScheduler } from './src/offline/mobile-outbox-drain-scheduler';
 import {
   connectMobileOfflineDashboard,
   shouldServeCachedDashboard,
@@ -150,6 +157,34 @@ export default function App() {
     }),
     [offlineSurfaces],
   );
+  // The drain scheduler reads the latest flush through a ref for the same reason the connectivity
+  // trigger does: the timer outlives any single render's closure. Its cadence runs only while
+  // entries are waiting, and every app resume gets one attempt regardless.
+  const flushOutboxNowRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    flushOutboxNowRef.current = () => {
+      void flushOutboxNow();
+    };
+  });
+  const outboxDrainScheduler = useMemo(
+    () =>
+      createMobileOutboxDrainScheduler({
+        flush: () => flushOutboxNowRef.current(),
+      }),
+    [],
+  );
+  useEffect(() => {
+    outboxDrainScheduler.setPending(outboxSummary.pending > 0);
+  }, [outboxDrainScheduler, outboxSummary.pending]);
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (next) => {
+      if (next === 'active') outboxDrainScheduler.onAppActive();
+    });
+    return () => {
+      subscription.remove();
+      outboxDrainScheduler.dispose();
+    };
+  }, [outboxDrainScheduler]);
 
   useEffect(() => {
     let active = true;
