@@ -62,6 +62,78 @@ export function clearSessionCookies(response: NextResponse): void {
   }
 }
 
+// Route handlers each build their own SessionBackendClient, so one browser burst (a dashboard
+// loading several panels, two tabs, or an SSE reconnect racing a fetch) can present the same
+// expired access token and the same refresh cookie to several routes at once. The backend
+// rotates refresh tokens with reuse detection and revokes the whole family when a consumed
+// token is presented again, which would turn that benign race into a forced logout.
+//
+// One in-flight rotation per refresh token is shared across every route handler in this
+// process, and a completed rotation is replayed for a short bounded window so a straggler
+// route that started before the refreshed cookies reached the browser still finishes with the
+// fresh pair instead of consuming the token a second time. The replay window is process-local
+// and time-bounded; the backend reuse detection itself is untouched. A multi-instance
+// deployment would need a shared coordinator, which this single-process app does not have.
+const REFRESH_ROTATION_GRACE_MS = 10_000;
+
+interface RefreshRotation {
+  settle: 'pending' | 'success' | 'failure';
+  expiresAt: number;
+  promise: Promise<TokenPair>;
+}
+
+const refreshRotations = new Map<string, RefreshRotation>();
+
+function rotateRefreshToken(refreshToken: string): Promise<TokenPair> {
+  const now = Date.now();
+  const rotation = refreshRotations.get(refreshToken);
+
+  if (rotation && rotation.settle === 'pending') {
+    return rotation.promise;
+  }
+
+  if (rotation && rotation.settle === 'success' && rotation.expiresAt > now) {
+    return rotation.promise;
+  }
+
+  for (const [token, entry] of refreshRotations) {
+    if (entry.settle !== 'pending' && entry.expiresAt <= now) {
+      refreshRotations.delete(token);
+    }
+  }
+
+  const promise = (async () => {
+    const response = await backendFetch('/auth/refresh', {
+      body: JSON.stringify({ token: refreshToken }),
+      headers: { 'content-type': 'application/json' },
+      method: 'POST',
+    });
+    return readBackendJson<TokenPair>(response);
+  })();
+
+  const entry: RefreshRotation = {
+    settle: 'pending',
+    expiresAt: now + REFRESH_ROTATION_GRACE_MS,
+    promise,
+  };
+
+  refreshRotations.set(refreshToken, entry);
+  promise.then(
+    () => {
+      entry.settle = 'success';
+      entry.expiresAt = Date.now() + REFRESH_ROTATION_GRACE_MS;
+    },
+    () => {
+      entry.settle = 'failure';
+      if (refreshRotations.get(refreshToken) === entry) {
+        refreshRotations.delete(refreshToken);
+      }
+    },
+  );
+
+  return promise;
+}
+
 export class SessionBackendClient {
   private refreshedTokens: TokenPair | null = null;
   private refreshPromise: Promise<void> | null = null;
@@ -165,12 +237,7 @@ export class SessionBackendClient {
       );
     }
 
-    const response = await backendFetch('/auth/refresh', {
-      body: JSON.stringify({ token: refreshToken }),
-      headers: { 'content-type': 'application/json' },
-      method: 'POST',
-    });
-    const tokens = await readBackendJson<TokenPair>(response);
+    const tokens = await rotateRefreshToken(refreshToken);
 
     this.session.accessToken = tokens.accessToken;
     this.session.refreshToken = tokens.refreshToken;

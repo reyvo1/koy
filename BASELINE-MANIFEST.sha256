@@ -65,9 +65,9 @@ a806666cbf85171af1027b36a496a750a0c20b253f48e82583a9f25a436622e1  ./AI-Developme
 cab10a82cb5f2255ecdf99981067119041beb07ab6c1f1976e531d10db5fd724  ./AI-Development-Kit/templates/MODULE-STATUS-TEMPLATE.md
 68f8de30afc578e0ab20ac92ef560f3081a95d699d998621092f1f61c0d00791  ./AI-Development-Kit/workflows/AGENT-EXECUTION-LOOP.md
 78e5c067c68636d36a3289d001fd159176a7792b7e33af206463d7aaa93a0f7c  ./AI-Development-Kit/workflows/FAILURE-PROTOCOL.md
-1b42d64dc2a7e7b379cc9b5046309249efac8bace2e6412f2ecf5bff17e445ad  ./CURRENT-STATE.md
+42119a9ed595db79e260c56262dbd98f85f211d1a38c698ce9326dcb9998436d  ./CURRENT-STATE.md
 bd29d21f37c224e1d6b4af71e0025d8f4019b3914381248356add4266724f1b0  ./GATE-1-STATUS.md
-622f03739e7ff1e9abc2b484a1ac7c6670b1d0947772c6420759b6a2c0ef7f0a  ./PASTE-KE-CHAT-BERIKUTNYA.txt
+4d9958cef83fc585e269859c55a4f311273c9bd9b5668d157d9dc9c5b7240c01  ./PASTE-KE-CHAT-BERIKUTNYA.txt
 2b1f7f4afce4f3196b0258437c83d64fdda0b01d21a7d9d390695aad6eff2c41  ./PROJECT-HANDOFF.md
 818d1504f9c83a672557cc3c45452c033f04098ce52f609be506b3bbe7dfe7d6  ./UI-DESIGN-SYSTEM.md
 c2482384a4f53220f51123f4fd6ae19151c47cb1a15dc2d49f9a8228beaaa964  ./apps/admin-web/.env.example
@@ -337,7 +337,7 @@ e47c6ef1637b6183431d0bc4163d51ce464de371d01556ab03c8a8b71278bb7b  ./apps/admin-w
 b3864f932d5669e531fd4c4a8ecf52aec49c80117c0ad237fa4b45120159a250  ./apps/admin-web/lib/operational-summary-state.ts
 1025dbec9fd4abe8ce0292dc0b370cbe2b0bdd6badba70da084aeca03544a228  ./apps/admin-web/lib/proxy.ts
 01876463b74cd16b1086042607b2c0e1ecfded8d06db65c5f3eac343c65174dc  ./apps/admin-web/lib/safe-fetch.ts
-a89bdf43609d4e863d5bd4189424132782b78c3f1f655e1f724fe571045e5ebb  ./apps/admin-web/lib/session.ts
+968e9f6c180df50d14d35b001d243f30589d6073703006e61a57c6067f9502e5  ./apps/admin-web/lib/session.ts
 4457e7126b05a20bdb4f25abe3290e9d9abe03ffa1425ec6ee859ee1933ddfe1  ./apps/admin-web/lib/tenant-navigation.ts
 a840ff1a6c64a902f0350f230b4da5e6a4c3593ea4d5f313e29354c8b01df4ac  ./apps/admin-web/lib/tenant-resolver.ts
 57b60e6572cc371512af55c0a239177a4f0682d3ac927f061867051ded48050c  ./apps/admin-web/lib/use-telemetry-stream.ts
@@ -454,13 +454,13 @@ abbe69799fc7bc36fad150548d24179dfbf63fec783bb98fae3329b38b1362de  ./apps/user-we
 c95256805e2efcab581912a5cdd692ef83add7afa358787394fd6b38390f0d36  ./apps/user-web/lib/backend.ts
 b90fc1e727e56d503e6b5c78926d0aead8e084867e1e00d7a5534dc18ed2cf7b  ./apps/user-web/lib/contracts.ts
 c41fe0b8acfca4facc1d52354cb941c2fa24f993333ef5ef75f84f0c2a295ca3  ./apps/user-web/lib/dashboard-loader.ts
-bead9f184b27083639c20803cac92b239a55bcea908cf442f5eed777f6b59df9  ./apps/user-web/lib/session.ts
+e100d7810ca74d0809296a27b384596caf72f6e8350d463b4838f5aa043573bf  ./apps/user-web/lib/session.ts
 4a236edaf457c184169a2592df456347d58f54281b934b30b737263b32e040be  ./apps/user-web/next.config.mjs
 01268576081ce66c1fa4686843e807e3913b3d449399c29f04633466378a7e1f  ./apps/user-web/package.json
 ccd2a17f28b9205adc19fbf05b2a9389dc24115b8ce40b6d958777af90bea7a1  ./apps/user-web/postcss.config.mjs
 7794f4a44d2c31c1f33e91477a00025f4e62687a88946b7c17f58f26257ef2e8  ./apps/user-web/public/icon.png
 38ee09e8ee48c7e75cab63bd076513018ca07b655295664d07c107e408606495  ./apps/user-web/tsconfig.json
-caef5aed12aa3aaf81d8d99aa32db78ceab09e51ad17b60d99c522d09f51756e  ./chat-session.md
+a1d9c6bd816b6f23740afcb438c01eda8b3474aa647a606f535faf3d2db68960  ./chat-session.md
 08395048b09eab1f15b7264df8b76ae8b4e99634c0f516aa3ce775042bd1859e  ./config/performance-budget.json
 3f7f2db41062faaeea13fd74832ddcd6e9332a2b4063f13af8ff0cf3c60b030a  ./config/stress-budget.json
 57e9cc3083ac5d0b99e00ed9afa5f740d958130437c0d6a1b52d7ed89ad04fb5  ./docker-compose.rescue.yml
@@ -481,7 +481,7 @@ e609750984b6a528a218c343a0e3614403e010751dd1529cdc17da3d9148d2cf  ./docs/RESCUE-
 2fd52fea04918f5e778492de8879f074e594fb72c449993eef7b4ef3e8e33921  ./docs/ROADMAP-COMPLETE.md
 b7c50d5ecd0ef5538e96d0c7c2b40311e951e764d53f6f16f27f516f3eb1c911  ./docs/ROADMAP-SMART-HOTEL.md
 6149db8093c4f5835d3ee5bf7a76ae1f90c6fad4f00cdf96d00ddb491a087574  ./docs/SECRET-SCAN-POLICY.md
-707a266c284d4dff480324631758e558c5437e5342e506f58ca0d44bb0737c78  ./docs/SESSION-CHECKPOINT.md
+c0c0af199e3db3cd632c3134c0ff91ece4a20ab9a0285014a9511edbf00fd470  ./docs/SESSION-CHECKPOINT.md
 03d88ce7efa18d6b1381392e386db54b5f026a9e345f02e6299c07d6102d41bb  ./docs/SESSION-HANDOFF-PROTOCOL.md
 cc7efd6089313daacae59b9e676431d674b7b8e45702a812618728689fe7c16e  ./docs/STAGING-RUNBOOK.md
 1fc4adecc7abe855470936cef9ac09129d7b83a8926f1d8bddbfc244c1a5f2dd  ./docs/UAT-CHECKLIST.md
@@ -1364,7 +1364,7 @@ bc848e7a210c1c4ae86c9087ccb864f26afc02b56a719158bdd437dfc8a10f72  ./test/module-
 0b3dd8190d74426b5b5871d8eae114bb0359fe8afd9ad239fa6ba0c582c8716a  ./test/module-10-admin-web-operational-dashboard.contract.spec.ts
 f821d5195012353c333ddb80badd096b3ad83747f13e722472f805b671210aa2  ./test/module-10-admin-web-operational-summary-route.spec.ts
 363a81cd00e4ce34467c32d1cc8fe9eee86d8a2247c2e6c6e552ebac919f8685  ./test/module-10-admin-web-operational-summary-state.spec.ts
-b9dfff1e7fa587ab712f854cdd9e70073b35f2d860f6f7a9a605e52809dc936d  ./test/module-10-admin-web-session-refresh.spec.ts
+6bbf5f9fbd66c9450bfa9c6c00dece53c6bd54a04a6e46d89edb94fb0cca8efb  ./test/module-10-admin-web-session-refresh.spec.ts
 ded619159f7bec3acbb2c90d9f93d7c77d3ec24e7104b4e7303404428d81556a  ./test/module-10-android-native-proof-preparation.contract.spec.ts
 0f2a4d3310548ae076fcb746bae244555095829aebff4327f5f9454560f49b9d  ./test/module-10-barcode-cctv-ui-compatibility.contract.spec.ts
 45fc91fb94c1e4e15b89c4ab7f33be6d1cb7a3ee07248811e7227fb106a3b5db  ./test/module-10-completion-review.contract.spec.ts
@@ -1379,7 +1379,7 @@ e54c5b3d5037211e5921a1fe8505d038f9fea96672d46a8a117c0bdae4b3a3c8  ./test/module-
 e9ebcf234850023bd757f00e2cdc07aec5edec5060ea1e6c65b5e10e51d54df8  ./test/module-10-security-observability-accessibility-e2e-review.contract.spec.ts
 610f6dbb9509b4e186e81f3ff66018f8d2ebc2e61ca2fa835bb55e45aca07d02  ./test/module-10-telemetry-widget-query-integration.contract.spec.ts
 4bb1ed4dadb0a3039722639dffd5168077124075933f555219d73c78d4f10b8c  ./test/module-10-user-web-dynamic-dashboard.contract.spec.ts
-41363008a96f6b58223c4e45d3a9325598f530b3656199447db2b5158f37944b  ./test/module-10-user-web-session-refresh.spec.ts
+e678066563d4702f39d278ec17b2cb8f2b566fced30bbf9ae8953f056b4d5513  ./test/module-10-user-web-session-refresh.spec.ts
 25303c610f253d2a6590e02a5a991802109e3c66fac49f6fafe8a9f74c93f98f  ./test/module-10-web-workspace-design-system-foundation.contract.spec.ts
 9a41f501ca0e98f7b5ef1ca8aa4dabdd9f2e7b2e58c39ba2827370218fa0e07a  ./test/module-10-widget-resolution.contract.spec.ts
 4178f4b1a959a004f353a6a4dd9474cd0a7f5237f5ff9a176cb738f548399641  ./test/module-11-automation-action-state-transition-foundation.contract.spec.ts
