@@ -52,6 +52,21 @@ describe('mobile offline surfaces contract', () => {
     expect(app).toContain('connectivityProvenRef.current()');
   });
 
+  it('caches the device detail per device and serves it only for connectivity outages', () => {
+    expect(surfaces).toContain('DEVICE_DETAIL_OFFLINE_SURFACE');
+    expect(surfaces).toContain('deviceDetailOfflineKey');
+    expect(surfaces).toContain('isCachedDeviceDetail');
+    expect(surfaces).toContain('CACHED_MAX_TELEMETRY_POINTS = 500');
+    expect(shell).toContain('await offline.readDeviceDetail(tenantId, deviceId)');
+    expect(shell).toContain(
+      'offline.rememberDeviceDetail(tenantId, deviceId, detail)',
+    );
+    expect(shell).toContain('setDeviceDetailCachedAt(cached.cachedAt)');
+    expect(app).toContain('connectMobileOfflineDeviceDetails');
+    expect(app).toContain('offlineSurfaces.details.read(tenantId, deviceId)');
+    expect(app).toContain('offlineSurfaces.details.remember(tenantId, deviceId, detail)');
+  });
+
   it('adds no web or insecure storage', () => {
     expect(surfaces).not.toMatch(/AsyncStorage|localStorage|sessionStorage/);
   });

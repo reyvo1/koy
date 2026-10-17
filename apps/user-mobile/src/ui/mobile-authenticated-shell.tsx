@@ -86,10 +86,19 @@ interface MobileShellOfflineGateway {
   readAlerts(
     tenantId: string,
   ): Promise<{ alerts: MobileAlertsPayload; cachedAt: string } | null>;
+  readDeviceDetail(
+    tenantId: string,
+    deviceId: string,
+  ): Promise<{ cachedAt: string; detail: MobileDeviceDetail } | null>;
   readDevices(
     tenantId: string,
   ): Promise<{ cachedAt: string; devices: MobileDeviceSummary[] } | null>;
   rememberAlerts(tenantId: string, alerts: MobileAlertsPayload): Promise<boolean>;
+  rememberDeviceDetail(
+    tenantId: string,
+    deviceId: string,
+    detail: MobileDeviceDetail,
+  ): Promise<boolean>;
   rememberDevices(
     tenantId: string,
     devices: MobileDeviceSummary[],
@@ -161,6 +170,7 @@ export function MobileAuthenticatedShell({
   const [deviceDetail, setDeviceDetail] = useState<MobileDeviceDetail | null>(null);
   const [deviceDetailLoading, setDeviceDetailLoading] = useState(false);
   const [deviceDetailError, setDeviceDetailError] = useState<string | null>(null);
+  const [deviceDetailCachedAt, setDeviceDetailCachedAt] = useState<string | null>(null);
   const [alerts, setAlerts] = useState<MobileAlertsPayload | null>(null);
   const [alertsLoading, setAlertsLoading] = useState(false);
   const [alertsError, setAlertsError] = useState<string | null>(null);
@@ -240,6 +250,7 @@ export function MobileAuthenticatedShell({
     const summary = devices.find((device) => device.id === deviceId);
     if (!summary) {
       setDeviceDetail(null);
+      setDeviceDetailCachedAt(null);
       setDeviceDetailError('Perangkat tidak lagi tersedia pada workspace user.');
       return;
     }
@@ -247,14 +258,29 @@ export function MobileAuthenticatedShell({
     setDeviceDetailLoading(true);
     setDeviceDetailError(null);
     try {
-      setDeviceDetail(await loadMobileDeviceDetail(mobileSessionClient, summary));
-    } catch {
-      setDeviceDetail(null);
-      setDeviceDetailError('Device Detail belum dapat dimuat dari backend.');
+      const detail = await loadMobileDeviceDetail(mobileSessionClient, summary);
+      setDeviceDetail(detail);
+      setDeviceDetailCachedAt(null);
+      offline.onConnectivityProven();
+      void offline.rememberDeviceDetail(tenantId, deviceId, detail);
+    } catch (cause) {
+      // A connectivity outage serves the last detail this device validated; any other failure
+      // (rejected session, permissions, unknown device) is an answer and must render as itself.
+      const cached = isMobileOfflineError(cause)
+        ? await offline.readDeviceDetail(tenantId, deviceId)
+        : null;
+      if (cached) {
+        setDeviceDetail(cached.detail);
+        setDeviceDetailCachedAt(cached.cachedAt);
+      } else {
+        setDeviceDetail(null);
+        setDeviceDetailCachedAt(null);
+        setDeviceDetailError('Device Detail belum dapat dimuat dari backend.');
+      }
     } finally {
       setDeviceDetailLoading(false);
     }
-  }, [devices]);
+  }, [devices, offline, tenantId]);
 
   const loadAlerts = useCallback(async () => {
     setAlertsLoading(true);
@@ -429,15 +455,27 @@ export function MobileAuthenticatedShell({
 
         {tab === 'devices' ? (
           detailDeviceId ? (
-            <MobileDeviceDetailPanel
-              detail={deviceDetail}
-              error={deviceDetailError}
-              isDark={isDark}
-              loading={deviceDetailLoading}
-              onBack={() => { setDetailDeviceId(null); setDeviceDetail(null); setDeviceDetailError(null); }}
-              onRefresh={() => loadDetail(detailDeviceId)}
-              onSendCommand={onSendCommand}
-            />
+            <View style={styles.sectionGap}>
+              <CachedSurfaceBanner
+                cachedAt={deviceDetailCachedAt}
+                copy={copy.dashboard}
+                isDark={isDark}
+              />
+              <MobileDeviceDetailPanel
+                detail={deviceDetail}
+                error={deviceDetailError}
+                isDark={isDark}
+                loading={deviceDetailLoading}
+                onBack={() => {
+                  setDetailDeviceId(null);
+                  setDeviceDetail(null);
+                  setDeviceDetailError(null);
+                  setDeviceDetailCachedAt(null);
+                }}
+                onRefresh={() => loadDetail(detailDeviceId)}
+                onSendCommand={onSendCommand}
+              />
+            </View>
           ) : (
             <View style={styles.sectionGap}>
               <CachedSurfaceBanner

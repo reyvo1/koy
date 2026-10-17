@@ -1,13 +1,17 @@
 import type {
   MobileAlertsPayload,
+  MobileDeviceDetail,
   MobileDeviceSummary,
 } from '../device-control/mobile-device-client';
 import {
   ALERTS_OFFLINE_SURFACE,
   DEVICES_OFFLINE_SURFACE,
   connectMobileOfflineAlerts,
+  connectMobileOfflineDeviceDetails,
   connectMobileOfflineDevices,
+  deviceDetailOfflineKey,
   isCachedAlertsPayload,
+  isCachedDeviceDetail,
   isCachedDeviceList,
 } from './mobile-offline-surfaces';
 import {
@@ -218,5 +222,129 @@ describe('cached payload guards', () => {
     expect(isCachedAlertsPayload(sampleAlerts())).toBe(true);
     expect(isCachedAlertsPayload({ ...sampleAlerts(), items: 'nope' })).toBe(false);
     expect(isCachedAlertsPayload(null)).toBe(false);
+  });
+});
+
+function sampleDetail(deviceId = 'device-1'): MobileDeviceDetail {
+  return {
+    capabilities: [
+      {
+        dataType: 'BOOLEAN',
+        id: 'cap-1',
+        isReadable: true,
+        isReportable: true,
+        isWritable: true,
+        key: 'power',
+        semanticType: 'SWITCH',
+        unit: null,
+      },
+    ],
+    commandHistory: [
+      {
+        acknowledgedAt: null,
+        correlationId: 'corr-1',
+        createdAt: '2026-10-16T09:00:00.000Z',
+        id: 'cmd-1',
+        payload: { value: true },
+        sentAt: null,
+        status: 'QUEUED',
+      },
+    ],
+    device: {
+      ...sampleDevice(1),
+      createdAt: '2026-10-01T00:00:00.000Z',
+      id: deviceId,
+      updatedAt: '2026-10-16T09:00:00.000Z',
+    },
+    technicalHistory: {
+      alertDeliveryHistory: { available: false, reason: 'belum tersedia' },
+      analyticsFindings: [],
+      firmware: {
+        availability: 'UNKNOWN',
+        currentVersion: null,
+        reason: 'belum tersedia',
+      },
+      protocol: {
+        availability: 'UNKNOWN',
+        name: null,
+        reason: 'belum tersedia',
+      },
+      updateHistory: [],
+    },
+    telemetry: [
+      {
+        capabilityKey: 'power',
+        recordedAt: '2026-10-16T09:00:00.000Z',
+        value: true,
+      },
+    ],
+  };
+}
+
+describe('offline device detail cache', () => {
+  it('remembers a validated detail and reads it back under its own device key', async () => {
+    const port = new MemoryPort();
+    const cache = createMobileSnapshotCache(port);
+    const bridge = connectMobileOfflineDeviceDetails({ apiOrigin: ORIGIN, cache });
+
+    expect(await bridge.remember(TENANT, 'device-1', sampleDetail())).toBe(true);
+
+    const key = surfaceSnapshotKey(
+      ORIGIN,
+      TENANT,
+      deviceDetailOfflineKey('device-1'),
+    );
+    expect(port.rows.has(key)).toBe(true);
+    expect(key).toContain('device-detail:device-1');
+
+    const cached = await bridge.read(TENANT, 'device-1');
+    expect(cached?.detail.device.id).toBe('device-1');
+    expect(cached?.detail.capabilities[0]?.key).toBe('power');
+    expect(cached?.cachedAt).toBeTruthy();
+  });
+
+  it('keeps every device in its own slot and never invents a missing one', async () => {
+    const port = new MemoryPort();
+    const cache = createMobileSnapshotCache(port);
+    const bridge = connectMobileOfflineDeviceDetails({ apiOrigin: ORIGIN, cache });
+
+    await bridge.remember(TENANT, 'device-1', sampleDetail('device-1'));
+    await bridge.remember(TENANT, 'device-2', sampleDetail('device-2'));
+
+    expect((await bridge.read(TENANT, 'device-1'))?.detail.device.id).toBe('device-1');
+    expect((await bridge.read(TENANT, 'device-2'))?.detail.device.id).toBe('device-2');
+    expect(await bridge.read(TENANT, 'device-3')).toBeNull();
+    expect(await bridge.read('tenant-2', 'device-1')).toBeNull();
+  });
+
+  it('rejects malformed details on remember and treats a corrupted file as no cache', async () => {
+    const port = new MemoryPort();
+    const cache = createMobileSnapshotCache(port);
+    const bridge = connectMobileOfflineDeviceDetails({ apiOrigin: ORIGIN, cache });
+
+    const corrupt = {
+      ...sampleDetail(),
+      telemetry: 'not-an-array',
+    } as unknown as MobileDeviceDetail;
+    expect(await bridge.remember(TENANT, 'device-1', corrupt)).toBe(false);
+    expect(isCachedDeviceDetail(corrupt)).toBe(false);
+
+    const missingHistory = { ...sampleDetail() } as Record<string, unknown>;
+    delete missingHistory.technicalHistory;
+    expect(isCachedDeviceDetail(missingHistory)).toBe(false);
+
+    await cache.write(
+      surfaceSnapshotKey(ORIGIN, TENANT, deviceDetailOfflineKey('device-1')),
+      { device: sampleDetail().device, capabilities: [] },
+      '2026-10-16T10:00:00.000Z',
+    );
+    expect(await bridge.read(TENANT, 'device-1')).toBeNull();
+  });
+
+  it('accepts a detail the network loader could produce, including optional fields', () => {
+    expect(isCachedDeviceDetail(sampleDetail())).toBe(true);
+    const withoutType = sampleDetail();
+    delete withoutType.device.type;
+    expect(isCachedDeviceDetail(withoutType)).toBe(true);
   });
 });

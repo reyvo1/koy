@@ -23,6 +23,7 @@ import {
   reconcileMobileCommand,
   sendCapabilityCommand,
   type MobileAlertsPayload,
+  type MobileDeviceDetail,
   type MobileDeviceSummary,
 } from './src/device-control/mobile-device-client';
 import { mobileSessionClient } from './src/session';
@@ -48,6 +49,7 @@ import {
 } from './src/offline/mobile-offline-dashboard';
 import {
   connectMobileOfflineAlerts,
+  connectMobileOfflineDeviceDetails,
   connectMobileOfflineDevices,
 } from './src/offline/mobile-offline-surfaces';
 import { defaultMobileLocale, type MobileLocale } from './src/localization/messages';
@@ -125,6 +127,10 @@ export default function App() {
         apiOrigin: mobileSessionClient.origin,
         cache: mobileSnapshotCache,
       }),
+      details: connectMobileOfflineDeviceDetails({
+        apiOrigin: mobileSessionClient.origin,
+        cache: mobileSnapshotCache,
+      }),
       devices: connectMobileOfflineDevices({
         apiOrigin: mobileSessionClient.origin,
         cache: mobileSnapshotCache,
@@ -149,9 +155,16 @@ export default function App() {
     () => ({
       onConnectivityProven: () => connectivityProvenRef.current(),
       readAlerts: (tenantId: string) => offlineSurfaces.alerts.read(tenantId),
+      readDeviceDetail: (tenantId: string, deviceId: string) =>
+        offlineSurfaces.details.read(tenantId, deviceId),
       readDevices: (tenantId: string) => offlineSurfaces.devices.read(tenantId),
       rememberAlerts: (tenantId: string, alerts: MobileAlertsPayload) =>
         offlineSurfaces.alerts.remember(tenantId, alerts),
+      rememberDeviceDetail: (
+        tenantId: string,
+        deviceId: string,
+        detail: MobileDeviceDetail,
+      ) => offlineSurfaces.details.remember(tenantId, deviceId, detail),
       rememberDevices: (tenantId: string, devices: MobileDeviceSummary[]) =>
         offlineSurfaces.devices.remember(tenantId, devices),
     }),

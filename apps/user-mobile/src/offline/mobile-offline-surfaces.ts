@@ -16,6 +16,7 @@
  */
 import type {
   MobileAlertsPayload,
+  MobileDeviceDetail,
   MobileDeviceSummary,
 } from '../device-control/mobile-device-client';
 import {
@@ -25,9 +26,20 @@ import {
 
 const CACHED_MAX_DEVICES = 500;
 const CACHED_MAX_ALERT_ITEMS = 200;
+const CACHED_MAX_CAPABILITIES = 100;
+const CACHED_MAX_TELEMETRY_POINTS = 500;
+const CACHED_MAX_COMMAND_HISTORY = 100;
+const CACHED_MAX_UPDATE_HISTORY = 100;
+const CACHED_MAX_DETAIL_FINDINGS = 200;
 
 export const DEVICES_OFFLINE_SURFACE = 'devices';
 export const ALERTS_OFFLINE_SURFACE = 'alerts';
+export const DEVICE_DETAIL_OFFLINE_SURFACE = 'device-detail';
+
+/** Device details are cached per device so one open detail cannot overwrite another. */
+export function deviceDetailOfflineKey(deviceId: string): string {
+  return `${DEVICE_DETAIL_OFFLINE_SURFACE}:${deviceId}`;
+}
 
 export interface MobileOfflineDevices {
   read(
@@ -44,6 +56,18 @@ export interface MobileOfflineAlerts {
     tenantId: string,
   ): Promise<{ alerts: MobileAlertsPayload; cachedAt: string } | null>;
   remember(tenantId: string, alerts: MobileAlertsPayload): Promise<boolean>;
+}
+
+export interface MobileOfflineDeviceDetails {
+  read(
+    tenantId: string,
+    deviceId: string,
+  ): Promise<{ cachedAt: string; detail: MobileDeviceDetail } | null>;
+  remember(
+    tenantId: string,
+    deviceId: string,
+    detail: MobileDeviceDetail,
+  ): Promise<boolean>;
 }
 
 export function connectMobileOfflineDevices(deps: {
@@ -86,8 +110,36 @@ export function connectMobileOfflineAlerts(deps: {
   };
 }
 
+export function connectMobileOfflineDeviceDetails(deps: {
+  apiOrigin: string;
+  cache: MobileSnapshotCache;
+}): MobileOfflineDeviceDetails {
+  const key = (tenantId: string, deviceId: string) =>
+    surfaceSnapshotKey(
+      deps.apiOrigin,
+      tenantId,
+      deviceDetailOfflineKey(deviceId),
+    );
+
+  return {
+    async read(tenantId, deviceId) {
+      const snapshot = await deps.cache.read(key(tenantId, deviceId));
+      if (!snapshot || !isCachedDeviceDetail(snapshot.payload)) return null;
+      return { cachedAt: snapshot.cachedAt, detail: snapshot.payload };
+    },
+    async remember(tenantId, deviceId, detail) {
+      if (!isCachedDeviceDetail(detail)) return false;
+      return deps.cache.write(
+        key(tenantId, deviceId),
+        detail,
+        new Date().toISOString(),
+      );
+    },
+  };
+}
+
 /**
- * Structural guards for the two cached payloads. Both were produced by the bounded network loader,
+ * Structural guards for the cached payloads. All were produced by the bounded network loader,
  * so the read re-checks the shape and the same order-of-magnitude bounds instead of trusting the
  * file.
  */
@@ -149,4 +201,150 @@ export function isCachedAlertsPayload(
         typeof finding.deviceName === 'string')
     );
   });
+}
+
+function isCachedAnalyticsFinding(value: unknown): boolean {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const finding = value as Record<string, unknown>;
+  return (
+    typeof finding.id === 'string' &&
+    typeof finding.capabilityKey === 'string' &&
+    typeof finding.kind === 'string' &&
+    typeof finding.severity === 'string' &&
+    typeof finding.summary === 'string' &&
+    typeof finding.confidence === 'number' &&
+    typeof finding.detectorVersion === 'string' &&
+    typeof finding.createdAt === 'string'
+  );
+}
+
+export function isCachedDeviceDetail(
+  value: unknown,
+): value is MobileDeviceDetail {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const detail = value as Record<string, unknown>;
+  const device = detail.device as Record<string, unknown> | undefined;
+  if (!device || !isCachedDeviceList([device])) return false;
+  if (
+    !(device.createdAt === null || typeof device.createdAt === 'string') ||
+    !(device.updatedAt === null || typeof device.updatedAt === 'string')
+  ) {
+    return false;
+  }
+  if (
+    !Array.isArray(detail.capabilities) ||
+    detail.capabilities.length > CACHED_MAX_CAPABILITIES
+  ) {
+    return false;
+  }
+  const capabilitiesOk = detail.capabilities.every((row) => {
+    if (!row || typeof row !== 'object' || Array.isArray(row)) return false;
+    const capability = row as Record<string, unknown>;
+    return (
+      typeof capability.id === 'string' &&
+      typeof capability.key === 'string' &&
+      typeof capability.semanticType === 'string' &&
+      typeof capability.dataType === 'string' &&
+      (capability.unit === null || typeof capability.unit === 'string') &&
+      typeof capability.isReadable === 'boolean' &&
+      typeof capability.isWritable === 'boolean' &&
+      typeof capability.isReportable === 'boolean'
+    );
+  });
+  if (!capabilitiesOk) return false;
+  if (
+    !Array.isArray(detail.telemetry) ||
+    detail.telemetry.length > CACHED_MAX_TELEMETRY_POINTS
+  ) {
+    return false;
+  }
+  const telemetryOk = detail.telemetry.every((row) => {
+    if (!row || typeof row !== 'object' || Array.isArray(row)) return false;
+    const point = row as Record<string, unknown>;
+    return (
+      typeof point.capabilityKey === 'string' &&
+      (typeof point.value === 'string' ||
+        typeof point.value === 'number' ||
+        typeof point.value === 'boolean') &&
+      typeof point.recordedAt === 'string'
+    );
+  });
+  if (!telemetryOk) return false;
+  if (
+    !Array.isArray(detail.commandHistory) ||
+    detail.commandHistory.length > CACHED_MAX_COMMAND_HISTORY
+  ) {
+    return false;
+  }
+  const historyOk = detail.commandHistory.every((row) => {
+    if (!row || typeof row !== 'object' || Array.isArray(row)) return false;
+    const command = row as Record<string, unknown>;
+    return (
+      typeof command.id === 'string' &&
+      typeof command.correlationId === 'string' &&
+      typeof command.status === 'string' &&
+      typeof command.createdAt === 'string' &&
+      (command.sentAt === null || typeof command.sentAt === 'string') &&
+      (command.acknowledgedAt === null ||
+        typeof command.acknowledgedAt === 'string')
+    );
+  });
+  if (!historyOk) return false;
+  const technical = detail.technicalHistory as
+    | Record<string, unknown>
+    | undefined;
+  if (!technical || typeof technical !== 'object' || Array.isArray(technical)) {
+    return false;
+  }
+  const firmware = technical.firmware as Record<string, unknown> | undefined;
+  const protocol = technical.protocol as Record<string, unknown> | undefined;
+  if (
+    !firmware ||
+    !(firmware.currentVersion === null ||
+      typeof firmware.currentVersion === 'string') ||
+    typeof firmware.availability !== 'string' ||
+    typeof firmware.reason !== 'string' ||
+    !protocol ||
+    !(protocol.name === null || typeof protocol.name === 'string') ||
+    typeof protocol.availability !== 'string' ||
+    typeof protocol.reason !== 'string'
+  ) {
+    return false;
+  }
+  if (
+    !Array.isArray(technical.updateHistory) ||
+    technical.updateHistory.length > CACHED_MAX_UPDATE_HISTORY
+  ) {
+    return false;
+  }
+  const updatesOk = technical.updateHistory.every((row) => {
+    if (!row || typeof row !== 'object' || Array.isArray(row)) return false;
+    const update = row as Record<string, unknown>;
+    const fw = update.firmware as Record<string, unknown> | undefined;
+    return (
+      typeof update.rolloutId === 'string' &&
+      typeof update.rolloutStatus === 'string' &&
+      typeof update.evidenceState === 'string' &&
+      typeof update.updatedAt === 'string' &&
+      !!fw &&
+      typeof fw.version === 'string' &&
+      typeof fw.sha256Metadata === 'string'
+    );
+  });
+  if (!updatesOk) return false;
+  if (
+    !Array.isArray(technical.analyticsFindings) ||
+    technical.analyticsFindings.length > CACHED_MAX_DETAIL_FINDINGS ||
+    !technical.analyticsFindings.every(isCachedAnalyticsFinding)
+  ) {
+    return false;
+  }
+  const delivery = technical.alertDeliveryHistory as
+    | Record<string, unknown>
+    | undefined;
+  return (
+    !!delivery &&
+    delivery.available === false &&
+    typeof delivery.reason === 'string'
+  );
 }
