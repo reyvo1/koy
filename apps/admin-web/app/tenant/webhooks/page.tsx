@@ -106,13 +106,13 @@ export default function TenantWebhooksPage() {
       setRows(null);
       return;
     }
-    const endpointBody = (await endpoints.json()) as {
+    const endpointBody = (await endpoints.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as {
       items?: EndpointRow[];
     } | EndpointRow[];
     setRows(Array.isArray(endpointBody) ? endpointBody : (endpointBody.items ?? []));
 
     if (history.ok) {
-      const deliveryBody = (await history.json()) as {
+      const deliveryBody = (await history.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as {
         items?: DeliveryRow[];
       } | DeliveryRow[];
       setDeliveries(

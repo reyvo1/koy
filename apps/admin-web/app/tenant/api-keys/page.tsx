@@ -58,7 +58,7 @@ export default function TenantApiKeysPage() {
     try {
       const res = await fetch('/api/tenant/api-keys', { cache: 'no-store' });
       if (!res.ok) throw new Error(`backend ${res.status}`);
-      const data = (await res.json()) as { items?: ApiKeyRow[] } | ApiKeyRow[];
+      const data = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { items?: ApiKeyRow[] } | ApiKeyRow[];
       setRows(Array.isArray(data) ? data : (data.items ?? []));
     } catch (cause) {
       setRows(null);

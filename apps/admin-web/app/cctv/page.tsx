@@ -97,7 +97,7 @@ export default function CctvPage() {
     try {
       const response = await fetch('/api/cameras', { cache: 'no-store' });
       if (!response.ok) throw new Error(`backend ${response.status}`);
-      const payload = await response.json();
+      const payload = await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       setCameras(Array.isArray(payload) ? (payload as CameraRow[]) : []);
       setListError(null);
     } catch (cause) {
@@ -137,7 +137,7 @@ export default function CctvPage() {
         toast.push('error', data?.message ?? 'Pendaftaran kamera gagal.');
         return;
       }
-      const data = await response.json();
+      const data = await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       setPairingUri(data.pairingUri ?? null);
       setShowForm(false);
       // Re-read the directory so the new camera appears immediately. Without this the

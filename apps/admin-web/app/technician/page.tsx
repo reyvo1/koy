@@ -91,7 +91,7 @@ export default function TechnicianAppPage() {
     try {
       const response = await fetch('/api/admin/devices');
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const body = (await response.json()) as DeviceRow[] | { items?: DeviceRow[] };
+      const body = (await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as DeviceRow[] | { items?: DeviceRow[] };
       setDevices(Array.isArray(body) ? body : (body.items ?? []));
       setLoadError(null);
     } catch (cause) {
@@ -111,7 +111,7 @@ export default function TechnicianAppPage() {
     try {
       const response = await fetch('/api/admin/device-maintenance');
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const body = (await response.json()) as {
+      const body = (await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as {
         items?: MaintenanceWindow[];
       };
       setWindows(Array.isArray(body.items) ? body.items : []);
@@ -200,7 +200,7 @@ export default function TechnicianAppPage() {
         `/api/admin/device-log?deviceId=${encodeURIComponent(deviceId)}`,
       );
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const body = (await response.json()) as {
+      const body = (await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as {
         items?: CommandLogRow[];
         total?: number;
       };

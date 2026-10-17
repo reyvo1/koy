@@ -23,8 +23,8 @@ export default function SuperTelemetryPage() {
   useEffect(() => {
     let cancelled = false;
     Promise.all([
-      fetch('/api/super/platform-devices').then(async (res) => { if (!res.ok) throw new Error(`device directory ${res.status}`); return res.json(); }),
-      fetch('/api/super/capabilities').then(async (res) => { if (!res.ok) throw new Error(`capability registry ${res.status}`); return res.json(); }),
+      fetch('/api/super/platform-devices').then(async (res) => { if (!res.ok) throw new Error(`device directory ${res.status}`); return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); }); }),
+      fetch('/api/super/capabilities').then(async (res) => { if (!res.ok) throw new Error(`capability registry ${res.status}`); return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); }); }),
     ]).then(([devicePayload, capabilityPayload]) => {
       if (cancelled) return;
       const deviceList: DeviceRow[] = Array.isArray(devicePayload) ? devicePayload : (devicePayload.items ?? []);

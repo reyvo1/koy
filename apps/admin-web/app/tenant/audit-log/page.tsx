@@ -51,7 +51,7 @@ export default function TenantAuditLogPage() {
           cache: 'no-store',
         });
         if (!response.ok) throw new Error(`backend ${response.status}`);
-        const payload = (await response.json()) as AuditPagePayload;
+        const payload = (await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as AuditPagePayload;
         const items = Array.isArray(payload.items) ? payload.items : [];
         setRows((current) => (append && current ? [...current, ...items] : items));
         setNextCursor(typeof payload.nextCursor === 'string' ? payload.nextCursor : null);

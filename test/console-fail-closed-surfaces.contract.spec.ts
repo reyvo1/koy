@@ -274,6 +274,10 @@ describe('user-web surfaces never treat an unreadable response body as data', ()
  * failure. All 101 unguarded parses were swept to throw a plain-language error instead,
  * and the pin below is directory-wide: any future `.json()` under `apps/<app>/components`
  * that is not paired with a `.catch` fails the test, in any file, by any later edit.
+ *
+ * W6 extended the same pin to `apps/<app>/app`: the app-directory pages are a second
+ * rendered surface with the same read-honesty requirement, and 26 unguarded parses across
+ * 14 admin-web pages were swept before the scope was widened.
  */
 describe('every web component guards its response body parses', () => {
   const stripCommentLines = (source: string): string =>
@@ -289,15 +293,29 @@ describe('every web component guards its response body parses', () => {
       })
       .join('\n');
 
+  const walkTsx = (dir: string, prefix: string): string[] => {
+    const out: string[] = [];
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        out.push(...walkTsx(resolve(dir, entry.name), `${prefix}${entry.name}/`));
+      } else if (entry.name.endsWith('.tsx')) {
+        out.push(`${prefix}${entry.name}`);
+      }
+    }
+    return out;
+  };
+
   it.each(['user-web', 'admin-web'])(
-    '%s components never parse a response body without a guard',
+    '%s rendered surfaces never parse a response body without a guard',
     (app) => {
-      const dir = resolve(root, 'apps', app, 'components');
-      const files = readdirSync(dir).filter((name) => name.endsWith('.tsx'));
+      const files = [
+        ...walkTsx(resolve(root, 'apps', app, 'components'), 'components/'),
+        ...walkTsx(resolve(root, 'apps', app, 'app'), 'app/'),
+      ];
       expect(files.length).toBeGreaterThan(0);
       const unguarded: string[] = [];
       for (const name of files) {
-        const source = stripCommentLines(read(`apps/${app}/components/${name}`));
+        const source = stripCommentLines(read(`apps/${app}/${name}`));
         const calls = source.match(/\.json\(\)/g) ?? [];
         const guarded = source.match(/\.json\(\)\s*\.catch\(/g) ?? [];
         if (calls.length !== guarded.length) {

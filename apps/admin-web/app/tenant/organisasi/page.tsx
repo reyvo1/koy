@@ -42,7 +42,7 @@ export default function TenantOrganizationsPage() {
       if (!response.ok) {
         throw new Error(`Gagal memuat organisasi (backend ${response.status}).`);
       }
-      const body = (await response.json()) as { organization?: OrganizationRow | null };
+      const body = (await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { organization?: OrganizationRow | null };
       setOrganization(body.organization ?? null);
     } catch (cause) {
       setOrganization(undefined);

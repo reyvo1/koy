@@ -59,7 +59,7 @@ function TelemetrySparkline() {
           const response = await fetch(`/api/admin/telemetry-chart?hours=${hours}`);
           if (!response.ok) continue;
           hadSuccessfulResponse = true;
-          const body = (await response.json()) as {
+          const body = (await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as {
             buckets?: Array<{ avg?: number | null }>;
           };
           const values = (body.buckets ?? [])
@@ -154,14 +154,14 @@ export default function TenantDashboardPage() {
       if (cancelled) return;
 
       if (deviceResult.status === 'fulfilled' && deviceResult.value.ok) {
-        const body = (await deviceResult.value.json()) as DeviceRow[] | { items?: DeviceRow[] };
+        const body = (await deviceResult.value.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as DeviceRow[] | { items?: DeviceRow[] };
         setDevices(Array.isArray(body) ? body : (body.items ?? []));
       } else {
         setDeviceError(true);
       }
 
       if (spaceResult.status === 'fulfilled' && spaceResult.value.ok) {
-        const body = (await spaceResult.value.json()) as SpaceNode[] | { items?: SpaceNode[] };
+        const body = (await spaceResult.value.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as SpaceNode[] | { items?: SpaceNode[] };
         const items = Array.isArray(body) ? body : (body.items ?? []);
         setRooms(items.filter((item) => item.kind === 'ROOM'));
       } else {
@@ -169,7 +169,7 @@ export default function TenantDashboardPage() {
       }
 
       if (sceneResult.status === 'fulfilled' && sceneResult.value.ok) {
-        const body = (await sceneResult.value.json()) as SceneRow[] | { items?: SceneRow[] };
+        const body = (await sceneResult.value.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as SceneRow[] | { items?: SceneRow[] };
         const items = Array.isArray(body) ? body : (body.items ?? []);
         setActiveScenes(items.filter((item) => item.enabled === true).length);
       } else {

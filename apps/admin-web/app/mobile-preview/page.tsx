@@ -46,7 +46,7 @@ export default function MobilePreviewPage() {
 
   useEffect(() => {
     fetch('/api/admin/devices')
-      .then((r) => r.json())
+      .then((r) => r.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); }))
       .then((body) => setDevices(Array.isArray(body) ? body : body.items ?? []))
       .catch(() => undefined);
   }, []);

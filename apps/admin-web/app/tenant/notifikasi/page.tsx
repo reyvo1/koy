@@ -79,13 +79,13 @@ export default function NotificationsPage() {
         fetch('/api/tenant/notifications/summary', { cache: 'no-store' }),
       ]);
       if (!listRes.ok) throw new Error(`backend ${listRes.status}`);
-      const payload = (await listRes.json()) as {
+      const payload = (await listRes.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as {
         items?: NotificationRow[];
       } | NotificationRow[];
       setRows(Array.isArray(payload) ? payload : (payload.items ?? []));
       setSummary(
         summaryRes.ok
-          ? ((await summaryRes.json()) as Record<string, number>)
+          ? ((await summaryRes.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as Record<string, number>)
           : null,
       );
     } catch (cause) {
@@ -107,7 +107,7 @@ export default function NotificationsPage() {
         { cache: 'no-store' },
       );
       if (!response.ok) throw new Error(`detail backend ${response.status}`);
-      setDetail((await response.json()) as NotificationDetail);
+      setDetail((await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as NotificationDetail);
     } catch (cause) {
       setDetail(null);
       setError(cause instanceof Error ? cause.message : 'gagal memuat detail notifikasi');

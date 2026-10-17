@@ -37,7 +37,7 @@ export default function PremiumLoginPage() {
           tenantId: form.get('tenantId'),
         }),
       });
-      const body = (await response.json()) as {
+      const body = (await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as {
         authenticated?: boolean;
         role?: string;
         message?: string;

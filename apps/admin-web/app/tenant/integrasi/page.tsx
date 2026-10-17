@@ -39,7 +39,7 @@ export default function TenantIntegrationsPage() {
     try {
       const response = await fetch('/api/tenant/integrations', { cache: 'no-store' });
       if (!response.ok) throw new Error(`backend ${response.status}`);
-      const payload = (await response.json()) as { items?: IntegrationRow[] };
+      const payload = (await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { items?: IntegrationRow[] };
       setRows(Array.isArray(payload.items) ? payload.items : []);
     } catch (cause) {
       setRows(null);
@@ -77,7 +77,7 @@ export default function TenantIntegrationsPage() {
 
   async function operate(row: IntegrationRow, action: 'connect' | 'sync' | 'disconnect' | 'runtime') {
     setBusy(row.id); setError(null); setNotice(null);
-    try { const response = await fetch(`/api/tenant/integrations/${encodeURIComponent(row.id)}/${action}`, action === 'runtime' ? { cache: 'no-store' } : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(action === 'sync' ? { deviceId } : {}) }); const body = await response.json(); if (!response.ok) throw new Error(body.message ?? body.error?.message ?? 'Operasi provider gagal.'); if (action === 'runtime') setRuntime((old) => ({ ...old, [row.id]: body })); else { setNotice(body.note ?? 'Operasi provider berhasil.'); await load(); } } catch (cause) { setError(cause instanceof Error ? cause.message : 'Operasi provider gagal.'); } finally { setBusy(null); }
+    try { const response = await fetch(`/api/tenant/integrations/${encodeURIComponent(row.id)}/${action}`, action === 'runtime' ? { cache: 'no-store' } : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(action === 'sync' ? { deviceId } : {}) }); const body = await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); }); if (!response.ok) throw new Error(body.message ?? body.error?.message ?? 'Operasi provider gagal.'); if (action === 'runtime') setRuntime((old) => ({ ...old, [row.id]: body })); else { setNotice(body.note ?? 'Operasi provider berhasil.'); await load(); } } catch (cause) { setError(cause instanceof Error ? cause.message : 'Operasi provider gagal.'); } finally { setBusy(null); }
   }
 
   async function remove(row: IntegrationRow) {

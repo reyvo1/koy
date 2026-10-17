@@ -54,7 +54,7 @@ export default function AiCenterPage() {
         setFindings([]);
         return;
       }
-      const data = (await res.json()) as { items?: Finding[] } | Finding[];
+      const data = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { items?: Finding[] } | Finding[];
       setFindings(Array.isArray(data) ? data : (data.items ?? []));
     } catch {
       setError('Temuan analitik tidak tersedia saat ini.');
