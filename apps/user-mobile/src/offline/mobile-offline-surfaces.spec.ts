@@ -3,16 +3,23 @@ import type {
   MobileDeviceDetail,
   MobileDeviceSummary,
 } from '../device-control/mobile-device-client';
+import type {
+  MobileNotificationHistory,
+  MobileNotificationSummary,
+} from '../device-control/mobile-notification-client';
 import {
   ALERTS_OFFLINE_SURFACE,
   DEVICES_OFFLINE_SURFACE,
+  NOTIFICATIONS_OFFLINE_SURFACE,
   connectMobileOfflineAlerts,
   connectMobileOfflineDeviceDetails,
   connectMobileOfflineDevices,
+  connectMobileOfflineNotifications,
   deviceDetailOfflineKey,
   isCachedAlertsPayload,
   isCachedDeviceDetail,
   isCachedDeviceList,
+  isCachedNotificationLog,
 } from './mobile-offline-surfaces';
 import {
   createMobileSnapshotCache,
@@ -346,5 +353,107 @@ describe('offline device detail cache', () => {
     const withoutType = sampleDetail();
     delete withoutType.device.type;
     expect(isCachedDeviceDetail(withoutType)).toBe(true);
+  });
+});
+
+function sampleNotificationLog(): {
+  history: MobileNotificationHistory;
+  summary: MobileNotificationSummary;
+} {
+  return {
+    history: {
+      appliedStatus: null,
+      destinationListed: false,
+      droppedRows: 0,
+      items: [
+        {
+          attemptCount: 1,
+          channel: 'EMAIL',
+          createdAt: '2026-10-16T08:00:00.000Z',
+          id: 'delivery-1',
+          lastErrorCode: null,
+          sentAt: '2026-10-16T08:00:05.000Z',
+          status: 'SENT',
+          subject: 'Verifikasi akun',
+          templateKey: 'account-verification',
+          wasSent: true,
+        },
+      ],
+      source: 'NOTIFICATION_DELIVERY_LOG',
+      total: 1,
+    },
+    summary: {
+      byStatus: {
+        DELIVERING: 0,
+        EXHAUSTED: 0,
+        FAILED: 1,
+        PENDING: 2,
+        SENT: 10,
+      },
+      total: 13,
+    },
+  };
+}
+
+describe('offline notification delivery log cache', () => {
+  it('remembers the unfiltered log with its summary and reads both back', async () => {
+    const port = new MemoryPort();
+    const cache = createMobileSnapshotCache(port);
+    const bridge = connectMobileOfflineNotifications({ apiOrigin: ORIGIN, cache });
+    const { history, summary } = sampleNotificationLog();
+
+    expect(await bridge.remember(TENANT, history, summary)).toBe(true);
+
+    const key = surfaceSnapshotKey(ORIGIN, TENANT, NOTIFICATIONS_OFFLINE_SURFACE);
+    expect(port.rows.has(key)).toBe(true);
+
+    const cached = await bridge.read(TENANT);
+    expect(cached?.log.history.items[0]?.id).toBe('delivery-1');
+    expect(cached?.log.summary?.byStatus.SENT).toBe(10);
+    expect(cached?.cachedAt).toBeTruthy();
+  });
+
+  it('keeps a log whose summary could not be read usable, with a null summary', async () => {
+    const port = new MemoryPort();
+    const cache = createMobileSnapshotCache(port);
+    const bridge = connectMobileOfflineNotifications({ apiOrigin: ORIGIN, cache });
+    const { history } = sampleNotificationLog();
+
+    expect(await bridge.remember(TENANT, history, null)).toBe(true);
+    const cached = await bridge.read(TENANT);
+    expect(cached?.log.history.total).toBe(1);
+    expect(cached?.log.summary).toBeNull();
+  });
+
+  it('refuses a filtered list and rejects corrupt files and unknown statuses', async () => {
+    const port = new MemoryPort();
+    const cache = createMobileSnapshotCache(port);
+    const bridge = connectMobileOfflineNotifications({ apiOrigin: ORIGIN, cache });
+    const { history, summary } = sampleNotificationLog();
+
+    expect(
+      await bridge.remember(
+        TENANT,
+        { ...history, appliedStatus: 'SENT' },
+        summary,
+      ),
+    ).toBe(false);
+
+    const badStatus = {
+      history: {
+        ...history,
+        items: [{ ...history.items[0], status: 'INVENTED' }],
+      },
+      summary,
+    };
+    expect(isCachedNotificationLog(badStatus)).toBe(false);
+
+    await cache.write(
+      surfaceSnapshotKey(ORIGIN, TENANT, NOTIFICATIONS_OFFLINE_SURFACE),
+      { history: { source: 'NOTIFICATION_DELIVERY_LOG' } },
+      '2026-10-16T10:00:00.000Z',
+    );
+    expect(await bridge.read(TENANT)).toBeNull();
+    expect(await bridge.read('tenant-2')).toBeNull();
   });
 });

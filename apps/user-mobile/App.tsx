@@ -26,6 +26,10 @@ import {
   type MobileDeviceDetail,
   type MobileDeviceSummary,
 } from './src/device-control/mobile-device-client';
+import type {
+  MobileNotificationHistory,
+  MobileNotificationSummary,
+} from './src/device-control/mobile-notification-client';
 import { mobileSessionClient } from './src/session';
 import {
   resolveMobileAppearance,
@@ -51,6 +55,7 @@ import {
   connectMobileOfflineAlerts,
   connectMobileOfflineDeviceDetails,
   connectMobileOfflineDevices,
+  connectMobileOfflineNotifications,
 } from './src/offline/mobile-offline-surfaces';
 import { defaultMobileLocale, type MobileLocale } from './src/localization/messages';
 import { MobileAuthenticatedShell } from './src/ui/mobile-authenticated-shell';
@@ -135,6 +140,10 @@ export default function App() {
         apiOrigin: mobileSessionClient.origin,
         cache: mobileSnapshotCache,
       }),
+      notifications: connectMobileOfflineNotifications({
+        apiOrigin: mobileSessionClient.origin,
+        cache: mobileSnapshotCache,
+      }),
     }),
     [],
   );
@@ -158,6 +167,8 @@ export default function App() {
       readDeviceDetail: (tenantId: string, deviceId: string) =>
         offlineSurfaces.details.read(tenantId, deviceId),
       readDevices: (tenantId: string) => offlineSurfaces.devices.read(tenantId),
+      readNotifications: (tenantId: string) =>
+        offlineSurfaces.notifications.read(tenantId),
       rememberAlerts: (tenantId: string, alerts: MobileAlertsPayload) =>
         offlineSurfaces.alerts.remember(tenantId, alerts),
       rememberDeviceDetail: (
@@ -167,6 +178,11 @@ export default function App() {
       ) => offlineSurfaces.details.remember(tenantId, deviceId, detail),
       rememberDevices: (tenantId: string, devices: MobileDeviceSummary[]) =>
         offlineSurfaces.devices.remember(tenantId, devices),
+      rememberNotifications: (
+        tenantId: string,
+        history: MobileNotificationHistory,
+        summary: MobileNotificationSummary | null,
+      ) => offlineSurfaces.notifications.remember(tenantId, history, summary),
     }),
     [offlineSurfaces],
   );

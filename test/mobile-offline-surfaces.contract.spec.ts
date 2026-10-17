@@ -67,6 +67,23 @@ describe('mobile offline surfaces contract', () => {
     expect(app).toContain('offlineSurfaces.details.remember(tenantId, deviceId, detail)');
   });
 
+  it('caches the unfiltered delivery log with its summary and refuses filters', () => {
+    expect(surfaces).toContain('NOTIFICATIONS_OFFLINE_SURFACE');
+    expect(surfaces).toContain('connectMobileOfflineNotifications');
+    expect(surfaces).toContain('isCachedNotificationLog');
+    expect(surfaces).toContain('history.appliedStatus !== null');
+    expect(shell).toContain('await offline.readNotifications(tenantId)');
+    expect(shell).toContain(
+      'offline.rememberNotifications(tenantId, history, summary)',
+    );
+    expect(shell).toContain('setNotificationCachedAt(cached.cachedAt)');
+    expect(app).toContain('connectMobileOfflineNotifications');
+    expect(app).toContain('offlineSurfaces.notifications.read(tenantId)');
+    expect(app).toContain(
+      'offlineSurfaces.notifications.remember(tenantId, history, summary)',
+    );
+  });
+
   it('adds no web or insecure storage', () => {
     expect(surfaces).not.toMatch(/AsyncStorage|localStorage|sessionStorage/);
   });

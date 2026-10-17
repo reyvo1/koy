@@ -20,6 +20,12 @@ import type {
   MobileDeviceSummary,
 } from '../device-control/mobile-device-client';
 import {
+  NOTIFICATION_DELIVERY_STATUSES,
+  type MobileNotificationDelivery,
+  type MobileNotificationHistory,
+  type MobileNotificationSummary,
+} from '../device-control/mobile-notification-client';
+import {
   surfaceSnapshotKey,
   type MobileSnapshotCache,
 } from './mobile-snapshot-cache';
@@ -31,10 +37,12 @@ const CACHED_MAX_TELEMETRY_POINTS = 500;
 const CACHED_MAX_COMMAND_HISTORY = 100;
 const CACHED_MAX_UPDATE_HISTORY = 100;
 const CACHED_MAX_DETAIL_FINDINGS = 200;
+const CACHED_MAX_NOTIFICATION_ROWS = 200;
 
 export const DEVICES_OFFLINE_SURFACE = 'devices';
 export const ALERTS_OFFLINE_SURFACE = 'alerts';
 export const DEVICE_DETAIL_OFFLINE_SURFACE = 'device-detail';
+export const NOTIFICATIONS_OFFLINE_SURFACE = 'notifications';
 
 /** Device details are cached per device so one open detail cannot overwrite another. */
 export function deviceDetailOfflineKey(deviceId: string): string {
@@ -67,6 +75,30 @@ export interface MobileOfflineDeviceDetails {
     tenantId: string,
     deviceId: string,
     detail: MobileDeviceDetail,
+  ): Promise<boolean>;
+}
+
+/**
+ * The unfiltered delivery log and its summary are cached as one snapshot.
+ *
+ * Two snapshots could tell two different stories: a fresher history under a stale summary count
+ * reads as a delivery that the summary says never happened. Only the unfiltered view is remembered,
+ * because that is the view the alerts tab shows -- a filtered list cached under the same key would
+ * silently answer a wider question.
+ */
+export interface MobileCachedNotificationLog {
+  history: MobileNotificationHistory;
+  summary: MobileNotificationSummary | null;
+}
+
+export interface MobileOfflineNotifications {
+  read(
+    tenantId: string,
+  ): Promise<{ cachedAt: string; log: MobileCachedNotificationLog } | null>;
+  remember(
+    tenantId: string,
+    history: MobileNotificationHistory,
+    summary: MobileNotificationSummary | null,
   ): Promise<boolean>;
 }
 
@@ -134,6 +166,27 @@ export function connectMobileOfflineDeviceDetails(deps: {
         detail,
         new Date().toISOString(),
       );
+    },
+  };
+}
+
+export function connectMobileOfflineNotifications(deps: {
+  apiOrigin: string;
+  cache: MobileSnapshotCache;
+}): MobileOfflineNotifications {
+  const key = (tenantId: string) =>
+    surfaceSnapshotKey(deps.apiOrigin, tenantId, NOTIFICATIONS_OFFLINE_SURFACE);
+
+  return {
+    async read(tenantId) {
+      const snapshot = await deps.cache.read(key(tenantId));
+      if (!snapshot || !isCachedNotificationLog(snapshot.payload)) return null;
+      return { cachedAt: snapshot.cachedAt, log: snapshot.payload };
+    },
+    async remember(tenantId, history, summary) {
+      const log: MobileCachedNotificationLog = { history, summary };
+      if (!isCachedNotificationLog(log)) return false;
+      return deps.cache.write(key(tenantId), log, new Date().toISOString());
     },
   };
 }
@@ -346,5 +399,64 @@ export function isCachedDeviceDetail(
     !!delivery &&
     delivery.available === false &&
     typeof delivery.reason === 'string'
+  );
+}
+
+function isCachedNotificationDelivery(value: unknown): value is MobileNotificationDelivery {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const row = value as Record<string, unknown>;
+  return (
+    typeof row.id === 'string' &&
+    typeof row.channel === 'string' &&
+    (row.subject === null || typeof row.subject === 'string') &&
+    typeof row.status === 'string' &&
+    (NOTIFICATION_DELIVERY_STATUSES as readonly string[]).includes(row.status) &&
+    typeof row.attemptCount === 'number' &&
+    (row.lastErrorCode === null || typeof row.lastErrorCode === 'string') &&
+    (row.sentAt === null || typeof row.sentAt === 'string') &&
+    typeof row.createdAt === 'string' &&
+    (row.templateKey === null || typeof row.templateKey === 'string') &&
+    typeof row.wasSent === 'boolean'
+  );
+}
+
+export function isCachedNotificationLog(
+  value: unknown,
+): value is MobileCachedNotificationLog {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const log = value as Record<string, unknown>;
+  const history = log.history as Record<string, unknown> | undefined;
+  if (!history || typeof history !== 'object' || Array.isArray(history)) {
+    return false;
+  }
+  if (
+    history.source !== 'NOTIFICATION_DELIVERY_LOG' ||
+    history.destinationListed !== false ||
+    history.appliedStatus !== null ||
+    typeof history.total !== 'number' ||
+    typeof history.droppedRows !== 'number' ||
+    !Array.isArray(history.items) ||
+    history.items.length > CACHED_MAX_NOTIFICATION_ROWS ||
+    !history.items.every(isCachedNotificationDelivery)
+  ) {
+    return false;
+  }
+  const summary = log.summary;
+  if (summary === null) return true;
+  if (!summary || typeof summary !== 'object' || Array.isArray(summary)) {
+    return false;
+  }
+  const byStatus = (summary as Record<string, unknown>).byStatus as
+    | Record<string, unknown>
+    | undefined;
+  if (
+    typeof (summary as Record<string, unknown>).total !== 'number' ||
+    !byStatus ||
+    typeof byStatus !== 'object'
+  ) {
+    return false;
+  }
+  return NOTIFICATION_DELIVERY_STATUSES.every(
+    (status) => typeof byStatus[status] === 'number',
   );
 }

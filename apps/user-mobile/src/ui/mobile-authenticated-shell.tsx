@@ -93,6 +93,13 @@ interface MobileShellOfflineGateway {
   readDevices(
     tenantId: string,
   ): Promise<{ cachedAt: string; devices: MobileDeviceSummary[] } | null>;
+  readNotifications(tenantId: string): Promise<{
+    cachedAt: string;
+    log: {
+      history: MobileNotificationHistory;
+      summary: MobileNotificationSummary | null;
+    };
+  } | null>;
   rememberAlerts(tenantId: string, alerts: MobileAlertsPayload): Promise<boolean>;
   rememberDeviceDetail(
     tenantId: string,
@@ -102,6 +109,11 @@ interface MobileShellOfflineGateway {
   rememberDevices(
     tenantId: string,
     devices: MobileDeviceSummary[],
+  ): Promise<boolean>;
+  rememberNotifications(
+    tenantId: string,
+    history: MobileNotificationHistory,
+    summary: MobileNotificationSummary | null,
   ): Promise<boolean>;
 }
 
@@ -183,6 +195,9 @@ export function MobileAuthenticatedShell({
     useState<MobileNotificationSummary | null>(null);
   const [notificationLoading, setNotificationLoading] = useState(false);
   const [notificationHistoryError, setNotificationHistoryError] = useState<
+    string | null
+  >(null);
+  const [notificationCachedAt, setNotificationCachedAt] = useState<
     string | null
   >(null);
 
@@ -325,19 +340,34 @@ export function MobileAuthenticatedShell({
       ]);
       setNotificationHistory(history);
       setNotificationSummary(summary);
+      setNotificationCachedAt(null);
+      offline.onConnectivityProven();
+      void offline.rememberNotifications(tenantId, history, summary);
     } catch (cause) {
-      // Both cleared, so a stale list from a previous read cannot sit under an error line.
-      setNotificationHistory(null);
-      setNotificationSummary(null);
-      setNotificationHistoryError(
-        cause instanceof Error
-          ? cause.message
-          : 'Riwayat pengiriman notifikasi belum dapat dimuat dari backend.',
-      );
+      // A connectivity outage serves the last delivery log this device validated; any other failure
+      // (rejected session, permissions) is an answer and must render as itself.
+      const cached = isMobileOfflineError(cause)
+        ? await offline.readNotifications(tenantId)
+        : null;
+      if (cached) {
+        setNotificationHistory(cached.log.history);
+        setNotificationSummary(cached.log.summary);
+        setNotificationCachedAt(cached.cachedAt);
+      } else {
+        // Both cleared, so a stale list from a previous read cannot sit under an error line.
+        setNotificationHistory(null);
+        setNotificationSummary(null);
+        setNotificationCachedAt(null);
+        setNotificationHistoryError(
+          cause instanceof Error
+            ? cause.message
+            : 'Riwayat pengiriman notifikasi belum dapat dimuat dari backend.',
+        );
+      }
     } finally {
       setNotificationLoading(false);
     }
-  }, []);
+  }, [offline, tenantId]);
 
   useEffect(() => {
     if (tab === 'alerts') {
@@ -534,7 +564,14 @@ export function MobileAuthenticatedShell({
             />
             {/* The delivery half. It sits under the analytics findings rather than on its own tab
                 because the two are read together: a finding is what the detector noticed, a delivery
-                row is whether the message about it left the building. */}
+                row is whether the message about it left the building. Its cache is separate from
+                the findings cache -- the two reads can fail independently, so one banner cannot
+                speak for both. */}
+            <CachedSurfaceBanner
+              cachedAt={notificationCachedAt}
+              copy={copy.dashboard}
+              isDark={isDark}
+            />
             <MobileNotificationDeliveryPanel
               error={notificationHistoryError}
               history={notificationHistory}
