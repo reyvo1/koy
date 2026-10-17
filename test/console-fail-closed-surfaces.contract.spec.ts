@@ -172,3 +172,45 @@ describe('console surfaces distinguish a failed read from an empty read', () => 
     });
   });
 });
+
+/**
+ * One more failure mode the blocks above do not reach: the device-detail command
+ * reconciliation. It polls `/api/device-command` after a write, and its first version
+ * collapsed *every* non-terminal ending — a 401, a 5xx, a network drop, or a command
+ * genuinely still in flight — into one `null`, which the caller rendered as
+ * "Command masih PENDING/SENT". A poll that failed observes nothing, so an operator
+ * reading that sentence was told the device was mid-command when the dashboard simply
+ * could not check. The invariant now is the same one the mobile reconciliation already
+ * keeps: state claims only from observed statuses.
+ */
+describe('the device-detail command reconciliation never reports an unobserved status as pending', () => {
+  const source = read(`${USER_WEB}/device-detail-experience.tsx`);
+
+  it('returns a discriminated outcome instead of collapsing failure and in-flight into null', () => {
+    expect(source).toContain("outcome: 'terminal'");
+    expect(source).toContain("outcome: 'pending'");
+    expect(source).toContain("outcome: 'failed'");
+    // The old collapse: one message that claimed PENDING/SENT no matter what cut polling short.
+    expect(source).not.toContain('Command masih PENDING/SENT setelah batas rekonsiliasi');
+  });
+
+  it('names the last observed status when it says the command is still in flight', () => {
+    // `pending` is returned only after a successful poll saw a non-terminal status, and
+    // the sentence carries that status rather than hard-coding PENDING/SENT.
+    expect(source).toContain('Command masih ${reconciliation.status} setelah batas rekonsiliasi');
+    expect(source).toContain('return { outcome: \'pending\', status: lastStatus');
+  });
+
+  it('reports a failed poll as a reconciliation failure with the backend reason', () => {
+    expect(source).toContain('Rekonsiliasi status command gagal');
+    // The endpoint answers errors as { message }, and a non-JSON error body must still
+    // produce a reason rather than a status claim.
+    expect(source).toMatch(/HTTP \$\{response\.status\}/);
+    expect(source).toContain("outcome: 'failed', reason: 'endpoint status command tidak dapat dihubungi'");
+  });
+
+  it('keeps the device-state disclaimer on every non-terminal ending', () => {
+    expect(source).toContain('setelah batas rekonsiliasi; state fisik tidak diasumsikan.');
+    expect(source).toContain('); state fisik tidak diasumsikan.');
+  });
+});

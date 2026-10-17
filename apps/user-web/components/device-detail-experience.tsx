@@ -16,6 +16,18 @@ type State =
   | { kind: 'error'; message: string }
   | { kind: 'ready'; payload: UserDeviceDetailPayload };
 
+/**
+ * A failed poll observes nothing, so it must not borrow the vocabulary of an
+ * observation: only `terminal` and `pending` may carry a status, and `pending`
+ * is only produced after a successful poll actually saw a non-terminal status.
+ * Collapsing "still in flight" and "could not check" into one `null` is how a
+ * 401/5xx ends up rendered as "Command masih PENDING/SENT".
+ */
+type CommandReconciliation =
+  | { outcome: 'terminal'; status: string }
+  | { outcome: 'pending'; status: string }
+  | { outcome: 'failed'; reason: string };
+
 
 export function DeviceDetailExperience({ deviceId }: { deviceId: string }) {
   const [state, setState] = useState<State>({ kind: 'loading' });
@@ -222,13 +234,15 @@ export function DeviceDetailExperience({ deviceId }: { deviceId: string }) {
         setCommandMessage(`Command diterima HTTP dengan status ${body.status ?? 'UNKNOWN'}, tetapi correlation id tidak tersedia; state fisik tidak diasumsikan.`);
         return;
       }
-      const terminal = await waitForTerminalCommand(body.commandId);
-      setCommandMessage(
-        terminal
-          ? `Command selesai dengan status ${terminal}. Telemetry dimuat ulang sebagai state authoritative.`
-          : 'Command masih PENDING/SENT setelah batas rekonsiliasi; state fisik tidak diasumsikan.',
-      );
-      if (terminal) await load();
+      const reconciliation = await waitForTerminalCommand(body.commandId);
+      if (reconciliation.outcome === 'terminal') {
+        setCommandMessage(`Command selesai dengan status ${reconciliation.status}. Telemetry dimuat ulang sebagai state authoritative.`);
+        await load();
+      } else if (reconciliation.outcome === 'pending') {
+        setCommandMessage(`Command masih ${reconciliation.status} setelah batas rekonsiliasi; state fisik tidak diasumsikan.`);
+      } else {
+        setCommandMessage(`Rekonsiliasi status command gagal (${reconciliation.reason}); state fisik tidak diasumsikan.`);
+      }
     } catch (cause) {
       setCommandMessage(cause instanceof Error ? cause.message : 'Command gagal dikirim.');
     } finally {
@@ -236,16 +250,25 @@ export function DeviceDetailExperience({ deviceId }: { deviceId: string }) {
     }
   }
 
-  async function waitForTerminalCommand(commandId: string): Promise<string | null> {
+  async function waitForTerminalCommand(commandId: string): Promise<CommandReconciliation> {
+    let lastStatus: string | null = null;
     for (let attempt = 0; attempt < 8; attempt += 1) {
       await delay(700);
-      const response = await fetch(`/api/device-command?deviceId=${encodeURIComponent(deviceId)}&commandId=${encodeURIComponent(commandId)}`, { cache: 'no-store' });
-      const body = (await response.json().catch(() => ({}))) as { status?: string };
-      if (!response.ok) return null;
-      const status = body.status ?? 'UNKNOWN';
-      if (TERMINAL_COMMAND_STATUSES.has(status)) return status;
+      let response: Response;
+      try {
+        response = await fetch(`/api/device-command?deviceId=${encodeURIComponent(deviceId)}&commandId=${encodeURIComponent(commandId)}`, { cache: 'no-store' });
+      } catch {
+        return { outcome: 'failed', reason: 'endpoint status command tidak dapat dihubungi' };
+      }
+      const body = (await response.json().catch(() => null)) as { status?: string; message?: string } | null;
+      if (!response.ok) {
+        return { outcome: 'failed', reason: body?.message ?? `endpoint status command menjawab HTTP ${response.status}` };
+      }
+      const status = body?.status ?? 'UNKNOWN';
+      if (TERMINAL_COMMAND_STATUSES.has(status)) return { outcome: 'terminal', status };
+      lastStatus = status;
     }
-    return null;
+    return { outcome: 'pending', status: lastStatus ?? 'UNKNOWN' };
   }
 }
 
