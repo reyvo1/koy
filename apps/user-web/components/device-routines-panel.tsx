@@ -35,8 +35,20 @@ async function request(path: string, method = 'GET', body?: unknown) {
         }
       : {}),
   });
-  const payload = await response.json();
-  if (!response.ok) throw new Error(payload.message ?? 'Aksi gagal.');
+  const payload = (await response.json().catch(() => null)) as
+    | { items?: any[]; message?: string }
+    | any[]
+    | null;
+  if (!response.ok) {
+    const message =
+      payload && !Array.isArray(payload) && typeof payload.message === 'string'
+        ? payload.message
+        : null;
+    throw new Error(message ?? 'Aksi gagal.');
+  }
+  if (payload === null) {
+    throw new Error('Backend mengembalikan respons yang tidak valid.');
+  }
   return payload;
 }
 

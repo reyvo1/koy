@@ -29,8 +29,10 @@ export function DashboardExperience() {
       const response = await fetch(`/api/dashboard${query}`, {
         cache: 'no-store',
       });
-      const payload = (await response.json()) as
-        DashboardExperiencePayload | ClientErrorPayload;
+      const payload = (await response.json().catch(() => null)) as
+        | DashboardExperiencePayload
+        | ClientErrorPayload
+        | null;
 
       if (response.status === 401) {
         setState({ kind: 'unauthorized' });
@@ -38,16 +40,26 @@ export function DashboardExperience() {
       }
 
       if (!response.ok) {
-        const error = payload as ClientErrorPayload;
+        const error = payload as ClientErrorPayload | null;
         setState(
-          error.state === 'offline'
+          error?.state === 'offline'
             ? { kind: 'offline', message: error.message }
             : {
                 kind: 'error',
-                message: error.message,
-                requestId: error.requestId,
+                message: error?.message ?? 'Dashboard gagal dimuat.',
+                requestId: error?.requestId ?? null,
               },
         );
+        return;
+      }
+
+      if (payload === null) {
+        setState({
+          kind: 'error',
+          message:
+            'Backend dashboard mengembalikan respons yang tidak dapat dibaca.',
+          requestId: null,
+        });
         return;
       }
 

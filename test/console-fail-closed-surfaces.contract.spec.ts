@@ -214,3 +214,50 @@ describe('the device-detail command reconciliation never reports an unobserved s
     expect(source).toContain('); state fisik tidak diasumsikan.');
   });
 });
+
+/**
+ * W4 applies the same discipline one layer up, to response *bodies*. Three user-web
+ * surfaces parsed JSON before checking (or without checking) `response.ok`, so an HTML
+ * crash page or an empty gateway body became a thrown SyntaxError: the routines panel
+ * lost its intended "Aksi gagal." message to the raw parser text, the profile form
+ * showed a browser parse error, and the dashboard classified an unreadable body as a
+ * connectivity failure ("Tidak dapat menghubungi User Web") even though the gateway had
+ * answered. A body that cannot be read is a failed read, not data -- and not proof of
+ * offline. The pin is structural: in these files every `.json()` must be paired with
+ * `.catch(`, so a future unguarded parse cannot slip back in.
+ */
+describe('user-web surfaces never treat an unreadable response body as data', () => {
+  const guardedFiles = [
+    `${USER_WEB}/dashboard-experience.tsx`,
+    `${USER_WEB}/device-routines-panel.tsx`,
+    `${USER_WEB}/profile-experience.tsx`,
+  ];
+
+  it.each(guardedFiles)('%s guards every response body parse', (file) => {
+    const fileSource = read(file);
+    const calls = fileSource.match(/\.json\(\)/g) ?? [];
+    const guarded = fileSource.match(/\.json\(\)\.catch\(/g) ?? [];
+    expect(calls.length).toBeGreaterThan(0);
+    expect(calls.length).toBe(guarded.length);
+  });
+
+  it('dashboard reports an unreadable body as an error, not as offline', () => {
+    const fileSource = read(`${USER_WEB}/dashboard-experience.tsx`);
+    expect(fileSource).toContain(
+      'Backend dashboard mengembalikan respons yang tidak dapat dibaca.',
+    );
+    // offline is still the label for a genuine fetch rejection (the catch block).
+    expect(fileSource).toContain('Tidak dapat menghubungi User Web saat ini.');
+  });
+
+  it('routines keeps its operator-facing failure vocabulary when the body is unreadable', () => {
+    const fileSource = read(`${USER_WEB}/device-routines-panel.tsx`);
+    expect(fileSource).toContain('Backend mengembalikan respons yang tidak valid.');
+    expect(fileSource).toContain("?? 'Aksi gagal.'");
+  });
+
+  it('profile rejects an unreadable body instead of showing parser text', () => {
+    const fileSource = read(`${USER_WEB}/profile-experience.tsx`);
+    expect(fileSource).toContain('Respons profil tidak valid.');
+  });
+});
