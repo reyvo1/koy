@@ -39,7 +39,7 @@ export default function TenantUsersContent() {
     fetch('/api/admin/tenant-users')
       .then(async (res) => {
         if (!res.ok) throw new Error(`backend ${res.status}`);
-        return res.json();
+        return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       })
       .then((data: { items?: UserRow[] }) => {
         setUsers(Array.isArray(data.items) ? data.items : []);
@@ -70,7 +70,7 @@ export default function TenantUsersContent() {
           role: form.get('role'),
         }),
       });
-      const body = (await res.json()) as { email?: string; error?: { message?: string }; message?: string };
+      const body = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { email?: string; error?: { message?: string }; message?: string };
       if (!res.ok) {
         throw new Error(body.error?.message ?? body.message ?? 'Gagal menambah pengguna');
       }

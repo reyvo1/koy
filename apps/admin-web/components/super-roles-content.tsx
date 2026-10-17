@@ -104,23 +104,23 @@ export default function SuperRolesContent() {
       if (!catalogRes.ok) {
         throw new Error(`katalog permission ${catalogRes.status}`);
       }
-      setCatalog((await catalogRes.json()) as CatalogPayload);
+      setCatalog((await catalogRes.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as CatalogPayload);
 
       setRoles(
         rolesRes.ok
-          ? ((await rolesRes.json()) as RoleListPayload)
+          ? ((await rolesRes.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as RoleListPayload)
           : null,
       );
 
       if (auditRes.ok) {
-        const payload = (await auditRes.json()) as { items?: AuditRow[] };
+        const payload = (await auditRes.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { items?: AuditRow[] };
         setAudit(payload.items ?? []);
       } else {
         setAudit(null);
       }
 
       if (usersRes.ok) {
-        const payload = (await usersRes.json()) as { items?: UserRow[] };
+        const payload = (await usersRes.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { items?: UserRow[] };
         setUsers(Array.isArray(payload.items) ? payload.items : []);
       } else {
         setUsers(null);

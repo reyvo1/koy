@@ -89,7 +89,7 @@ export default function NocContent() {
   const probe = useCallback(async () => {
     try {
       const res = await fetch('/api/super/health');
-      setReady((await res.json()).status === 'ready');
+      setReady((await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })).status === 'ready');
     } catch {
       setReady(false);
     }
@@ -107,7 +107,7 @@ export default function NocContent() {
     try {
       const res = await fetch('/api/super/findings?limit=100');
       if (!res.ok) throw new Error(`backend ${res.status}`);
-      const data = (await res.json()) as
+      const data = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as
         | Array<{ id: string; tenantId?: string }>
         | { items?: Array<{ id: string; tenantId?: string }> };
       const items = Array.isArray(data) ? data : (data.items ?? []);
@@ -151,7 +151,7 @@ export default function NocContent() {
         // One read per response: calling `res.json()` twice throws "Body is unusable" and takes the
         // whole load down with it.
         if (!res.ok) throw new Error(`backend ${res.status}`);
-        const data = (await res.json()) as { items?: NocAcknowledgement[] };
+        const data = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { items?: NocAcknowledgement[] };
         for (const item of data.items ?? []) next[item.findingId] = item;
       }
       setAcks(next);
@@ -196,7 +196,7 @@ export default function NocContent() {
             body: JSON.stringify({ tenantId }),
           },
         );
-        const data = (await res.json()) as NocActionResponse;
+        const data = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as NocActionResponse;
         if (!res.ok) throw new Error(data.message ?? `backend ${res.status}`);
         setAcks((prev) => ({ ...prev, [findingId]: data.acknowledgement }));
       } catch (cause) {
@@ -226,7 +226,7 @@ export default function NocContent() {
         `/api/super/noc/findings/${encodeURIComponent(findingId)}/resolve?tenantId=${encodeURIComponent(tenantId)}`,
         { method: 'DELETE' },
       );
-      const data = (await res.json()) as NocActionResponse;
+      const data = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as NocActionResponse;
       if (!res.ok) throw new Error(data.message ?? `backend ${res.status}`);
       setAcks((prev) => ({ ...prev, [findingId]: data.acknowledgement }));
     } catch (cause) {
@@ -241,7 +241,7 @@ export default function NocContent() {
     fetch('/api/admin/operational-summary')
       .then(async (res) => {
         if (!res.ok) throw new Error(`backend ${res.status}`);
-        return res.json();
+        return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       })
       .then((data: Summary) => {
         if (!cancelled) setSummary(data);
@@ -261,7 +261,7 @@ export default function NocContent() {
   useEffect(() => {
     let source: EventSource | null = null;
     fetch('/api/admin/devices')
-      .then(async (res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
+      .then(async (res) => (res.ok ? res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); }) : Promise.reject(new Error(String(res.status)))))
       .then((data: unknown) => {
         const items = Array.isArray(data)
           ? data

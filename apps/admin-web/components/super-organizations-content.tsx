@@ -57,8 +57,8 @@ export default function SuperOrganizationsContent() {
     if (!tenantsRes.ok) {
       throw new Error(`tenant backend ${tenantsRes.status}`);
     }
-    const organizationsBody = (await organizationsRes.json()) as { items?: OrganizationRow[] };
-    const tenantsBody = (await tenantsRes.json()) as { items?: TenantRow[] };
+    const organizationsBody = (await organizationsRes.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { items?: OrganizationRow[] };
+    const tenantsBody = (await tenantsRes.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { items?: TenantRow[] };
     setOrganizations(Array.isArray(organizationsBody.items) ? organizationsBody.items : []);
     setTenants(Array.isArray(tenantsBody.items) ? tenantsBody.items : []);
   }, []);

@@ -63,7 +63,7 @@ export default function DeviceSharePanel({ deviceId }: { deviceId: string }) {
     fetch(`/api/devices/${deviceId}/shares`)
       .then(async (res) => {
         if (!res.ok) throw new Error(`backend ${res.status}`);
-        return res.json();
+        return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       })
       .then((data: unknown) => {
         const rows = Array.isArray(data)

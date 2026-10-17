@@ -14,7 +14,7 @@ export function DeviceLocationEditor({ deviceId }: { deviceId: string }) {
     setLoading(true);
     try {
       const response = await fetch(endpoint, { cache: 'no-store' });
-      const body = await response.json();
+      const body = await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       if (!response.ok) throw new Error('Lokasi gagal dibaca.');
       setLatest(body.latest ?? null);
     } catch (cause) {

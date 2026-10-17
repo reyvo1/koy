@@ -83,7 +83,7 @@ export default function TenantAutomationContent() {
     try {
       const res = await fetch('/api/tenant/automations');
       if (!res.ok) throw new Error(`backend ${res.status}`);
-      const data = (await res.json()) as { items?: AutomationRow[]; runtimeEnabled?: boolean };
+      const data = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { items?: AutomationRow[]; runtimeEnabled?: boolean };
       if (!isCurrent()) return;
       setRows(Array.isArray(data.items) ? data.items : []);
       setRuntimeEnabled(data.runtimeEnabled === true);
@@ -102,7 +102,7 @@ export default function TenantAutomationContent() {
     fetch('/api/admin/devices')
       .then(async (res) => {
         if (!res.ok) throw new Error(`backend ${res.status}`);
-        return res.json();
+        return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       })
       .then((data: { items?: DeviceRow[] } | DeviceRow[]) =>
         setDevices(Array.isArray(data) ? data : (data.items ?? [])),
@@ -117,7 +117,7 @@ export default function TenantAutomationContent() {
     try {
       const res = await fetch(`/api/admin/device-capabilities?deviceId=${encodeURIComponent(deviceId)}`);
       if (!res.ok) throw new Error(`capability backend ${res.status}`);
-      const data = (await res.json()) as { items?: CapabilityRow[] } | CapabilityRow[];
+      const data = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { items?: CapabilityRow[] } | CapabilityRow[];
       const caps = Array.isArray(data) ? data : (data.items ?? []);
       setCapsCache((prev) => ({ ...prev, [deviceId]: caps }));
       return caps;
@@ -240,7 +240,7 @@ export default function TenantAutomationContent() {
           { cache: 'no-store' },
         );
         if (fetched.ok) {
-          const body = (await fetched.json()) as CapabilityRow[] | {
+          const body = (await fetched.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as CapabilityRow[] | {
             items?: CapabilityRow[];
           };
           triggerCaps = Array.isArray(body) ? body : (body.items ?? []);
@@ -266,7 +266,7 @@ export default function TenantAutomationContent() {
           { cache: 'no-store' },
         );
         if (!fetched.ok) continue;
-        const body = (await fetched.json()) as CapabilityRow[] | {
+        const body = (await fetched.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as CapabilityRow[] | {
           items?: CapabilityRow[];
         };
         const caps = Array.isArray(body) ? body : (body.items ?? []);

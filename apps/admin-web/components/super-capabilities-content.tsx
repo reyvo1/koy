@@ -29,7 +29,7 @@ export default function SuperCapabilitiesContent() {
   useEffect(() => {
     fetch('/api/super/capabilities')
       .then(async (res) => {
-        const body = await res.json();
+        const body = await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
         if (!res.ok) throw new Error(body?.error?.message ?? `backend ${res.status}`);
         return body;
       })

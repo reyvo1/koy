@@ -53,7 +53,7 @@ export default function SuperFirmwareContent() {
   const load = useCallback(async () => {
     const res = await fetch('/api/super/firmware');
     if (!res.ok) throw new Error(`backend ${res.status}`);
-    const payload: { items?: ArtifactRow[]; rollouts?: RolloutRow[] } = await res.json();
+    const payload: { items?: ArtifactRow[]; rollouts?: RolloutRow[] } = await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
     setData({ items: payload.items ?? [], rollouts: payload.rollouts ?? [] });
   }, []);
 

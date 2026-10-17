@@ -34,7 +34,7 @@ export default function SuperTenantsContent() {
     fetch('/api/super/tenants')
       .then(async (res) => {
         if (!res.ok) throw new Error(`backend ${res.status}`);
-        return res.json();
+        return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       })
       .then((data: { items?: TenantRow[] }) =>
         setTenants(Array.isArray(data.items) ? data.items : []),
@@ -59,7 +59,7 @@ export default function SuperTenantsContent() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ name: String(form.get('name') ?? '').trim() }),
       });
-      const body = (await res.json()) as { name?: string; error?: { message?: string } };
+      const body = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { name?: string; error?: { message?: string } };
       if (!res.ok) throw new Error(body.error?.message ?? 'Gagal membuat tenant');
       setNotice(`Tenant "${body.name}" dibuat.`);
       event.currentTarget.reset();
@@ -81,7 +81,7 @@ export default function SuperTenantsContent() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ name: renaming.name.trim() }),
       });
-      const body = (await res.json()) as { error?: { message?: string } };
+      const body = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { error?: { message?: string } };
       if (!res.ok) throw new Error(body.error?.message ?? 'Gagal mengubah nama');
       setNotice('Nama tenant diubah.');
       setRenaming(null);
@@ -98,7 +98,7 @@ export default function SuperTenantsContent() {
     setNotice(null);
     try {
       const res = await fetch(`/api/super/tenants/${tenantId}`, { method: 'DELETE' });
-      const body = (await res.json()) as { error?: { message?: string } };
+      const body = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { error?: { message?: string } };
       if (!res.ok) throw new Error(body.error?.message ?? 'Gagal menghapus tenant');
       setNotice('Tenant dihapus.');
       setConfirmDelete(null);

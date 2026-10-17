@@ -60,7 +60,7 @@ export default function SuperWorkersPanel() {
         cache: 'no-store',
       });
       if (!response.ok) throw new Error(`backend ${response.status}`);
-      setPayload((await response.json()) as RuntimePayload);
+      setPayload((await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as RuntimePayload);
     } catch (cause) {
       setPayload(null);
       setError(

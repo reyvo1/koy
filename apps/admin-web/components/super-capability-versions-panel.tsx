@@ -124,7 +124,7 @@ export default function SuperCapabilityVersionsPanel() {
         `/api/admin/capability-templates?tenantId=${encodeURIComponent(nextTenantId)}`,
         { cache: 'no-store' },
       );
-      const body = (await response.json()) as { templates?: TemplateRow[]; message?: string };
+      const body = (await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { templates?: TemplateRow[]; message?: string };
       if (!response.ok) throw new Error(body?.message ?? `backend ${response.status}`);
       setTemplates(body.templates ?? []);
     } catch (cause) {
@@ -231,7 +231,7 @@ export default function SuperCapabilityVersionsPanel() {
         cache: 'no-store',
       });
       if (!response.ok) throw new Error(`backend ${response.status}`);
-      setPayload((await response.json()) as VersionsPayload);
+      setPayload((await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as VersionsPayload);
     } catch (cause) {
       setPayload(null);
       setError(cause instanceof Error ? cause.message : 'gagal memuat versi');
@@ -247,7 +247,7 @@ export default function SuperCapabilityVersionsPanel() {
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ tenantId, templateId, dryRun: !confirm }),
         });
-        const body = (await response.json()) as ApplyResult & { message?: string };
+        const body = (await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as ApplyResult & { message?: string };
         if (!response.ok) {
           setApplyState((previous) => ({
             ...previous,

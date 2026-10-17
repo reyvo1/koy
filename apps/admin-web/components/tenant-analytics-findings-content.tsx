@@ -45,7 +45,7 @@ export default function TenantAnalyticsFindingsContent() {
     fetch('/api/admin/analytics-findings?limit=50')
       .then(async (res) => {
         if (!res.ok) throw new Error(`backend ${res.status}`);
-        return res.json();
+        return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       })
       .then((data: unknown) => {
         if (cancelled) return;

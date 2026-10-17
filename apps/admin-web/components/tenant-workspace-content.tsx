@@ -162,7 +162,7 @@ export default function TenantWorkspaceContent() {
     try {
       const res = await fetch('/api/tenant/dashboards');
       if (!res.ok) throw new Error(`backend ${res.status}`);
-      const data = (await res.json()) as { items?: DashboardRow[] } | DashboardRow[];
+      const data = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { items?: DashboardRow[] } | DashboardRow[];
       setRows(Array.isArray(data) ? data : (data.items ?? []));
       setError(null);
     } catch (cause) {
@@ -221,7 +221,7 @@ export default function TenantWorkspaceContent() {
     setBusy(`open-${id}`);
     try {
       const res = await fetch(`/api/tenant/dashboards/${id}`);
-      const data = (await res.json()) as Resolution;
+      const data = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as Resolution;
       setResolution(data);
       setOpenId(id);
 

@@ -28,7 +28,7 @@ export default function SuperSecurityContent() {
     fetch('/api/super/audit-logs')
       .then(async (res) => {
         if (!res.ok) throw new Error(`backend ${res.status}`);
-        return res.json();
+        return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       })
       .then((data: { items?: AuditRow[] }) => {
         if (!cancelled) setRows(Array.isArray(data.items) ? data.items : []);

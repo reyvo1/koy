@@ -26,7 +26,7 @@ export default function SuperAlertsContent() {
     fetch('/api/super/findings?limit=100')
       .then(async (res) => {
         if (!res.ok) throw new Error(`backend ${res.status}`);
-        return res.json();
+        return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       })
       .then((data: { items?: Finding[] }) => {
         const items = Array.isArray(data.items) ? data.items : [];

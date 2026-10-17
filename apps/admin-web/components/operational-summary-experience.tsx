@@ -93,7 +93,7 @@ export function OperationalSummaryExperience() {
         });
         return;
       }
-      const summary = (await response.json()) as AdminOperationalSummary;
+      const summary = (await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as AdminOperationalSummary;
       setState({
         kind: 'ready',
         summary: summary as AdminOperationalSummary,

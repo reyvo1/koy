@@ -61,8 +61,8 @@ export default function SuperMonitoringContent() {
       if (!deviceRes.ok) throw new Error(`device directory ${deviceRes.status}`);
       if (!tenantRes.ok) throw new Error(`tenant directory ${tenantRes.status}`);
 
-      const devicePayload = await deviceRes.json();
-      const tenantPayload = await tenantRes.json();
+      const devicePayload = await deviceRes.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
+      const tenantPayload = await tenantRes.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       setDevices(Array.isArray(devicePayload) ? devicePayload : (devicePayload.items ?? []));
       setTenants(Array.isArray(tenantPayload) ? tenantPayload : (tenantPayload.items ?? []));
     } catch (cause) {

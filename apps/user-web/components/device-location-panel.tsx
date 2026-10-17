@@ -14,7 +14,7 @@ export function DeviceLocationPanel({ deviceId }: { deviceId: string }) {
     })
       .then(async (response) => {
         if (!response.ok) throw new Error('Lokasi tidak dapat dibaca.');
-        const body = await response.json();
+        const body = await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
         setFixes(body.latest ? [body.latest] : []);
       })
       .catch((cause) => {

@@ -22,7 +22,7 @@ export default function SuperSettingsContent() {
     try {
       const res = await fetch('/api/profile');
       if (!res.ok) throw new Error(`backend ${res.status}`);
-      const data = (await res.json()) as { email?: string; name?: string; user?: { email?: string; name?: string } };
+      const data = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { email?: string; name?: string; user?: { email?: string; name?: string } };
       const u = data.user ?? data;
       setEmail(u.email ?? '');
       setName(u.name ?? '');

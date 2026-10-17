@@ -51,7 +51,7 @@ export default function SuperDevicesContent() {
     fetch('/api/super/platform-devices')
       .then(async (res) => {
         if (!res.ok) throw new Error(`backend ${res.status}`);
-        return res.json();
+        return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       })
       .then((data: unknown) => {
         const items = Array.isArray(data)

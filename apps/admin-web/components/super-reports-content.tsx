@@ -68,7 +68,7 @@ export default function SuperReportsContent() {
         `/api/super/reports/saved?tenantId=${encodeURIComponent(archiveTenant.trim())}`,
         { cache: 'no-store' },
       );
-      const body = await response.json();
+      const body = await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       if (!response.ok) throw new Error(body?.error?.message ?? `backend ${response.status}`);
       setSaved({
         items: Array.isArray(body.items) ? body.items : [],
@@ -108,7 +108,7 @@ export default function SuperReportsContent() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ tenantId, hours }),
       });
-      const body = await response.json();
+      const body = await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       if (!response.ok) throw new Error(body?.error?.message ?? `backend ${response.status}`);
       setSaveNote(
         body?.note ?? 'Laporan disimpan. Angka yang diunduh nanti adalah angka yang disimpan ini.',
@@ -133,7 +133,7 @@ export default function SuperReportsContent() {
       `/api/super/reports/saved/download?id=${encodeURIComponent(row.id)}&tenantId=${encodeURIComponent(archiveTenant.trim())}`,
       { cache: 'no-store' },
     );
-    const body = await response.json();
+    const body = await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
     if (!response.ok) throw new Error(body?.error?.message ?? `backend ${response.status}`);
 
     const payload = body?.payload ?? body?.saved?.payload;
@@ -156,7 +156,7 @@ export default function SuperReportsContent() {
     setLoading(true); setError(null);
     try {
       const response = await fetch(`/api/super/reports/tenant-summary?hours=${hours}`);
-      const body = await response.json();
+      const body = await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       if (!response.ok) throw new Error(body?.error?.message ?? `backend ${response.status}`);
       setReport({ ...body, items: Array.isArray(body.items) ? body.items : [] });
     } catch (cause) {

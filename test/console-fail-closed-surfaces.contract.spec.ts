@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 /**
@@ -145,8 +145,10 @@ describe('console surfaces distinguish a failed read from an empty read', () => 
     });
 
     it('sets a resource to null when its own request failed', () => {
-      expect(source).toMatch(/if \(auditRes\.ok\)[\s\S]{0,220}?\n\s*\} else \{\s*setAudit\(null\)/);
-      expect(source).toMatch(/if \(usersRes\.ok\)[\s\S]{0,220}?\n\s*\} else \{\s*setUsers\(null\)/);
+      // Both anchors appear exactly once each, so the lazy match can only land on the
+      // `else` that belongs to the guarded `if` -- no fixed window to outgrow.
+      expect(source).toMatch(/if \(auditRes\.ok\)[\s\S]*?\n\s*\} else \{\s*setAudit\(null\)/);
+      expect(source).toMatch(/if \(usersRes\.ok\)[\s\S]*?\n\s*\} else \{\s*setUsers\(null\)/);
     });
 
     it('renders each of the three sections against that null', () => {
@@ -260,4 +262,49 @@ describe('user-web surfaces never treat an unreadable response body as data', ()
     const fileSource = read(`${USER_WEB}/profile-experience.tsx`);
     expect(fileSource).toContain('Respons profil tidak valid.');
   });
+});
+
+/**
+ * W5 closes the unreadable-body class across *every* component of both web apps, not
+ * just the three user-web files W4 pinned. A response body is only data after it has
+ * been read successfully: when the gateway answers a failed request with an HTML crash
+ * page or a truncated body, the parse throws and the raw parser text ("Unexpected token
+ * '<'") is what ends up on screen -- or the failure gets classified as something it is
+ * not, which is how W4 found an unreadable body being reported as a connectivity
+ * failure. All 101 unguarded parses were swept to throw a plain-language error instead,
+ * and the pin below is directory-wide: any future `.json()` under `apps/<app>/components`
+ * that is not paired with a `.catch` fails the test, in any file, by any later edit.
+ */
+describe('every web component guards its response body parses', () => {
+  const stripCommentLines = (source: string): string =>
+    source
+      .split('\n')
+      .filter((line) => {
+        const trimmed = line.trimStart();
+        return !(
+          trimmed.startsWith('//') ||
+          trimmed.startsWith('*') ||
+          trimmed.startsWith('/*')
+        );
+      })
+      .join('\n');
+
+  it.each(['user-web', 'admin-web'])(
+    '%s components never parse a response body without a guard',
+    (app) => {
+      const dir = resolve(root, 'apps', app, 'components');
+      const files = readdirSync(dir).filter((name) => name.endsWith('.tsx'));
+      expect(files.length).toBeGreaterThan(0);
+      const unguarded: string[] = [];
+      for (const name of files) {
+        const source = stripCommentLines(read(`apps/${app}/components/${name}`));
+        const calls = source.match(/\.json\(\)/g) ?? [];
+        const guarded = source.match(/\.json\(\)\s*\.catch\(/g) ?? [];
+        if (calls.length !== guarded.length) {
+          unguarded.push(`${name} (${calls.length} calls, ${guarded.length} guarded)`);
+        }
+      }
+      expect(unguarded).toEqual([]);
+    },
+  );
 });

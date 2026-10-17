@@ -121,18 +121,18 @@ export default function DeviceDetailContent() {
       // this a slow earlier load can overwrite the state written by a later one, and a
       // navigation away mid-flight writes to a component that is no longer mounted.
       if (!isCurrent()) return;
-      setDevice(await dRes.json());
+      setDevice(await dRes.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); }));
       // Ask the API for the verdict rather than recomputing it from lastHeartbeatAt here.
       // The five-minute rule lives in DeviceService.checkHealth; duplicating it in the
       // browser is how the console and the system it reports on drift apart.
       if (healthRes.ok) {
-        const body = (await healthRes.json()) as { status?: DeviceHealthStatus };
+        const body = (await healthRes.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { status?: DeviceHealthStatus };
         setHealth(body.status ?? 'UNKNOWN');
       } else {
         setHealth('UNKNOWN');
       }
       if (capRes.ok) {
-        const body = await capRes.json();
+        const body = await capRes.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
         setCapabilities(body.capabilities ?? []);
         setCapabilityError(null);
       } else {
@@ -140,7 +140,7 @@ export default function DeviceDetailContent() {
         setCapabilityError(`capability HTTP ${capRes.status}`);
       }
       if (commandRes.ok) {
-        const body = (await commandRes.json()) as { items?: CommandRow[] };
+        const body = (await commandRes.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { items?: CommandRow[] };
         setCommands(Array.isArray(body.items) ? body.items : []);
         setCommandHistoryError(null);
       } else {
@@ -148,7 +148,7 @@ export default function DeviceDetailContent() {
         setCommandHistoryError(`command history HTTP ${commandRes.status}`);
       }
       if (technicalRes.ok) {
-        setTechnicalHistory((await technicalRes.json()) as DeviceTechnicalHistory);
+        setTechnicalHistory((await technicalRes.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as DeviceTechnicalHistory);
         setTechnicalHistoryError(null);
       } else {
         setTechnicalHistory(null);
@@ -158,7 +158,7 @@ export default function DeviceDetailContent() {
         `/api/admin/telemetry-chart?deviceId=${encodeURIComponent(deviceId)}&hours=24`,
       );
       if (chartRes.ok) {
-        setBuckets(((await chartRes.json()).buckets ?? []) as typeof buckets);
+        setBuckets(((await chartRes.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })).buckets ?? []) as typeof buckets);
         setTelemetryError(null);
       } else {
         setBuckets([]);

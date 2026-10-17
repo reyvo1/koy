@@ -47,7 +47,7 @@ export default function TenantReportsContent() {
     fetch('/api/admin/devices')
       .then(async (res) => {
         if (!res.ok) throw new Error(`backend ${res.status}`);
-        return res.json();
+        return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       })
       .then((data: unknown) => {
         if (cancelled) return;
@@ -73,7 +73,7 @@ export default function TenantReportsContent() {
         `/api/admin/telemetry-chart?deviceId=${device.id}&hours=${hours}`,
       );
       if (!res.ok) throw new Error(`backend ${res.status}`);
-      const data = (await res.json()) as { buckets?: Bucket[] };
+      const data = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { buckets?: Bucket[] };
       const rows = (data.buckets ?? [])
         .filter((b) => typeof b.avg === 'number')
         .map((b) => ({

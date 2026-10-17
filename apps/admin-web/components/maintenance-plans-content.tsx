@@ -24,7 +24,7 @@ export function MaintenancePlansContent({
       const response = await fetch('/api/admin/device-maintenance/plans', {
         cache: 'no-store',
       });
-      const body = await response.json();
+      const body = await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       if (!response.ok)
         throw new Error(
           body.message ?? body.error?.message ?? 'Jadwal tidak tersedia.',
@@ -97,7 +97,7 @@ export function MaintenancePlansContent({
                 }),
               },
             );
-            const body = await response.json();
+            const body = await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
             if (!response.ok)
               throw new Error(
                 body.message ?? body.error?.message ?? 'Jadwal gagal dibuat.',

@@ -58,7 +58,7 @@ export default function TenantSchedulesContent() {
     try {
       const res = await fetch(`/api/tenant/schedules/${scheduleId}/runs?limit=8`);
       if (!res.ok) throw new Error('gagal');
-      const data = (await res.json()) as { items?: RunRow[] } | RunRow[];
+      const data = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { items?: RunRow[] } | RunRow[];
       setHistory(Array.isArray(data) ? data : (data.items ?? []));
     } catch (cause) {
       setHistory([]);
@@ -70,7 +70,7 @@ export default function TenantSchedulesContent() {
     try {
       const response = await fetch('/api/tenant/schedules');
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const body = (await response.json()) as { items?: ScheduleRow[] } | ScheduleRow[];
+      const body = (await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { items?: ScheduleRow[] } | ScheduleRow[];
       setRows(Array.isArray(body) ? body : (body.items ?? []));
       setError(null);
     } catch (cause) {
@@ -85,7 +85,7 @@ export default function TenantSchedulesContent() {
     fetch('/api/tenant/scenes')
       .then(async (res) => {
         if (!res.ok) throw new Error(`backend ${res.status}`);
-        return res.json();
+        return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       })
       .then((data: { items?: SceneOption[] } | SceneOption[]) =>
         setScenes(Array.isArray(data) ? data : (data.items ?? [])),

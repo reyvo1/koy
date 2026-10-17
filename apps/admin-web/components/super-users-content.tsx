@@ -46,7 +46,7 @@ export default function SuperUsersContent() {
     fetch('/api/super/platform-users')
       .then(async (res) => {
         if (!res.ok) throw new Error(`backend ${res.status}`);
-        return res.json();
+        return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       })
       .then((data: { items?: UserRow[] }) => {
         setUsers(Array.isArray(data.items) ? data.items : []);
@@ -62,7 +62,7 @@ export default function SuperUsersContent() {
     fetch('/api/super/tenants')
       .then(async (res) => {
         if (!res.ok) throw new Error('backend');
-        return res.json();
+        return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       })
       .then((data: { items?: TenantOption[] }) => {
         setTenants(Array.isArray(data.items) ? data.items : []);
@@ -90,7 +90,7 @@ export default function SuperUsersContent() {
           role: form.get('role'),
         }),
       });
-      const body = (await res.json()) as { message?: string; error?: { message?: string } };
+      const body = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { message?: string; error?: { message?: string } };
       if (!res.ok) {
         throw new Error(body.error?.message ?? body.message ?? 'Gagal menambah pengguna');
       }

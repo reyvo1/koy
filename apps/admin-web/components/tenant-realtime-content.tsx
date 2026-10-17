@@ -70,7 +70,7 @@ export default function TenantRealtimeContent() {
     fetch('/api/admin/devices')
       .then(async (res) => {
         if (!res.ok) throw new Error(`backend ${res.status}`);
-        return res.json();
+        return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       })
       .then((data: unknown) => {
         if (cancelled) return;
@@ -109,7 +109,7 @@ export default function TenantRealtimeContent() {
     fetch(`/api/admin/telemetry-chart?deviceId=${selectedId}&range=24h`)
       .then(async (res) => {
         if (!res.ok) throw new Error(`backend ${res.status}`);
-        return res.json();
+        return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       })
       .then((data: { buckets?: Bucket[] }) => {
         if (!cancelled) setBuckets(data.buckets ?? []);

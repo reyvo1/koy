@@ -59,7 +59,7 @@ export default function SuperCommandDispatchPanel() {
     try {
       const response = await fetch('/api/super/tenants', { cache: 'no-store' });
       if (!response.ok) throw new Error(`tenant directory ${response.status}`);
-      const body = await response.json();
+      const body = await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       setTenants(Array.isArray(body) ? body : (body.items ?? []));
     } catch (cause) {
       setTenants(null);
@@ -88,7 +88,7 @@ export default function SuperCommandDispatchPanel() {
           cache: 'no-store',
         });
         if (!response.ok) throw new Error(`device directory ${response.status}`);
-        const body = await response.json();
+        const body = await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
         if (cancelled) return;
         const all: DeviceRow[] = Array.isArray(body) ? body : (body.items ?? []);
         setDevices(all.filter((device) => device.tenantId === tenantId));

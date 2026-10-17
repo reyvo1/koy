@@ -7,7 +7,7 @@ type Payload = { items: AlertItem[]; deviceScopeTruncated: boolean; limit: numbe
 export function AlertsExperience() {
   const [data, setData] = useState<Payload | null>(null);
   const [error, setError] = useState('');
-  useEffect(() => { void fetch('/api/alerts').then(async (r) => { const p = await r.json(); if (!r.ok) throw new Error(p.message ?? 'Alert gagal dimuat'); setData(p); }).catch((e) => setError(e instanceof Error ? e.message : 'Alert gagal dimuat')); }, []);
+  useEffect(() => { void fetch('/api/alerts').then(async (r) => { const p = await r.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); }); if (!r.ok) throw new Error(p.message ?? 'Alert gagal dimuat'); setData(p); }).catch((e) => setError(e instanceof Error ? e.message : 'Alert gagal dimuat')); }, []);
   if (error) return <p className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</p>;
   if (!data) return <p className="text-sm text-slate-500">Memuat alert…</p>;
   if (!data.items.length) return <p className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">Tidak ada WARNING/CRITICAL untuk perangkat yang dapat Anda akses.</p>;

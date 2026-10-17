@@ -22,7 +22,7 @@ export default function SuperDeviceCredentialsContent() {
   useEffect(() => {
     fetch('/api/super/device-credentials')
       .then(async (response) => {
-        const body = await response.json();
+        const body = await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
         if (!response.ok) throw new Error(body?.error?.message ?? `backend ${response.status}`);
         return body;
       })

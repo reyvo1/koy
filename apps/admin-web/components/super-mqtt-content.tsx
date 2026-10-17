@@ -68,7 +68,7 @@ export default function SuperMqttContent() {
     setSnapshotError(null);
     try {
       const res = await fetch('/api/super/mqtt/management', { cache: 'no-store' });
-      const payload = (await res.json()) as MqttSnapshot;
+      const payload = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as MqttSnapshot;
       if (!res.ok) {
         // The broker may be perfectly reachable while the platform refuses to ask, and the two
         // deserve different words. Both leave the snapshot unknown, so the reason is carried
@@ -101,7 +101,7 @@ export default function SuperMqttContent() {
   const probe = useCallback(async () => {
     try {
       const res = await fetch('/api/super/health');
-      const payload = (await res.json()) as HealthPayload;
+      const payload = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as HealthPayload;
       setReady(payload.status === 'ready');
     } catch {
       setReady(false);

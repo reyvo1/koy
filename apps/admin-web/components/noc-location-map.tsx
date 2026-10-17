@@ -15,7 +15,7 @@ export function NocLocationMap() {
     })
       .then(async (r) => {
         if (!r.ok) throw new Error('Lokasi platform gagal dibaca.');
-        setData(await r.json());
+        setData(await r.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); }));
       })
       .catch((e) => {
         if (!controller.signal.aborted) setError(e.message);

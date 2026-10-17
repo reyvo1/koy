@@ -50,7 +50,7 @@ export default function SuperApiKeysContent() {
     fetch('/api/super/api-keys')
       .then(async (res) => {
         if (!res.ok) throw new Error(`backend ${res.status}`);
-        return res.json();
+        return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       })
       .then((data: { items?: ApiKeyRow[] }) =>
         setKeys(Array.isArray(data.items) ? data.items : []),
@@ -66,7 +66,7 @@ export default function SuperApiKeysContent() {
     fetch('/api/super/tenants')
       .then(async (res) => {
         if (!res.ok) throw new Error(`backend ${res.status}`);
-        return res.json();
+        return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       })
       .then((data: { items?: TenantOption[] }) =>
         setTenants(Array.isArray(data.items) ? data.items : []),
@@ -94,7 +94,7 @@ export default function SuperApiKeysContent() {
           scopes,
         }),
       });
-      const body = (await res.json()) as {
+      const body = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as {
         plaintext?: string;
         error?: { message?: string };
       };

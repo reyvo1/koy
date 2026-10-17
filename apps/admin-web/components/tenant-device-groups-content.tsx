@@ -62,8 +62,8 @@ export default function TenantDeviceGroupsContent() {
         throw new Error(errorMessage(body, `Perangkat gagal dimuat (${devicesResponse.status})`));
       }
 
-      const groupsBody = (await groupsResponse.json()) as { items?: DeviceGroupRow[] };
-      const devicesBody = (await devicesResponse.json()) as DeviceRow[] | { items?: DeviceRow[] };
+      const groupsBody = (await groupsResponse.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { items?: DeviceGroupRow[] };
+      const devicesBody = (await devicesResponse.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as DeviceRow[] | { items?: DeviceRow[] };
       if (!isCurrent()) return;
       setGroups(Array.isArray(groupsBody.items) ? groupsBody.items : []);
       setDevices(Array.isArray(devicesBody) ? devicesBody : (devicesBody.items ?? []));

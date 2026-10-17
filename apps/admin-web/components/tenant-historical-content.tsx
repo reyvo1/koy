@@ -62,7 +62,7 @@ export default function TenantHistoricalContent() {
     fetch('/api/admin/devices')
       .then(async (res) => {
         if (!res.ok) throw new Error(`backend ${res.status}`);
-        return res.json();
+        return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       })
       .then((data: unknown) => {
         if (cancelled) return;
@@ -89,7 +89,7 @@ export default function TenantHistoricalContent() {
     fetch(`/api/admin/telemetry-chart?deviceId=${deviceId}&hours=${hours}`)
       .then(async (res) => {
         if (!res.ok) throw new Error(`backend ${res.status}`);
-        return res.json();
+        return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       })
       .then((data: { buckets?: Bucket[] }) => {
         if (!cancelled) setBuckets(data.buckets ?? []);
@@ -126,7 +126,7 @@ export default function TenantHistoricalContent() {
     fetch(`/api/admin/telemetry-history?deviceId=${encodeURIComponent(deviceId)}&limit=50`)
       .then(async (res) => {
         if (!res.ok) throw new Error(`backend ${res.status}`);
-        return res.json();
+        return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       })
       .then((data: { items?: Reading[] } | Reading[]) => {
         if (cancelled) return;

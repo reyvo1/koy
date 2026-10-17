@@ -96,7 +96,7 @@ export default function TenantScenesContent() {
     try {
       const res = await fetch(`/api/tenant/scenes/${sceneId}/executions?limit=8`);
       if (!res.ok) throw new Error('gagal');
-      const data = (await res.json()) as { items?: ExecutionRow[] } | ExecutionRow[];
+      const data = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { items?: ExecutionRow[] } | ExecutionRow[];
       setHistory(Array.isArray(data) ? data : (data.items ?? []));
     } catch (cause) {
       setHistory([]);
@@ -111,7 +111,7 @@ export default function TenantScenesContent() {
     try {
       const response = await fetch('/api/tenant/scenes');
       if (!response.ok) throw new Error(`backend ${response.status}`);
-      const body = (await response.json()) as { items?: SceneCard[] } | SceneCard[];
+      const body = (await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { items?: SceneCard[] } | SceneCard[];
       if (!isCurrent()) return;
       setScenes(Array.isArray(body) ? body : (body.items ?? []));
       setError(null);
@@ -128,7 +128,7 @@ export default function TenantScenesContent() {
     fetch('/api/admin/devices')
       .then(async (res) => {
         if (!res.ok) throw new Error(`backend ${res.status}`);
-        return res.json();
+        return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       })
       .then((data: { items?: DeviceRow[] } | DeviceRow[]) =>
         setDevices(Array.isArray(data) ? data : (data.items ?? [])),
@@ -143,7 +143,7 @@ export default function TenantScenesContent() {
     try {
       const res = await fetch(`/api/admin/device-capabilities?deviceId=${encodeURIComponent(deviceId)}`);
       if (!res.ok) throw new Error(`capability backend ${res.status}`);
-      const data = (await res.json()) as { items?: CapabilityRow[] } | CapabilityRow[];
+      const data = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { items?: CapabilityRow[] } | CapabilityRow[];
       const caps = Array.isArray(data) ? data : (data.items ?? []);
       setCapsCache((prev) => ({ ...prev, [deviceId]: caps }));
       return caps;

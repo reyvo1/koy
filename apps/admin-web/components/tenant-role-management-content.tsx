@@ -56,9 +56,9 @@ export default function TenantRoleManagementContent() {
     if (!rolesRes.ok) throw new Error(`custom role backend ${rolesRes.status}`);
     if (!catalogRes.ok) throw new Error(`permission catalog backend ${catalogRes.status}`);
     if (!usersRes.ok) throw new Error(`tenant users backend ${usersRes.status}`);
-    const rolesBody = (await rolesRes.json()) as { items?: RoleRow[] };
-    const catalogBody = (await catalogRes.json()) as { permissions?: PermissionDefinition[] };
-    const usersBody = (await usersRes.json()) as { items?: TenantUserRow[] };
+    const rolesBody = (await rolesRes.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { items?: RoleRow[] };
+    const catalogBody = (await catalogRes.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { permissions?: PermissionDefinition[] };
+    const usersBody = (await usersRes.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { items?: TenantUserRow[] };
     setRoles(Array.isArray(rolesBody.items) ? rolesBody.items : []);
     setPermissions(Array.isArray(catalogBody.permissions) ? catalogBody.permissions : []);
     setUsers(Array.isArray(usersBody.items) ? usersBody.items : []);

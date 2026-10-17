@@ -102,7 +102,7 @@ export default function TenantCommandsContent() {
     try {
       const res = await fetch('/api/tenant/commands');
       if (!res.ok) throw new Error(`backend ${res.status}`);
-      const data = (await res.json()) as { items?: CommandItem[] };
+      const data = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { items?: CommandItem[] };
       setHistory(Array.isArray(data.items) ? data.items : []);
       setHistoryError(null);
     } catch (cause) {
@@ -175,7 +175,7 @@ export default function TenantCommandsContent() {
     fetch('/api/admin/devices')
       .then(async (res) => {
         if (!res.ok) throw new Error(`backend ${res.status}`);
-        return res.json();
+        return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       })
       .then((data: unknown) => {
         if (cancelled) return;
@@ -215,7 +215,7 @@ export default function TenantCommandsContent() {
     fetch(`/api/admin/device-capabilities?deviceId=${encodeURIComponent(targetId)}`)
       .then(async (res) => {
         if (!res.ok) throw new Error(`backend ${res.status}`);
-        return res.json();
+        return res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       })
       .then((data: { items?: CapabilityRow[]; capabilities?: CapabilityRow[] } | CapabilityRow[]) => {
         if (cancelled) return;

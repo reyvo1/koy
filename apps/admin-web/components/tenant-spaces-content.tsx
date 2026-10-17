@@ -55,7 +55,7 @@ export default function TenantSpacesContent({ kind }: { kind: SpaceNode['kind'] 
     try {
       const res = await fetch('/api/tenant/spaces');
       if (!res.ok) throw new Error(`backend ${res.status}`);
-      const data = (await res.json()) as { items?: SpaceNode[] };
+      const data = (await res.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); })) as { items?: SpaceNode[] };
       setNodes(Array.isArray(data.items) ? data.items : []);
       setError(null);
     } catch (cause) {

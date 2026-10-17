@@ -48,7 +48,7 @@ export default function SuperCommandMonitorContent() {
       const query = new URLSearchParams({ limit: '150' });
       if (status) query.set('status', status);
       const response = await fetch(`/api/super/commands?${query.toString()}`);
-      const body = await response.json();
+      const body = await response.json().catch(() => { throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.'); });
       if (!response.ok) throw new Error(body?.error?.message ?? `backend ${response.status}`);
       if (body.sendCommandEnabled === true) throw new Error('kontrak read-only dilanggar backend');
       setRows(Array.isArray(body.items) ? body.items : []);
