@@ -45,7 +45,19 @@ export async function GET(request: Request) {
     const response = await client.request(
       `/admin/platform-devices/${encodeURIComponent(deviceId)}/telemetry/aggregate?${query.toString()}`,
     );
-    const payload = await response.json().catch(() => ({}));
+    const payload = await response.json().catch(() => null);
+    if (payload === null) {
+      const next = NextResponse.json(
+        {
+          error: {
+            code: 'TELEMETRY_UNAVAILABLE',
+            message: 'Backend mengembalikan respons yang tidak dapat dibaca.',
+          },
+        },
+        { status: 502 },
+      );
+      return finalizeAdminSessionResponse(client, next, response.status);
+    }
     const next = NextResponse.json(payload, { status: response.status });
     return finalizeAdminSessionResponse(client, next, response.status);
   } catch (cause) {

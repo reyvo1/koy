@@ -1,7 +1,7 @@
 'use client';
 
 import { TERMINAL_COMMAND_STATUSES } from '../lib/contracts';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { CameraPlayer } from '@iot-platform/design-system';
 import { DeviceRoutinesPanel } from './device-routines-panel';
 import { DeviceLocationPanel } from './device-location-panel';
@@ -34,21 +34,33 @@ export function DeviceDetailExperience({ deviceId }: { deviceId: string }) {
   const [commandBusy, setCommandBusy] = useState<string | null>(null);
   const [commandMessage, setCommandMessage] = useState<string | null>(null);
 
+  const loadGeneration = useRef(0);
+
   const load = useCallback(async () => {
+    const generation = ++loadGeneration.current;
     setState({ kind: 'loading' });
     try {
       const response = await fetch(`/api/devices/${encodeURIComponent(deviceId)}`, { cache: 'no-store' });
-      const payload = (await response.json().catch(() => ({}))) as UserDeviceDetailPayload | { message?: string };
+      const payload = (await response.json().catch(() => null)) as
+        | UserDeviceDetailPayload
+        | { message?: string }
+        | null;
+      if (generation !== loadGeneration.current) return;
       if (response.status === 401) {
         setState({ kind: 'unauthorized' });
         return;
       }
       if (!response.ok) {
-        setState({ kind: 'error', message: 'message' in payload && payload.message ? payload.message : 'Detail perangkat gagal dimuat.' });
+        setState({ kind: 'error', message: payload && 'message' in payload && payload.message ? payload.message : 'Detail perangkat gagal dimuat.' });
+        return;
+      }
+      if (payload === null) {
+        setState({ kind: 'error', message: 'Backend mengembalikan respons yang tidak dapat dibaca.' });
         return;
       }
       setState({ kind: 'ready', payload: payload as UserDeviceDetailPayload });
     } catch {
+      if (generation !== loadGeneration.current) return;
       setState({ kind: 'error', message: 'User Web tidak dapat menghubungi backend.' });
     }
   }, [deviceId]);

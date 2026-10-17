@@ -23,9 +23,10 @@ export function RoomWorkspaceExperience({ mode }: { mode: WorkspaceMode }) {
     setState({ kind: 'loading' });
     try {
       const response = await fetch('/api/workspace', { cache: 'no-store' });
-      const payload = (await response.json().catch(() => ({}))) as
+      const payload = (await response.json().catch(() => null)) as
         | UserWorkspacePayload
-        | { message?: string };
+        | { message?: string }
+        | null;
       if (response.status === 401) {
         setState({ kind: 'unauthorized' });
         return;
@@ -33,8 +34,12 @@ export function RoomWorkspaceExperience({ mode }: { mode: WorkspaceMode }) {
       if (!response.ok) {
         setState({
           kind: 'error',
-          message: 'message' in payload && payload.message ? payload.message : 'Workspace gagal dimuat.',
+          message: payload && 'message' in payload && payload.message ? payload.message : 'Workspace gagal dimuat.',
         });
+        return;
+      }
+      if (payload === null) {
+        setState({ kind: 'error', message: 'Backend mengembalikan respons yang tidak dapat dibaca.' });
         return;
       }
       setState({ kind: 'ready', payload: payload as UserWorkspacePayload });

@@ -201,11 +201,14 @@ export default function TenantAutomationContent() {
       const res = await fetch(`/api/tenant/automations/${row.id}`, {
         cache: 'no-store',
       });
-      const payload = (await res.json().catch(() => ({}))) as {
+      const payload = (await res.json().catch(() => null)) as {
         error?: { message?: string };
-      };
+      } | null;
       if (!res.ok) {
-        throw new Error(payload.error?.message ?? `backend ${res.status}`);
+        throw new Error(payload?.error?.message ?? `backend ${res.status}`);
+      }
+      if (payload === null) {
+        throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.');
       }
       // `GET /automations/:id` returns a FLAT record, not a `{ definition: {...} }`
       // envelope: triggerKind / triggerDeviceId / triggerCapabilityId plus a resolved

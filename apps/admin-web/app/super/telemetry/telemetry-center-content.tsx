@@ -52,8 +52,9 @@ export default function SuperTelemetryPage() {
     setLoading(true); setError(null);
     try {
       const query = new URLSearchParams({ deviceId, capability: capabilityKey, hours: '24' });
-      const response = await fetch(`/api/super/telemetry-chart?${query}`); const body = await response.json().catch(() => ({}));
+      const response = await fetch(`/api/super/telemetry-chart?${query}`); const body = (await response.json().catch(() => null)) as { buckets?: Bucket[]; error?: { message?: string } } | null;
       if (!response.ok) throw new Error(body?.error?.message ?? `telemetry backend ${response.status}`);
+      if (body === null) throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.');
       if (!isCurrent()) return;
       setBuckets(Array.isArray(body.buckets) ? body.buckets : []);
     } catch (cause) {
@@ -70,8 +71,9 @@ export default function SuperTelemetryPage() {
     setExplorerLoading(true); setError(null);
     try {
       const query = new URLSearchParams({ deviceId, limit: '150' }); if (capabilityKey) query.set('capability', capabilityKey);
-      const response = await fetch(`/api/super/telemetry-explorer?${query}`); const body = await response.json().catch(() => ({}));
+      const response = await fetch(`/api/super/telemetry-explorer?${query}`); const body = (await response.json().catch(() => null)) as { items?: TelemetryRow[]; error?: { message?: string } } | null;
       if (!response.ok) throw new Error(body?.error?.message ?? `explorer backend ${response.status}`);
+      if (body === null) throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.');
       if (!isCurrent()) return;
       setExplorerRows(Array.isArray(body.items) ? body.items : []);
     } catch (cause) {

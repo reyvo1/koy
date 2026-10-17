@@ -91,8 +91,9 @@ export default function DeviceSharePanel({ deviceId }: { deviceId: string }) {
     setMembersError(null);
     fetch('/api/admin/tenant-users')
       .then(async (res) => {
-        const body = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error((body as { error?: { message?: string } }).error?.message ?? `backend ${res.status}`);
+        const body = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
+        if (!res.ok) throw new Error(body?.error?.message ?? `backend ${res.status}`);
+        if (body === null) throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.');
         return body;
       })
       .then((data: unknown) => {

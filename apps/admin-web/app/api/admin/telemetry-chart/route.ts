@@ -72,8 +72,20 @@ export async function GET(request: Request) {
       );
       return finalizeAdminSessionResponse(client, next, response.status);
     }
-    const payload = responsePayload as { buckets?: unknown[] } | null;
-    const next = NextResponse.json({ buckets: payload?.buckets ?? [] });
+    if (responsePayload === null) {
+      const next = NextResponse.json(
+        {
+          error: {
+            code: 'TELEMETRY_UNAVAILABLE',
+            message: 'Backend mengembalikan respons yang tidak dapat dibaca.',
+          },
+        },
+        { status: 502 },
+      );
+      return finalizeAdminSessionResponse(client, next, response.status);
+    }
+    const payload = responsePayload as { buckets?: unknown[] };
+    const next = NextResponse.json({ buckets: payload.buckets ?? [] });
     return finalizeAdminSessionResponse(client, next, response.status);
   } catch (cause) {
     const status =

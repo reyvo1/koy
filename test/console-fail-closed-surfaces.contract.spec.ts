@@ -355,3 +355,46 @@ describe('selector-driven admin loads drop stale responses', () => {
     expect(dropped.length).toBeGreaterThanOrEqual(2);
   });
 });
+
+/**
+ * W8 closes the last fabricated-empty reads that survived the W5/W6 sweeps: parses that
+ * swallowed an unreadable body into `{}` and let a success path render `body.items ?? []`,
+ * a `{kind:'ready'}` payload, or a passthrough 200, so a backend answering unreadably still
+ * produced "no data" or a ready-looking screen. Six rendered surfaces now treat an
+ * unreadable body as a failed read, the user-web device read also drops a stale response
+ * when the operator switches devices mid-flight, and the proxy layer stops turning an
+ * unreadable backend body into parser text (proxyBackend) or `{}` (health, both
+ * telemetry-chart routes).
+ */
+describe('unreadable reads are never fabricated into empty data', () => {
+  it.each([
+    `${ADMIN_WEB}/device-share-panel.tsx`,
+    `${ADMIN_WEB}/super-billing-content.tsx`,
+    `${ADMIN_WEB}/tenant-automation-content.tsx`,
+    'apps/admin-web/app/super/telemetry/telemetry-center-content.tsx',
+    `${USER_WEB}/device-detail-experience.tsx`,
+    `${USER_WEB}/room-workspace-experience.tsx`,
+  ])('%s treats an unreadable body as a failed read', (file) => {
+    const source = read(file);
+    expect(source).toContain('json().catch(() => null)');
+    expect(source).toContain('Backend mengembalikan respons yang tidak dapat dibaca.');
+  });
+
+  it('device-detail drops a stale response when the device changes mid-flight', () => {
+    const source = read(`${USER_WEB}/device-detail-experience.tsx`);
+    expect(source).toContain('const loadGeneration = useRef(0);');
+    const drops = source.match(/generation !== loadGeneration\.current/g) ?? [];
+    expect(drops.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it.each([
+    'apps/admin-web/lib/proxy.ts',
+    'apps/admin-web/app/api/super/health/route.ts',
+    'apps/admin-web/app/api/super/telemetry-chart/route.ts',
+    'apps/admin-web/app/api/admin/telemetry-chart/route.ts',
+  ])('%s never turns an unreadable backend body into data', (file) => {
+    const source = read(file);
+    expect(source).not.toContain('json().catch(() => ({}))');
+    expect(source).toContain('Backend mengembalikan respons yang tidak dapat dibaca.');
+  });
+});

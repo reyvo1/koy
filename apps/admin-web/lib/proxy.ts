@@ -12,7 +12,19 @@ export async function proxyBackend(
   try {
     const client = await AdminSessionBackendClient.create();
     const response = await handler(client);
-    const payload = await response.json();
+    const payload = await response.json().catch(() => null);
+    if (payload === null) {
+      const next = NextResponse.json(
+        {
+          error: {
+            code: 'PROXY_UNAVAILABLE',
+            message: 'Backend mengembalikan respons yang tidak dapat dibaca.',
+          },
+        },
+        { status: 502 },
+      );
+      return finalizeAdminSessionResponse(client, next, response.status);
+    }
     const next = NextResponse.json(payload, { status: response.status });
     return finalizeAdminSessionResponse(client, next, response.status);
   } catch (cause) {

@@ -76,8 +76,9 @@ export default function SuperBillingContent() {
     setTenantDirectoryError(null);
     fetch('/api/super/tenants')
       .then(async (res) => {
-        const body = await res.json().catch(() => ({}));
+        const body = (await res.json().catch(() => null)) as { items?: TenantOption[] } | null;
         if (!res.ok) throw new Error(`backend ${res.status}`);
+        if (body === null) throw new Error('Backend mengembalikan respons yang tidak dapat dibaca.');
         return body;
       })
       .then((data: { items?: TenantOption[] }) => setTenants(Array.isArray(data.items) ? data.items : []))
