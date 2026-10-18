@@ -45,7 +45,18 @@ export class TelemetryAnomalyDetector {
     minSamples?: number;
     window?: number;
     now?: Date;
-  }): Promise<{ evaluated: number; findings: number }> {
+  }): Promise<{
+    evaluated: number;
+    findings: number;
+    /**
+     * The rows this run actually created, in creation order. The counts alone cannot
+     * drive a downstream fan-out: a caller that only knows "two findings appeared" has
+     * no id to make a delivery idempotent, so the runtime coordinator would have to
+     * re-query by time instead and could notify on someone else's row. The list is
+     * additive -- every pre-existing reader keeps working.
+     */
+    createdFindings: TelemetryAnomalyDetectorCreatedFinding[];
+  }> {
     const deviationMultiplier = options.deviationMultiplier ?? 3;
     const minSamples = options.minSamples ?? 8;
     const window = options.window ?? 500;
@@ -88,7 +99,7 @@ export class TelemetryAnomalyDetector {
     // Too little history is not evidence of normality. Returning "nothing anomalous" here would be the
     // dangerous answer, so the caller is told the sample was simply too small to judge.
     if (samples.length < minSamples) {
-      return { evaluated: samples.length, findings: 0 };
+      return { evaluated: samples.length, findings: 0, createdFindings: [] };
     }
 
     const values = samples.map((sample) => sample.value);
@@ -103,6 +114,7 @@ export class TelemetryAnomalyDetector {
     );
 
     let created = 0;
+    const createdFindings: TelemetryAnomalyDetectorCreatedFinding[] = [];
     for (const sample of anomalous) {
       // One finding per sample. Re-running over the same window must not add a second row for the same
       // evidence, or the NOC view fills with copies of a single event and operators learn to dismiss it.
@@ -122,18 +134,26 @@ export class TelemetryAnomalyDetector {
       const deviation =
         spread > 0 ? Math.abs(sample.value - baseline) / spread : Math.abs(sample.value - baseline);
 
-      await this.prisma.analyticsFinding.create({
+      const severity = severityFor(deviation, deviationMultiplier);
+      const summary = `${options.capabilityKey} read ${sample.value} against a baseline of ${round(baseline)}`;
+      const finding = await this.prisma.analyticsFinding.create({
         data: {
           tenantId: options.tenantId,
           deviceId: options.deviceId,
           capabilityKey: options.capabilityKey,
           kind: 'ANOMALY',
-          severity: severityFor(deviation, deviationMultiplier),
+          severity,
           confidence: confidenceFor(deviation, deviationMultiplier),
-          summary: `${options.capabilityKey} read ${sample.value} against a baseline of ${round(baseline)}`,
+          summary,
           detectorVersion: TelemetryAnomalyDetector.DETECTOR_VERSION,
           evidenceTelemetryId: sample.id,
         },
+      });
+      createdFindings.push({
+        id: finding.id,
+        severity,
+        capabilityKey: options.capabilityKey,
+        summary,
       });
       created += 1;
     }
@@ -144,8 +164,15 @@ export class TelemetryAnomalyDetector {
       );
     }
 
-    return { evaluated: samples.length, findings: created };
+    return { evaluated: samples.length, findings: created, createdFindings };
   }
+}
+
+export interface TelemetryAnomalyDetectorCreatedFinding {
+  readonly id: string;
+  readonly severity: 'INFO' | 'WARNING' | 'CRITICAL';
+  readonly capabilityKey: string;
+  readonly summary: string;
 }
 
 interface Sample {

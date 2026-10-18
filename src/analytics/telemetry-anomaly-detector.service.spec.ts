@@ -8,9 +8,12 @@ import { TelemetryAnomalyDetector } from './telemetry-anomaly-detector.service';
  */
 describe('TelemetryAnomalyDetector', () => {
   const build = () => {
+    let createdCount = 0;
     const analyticsFinding = {
       findFirst: jest.fn().mockResolvedValue(null),
-      create: jest.fn().mockResolvedValue({}),
+      create: jest
+        .fn()
+        .mockImplementation(async () => ({ id: `finding-${(createdCount += 1)}` })),
     };
     const telemetry = { findMany: jest.fn().mockResolvedValue([]) };
     const prisma = { analyticsFinding, telemetry } as never;
@@ -80,7 +83,7 @@ describe('TelemetryAnomalyDetector', () => {
 
       // Not "no anomalies found" -- too little history is not evidence of normality, and the caller is
       // told the difference by the evaluated count being below the threshold.
-      expect(result).toEqual({ evaluated: 3, findings: 0 });
+      expect(result).toEqual({ evaluated: 3, findings: 0, createdFindings: [] });
       expect(analyticsFinding.create).not.toHaveBeenCalled();
     });
 
@@ -223,6 +226,25 @@ describe('TelemetryAnomalyDetector', () => {
 
       expect(result.findings).toBe(2);
       expect(analyticsFinding.create).toHaveBeenCalledTimes(2);
+    });
+
+    it('returns the rows it created so a fan-out can identify exactly them', async () => {
+      const { service, telemetry } = build();
+      telemetry.findMany.mockResolvedValue(rows([10, 11, 10, 12, 11, 10, 11, 12, 100]));
+
+      const result = await service.detect({ ...base, minSamples: 8, deviationMultiplier: 3 });
+
+      // The counts alone cannot make a downstream notification idempotent: the caller needs the
+      // persisted identity of each created row, not a number it would have to re-derive by time.
+      expect(result.createdFindings).toHaveLength(1);
+      expect(result.createdFindings[0]).toEqual(
+        expect.objectContaining({
+          id: 'finding-1',
+          severity: 'CRITICAL',
+          capabilityKey: 'temp',
+          summary: expect.stringContaining('temp read 100'),
+        }),
+      );
     });
   });
 });

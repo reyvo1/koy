@@ -13,6 +13,8 @@ import {
 } from '../automation/automation-telemetry-coordination.types';
 import { AutomationTelemetryCoordinator } from '../automation/automation-telemetry-coordinator';
 import { isAutomationRuntimeEnabled } from '../automation/automation-runtime-policy';
+import { FindingsRuntimeCoordinator } from '../analytics/findings-runtime.coordinator';
+import { isFindingsRuntimeEnabled } from '../analytics/findings-runtime.policy';
 import { CapabilityValidator } from '../device/capability.validator';
 import { MetricsService } from '../metrics/metrics.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -31,6 +33,12 @@ export class TelemetryService {
   private readonly automationRuntimeEnabled =
     isAutomationRuntimeEnabled();
   /**
+   * Wave 11 findings runtime hook. Same fail-closed contract as automation:
+   * only an explicit FINDINGS_RUNTIME_ENABLED=true starts anomaly evaluation
+   * from ingested telemetry.
+   */
+  private readonly findingsRuntimeEnabled = isFindingsRuntimeEnabled();
+  /**
    * Per-device capabilityKey -> capabilityId map used to build valid automation
    * coordination envelopes. Bounded so a large fleet cannot grow it without limit.
    */
@@ -42,6 +50,7 @@ export class TelemetryService {
     private readonly capabilityValidator: CapabilityValidator,
     @Optional() private readonly metrics?: MetricsService,
     @Optional() private readonly automationCoordinator?: AutomationTelemetryCoordinator,
+    @Optional() private readonly findingsCoordinator?: FindingsRuntimeCoordinator,
   ) {}
 
   async ingest(
@@ -189,6 +198,16 @@ export class TelemetryService {
         // fresh `new Date()` here is always a few microseconds later, so every envelope
         // was rejected with AUTOMATION_RUNTIME_READ_TELEMETRY_MISMATCH. Use the stored
         // value so the envelope describes the row it claims to describe.
+        occurredAt: telemetry.createdAt,
+      });
+
+      // Fire-and-forget: anomaly evaluation must never affect the ingest response.
+      void this.coordinateFindingsSafely({
+        tenantId,
+        deviceId,
+        payload,
+        // Anchored to the stored row for the same reason as automation: the
+        // evaluation window describes the sample that triggered it.
         occurredAt: telemetry.createdAt,
       });
 
@@ -670,5 +689,45 @@ export class TelemetryService {
             : 'AUTOMATION_COORDINATION_FAILED',
       });
     });
+  }
+
+  /**
+   * Wave 11 findings runtime — fire-and-forget anomaly evaluation after
+   * durable telemetry persistence. Same isolation contract as the automation
+   * hook above: every failure is a bounded structured log and nothing here can
+   * change or delay the ingest result. Capability resolution stays inside the
+   * coordinator, which reads capability keys straight from the payload because
+   * the detector judges a capability by its telemetry column, not by the
+   * registered capability id the automation envelope requires.
+   */
+  private async coordinateFindingsSafely(input: {
+    tenantId: string;
+    deviceId: string;
+    payload: Record<string, unknown>;
+    occurredAt: Date;
+  }): Promise<void> {
+    if (!this.findingsRuntimeEnabled || !this.findingsCoordinator) {
+      return;
+    }
+
+    try {
+      await this.findingsCoordinator.coordinate({
+        tenantId: input.tenantId,
+        deviceId: input.deviceId,
+        payload: input.payload,
+        now: input.occurredAt,
+      });
+    } catch (error) {
+      this.logger.warn({
+        event: 'telemetry.findings_coordination.failed',
+        outcome: 'failed',
+        tenantId: input.tenantId,
+        deviceId: input.deviceId,
+        errorCode:
+          error && typeof error === 'object' && 'code' in error
+            ? String((error as { code?: unknown }).code)
+            : 'FINDINGS_COORDINATION_FAILED',
+      });
+    }
   }
 }

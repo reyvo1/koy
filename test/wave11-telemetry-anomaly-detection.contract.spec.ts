@@ -25,6 +25,12 @@ const read = (relative: string): string => readFileSync(resolve(root, relative),
 
 const schema = read('prisma/schema.prisma');
 const service = read('src/analytics/telemetry-anomaly-detector.service.ts');
+const findingsPolicy = read('src/analytics/findings-runtime.policy.ts');
+const coordinator = read('src/analytics/findings-runtime.coordinator.ts');
+const telemetryService = read('src/telemetry/telemetry.service.ts');
+const telemetryModule = read('src/telemetry/telemetry.module.ts');
+const configValidation = read('src/config/config.validation.ts');
+const envExample = read('.env.example');
 
 describe('Wave 11 real anomaly detection', () => {
   describe('schema', () => {
@@ -82,5 +88,75 @@ describe('Wave 11 real anomaly detection', () => {
     it('bounds the window it reads', () => {
       expect(service).toMatch(/(take:|limit|LIMIT)/i);
     });
+  });
+});
+
+/**
+ * Wave 11 anomaly detection, runtime slice.
+ *
+ * The detector existed and nothing called it outside a probe, and the durable notification
+ * queue existed and only auth flows used it. A device could swing wildly with every operator
+ * surface silent. These pins hold the missing edge in place: ingested telemetry feeds the
+ * detector, and CRITICAL findings become idempotent queued emails. The whole path is
+ * fail-closed, bounded, and optional at every seam, so none of it can take down ingest.
+ */
+describe('Wave 11 anomaly findings runtime', () => {
+  it('feeds the detector from accepted ingest, not only from a probe', () => {
+    expect(telemetryService).toContain('coordinateFindingsSafely');
+    expect(telemetryService).toMatch(/void this\.coordinateFindingsSafely\(/);
+    expect(telemetryService).toContain('findingsCoordinator');
+  });
+
+  it('stays off unless the exact flag is set', () => {
+    expect(findingsPolicy).toContain('FINDINGS_RUNTIME_ENABLED');
+    expect(findingsPolicy).toMatch(/===\s*'true'/);
+    expect(telemetryService).toContain('isFindingsRuntimeEnabled');
+    expect(configValidation).toMatch(/FINDINGS_RUNTIME_ENABLED\s*=\s*false/);
+    expect(envExample).toContain('FINDINGS_RUNTIME_ENABLED=false');
+  });
+
+  it('registers the cooldown inside the approved bounds', () => {
+    expect(configValidation).toMatch(/FINDINGS_RUNTIME_COOLDOWN_SECONDS\s*=\s*300/);
+    expect(findingsPolicy).toContain('FINDINGS_RUNTIME_COOLDOWN_MIN_SECONDS');
+    expect(findingsPolicy).toContain('FINDINGS_RUNTIME_COOLDOWN_MAX_SECONDS');
+  });
+
+  it('wires the coordinator through the telemetry module as an optional injection', () => {
+    // The automation coordinator had exactly this failure once: @Optional() hid a
+    // missing module import and the runtime was silently dead.
+    expect(telemetryModule).toContain('forwardRef(() => AnalyticsModule)');
+    expect(telemetryService).toMatch(
+      /@Optional\(\)\s+private readonly findingsCoordinator\?/,
+    );
+  });
+
+  it('returns created findings so the fan-out has a durable identity to key on', () => {
+    expect(service).toContain('createdFindings');
+    expect(coordinator).toContain('createdFindings');
+  });
+
+  it('bounds the number of evaluations one event can trigger', () => {
+    expect(coordinator).toMatch(/maxCapabilitiesPerEvent/);
+    expect(coordinator).toMatch(/cooldown/i);
+    expect(coordinator).toContain('lastEvaluationByKey');
+  });
+
+  it('enqueues idempotent CRITICAL emails through the durable queue', () => {
+    expect(coordinator).toMatch(/severity !== 'CRITICAL'/);
+    expect(coordinator).toContain(`channel: 'EMAIL'`);
+    expect(coordinator).toContain('analytics.finding.critical');
+    expect(coordinator).toContain('analytics-finding:');
+    expect(coordinator).toMatch(/notifications\.enqueue\(/);
+  });
+
+  it('reads recipients from the real preference table, bounded and deduplicated', () => {
+    expect(coordinator).toContain('notificationPreferences');
+    expect(coordinator).toMatch(/channel: 'EMAIL', enabled: true/);
+    expect(coordinator).toMatch(/take: FINDINGS_RUNTIME_LIMITS\.maxRecipientsPerFinding/);
+    expect(schema).toMatch(/model NotificationPreference/);
+  });
+
+  it('requires the notification runtime before enqueueing anything', () => {
+    expect(coordinator).toContain('NOTIFICATION_RUNTIME_ENABLED');
   });
 });

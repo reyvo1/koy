@@ -10,6 +10,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { DeviceModule } from '../device/device.module';
 import { AutomationModule } from '../automation/automation.module';
+import { AnalyticsModule } from '../analytics/analytics.module';
 
 @Module({
   imports: [
@@ -20,6 +21,10 @@ import { AutomationModule } from '../automation/automation.module';
     // injection is @Optional(), so omitting this module did not fail at boot; it made the
     // automation runtime silently dead for every ingested telemetry event.
     forwardRef(() => AutomationModule),
+    // Same failure mode, same fix: without this import the optional
+    // FindingsRuntimeCoordinator is undefined at runtime and the anomaly detector never
+    // sees an ingested event.
+    forwardRef(() => AnalyticsModule),
   ],
   controllers: [
     MqttTelemetryWebhookController,

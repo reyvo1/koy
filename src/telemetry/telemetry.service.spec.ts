@@ -14,6 +14,7 @@ import { MetricsService } from '../metrics/metrics.service';
 describe('TelemetryService', () => {
   let service: TelemetryService;
   let prisma: PrismaService;
+  let validator: CapabilityValidator;
   let warnSpy: jest.SpyInstance;
   let metrics: { recordTelemetryIngestion: jest.Mock };
 
@@ -43,6 +44,7 @@ describe('TelemetryService', () => {
 
     service = module.get<TelemetryService>(TelemetryService);
     prisma = module.get<PrismaService>(PrismaService);
+    validator = module.get<CapabilityValidator>(CapabilityValidator);
     metrics = module.get(MetricsService);
     warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
   });
@@ -917,6 +919,104 @@ describe('TelemetryService', () => {
       ).rejects.toThrow(NotFoundException);
 
       expect(prisma.telemetry.findMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findings runtime wiring', () => {
+    // The flag is read once at construction, exactly like the automation flag, so a
+    // direct instance is the only way to exercise both sides of the gate in one process.
+    const buildWithCoordinator = (findingsCoordinator: unknown) =>
+      new TelemetryService(
+        prisma,
+        validator,
+        metrics as unknown as MetricsService,
+        undefined,
+        findingsCoordinator as never,
+      );
+
+    const activeDevice = () =>
+      (prisma.device.findFirst as jest.Mock).mockResolvedValue({
+        id: 'd1',
+        tenantId: 't1',
+        status: DeviceStatus.ACTIVE,
+        capabilities: [{ key: 'temp', dataType: 'number', isReportable: true }],
+      });
+
+    const withFlag = async (value: string | undefined, run: () => Promise<void>) => {
+      const previous = process.env.FINDINGS_RUNTIME_ENABLED;
+      if (value === undefined) {
+        delete process.env.FINDINGS_RUNTIME_ENABLED;
+      } else {
+        process.env.FINDINGS_RUNTIME_ENABLED = value;
+      }
+      try {
+        await run();
+      } finally {
+        if (previous === undefined) {
+          delete process.env.FINDINGS_RUNTIME_ENABLED;
+        } else {
+          process.env.FINDINGS_RUNTIME_ENABLED = previous;
+        }
+      }
+    };
+
+    it('coordinates findings after accepted ingest when the flag is on', async () => {
+      await withFlag('true', async () => {
+        const findingsCoordinator = {
+          coordinate: jest.fn().mockResolvedValue({}),
+        };
+        const direct = buildWithCoordinator(findingsCoordinator);
+        activeDevice();
+
+        await direct.ingest('t1', 'd1', 'evt-findings', { temp: 25 });
+
+        expect(findingsCoordinator.coordinate).toHaveBeenCalledWith(
+          expect.objectContaining({
+            tenantId: 't1',
+            deviceId: 'd1',
+            payload: { temp: 25 },
+          }),
+        );
+      });
+    });
+
+    it('never coordinates when the flag is off, even with a coordinator injected', async () => {
+      await withFlag(undefined, async () => {
+        const findingsCoordinator = {
+          coordinate: jest.fn().mockResolvedValue({}),
+        };
+        const direct = buildWithCoordinator(findingsCoordinator);
+        activeDevice();
+
+        await direct.ingest('t1', 'd1', 'evt-findings', { temp: 25 });
+
+        expect(findingsCoordinator.coordinate).not.toHaveBeenCalled();
+      });
+    });
+
+    it('keeps ingesting when no findings coordinator is injected at all', async () => {
+      await withFlag('true', async () => {
+        const direct = buildWithCoordinator(undefined);
+        activeDevice();
+
+        await expect(
+          direct.ingest('t1', 'd1', 'evt-findings', { temp: 25 }),
+        ).resolves.toEqual(expect.objectContaining({ id: 'telemetry-created' }));
+      });
+    });
+
+    it('does not reject ingest when coordination itself throws', async () => {
+      await withFlag('true', async () => {
+        const findingsCoordinator = {
+          coordinate: jest.fn().mockRejectedValue(new Error('coordinator down')),
+        };
+        const direct = buildWithCoordinator(findingsCoordinator);
+        activeDevice();
+
+        await expect(
+          direct.ingest('t1', 'd1', 'evt-findings', { temp: 25 }),
+        ).resolves.toEqual(expect.objectContaining({ id: 'telemetry-created' }));
+      });
     });
   });
 });

@@ -176,6 +176,16 @@ class EnvironmentVariables {
   @IsBoolean()
   NOTIFICATION_RUNTIME_ENABLED = false;
 
+  @Transform(({ value }) => transformBoolean(value))
+  @IsBoolean()
+  FINDINGS_RUNTIME_ENABLED = false;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(30)
+  @Max(3600)
+  FINDINGS_RUNTIME_COOLDOWN_SECONDS = 300;
+
   @Type(() => Number)
   @IsInt()
   @Min(30_000)
