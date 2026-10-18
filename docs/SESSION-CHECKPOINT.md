@@ -3467,7 +3467,15 @@ Wave 9 and has not been traced.
 **Where this sits.** The owner asked whether the production store of record holds up under
 "millions of records", authorized a local synthetic scale test, then authorized implementing the
 audit's fixes. This session ran both, against a real migrated PostgreSQL 16 (`iot_scale_test`).
-Push is held for explicit owner authorization; production remains NOT APPROVED.
+
+**Pushed receipt (2026-10-18).** Commit `5aefd7718ac92596f634342ec724c3a80b23e490` on `main`,
+pushed to both verified remotes without force (`27167d2..5aefd77`). `reyvo1/koy` run
+`39094049244` green on first attempt: `test` 5m25s, Wave 3 esp32 5m25s, esp32c3 5m3s, and the
+rescue live EMQX / acceptance job 11m54s (Wave 12/11 probes, Gate 1 source-bound runtime receipt,
+full automated acceptance — the new migration flowed through that chain's `migrate deploy`). The
+`reyvo1/iot-platform` run `39094047257` failed in 5s at external runner allocation with zero steps
+executed: the recorded owner-owned billing gate, not a software failure. Production deployment
+remains NOT APPROVED.
 
 **The audit found three defects and one documentation conflict.**
 
