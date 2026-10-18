@@ -95,6 +95,46 @@ export class MetricsService {
     );
   }
 
+  /**
+   * Wave 10 retention runs. Labels stay bounded: the outcome and whether the pass stopped on its
+   * budget. Tenant and device are deliberately absent -- retention is per tenant, so either would
+   * be an unbounded label set.
+   */
+  recordTelemetryRetention(
+    outcome: 'succeeded' | 'failed' | 'skipped' | 'dry_run',
+    durationSeconds: number,
+    rowsPruned = 0,
+    bucketsWritten = 0,
+    stoppedEarly = false,
+  ): void {
+    const labels = { outcome, stopped_early: String(stoppedEarly) };
+
+    this.incrementCounter(
+      'iot_telemetry_retention_runs_total',
+      'Total telemetry retention run outcomes.',
+      labels,
+    );
+    this.incrementCounter(
+      'iot_telemetry_retention_rows_pruned_total',
+      'Telemetry rows pruned by retention runs.',
+      labels,
+      rowsPruned,
+    );
+    this.incrementCounter(
+      'iot_telemetry_retention_rollup_buckets_total',
+      'Telemetry rollup buckets written by retention runs.',
+      labels,
+      bucketsWritten,
+    );
+    this.observeHistogram(
+      'iot_telemetry_retention_duration_seconds',
+      'Telemetry retention run duration in seconds.',
+      labels,
+      durationSeconds,
+      HTTP_DURATION_BUCKETS,
+    );
+  }
+
   recordCommandLifecycle(event: CommandMetricEvent, value = 1): void {
     this.incrementCounter(
       'iot_device_command_lifecycle_total',

@@ -730,6 +730,7 @@ prisma/migrations/20261004213000_schedule_scene_referential_integrity/migration.
 prisma/migrations/20261005011500_tenant_role_override_tenant_integrity/migration.sql
 prisma/migrations/20261005165000_integration_registry_tenant_integrity/migration.sql
 prisma/migrations/20261007090000_product_operational_completion/migration.sql
+prisma/migrations/20261018000000_hardening_telemetry_tenant_createdat_index/migration.sql
 prisma/migrations/migration_lock.toml
 prisma/schema.prisma
 prisma/seed.ts
@@ -814,6 +815,7 @@ scripts/run-rescue-live-broker-smoke.mjs
 scripts/run-rescue-runtime-flow-extension.mjs
 scripts/run-saved-reports-probe.sh
 scripts/run-secret-scan.mjs
+scripts/run-telemetry-retention.ts
 scripts/run-wave3-esp32-simulation.mjs
 scripts/run-wave3-qemu-boot.mjs
 scripts/run-wave4-staging-probes.sh

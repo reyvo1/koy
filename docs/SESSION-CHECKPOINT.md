@@ -3459,3 +3459,68 @@ behavioural spec, and every behavioural spec is mutation-tested.
 **Known and untouched.** A worker-leak warning appears in the full Jest run. It is *not* from this
 wave: the suite was re-run with the ONVIF spec excluded and the warning persists, so it predates
 Wave 9 and has not been traced.
+
+---
+
+## 2026-10-18 — Telemetry retention at scale: audit, hardening, measured [D1]
+
+**Where this sits.** The owner asked whether the production store of record holds up under
+"millions of records", authorized a local synthetic scale test, then authorized implementing the
+audit's fixes. This session ran both, against a real migrated PostgreSQL 16 (`iot_scale_test`).
+Push is held for explicit owner authorization; production remains NOT APPROVED.
+
+**The audit found three defects and one documentation conflict.**
+
+The retention pass removed rows with one unbounded `deleteMany` per tenant -- a 500k-row statement
+at the measured scale -- and computed each bucket's last value with a query per bucket (N+1). The
+prune and rollup predicates both range over `createdAt` for one tenant without naming a device, and
+the only composite index with `createdAt` in it puts `deviceId` second, so the tenant-wide range
+could not be served by a seek. And the refresh path never removed expired refresh tokens.
+
+The documentation conflict: `docs/telemetry-aggregation.md` still pinned "Persisted rollups remain
+deferred / No schema migration" from Module 09, while Wave 10 had already shipped
+`telemetry_rollups`. The pinned phrases are contract-tested; the fix was to keep every phrase
+byte-for-byte and append an addendum that marks them as the Module-09 baseline and states what
+supersedes them and what still does not (a scheduler, partitioning, production approval).
+
+**The numbers, before and after.** 1,000,000 rows over a 30-day spread, 10k-row `createMany`
+batches:
+
+| measure | before (unbounded) | after (hardened) |
+| --- | --- | --- |
+| retention wall | 33.5s, one statement | 29.9s, 100 x 5k batches |
+| pruned / buckets | 501,999 / 2,886 | 501,999 / 2,886 (identical) |
+| prune predicate plan | composite fallback: 348 buffers | new index: 102 buffers |
+| index size | 666.1 MiB | 783.2 MiB (+117 MiB, ~122 B/row) |
+| bulk ingest | 4,918 rows/s | 4,126 rows/s |
+| per-row insert | 6.46ms | 6.71ms |
+
+Reads were unchanged (latest 13-16ms, history-50 3ms). The ingest slowdown is index maintenance on
+the new `(tenantId, createdAt)` index -- the honest cost of the prune/rollup seek.
+
+**What was implemented.** Migration
+`20261018000000_hardening_telemetry_tenant_createdat_index`, hand-written because `prisma migrate
+dev` refuses to run non-interactively in this environment and would have swept three pre-existing,
+unrelated schema/migration drifts into the generated file (`DATABASE-CONVENTIONS.md` documents
+manual SQL as the fallback for exactly this case). The hardened service runs under
+`pg_try_advisory_xact_lock(hashtextextended('telemetry-retention:<tenantId>', 0))` in one
+transaction: a concurrent run reports `skipped` rather than racing or queueing, deletes are bounded
+(`batchSize` 5000 default, `maxDurationMs` 300s budget -> `stoppedEarly` with a clean commit), the
+last value per bucket is computed by `array_agg(... ORDER BY t."createdAt" DESC)[1]` inside the
+single aggregate (the N+1 is gone), and `dryRun` reports `wouldWriteBuckets`/`wouldPrune` with zero
+writes. Four bounded-cardinality metrics (`outcome`/`stopped_early` labels only) and an operator CLI
+(`npm run retention:run`, dry-run-first, exit codes 0/1/2/3) complete the operator story.
+
+**What proves it.** Live probe 16/16 on real PostgreSQL (including the `valueLast = 22` ordering
+check and a residue-free teardown). The CLI predicted exactly the destructive pass (dry-run: 2 rows
+/ 1 bucket -> real run: 2 rows / 1 bucket) and refuses to run unscoped (exit 2). Warm-cache
+EXPLAIN ANALYZE: 102 vs 348 buffers for the prune predicate with vs without the new index; without
+it, Postgres falls back to the composite and scans every tenant entry. Focused suites 9/9 (77
+tests), targeted QA 69/69 (690), full Jest 2768/2769 -- the single failure is the known DB-env-only
+`demo-seed-reentry`, which passes 4/4 once `DATABASE_URL` is supplied. `rescue:validate` 507/507.
+Lint, both web typechecks, `mobile:validate`, and all five self-tests PASS.
+
+**Method note.** The Wave 10 contract spec is classified `current-state` and was updated with
+rigor (the `createdAt < (` count is now 3, one per bound predicate; `AT TIME ZONE` stays 4 with the
+composition named). The Module-09 specs are `historical-evidence` and were not touched -- their
+pinned phrases survive in the docs, which is why the addenda exist as appends instead of rewrites.

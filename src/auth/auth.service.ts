@@ -253,6 +253,15 @@ export class AuthService {
         },
       });
 
+      // Housekeeping, opportunistic and user-scoped. Every login and every rotation adds a row, and
+      // once a token is past its expiry it can never be accepted again -- step 4 above refuses it --
+      // yet nothing ever removes it, so the table grows with sessions that have been over for
+      // months. Deleting this user's expired rows on rotation keeps the table proportional to live
+      // sessions. Revoked-but-unexpired rows stay: those are what make replay detection work.
+      await tx.refreshToken.deleteMany({
+        where: { userId: record.userId, expiresAt: { lt: new Date() } },
+      });
+
       const accessToken = this.jwtService.sign({
         sub: record.userId,
         tenantId: record.tenantId,

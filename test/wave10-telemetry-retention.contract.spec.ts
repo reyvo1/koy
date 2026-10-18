@@ -85,8 +85,55 @@ describe('Wave 10 telemetry retention and rollups', () => {
     it('never rolls up samples from outside the retention boundary into a live bucket', () => {
       // The prune and the rollup must agree on the cut-off. If the rollup takes everything and the
       // prune takes only the old rows, the buckets double-count every retained sample on each pass.
+      // Asserted on the raw comparisons the database actually executes: the aggregate bound, the
+      // batched removal bound, and the dry-run count all compare `createdAt` with the same converted
+      // cut-off, and each wraps the bound value in parentheses so the driver binds it as a parameter
+      // rather than the SQL being assembled from it. A count, not a `toContain`, so a second bound
+      // that drops the parameter wrapper -- or a fourth comparison that appears without its own
+      // conversion -- cannot pass unnoticed.
       expect(service).toMatch(/cutoff/);
-      expect(service).toMatch(/(createdAt: *\{ *lt:|createdAt *<)/);
+      const rawCutoffComparisons = service.match(/"createdAt" *< *\(/g) ?? [];
+      expect(rawCutoffComparisons.length).toBe(3);
+    });
+
+    it('coordinates concurrent runs with a per-tenant advisory lock and skips instead of queueing', () => {
+      // Operator runs can be started from more than one host. The try-lock makes the second run
+      // report `skipped` rather than race the first, and running it inside the transaction means the
+      // lock cannot outlive the work it protects.
+      expect(service).toContain('pg_try_advisory_xact_lock');
+      expect(service).toContain('hashtextextended');
+      expect(service).toMatch(/telemetry-retention:/);
+      expect(service).toContain('$transaction');
+    });
+
+    it('removes in bounded batches under a wall-clock budget', () => {
+      // The 1M-row scale probe measured the original single-statement removal at ~33s; an unbounded
+      // statement holds its locks for as long as the backlog is large. Batches bound each statement,
+      // and the budget stops a pass cleanly with `stoppedEarly` so the next run continues.
+      expect(service).toContain('LIMIT ${batchSize}');
+      expect(service).toContain('maxDurationMs');
+      expect(service).toContain('stoppedEarly');
+      expect(service).toMatch(/deleted < batchSize/);
+    });
+
+    it('supports dry-run evidence before a destructive pass', () => {
+      // The storage strategy's retention boundary requires dry-run evidence before destructive
+      // execution; this is that path, and it must not remove or write anything. What the pass *would*
+      // write and remove is reported through `wouldWriteBuckets` and `wouldPrune`, because a dry run
+      // that reports zeroes for both is not evidence of anything.
+      expect(service).toContain('dryRun');
+      expect(service).toContain('countPrunable');
+      expect(service).toContain('wouldWriteBuckets');
+      expect(service).toContain('wouldPrune');
+    });
+
+    it('derives the last value from the same aggregate instead of one lookup per bucket', () => {
+      // The N+1 shape was one extra query per bucket; it also carried the bucket-bounds bug the probe
+      // found. Ordering inside the aggregate removes both problems by construction: the last value
+      // cannot disagree with the grouping that produced its bucket.
+      expect(service).toContain('array_agg(');
+      expect(service).toMatch(/ORDER BY t\."createdAt" DESC/);
+      expect(service).not.toMatch(/last\[0\]/);
     });
   });
   describe('timezone', () => {
@@ -97,7 +144,12 @@ describe('Wave 10 telemetry retention and rollups', () => {
     // a machine running UTC, which is what made this invisible until it reached a real deployment.
     it('converts every raw bound value from timestamptz into naive UTC', () => {
       const conversions = service.match(/AT TIME ZONE 'UTC'/g) ?? [];
-      // Four: the cut-off and both bounds of the last-value lookup, plus the bucket epoch.
+      // Four, and the composition changed with the hardening pass: the cut-off bound inside the
+      // aggregate, the bucket epoch, the cut-off bound inside the batched removal, and the cut-off
+      // bound inside the dry-run count. The two that used to convert the last-value lookup's bounds
+      // disappeared with the per-bucket lookup itself; anything still binding a bare `${cutoff}` or
+      // `${bucketEnd}` would have to add a conversion (or fail the bare-bound check below), so the
+      // exact count stays the tripwire for that class of regression.
       expect(conversions.length).toBe(4);
     });
 

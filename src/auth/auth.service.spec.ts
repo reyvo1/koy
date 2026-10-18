@@ -21,7 +21,7 @@ describe('AuthService', () => {
             $transaction: jest.fn(async (cb) => {
                 const tx = {
                     user: { create: jest.fn(), update: jest.fn() },
-                    refreshToken: { findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn(), create: jest.fn() },
+                    refreshToken: { findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn(), create: jest.fn(), deleteMany: jest.fn() },
                     refreshTokenFamily: { update: jest.fn() }
                 };
                 return await cb(tx);
@@ -176,7 +176,9 @@ describe('AuthService', () => {
                 create: jest.fn().mockImplementation(async (_args) => {
                     events.push('replacement-created');
                     return { id: 'rt2', tokenLookup: 'new-lookup' };
-                })
+                }),
+                // Housekeeping for this user's expired tokens runs on the same rotation transaction.
+                deleteMany: jest.fn().mockResolvedValue({ count: 0 })
             },
             refreshTokenFamily: { update: jest.fn() }
         };
@@ -197,6 +199,12 @@ describe('AuthService', () => {
         });
         const createCall = tx.refreshToken.create.mock.calls[0][0];
         expect(createCall.data).toMatchObject({ familyId: 'f1', userId: 'u1', tenantId: 't1' });
+        // The opportunistic housekeeping is user-scoped and expiry-bounded: it must never touch another
+        // user's rows, and it must never delete a token that is still valid (those are what make replay
+        // detection work).
+        expect(tx.refreshToken.deleteMany).toHaveBeenCalledWith({
+            where: { userId: 'u1', expiresAt: { lt: expect.any(Date) } }
+        });
         expect(service['lookupToken'](result.refreshToken)).toBe(createCall.data.tokenLookup);
         expect(result.accessToken).toBe('new-access-token');
         expect(result.refreshToken).toBeDefined();

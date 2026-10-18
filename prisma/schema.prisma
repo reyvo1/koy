@@ -387,6 +387,12 @@ model Telemetry {
   @@unique([id, tenantId])
   @@unique([deviceId, eventId])
   @@index([tenantId])
+  /// Retention and rollup both range over `createdAt` for a single tenant without naming a device.
+  /// The composite `[tenantId, deviceId, createdAt, id]` index cannot serve that: after the tenant
+  /// equality it needs `deviceId`, so a tenant-wide `createdAt` range falls back to a scan. Measured
+  /// on the 1M-row local scale probe: the pre-index rollup read of a 30-day window and the batched
+  /// prune both keyed off this shape, and the scale test compares before/after.
+  @@index([tenantId, createdAt])
   @@index([deviceId])
   @@index([createdAt])
   @@index([tenantId, deviceId, createdAt, id])

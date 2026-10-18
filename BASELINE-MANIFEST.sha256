@@ -65,9 +65,9 @@ a806666cbf85171af1027b36a496a750a0c20b253f48e82583a9f25a436622e1  ./AI-Developme
 cab10a82cb5f2255ecdf99981067119041beb07ab6c1f1976e531d10db5fd724  ./AI-Development-Kit/templates/MODULE-STATUS-TEMPLATE.md
 68f8de30afc578e0ab20ac92ef560f3081a95d699d998621092f1f61c0d00791  ./AI-Development-Kit/workflows/AGENT-EXECUTION-LOOP.md
 78e5c067c68636d36a3289d001fd159176a7792b7e33af206463d7aaa93a0f7c  ./AI-Development-Kit/workflows/FAILURE-PROTOCOL.md
-3892f61055cb34d4e6719a9af8e3258d6a47a10a2ae9efda2098634c53a8613c  ./CURRENT-STATE.md
+4d2a4c292d844f80c23079fbdde0af276835d26de7f660deefc5054cc2f903ef  ./CURRENT-STATE.md
 bd29d21f37c224e1d6b4af71e0025d8f4019b3914381248356add4266724f1b0  ./GATE-1-STATUS.md
-d574b8e641cd1e6e86a66a24cff1a4100fdc3aa6bd15ef71f7dd85738fbae5d1  ./PASTE-KE-CHAT-BERIKUTNYA.txt
+59450ddaf65c95d724c21ecc24e3516c125498b948e22044bf9fa378adc2dfd3  ./PASTE-KE-CHAT-BERIKUTNYA.txt
 2b1f7f4afce4f3196b0258437c83d64fdda0b01d21a7d9d390695aad6eff2c41  ./PROJECT-HANDOFF.md
 818d1504f9c83a672557cc3c45452c033f04098ce52f609be506b3bbe7dfe7d6  ./UI-DESIGN-SYSTEM.md
 c2482384a4f53220f51123f4fd6ae19151c47cb1a15dc2d49f9a8228beaaa964  ./apps/admin-web/.env.example
@@ -460,7 +460,7 @@ e100d7810ca74d0809296a27b384596caf72f6e8350d463b4838f5aa043573bf  ./apps/user-we
 ccd2a17f28b9205adc19fbf05b2a9389dc24115b8ce40b6d958777af90bea7a1  ./apps/user-web/postcss.config.mjs
 7794f4a44d2c31c1f33e91477a00025f4e62687a88946b7c17f58f26257ef2e8  ./apps/user-web/public/icon.png
 38ee09e8ee48c7e75cab63bd076513018ca07b655295664d07c107e408606495  ./apps/user-web/tsconfig.json
-146e771075f6da905533e8abd99cf49a2a3404258d242700cd37b1a6e9f46c1c  ./chat-session.md
+c7b644a7e8df5e8bf8b7bd64d6581e47b7785e7567cfe53c48e7ce23f60fc37f  ./chat-session.md
 08395048b09eab1f15b7264df8b76ae8b4e99634c0f516aa3ce775042bd1859e  ./config/performance-budget.json
 3f7f2db41062faaeea13fd74832ddcd6e9332a2b4063f13af8ff0cf3c60b030a  ./config/stress-budget.json
 57e9cc3083ac5d0b99e00ed9afa5f740d958130437c0d6a1b52d7ed89ad04fb5  ./docker-compose.rescue.yml
@@ -481,7 +481,7 @@ e609750984b6a528a218c343a0e3614403e010751dd1529cdc17da3d9148d2cf  ./docs/RESCUE-
 2fd52fea04918f5e778492de8879f074e594fb72c449993eef7b4ef3e8e33921  ./docs/ROADMAP-COMPLETE.md
 b7c50d5ecd0ef5538e96d0c7c2b40311e951e764d53f6f16f27f516f3eb1c911  ./docs/ROADMAP-SMART-HOTEL.md
 6149db8093c4f5835d3ee5bf7a76ae1f90c6fad4f00cdf96d00ddb491a087574  ./docs/SECRET-SCAN-POLICY.md
-421c1fb34bd5dcb01ffa4bdc5dc119e3fceaa3f1b7d86fa1d6fde5b4234607c7  ./docs/SESSION-CHECKPOINT.md
+18a6b61aa3569367918a2df486d77ecff0dbe0ef18669c35d0cca82a28c73488  ./docs/SESSION-CHECKPOINT.md
 03d88ce7efa18d6b1381392e386db54b5f026a9e345f02e6299c07d6102d41bb  ./docs/SESSION-HANDOFF-PROTOCOL.md
 cc7efd6089313daacae59b9e676431d674b7b8e45702a812618728689fe7c16e  ./docs/STAGING-RUNBOOK.md
 1fc4adecc7abe855470936cef9ac09129d7b83a8926f1d8bddbfc244c1a5f2dd  ./docs/UAT-CHECKLIST.md
@@ -594,8 +594,8 @@ f0ba560af31fbfdfed690fc1d01a53b93ef5afb67747bab888b5692cd6852416  ./docs/project
 730bb0319a8be7b968779028331ad5f90b5e0ef8cb66077758b9b6a912a25568  ./docs/repository-historical-contract-architecture-remediation.md
 f28815107b0fb85c0eac29ace719ecb25f60160a91111a2385b6c1de647f43b8  ./docs/roadmap.md
 d1cc59e1de673749874e13c6a789fe6063d159f8256891a146dcc3d684823d39  ./docs/structured-logging.md
-b5f241c5bcf5e860dfef9e1b5ccf9deee8ffe60c05ae9767754d993462d23bbe  ./docs/telemetry-aggregation.md
-c6dfa1d4ff37b3f8800a0e868d7c2a8b6e8662759e6246f461b810fa83d22bf0  ./docs/telemetry-storage-strategy.md
+2f89c35f198719aca4e1dd2b258a6b0a33da1dec067c4fefdd965bfacbc34f3d  ./docs/telemetry-aggregation.md
+2ed2d7584ed8f95928a4ba510f178a70540690a87f15e208ce86521b6509fa7d  ./docs/telemetry-storage-strategy.md
 525b0e366b6d5296e9e7bbc8167c8ed610459750df19e096e25c2bfc3e77b571  ./docs/testing-strategy.md
 aa67f7d9534a998515dad63ed8bd3379af6d85f79830e3c60762d200b221a808  ./docs/wave-02-core-runtime-closure.md
 893c7c6fb01f5c4bfda8c066b4d8217c286dbe7a56e4f63fa500edf9561c7644  ./docs/wave-03-esp32-ota-simulation.md
@@ -647,7 +647,7 @@ d296e3a0df131f20476c6d8c4ece1af57e861ed63b49659ab468ab3f038bc155  ./ops/systemd/
 0ab8a7cb3c2364eaae2ed177ad5dc0c605e90167f70de7f89aa552d184c0cdfa  ./ops/systemd/iot-platform-offhost-backup.timer
 c16ce529395244a7a5cdd9b4b86902273e232212695edd8c768c8de28cfbe78f  ./ops/systemd/iot-platform.service
 8324af11e31b28f764886f81456da39d3d6b503cbf97f394c1eddbb0aca5839e  ./package-lock.json
-12dc1843db20c97f2dab3d2029e6bf15f0cf15861be2e93359d3b91261e7644b  ./package.json
+b0263389134c8f7b095463d8ce17700dece9eae5df1d3cfd724db05dd4079946  ./package.json
 a119fdac221907cc9580b940bb96d031ae518f3a3f97dab501bfe3e94cef19d3  ./packages/design-system/package.json
 a6a80d485fd45df498f0ff7b7ed29c8c99a5d0aad2caeb80fd0df23a9d69400e  ./packages/design-system/src/camera-player.tsx
 b9b3e462cf4f09ca525457ac78f1274b48dac05b701f37ad32414a3d0515356e  ./packages/design-system/src/capability-value-input.tsx
@@ -730,8 +730,9 @@ a68bc29e1371d7a34982449dc0e4836849e0584d431c90b77f3b1bb3959c70df  ./prisma/migra
 08b9791a35b755e4f7fa255d497b42db0dec0006cb47c1d6c18fea248ebb8d4c  ./prisma/migrations/20261005011500_tenant_role_override_tenant_integrity/migration.sql
 336af3cd9bc87d8c61e5900ce845f6547af331836c6ab97ed101ac1914aad0e0  ./prisma/migrations/20261005165000_integration_registry_tenant_integrity/migration.sql
 ff73425b519396b068969ea241defc8d89316c14897fa3595157364fdf48a0d2  ./prisma/migrations/20261007090000_product_operational_completion/migration.sql
+681a478835736867aaf4acd2f98a89d363d26efb6bde69b26dec121f84c74c02  ./prisma/migrations/20261018000000_hardening_telemetry_tenant_createdat_index/migration.sql
 693566b52c49db47a2b0901d12400aa3d710d13a49f4a2a154b80c0505ed737c  ./prisma/migrations/migration_lock.toml
-ff9a4290edf37209aa8c3500ed21771fbe1f5dd882029f3d236cba1e5bbcb9cb  ./prisma/schema.prisma
+dc346b78c0eb202044aa38cf39a618830d534a3d429d2dff5c2321895a2f7d18  ./prisma/schema.prisma
 a29a9d85dbad9cfb94a096e26f3a640d2ebbfe903c921d18262a1153e3eb287e  ./prisma/seed.ts
 863f5d09a5b62e0618f48a98627a7e906e0a417513db68862f5b8e776117ab47  ./project-config.json
 896508b052ba39570ee74e4c671e2665e548893a9a236ee8028ae1d60796ea2a  ./scripts/attach-rescue-02b-evidence.mjs
@@ -814,6 +815,7 @@ c69815631691a1a3552e3a4d62b942693b34878d4f95c70fe7e39d60db603334  ./scripts/run-
 e632e42126bf99256971c3793c66b360cfa6bcf5d384b6b5bb5ac3c4971691e8  ./scripts/run-rescue-runtime-flow-extension.mjs
 38e122b2d436b2d095efbe893b64427e2ee617d484df2896dc8cf537a81ba000  ./scripts/run-saved-reports-probe.sh
 b7f7119f80d0a4e9341e4f295f3fd0d7554e8b0054cbf1ccb5f55959001ee336  ./scripts/run-secret-scan.mjs
+078d2090cd5a56fa32cdd2c1cd9f27068a28b5eaf98510109aad789b3f913f01  ./scripts/run-telemetry-retention.ts
 94b99abf0e9b5a5434ba6a3a5f64d72ccc88fa42eaab1bfda0a84ab2ba88136f  ./scripts/run-wave3-esp32-simulation.mjs
 6ce455e472c2ee9238284a0f3c3a823c9a4cde0f868a69037bcc40d02b50e78d  ./scripts/run-wave3-qemu-boot.mjs
 d63d15e52f7c3e25bc0e40d9ea86a6dfe07d60a66b9939f85926b6d90fcecc93  ./scripts/run-wave4-staging-probes.sh
@@ -942,8 +944,8 @@ dfd8b3a48380173f3c39e5d590931c132e400cb1e748c0f2bc5e02ef8533b9be  ./src/analytic
 eaf8514ce110fa428a93a27408df4d06d133dbd9ed0a775c315ddfdd507853a9  ./src/app.service.ts
 1a22816a94fa9f995f6664df60d07bd4cdf969ce9ab383ffa444dd160c669524  ./src/auth/auth.controller.ts
 a63c81d755681d69d16867687807912aab6ea52c4303d492a3c33a5b27acd21e  ./src/auth/auth.module.ts
-02ee3c29efaad53b71792dd67d986a1a9fe605998f6c94120e11398c65e65e29  ./src/auth/auth.service.spec.ts
-35518edea0c94ce78b2b7ba0c0cc372b0ad4d116ad7f98e9536728c0b8a24dac  ./src/auth/auth.service.ts
+5605934b07f5f6a1bf9195a40fbd34cf7fcc02e96c444c2f6587823b7590aaf5  ./src/auth/auth.service.spec.ts
+3b8a12d705341c4c3cc2a63fffb52b653f53e9951a316826d87e5bbc433c5bca  ./src/auth/auth.service.ts
 8c8c9993faf4a7bc6af861abdd3f5850cd806044661ea4b3f7f2ff70bc3f804b  ./src/auth/dto/forgot-password.dto.ts
 1421f86851d3b53be661ac04572935ab079e2d78a8e6fc3071a7d4c96eb46b07  ./src/auth/dto/login.dto.ts
 9846cd78755bffd2391a6edbf18cfb0370b777c2362b25d0dfcfeb50a1aca158  ./src/auth/dto/register.dto.ts
@@ -1130,7 +1132,7 @@ e60413eb7b34c6e3647c15a88b970b16e2b2411c31e9b4ef8157fbd0a07829d4  ./src/metrics/
 4e811e5463464e718538eb126ae54ff4b94ba5557b62d3b171c94824df2553e9  ./src/metrics/metrics.module.spec.ts
 1835a69ccceeb70f827715a06452c3cdad02113934ae6cb92ecd7df20d5112de  ./src/metrics/metrics.module.ts
 78df37afded33abb5f120f1978003cd2dd4f54b58377e239e090685283f46c44  ./src/metrics/metrics.service.spec.ts
-48dcc1cf8ec524964b6272a3281d500fd540e6400ea450f3fb88665a75eac2d0  ./src/metrics/metrics.service.ts
+6d25b459b6ad1dd58f3f110610d0c86b7e828b3155dcf42a0de19008ddba5a0b  ./src/metrics/metrics.service.ts
 5a0dfa5ddad0681fc949e7eb3ca594f50755a64b0ecb74b758a08e355de0409b  ./src/metrics/metrics.types.ts
 1c47931027349f8858e6023bcbb432892ee0abd1b8cd819a7590a39d08a458db  ./src/metrics/observability.contract.spec.ts
 218912577a8483b5ec03350c77ba731e8307fed659923f00ad980c8470d97fdf  ./src/metrics/telemetry-aggregation.metrics.spec.ts
@@ -1253,8 +1255,8 @@ a088ecacc8c30245e2970e511a4b88af5a32a5ec4170bd8a7e7f98dbfdeaf5ae  ./src/telemetr
 367edca49feccce36b88befde3f078720920318eff52dab705815770e43895d8  ./src/telemetry/telemetry-aggregation.controller.ts
 16f590db3bc50fdeba99791bd3907ed2ccb9c84102c3915573de52038ceba720  ./src/telemetry/telemetry-aggregation.service.ts
 36f9d186f255fde2fab56b04437c78de0a802e91c77f57b9b385fc9d21b04529  ./src/telemetry/telemetry-aggregation.spec.ts
-455d4e7ff5d2ddb9675e56721b0021f4c89369c914e11d8d39da41e15372010d  ./src/telemetry/telemetry-retention.service.spec.ts
-bab1bcc23f0351774ed62cf7869feaba34609a0600b8a52735de5f343a29361d  ./src/telemetry/telemetry-retention.service.ts
+2b08907652c0206da9aa9ef389d896216ef40924bbb8676b8e189e0461fe01f5  ./src/telemetry/telemetry-retention.service.spec.ts
+6eed80851029a0138f154e0fb5547529ae3ba06c37daa5383673265f37f73310  ./src/telemetry/telemetry-retention.service.ts
 ae67eda0fd97ea63e8965e2aae63d1566dd86b9279f0f3dfeb1c57be0047d3d4  ./src/telemetry/telemetry-stream.controller.spec.ts
 a82ca4eaf9cdfd435a9fa6e8efa4a213e27e5eaa3f56eda8948d0763ee4f6163  ./src/telemetry/telemetry-stream.controller.ts
 173b659490d95b7e9c7bceced64cccf14d2b6e51f32c7acf069ae964a58199a1  ./src/telemetry/telemetry.controller.spec.ts
@@ -1454,7 +1456,7 @@ c3ec705b59840a4997277389d1a1d923c831a6c97e6587797211d7e3b974cbb0  ./test/tenant-
 ffbfa42c168686841ae32c97f9512b308dc7ddbf95a7c66db58594d471c9b686  ./test/ui-chart-system.contract.spec.ts
 cd26f3f9c88410552e474bdc12e5a1fbbbae4241e9e12e61dcda067f77d68245  ./test/user-web-surface-completeness.contract.spec.ts
 67ea90b786dc829a8538f3734ae0ac3bb710f4b208c6d96a28797d15e6c6681e  ./test/wave-02-core-runtime-closure-invariants.contract.spec.ts
-da89ce0c71385194eb880ab4c158270d2da4d907cd7ea2e80664ad4777b64142  ./test/wave10-telemetry-retention.contract.spec.ts
+a862fcf988164339645cf5f0eac971c6112e04c84a248cee135d7272789d0cf8  ./test/wave10-telemetry-retention.contract.spec.ts
 2a171fe8c9887a078191cd56c2d49d8a3393caf3e1b984ca41e6afb39df10b5d  ./test/wave11-device-health-scoring.contract.spec.ts
 e798394c25cccff6dfb525349fd63249183fd463519ffb0471fbe49e8176ab59  ./test/wave11-device-risk-forecasting.contract.spec.ts
 96ff2bfc35ed18144cc0cdf152f59cbe454c1d4de79f89bef3803273d19a763c  ./test/wave11-energy-intelligence.contract.spec.ts
@@ -1525,4 +1527,4 @@ d526784499ba2f416a3fca603acb5dd534fb7450580e048a80abcba43f9ece63  ./tools/redis-
 0543e915f75a5ecc6acceb422f4bebbac2e6a4ca6a77c3b8a031191884d8996c  ./tsconfig.build.json
 7256486d18986f5c8b6c0d1548e30a2cdf8dfb0c4d1fb27e5dffd081ee67fa98  ./tsconfig.jest.json
 fb2278ad89fcdbeb387aa4a8e0f3c550b9ffd464d1ce83b2c2aee1ff72ddc14c  ./tsconfig.json
-ecf80bc612d8d57f1d40836aa4f379422272817eeea432c2aa71f53270d52396  ./repository-tree.txt
+34b37361be8edc45119aa2655d37a363a98b318a0fb31af38d916d3388a68f44  ./repository-tree.txt

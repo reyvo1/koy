@@ -124,3 +124,15 @@ The read-only completion audit passed 114 checks with 0 failures. Implementation
 
 Module 10 remains inactive until this completion-review commit is green remotely and activation is explicitly approved. Production deployment remains NOT APPROVED.
 <!-- MODULE-09-COMPLETION-REVIEW:END -->
+
+<!-- WAVE10-PERSISTED-ROLLUP-SUPERSESSION:START -->
+## Persisted Rollup Status (supersedes the deferral above; 2026-10-18)
+
+The statements above -- "Persisted rollups remain deferred", "No schema migration", and their neighbours in Explicit Exclusions -- describe the Module 09 read-time baseline at commit `207894e`. They remain in place as the historical record of that baseline. They are no longer the current state:
+
+- Migration `20261002000000_wave10_telemetry_rollups` added the `telemetry_rollups` table (model `TelemetryRollup`), and `src/analytics/energy-intelligence.service.ts` reads it.
+- Rollup rows are written only by the operator-invoked retention service (`src/telemetry/telemetry-retention.service.ts`, run via `npm run retention:run` or proven by `npm run retention:probe`). No scheduler writes them automatically, and nothing writes them on the read path.
+- The read-time aggregation endpoint this document specifies is unchanged: same route, same parameters, same `date_bin` query, same response shape. The rollup table is a separate summarised history for windows whose raw rows are removed by the retention pass; the endpoint does not read it.
+
+So the correct reading of the exclusions: this document's endpoint slice added no schema migration, and that remains true of the endpoint. The storage lifecycle around it moved, and the Telemetry Storage Strategy addendum records the implementation status.
+<!-- WAVE10-PERSISTED-ROLLUP-SUPERSESSION:END -->

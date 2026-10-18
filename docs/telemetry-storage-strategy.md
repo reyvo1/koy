@@ -111,3 +111,25 @@ The read-only completion audit passed 114 checks with 0 failures. Implementation
 
 Module 10 remains inactive until this completion-review commit is green remotely and activation is explicitly approved. Production deployment remains NOT APPROVED.
 <!-- MODULE-09-COMPLETION-REVIEW:END -->
+
+<!-- WAVE10-RETENTION-IMPLEMENTATION:START -->
+## Retention Implementation Status (Wave 10; hardened 2026-10-18)
+
+The Retention Boundary above states what a retention implementation must do before it may run. That implementation now exists, so where the Decision Summary and Aggregation Boundary describe automatic deletion and persisted rollups as future work, read those statements as the baseline as approved on 2026-07-18, not as the current repository state. Nothing here approves partitioning, a scheduler, or production deployment.
+
+Where the implementation lives:
+
+- `src/telemetry/telemetry-retention.service.ts` summarises each expiring window into `telemetry_rollups` (model `TelemetryRollup`, migration `20261002000000_wave10_telemetry_rollups`) and only then removes raw rows. Both steps share one `cutoff` inside one transaction.
+- The cut-off is derived from `createdAt`, tenant id is required, and an unscoped call refuses before touching the database.
+- Removal runs in bounded batches (`batchSize`, default 5000) under a wall-clock budget (`maxDurationMs`, default 300s). A run that reaches the budget stops cleanly, commits what it did, and reports `stoppedEarly`; the next run continues where it left off.
+- The whole run executes under `pg_try_advisory_xact_lock(hashtextextended('telemetry-retention:<tenantId>', 0))`. A second run against the same tenant skips and reports `skipped` rather than queueing or racing.
+- `dryRun: true` reports the buckets a pass would write and the rows it would remove without writing anything -- the dry-run evidence this document requires before destructive execution.
+- Runs emit structured start, completion, skip, and failure logs, and bounded-cardinality metrics (`iot_telemetry_retention_runs_total`, `iot_telemetry_retention_rows_pruned_total`, `iot_telemetry_retention_rollup_buckets_total`, `iot_telemetry_retention_duration_seconds`) with outcome and stopped-early labels only -- no tenant or device cardinality.
+
+Operations:
+
+- Nothing is scheduled automatically. Retention remains disabled by default and operator-invoked. Evidence first: `npm run retention:run -- --tenant <id> --retention-days 30 --bucket 15m --dry-run`. Then the same command without `--dry-run` for the destructive pass.
+- `npm run retention:probe` remains the live PostgreSQL proof run by CI; it exercises the same service end to end.
+- The 1M-row local scale probe (2026-10-18) measured the pre-hardening pass at a single 502k-row statement taking ~33s, plus one extra query per rollup bucket. The batched form bounds each statement; the last value per bucket is computed inside the single aggregate query.
+- Migration `20261018000000_hardening_telemetry_tenant_createdat_index` adds `(tenantId, createdAt)`, the shape both retention steps use and which the composite query index cannot serve without a device.
+<!-- WAVE10-RETENTION-IMPLEMENTATION:END -->
