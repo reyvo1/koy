@@ -935,6 +935,10 @@ src/analytics/device-risk-forecasting.service.spec.ts
 src/analytics/device-risk-forecasting.service.ts
 src/analytics/energy-intelligence.service.spec.ts
 src/analytics/energy-intelligence.service.ts
+src/analytics/findings-runtime.coordinator.spec.ts
+src/analytics/findings-runtime.coordinator.ts
+src/analytics/findings-runtime.policy.spec.ts
+src/analytics/findings-runtime.policy.ts
 src/analytics/telemetry-anomaly-detector.service.spec.ts
 src/analytics/telemetry-anomaly-detector.service.ts
 src/app.controller.spec.ts
